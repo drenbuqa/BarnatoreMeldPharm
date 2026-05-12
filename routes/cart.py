@@ -436,7 +436,8 @@ def place_order():
         "total_price": total_price,
         "shipping_cost": shipping_cost,
         "grand_total": grand_total,
-        "user_id": current_user.get_id() if current_user.is_authenticated else None
+        "user_id": current_user.get_id() if current_user.is_authenticated else None,
+        "status": "Pending"
     })
         
     # Process Cash on Delivery

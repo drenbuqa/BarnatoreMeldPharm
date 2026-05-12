@@ -20,7 +20,7 @@ from routes.admin import admin
 
 csrf = CSRFProtect()
 
-load_dotenv(override=True)
+load_dotenv()
 
 app = Flask(__name__)
 
@@ -157,4 +157,7 @@ def internal_server_error(e):
     return render_template('errors/500.html'), 500
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5001)
+    port = int(os.getenv('PORT', '5001'))
+    debug = os.getenv('FLASK_DEBUG', '1').lower() not in ('0', 'false', 'no')
+    use_reloader = os.getenv('FLASK_USE_RELOADER', '0').lower() in ('1', 'true', 'yes')
+    app.run(debug=debug, use_reloader=use_reloader, host='0.0.0.0', port=port)

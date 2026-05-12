@@ -5,9 +5,320 @@ from models.order import Order
 from models.user import User
 from models.categories import CATEGORIES
 from models.banner import Banner
+from models.conversation import Conversation
 from flask_login import current_user, login_required
+from bson import ObjectId
+import uuid
+import re
+import json
+import urllib.request
+import urllib.error
+import os
+import ssl
+import certifi
+from dotenv import load_dotenv
+
+# Load .env into environment for local development (keys remain on server only)
+load_dotenv()
 
 main = Blueprint('main', __name__)
+
+
+def _get_guest_id():
+    """Get or create a stable guest ID stored in session"""
+    if 'guest_id' not in session:
+        session['guest_id'] = 'guest_' + uuid.uuid4().hex
+    return session['guest_id']
+
+
+def _normalize_chat_query(value):
+    return str(value or '').strip()
+
+
+def _find_chatbot_products(query_text, limit=5):
+    query_text = _normalize_chat_query(query_text)
+    if not query_text:
+        return []
+
+    # Reuse the existing site search logic, then fall back to a direct regex search
+    products, _, _ = Product.get_paginated(
+        page=1,
+        per_page=limit,
+        search_query=query_text,
+        sort='relevance'
+    )
+    if products:
+        return products[:limit]
+
+    terms = [term for term in re.split(r'\s+', query_text) if term]
+    if not terms:
+        return []
+
+    and_parts = []
+    for term in terms:
+        escaped_term = re.escape(term)
+        and_parts.append({
+            '$or': [
+                {'name': {'$regex': escaped_term, '$options': 'i'}},
+                {'brand': {'$regex': escaped_term, '$options': 'i'}},
+                {'category': {'$regex': escaped_term, '$options': 'i'}},
+                {'subcategory': {'$regex': escaped_term, '$options': 'i'}},
+                {'size': {'$regex': escaped_term, '$options': 'i'}},
+            ]
+        })
+
+    search_query = {'$and': and_parts, 'is_deleted': {'$ne': True}}
+    products = list(mongo.db.products.find(search_query).limit(limit))
+    for product in products:
+        product['_id'] = str(product['_id'])
+    return products
+
+
+def _product_summary(product):
+    price = product.get('discount_price') or product.get('price') or 0
+    brand = product.get('brand') or 'Pa markë'
+    category = product.get('subcategory') or product.get('category') or 'Produkt'
+    size = product.get('size') or ''
+    stock = 'Në stok' if product.get('in_stock', True) else 'Jashtë stokut'
+    details = [brand, category]
+    if size:
+        details.append(str(size))
+    details.append(stock)
+    return {
+        'id': str(product.get('_id')),
+        'name': product.get('name'),
+        'brand': product.get('brand'),
+        'category': product.get('category'),
+        'subcategory': product.get('subcategory'),
+        'size': product.get('size'),
+        'price': product.get('price'),
+        'discount_price': product.get('discount_price'),
+        'image_url': product.get('image_url'),
+        'summary': f"{product.get('name')} — {' • '.join([part for part in details if part])} — €{float(price):.2f}"
+    }
+
+
+def _build_products_url(user_query='', category=None, subcategory=None):
+    params = {}
+    if user_query:
+        params['search'] = user_query
+    if category:
+        params['category'] = category
+    if subcategory:
+        params['subcategory'] = subcategory
+    return url_for('main.products', **params) if params else url_for('main.products')
+
+
+def _call_openai_chat(user_query, products_context, conversation_history=None, selected_category=None, selected_subcategory=None):
+    api_key = (os.getenv('OPENAI_API_KEY') or os.getenv('GEMINI_API_KEY') or '').strip()
+    if not api_key:
+        return None
+
+    api_url = os.getenv('OPENAI_API_URL') or os.getenv('GEMINI_API_URL') or 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions'
+    model = os.getenv('OPENAI_MODEL') or os.getenv('GEMINI_MODEL') or 'gemini-2.5-flash'
+
+    context_lines = []
+    for product in products_context[:8]:
+        context_lines.append(product['summary'])
+
+    system_prompt = (
+        'You are a professional pharmacy shopping assistant for Barnatore Meld Pharm. '
+        'Answer in Albanian. Help users find products based on their need, category, brand, size, or price. '
+        'Be concise, friendly, and practical. If you suggest products, list up to 3. '
+        'If no exact match is available, still answer naturally, explain the best next step, '
+        'and offer to browse more products. Never claim medical diagnosis. When relevant, '
+        'advise consulting a pharmacist or doctor.'
+    )
+
+    user_prompt = f"User request: {user_query}"
+    if context_lines:
+        user_prompt += "\n\nAvailable catalog context:\n- " + "\n- ".join(context_lines)
+
+    messages = []
+    
+    # Add system prompt
+    messages.append({'role': 'system', 'content': system_prompt})
+    
+    # Add conversation history (last 10 messages to keep context manageable)
+    if conversation_history:
+        for msg in conversation_history[-10:]:  # Limit to last 10 messages
+            if msg.get('role') in ['user', 'assistant']:
+                messages.append({
+                    'role': msg['role'],
+                    'content': msg['content']
+                })
+    
+    # Add current user message
+    messages.append({'role': 'user', 'content': user_prompt})
+
+    payload = {
+        'model': model,
+        'messages': messages,
+        'temperature': 0.4,
+        'max_tokens': 2048,
+        'top_p': 0.95,
+    }
+
+    request_obj = urllib.request.Request(
+        api_url,
+        data=json.dumps(payload).encode('utf-8'),
+        headers={
+            'Authorization': f'Bearer {api_key}',
+            'Content-Type': 'application/json',
+        },
+        method='POST'
+    )
+
+    try:
+        with urllib.request.urlopen(request_obj, timeout=20, context=ssl.create_default_context(cafile=certifi.where())) as response:
+            response_payload = json.loads(response.read().decode('utf-8'))
+    except Exception as e:
+        print(f"LLM API Error: {e}")
+        return None
+
+    text_chunks = []
+    # Standard OpenAI / Gemini OpenAI compatibility structure
+    for choice in response_payload.get('choices', []):
+        msg = choice.get('message', {})
+        content = msg.get('content')
+        if isinstance(content, str) and content.strip():
+            text_chunks.append(content)
+        elif isinstance(content, list):
+            for part in content:
+                if isinstance(part, str) and part.strip():
+                    text_chunks.append(part)
+                elif isinstance(part, dict):
+                    part_text = part.get('text') or part.get('content')
+                    if isinstance(part_text, str) and part_text.strip():
+                        text_chunks.append(part_text)
+
+    if not text_chunks:
+        output_text = response_payload.get('output_text')
+        if isinstance(output_text, str) and output_text.strip():
+            text_chunks.append(output_text)
+
+    # Join chunks preserving paragraph structure
+    full_text = ''.join(chunk for chunk in text_chunks if chunk).strip()
+    return full_text if full_text else None
+
+
+def _build_chatbot_reply(user_query, conversation_id=None):
+    normalized = _normalize_chat_query(user_query)
+    lowered = normalized.lower()
+    
+    # Get conversation history if conversation_id is provided
+    conversation_history = None
+    if conversation_id:
+        user_id = str(current_user.id) if current_user.is_authenticated else None
+        conversation_history = Conversation.get_conversation_messages(conversation_id, user_id)
+
+    if not normalized:
+        return {
+            'reply': 'Përshëndetje! Më shkruani çfarë po kërkoni dhe unë do t’ju sugjeroj produktet më të përshtatshme.',
+            'products': [],
+            'quick_replies': ['Për akne', 'Për hidratim', 'Vitaminë C', 'Më të shiturat'],
+            'needs_clarification': False
+        }
+
+    category_hints = [
+        ('akne', 'Dermokozmetikë', 'Kundër Akneve'),
+        ('anti aging', 'Dermokozmetikë', 'Anti-aging & Rrudhat'),
+        ('anti-aging', 'Dermokozmetikë', 'Anti-aging & Rrudhat'),
+        ('hidrat', 'Dermokozmetikë', 'Hidratues'),
+        ('vitamin', 'Suplementë & Vitamina', None),
+        ('suplement', 'Suplementë & Vitamina', None),
+        ('baby', 'Baby & Mami', None),
+        ('fëmij', 'Baby & Mami', None),
+        ('flok', 'Flokët', None),
+        ('diell', 'Dermokozmetikë', 'Mbrojtje nga Dielli'),
+        ('spf', 'Dermokozmetikë', 'Mbrojtje nga Dielli'),
+    ]
+
+    selected_category = None
+    selected_subcategory = None
+    for hint, category_name, subcategory_name in category_hints:
+        if hint in lowered:
+            selected_category = category_name
+            selected_subcategory = subcategory_name
+            break
+
+    products = []
+    search_terms = normalized
+    if selected_subcategory:
+        products = Product.get_paginated(
+            page=1,
+            per_page=5,
+            category=selected_category,
+            subcategory=selected_subcategory,
+            search_query=search_terms,
+            sort='relevance'
+        )[0]
+    elif selected_category:
+        products = Product.get_paginated(
+            page=1,
+            per_page=5,
+            category=selected_category,
+            search_query=search_terms,
+            sort='relevance'
+        )[0]
+    else:
+        products = _find_chatbot_products(search_terms, limit=5)
+
+    if not products:
+        products = _find_chatbot_products(search_terms, limit=5)
+
+    product_cards = [_product_summary(product) for product in products[:5]]
+    ai_reply = _call_openai_chat(normalized, product_cards, conversation_history, selected_category, selected_subcategory)
+
+    if product_cards:
+        reply = ai_reply or (
+            'Kam gjetur disa opsione që duken të përshtatshme. '
+            + '; '.join(card['summary'] for card in product_cards[:3])
+            + '.'
+        )
+        return {
+            'reply': reply,
+            'products': [
+                {
+                    'id': card['id'],
+                    'name': card['name'],
+                    'brand': card['brand'],
+                    'category': card['category'],
+                    'subcategory': card['subcategory'],
+                    'size': card['size'],
+                    'price': card['price'],
+                    'discount_price': card['discount_price'],
+                    'image_url': card['image_url'],
+                }
+                for card in product_cards
+            ],
+            'quick_replies': ['Më trego më shumë', 'Kërko alternativa', 'Më të shiturat', 'Oferta'],
+            'see_more_url': _build_products_url(normalized, selected_category, selected_subcategory),
+            'needs_clarification': False
+        }
+
+    if ai_reply:
+        fallback_reply = ai_reply
+    else:
+        # If AI is not available, show a clearer Albanian message and guidance
+        api_key_present = bool((os.getenv('OPENAI_API_KEY') or os.getenv('GEMINI_API_KEY') or '').strip())
+        if not api_key_present:
+            fallback_reply = (
+                "Më vjen keq — shërbimi i inteligjencës artificiale nuk është i konfiguruar në server. "
+                "Për të marrë përgjigje më të plota, vendosni GEMINI_API_KEY ose OPENAI_API_KEY në variablat mjedisore të serverit (nuk duhet të vendoset çelësi në klient). "
+                "Derisa të konfigurohet, më tregoni saktësisht markën, kategorinë ose përdorimin që kërkoni dhe unë do të kërkoj manualisht në katalog."
+            )
+        else:
+            fallback_reply = (
+                'Po e kuptoj kërkesën tuaj. Nuk gjeta përputhje të drejtpërdrejtë në katalog, por mund t’ju ndihmoj të gjeni alternativa nëse më jepni markën, kategorinë ose përdorimin që kërkoni.'
+            )
+    return {
+        'reply': fallback_reply,
+        'products': [],
+        'quick_replies': ['Për akne', 'Për hidratim', 'Vitaminë C', 'Mbrojtje nga dielli'],
+        'see_more_url': _build_products_url(normalized, selected_category, selected_subcategory),
+        'needs_clarification': True
+    }
 
 @main.route('/')
 def index():
@@ -174,12 +485,13 @@ def product_detail(product_id):
     related_products = Product.get_related(product.get('category'), product.get('_id'), limit=12)
     # The limit is set to 12 directly inside get_related
 
-    # Fetch variants if they exist (By Group ID or Name fallback)
+    # Fetch variants only when an explicit group code exists.
     variants = []
     variant_group = product.get('variant_group')
-    product_name = product.get('name')
     
-    all_variants = Product.get_variants(variant_group, product_name)
+    all_variants = Product.get_variants(
+        variant_group,
+    )
     if all_variants and len(all_variants) > 1:
         variants = all_variants
 
@@ -315,6 +627,127 @@ def search_api():
         })
     
     return jsonify(results)
+
+
+@main.route('/api/chatbot', methods=['POST'])
+def chatbot_api():
+    payload = request.get_json(silent=True) or {}
+    user_query = payload.get('message', '').strip()
+    conversation_id = payload.get('conversation_id')
+    user_id = str(current_user.id) if current_user.is_authenticated else _get_guest_id()
+    
+    # Create new conversation if no conversation_id provided
+    if not conversation_id:
+        # Auto-generate title from first message
+        title = user_query[:30] + '...' if len(user_query) > 30 else user_query
+        conversation = Conversation.create_conversation(user_id, title)
+        conversation_id = conversation['_id']
+    
+    # Add user message to conversation
+    Conversation.add_message(conversation_id, user_query, 'user', user_id)
+    
+    # Get AI response
+    result = _build_chatbot_reply(user_query, conversation_id)
+    
+    # Add AI response to conversation
+    if result and result.get('reply'):
+        Conversation.add_message(conversation_id, result['reply'], 'assistant', user_id)
+    
+    return jsonify({
+        'success': True,
+        'message': result['reply'],
+        'products': result['products'],
+        'quick_replies': result['quick_replies'],
+        'needs_clarification': result['needs_clarification'],
+        'conversation_id': conversation_id
+    })
+
+
+@main.route('/api/chatbot/status')
+def chatbot_status():
+    # Return whether an AI API key is present on the server (no keys are returned)
+    api_key_present = bool((os.getenv('OPENAI_API_KEY') or os.getenv('GEMINI_API_KEY') or '').strip())
+    return jsonify({'ai_configured': api_key_present})
+
+
+@main.route('/api/conversations', methods=['GET'])
+def get_conversations():
+    """Get all conversations for the current user"""
+    user_id = str(current_user.id) if current_user.is_authenticated else _get_guest_id()
+    conversations = Conversation.get_user_conversations(user_id)
+    return jsonify({'conversations': conversations})
+
+
+@main.route('/api/conversations', methods=['POST'])
+def create_conversation():
+    """Create a new conversation"""
+    payload = request.get_json(silent=True) or {}
+    title = payload.get('title', 'Biseda e re')
+    
+    user_id = str(current_user.id) if current_user.is_authenticated else _get_guest_id()
+    conversation = Conversation.create_conversation(user_id, title)
+    
+    return jsonify({
+        'success': True,
+        'conversation': conversation
+    })
+
+
+@main.route('/api/conversations/<conversation_id>', methods=['GET'])
+def get_conversation(conversation_id):
+    """Get a specific conversation with its messages"""
+    user_id = str(current_user.id) if current_user.is_authenticated else _get_guest_id()
+    conversation = Conversation.get_conversation(conversation_id, user_id)
+    
+    if not conversation:
+        return jsonify({'error': 'Conversation not found'}), 404
+    
+    messages = Conversation.get_conversation_messages(conversation_id, user_id)
+    conversation['messages'] = messages
+    
+    return jsonify({'conversation': conversation})
+
+
+@main.route('/api/conversations/<conversation_id>', methods=['PUT'])
+def update_conversation(conversation_id):
+    """Update conversation title"""
+    payload = request.get_json(silent=True) or {}
+    title = payload.get('title')
+    
+    if not title:
+        return jsonify({'error': 'Title is required'}), 400
+    
+    user_id = str(current_user.id) if current_user.is_authenticated else _get_guest_id()
+    success = Conversation.update_conversation_title(conversation_id, title, user_id)
+    
+    if success:
+        return jsonify({'success': True})
+    else:
+        return jsonify({'error': 'Conversation not found or update failed'}), 404
+
+
+@main.route('/api/conversations/<conversation_id>', methods=['DELETE'])
+def delete_conversation(conversation_id):
+    """Delete a conversation"""
+    user_id = str(current_user.id) if current_user.is_authenticated else _get_guest_id()
+    success = Conversation.delete_conversation(conversation_id, user_id)
+    
+    if success:
+        return jsonify({'success': True})
+    else:
+        return jsonify({'error': 'Conversation not found or deletion failed'}), 404
+
+
+@main.route('/api/conversations/<conversation_id>/clear', methods=['POST'])
+def clear_conversation(conversation_id):
+    """Clear all messages in a conversation"""
+    user_id = str(current_user.id) if current_user.is_authenticated else _get_guest_id()
+    success = Conversation.clear_conversation_messages(conversation_id, user_id)
+    
+    if success:
+        return jsonify({'success': True})
+    else:
+        return jsonify({'error': 'Conversation not found or clear failed'}), 404
 
 @main.route('/quiz')
 def quiz():

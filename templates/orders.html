@@ -42,10 +42,14 @@
                         <td>
                             {% if order.status == 'Received' %}
                                 <span class="status-badge status-received">Pranuar</span>
+                            {% elif order.status in ['Pranuar', 'Confirmed'] %}
+                                <span class="status-badge status-confirmed">Pranuar</span>
+                            {% elif order.status in ['Pending', 'Delivering'] %}
+                                <span class="status-badge status-pending">Në Pritje</span>
                             {% elif order.status == 'Cancelled' %}
                                 <span class="status-badge status-cancelled">Anuluar</span>
                             {% else %}
-                                <span class="status-badge status-pending">Në Proces</span>
+                                <span class="status-badge status-pending">Në Pritje</span>
                             {% endif %}
                         </td>
                         <td>
@@ -107,6 +111,7 @@
     
     .status-badge { padding: 0.4rem 0.8rem; border-radius: 2rem; font-size: 0.75rem; font-weight: 700; display: inline-block; }
     .status-pending { background: #fef3c7; color: #92400e; }
+    .status-confirmed { background: #dbeafe; color: #1d4ed8; }
     .status-received { background: #dcfce7; color: #166534; }
     .status-cancelled { background: #fee2e2; color: #991b1b; }
 

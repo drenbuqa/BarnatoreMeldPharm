@@ -38,9 +38,8 @@
                 <span class="stat-label">Gjithsej</span>
             </div>
             <div class="stat-card warning">
-                <span class="stat-value">{% set pending = orders|selectattr('status', 'equalto',
-                    'Delivering')|list|length %}{{ pending }}</span>
-                <span class="stat-label">Në Dërgesë</span>
+                <span class="stat-value">{% set ns = namespace(pending=0) %}{% for order in orders %}{% if order.status in ['Pending', 'Delivering'] %}{% set ns.pending = ns.pending + 1 %}{% endif %}{% endfor %}{{ ns.pending }}</span>
+                <span class="stat-label">Në Pritje</span>
             </div>
         </div>
     </div>
@@ -108,10 +107,12 @@
                                 <div class="premium-select-wrapper">
                                     <select name="status" class="premium-status-select {{ order.status|lower }}"
                                         onchange="this.form.submit()">
-                                        <option value="Delivering" {{ 'selected' if order.status=='Delivering' else ''
-                                            }}>Në Dërgesë</option>
-                                        <option value="Received" {{ 'selected' if order.status=='Received' else '' }}>
+                                        <option value="Pending" {{ 'selected' if order.status in ['Pending', 'Delivering'] else '' }}>
+                                            Në Pritje</option>
+                                        <option value="Pranuar" {{ 'selected' if order.status in ['Pranuar', 'Confirmed'] else '' }}>
                                             Pranuar</option>
+                                        <option value="Delivering" {{ 'selected' if order.status=='Delivering' else '' }}>
+                                            Në Dërgesë</option>
                                         <option value="Cancelled" {{ 'selected' if order.status=='Cancelled' else '' }}>
                                             Anuluar</option>
                                     </select>
@@ -462,6 +463,24 @@
         background: #fffbeb;
         color: #d97706;
         border-color: #fef3c7;
+    }
+
+    .premium-status-select.pending {
+        background: #fef3c7;
+        color: #92400e;
+        border-color: #fde68a;
+    }
+
+    .premium-status-select.confirmed {
+        background: #eff6ff;
+        color: #1d4ed8;
+        border-color: #dbeafe;
+    }
+
+    .premium-status-select.pranuar {
+        background: #eff6ff;
+        color: #1d4ed8;
+        border-color: #dbeafe;
     }
 
     .premium-status-select.received {

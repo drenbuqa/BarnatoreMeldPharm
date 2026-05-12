@@ -5,6 +5,7 @@ from models.db import mongo
 from models.banner import Banner
 
 from models.order import Order
+from models.email_utils import send_order_confirmation_email
 from models.categories import CATEGORIES
 from functools import wraps
 from datetime import datetime
@@ -33,8 +34,16 @@ def orders():
 def update_order_status(order_id):
     new_status = request.form.get('status')
     if new_status:
+        existing_order = Order.get_by_id(order_id)
         Order.update_status(order_id, new_status)
-        flash(f'Statusi i porosisë u ndryshua në {new_status}.', 'success')
+        if new_status in ('Confirmed', 'Pranuar') and existing_order and existing_order.get('status') not in ('Confirmed', 'Pranuar'):
+            sent, message = send_order_confirmation_email(order_id)
+            if sent:
+                flash('Porosia u konfirmua dhe emaili u dërgua te klienti.', 'success')
+            else:
+                flash(f'Porosia u konfirmua, por emaili nuk u dërgua: {message}', 'warning')
+        else:
+            flash(f'Statusi i porosisë u ndryshua në {new_status}.', 'success')
     return redirect(url_for('admin.orders'))
 
 @admin.route('/dashboard')

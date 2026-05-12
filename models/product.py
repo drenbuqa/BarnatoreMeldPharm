@@ -394,27 +394,51 @@ class Product:
             return []
 
     @staticmethod
-    def get_variants(variant_group, name=None):
+    def get_variants(variant_group, name=None, brand=None, category=None, subcategory=None):
         try:
-            if variant_group:
-                # Try finding by variant_group first
-                variants = list(mongo.db.products.find({
-                    "variant_group": variant_group,
-                    "is_deleted": {"$ne": True}
-                }))
-            elif name:
-                # Fallback: if no variant group, try matching by name (for products that share a name but differ in size)
-                # Ensure they don't have a variant group assigned to avoid mixing
-                variants = list(mongo.db.products.find({
-                    "name": name,
-                    "variant_group": {"$in": [None, ""]},
-                    "is_deleted": {"$ne": True}
-                }))
-            else:
+            def normalize_text(value):
+                text = str(value or "").strip()
+                if text.lower() in {"none", "null", "nil", ""}:
+                    return ""
+                return text
+
+            group_key = normalize_text(variant_group)
+            if not group_key:
                 return []
 
-            for v in variants:
+            variants = list(mongo.db.products.find({
+                "variant_group": group_key,
+                "is_deleted": {"$ne": True}
+            }))
+
+            # Remove duplicates and sort by size so the pills stay compact and predictable.
+            seen_sizes = set()
+            deduped = []
+            for variant in variants:
+                size_key = normalize_text(variant.get("size")).lower()
+                if size_key in seen_sizes:
+                    continue
+                seen_sizes.add(size_key)
+                deduped.append(variant)
+
+            def sort_key(variant):
+                size_value = normalize_text(variant.get("size"))
+                if not size_value:
+                    return (1, "zzz", str(variant.get("_id")))
+                import re
+                numeric_match = re.search(r"\d+(?:[.,]\d+)?", size_value)
+                if numeric_match:
+                    try:
+                        numeric_value = float(numeric_match.group(0).replace(",", "."))
+                    except ValueError:
+                        numeric_value = float("inf")
+                    return (0, numeric_value, size_value.lower())
+                return (0, float("inf"), size_value.lower())
+
+            deduped.sort(key=sort_key)
+
+            for v in deduped:
                 v["_id"] = str(v["_id"])
-            return variants
+            return deduped
         except:
             return []

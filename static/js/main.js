@@ -2162,3 +2162,619 @@ document.addEventListener('DOMContentLoaded', () => {
         if (adminSearch) adminSearch.value = searchVal;
     }
 });
+
+// --- AI Chatbot Widget ---
+const chatbotState = {
+    openedOnce: false,
+    busy: false,
+    currentConversationId: null,
+    conversations: [],
+    showConversationList: false
+};
+
+function escapeHtml(value) {
+    return String(value ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
+}
+
+function getChatbotElements() {
+    return {
+        panel: document.getElementById('chatbotPanel'),
+        messages: document.getElementById('chatbotMessages'),
+        form: document.getElementById('chatbotForm'),
+        input: document.getElementById('chatbotInput'),
+        sendBtn: document.getElementById('chatbotSendBtn'),
+    };
+}
+
+function buildChatbotChip(text, href = null, extraClass = '') {
+    const label = escapeHtml(text);
+    if (href) {
+        return `<a class="chatbot-chip ${extraClass}" href="${escapeHtml(href)}">${label}</a>`;
+    }
+    return `<button type="button" class="chatbot-chip ${extraClass}">${label}</button>`;
+}
+
+function buildChatbotAttachments(quickReplies = [], products = [], seeMoreUrl = '') {
+    const productStrip = Array.isArray(products) && products.length
+        ? `
+            <div class="chatbot-product-strip" role="list" aria-label="Produktet e sugjeruara">
+                ${products.slice(0, 5).map((product) => `
+                    <a class="chatbot-product-card" role="listitem" href="/product/${escapeHtml(product.id || '')}">
+                        <img class="chatbot-product-image" src="${escapeHtml(product.image_url || '')}" alt="${escapeHtml(product.name || 'Produkt')}">
+                        <div class="chatbot-product-meta">
+                            <div class="chatbot-product-name">${escapeHtml(product.name || 'Produkt')}</div>
+                            <div class="chatbot-product-subtitle">${escapeHtml([product.brand, product.subcategory || product.category, product.size].filter(Boolean).join(' • '))}</div>
+                            <div class="chatbot-product-price">€${parseFloat(product.discount_price || product.price || 0).toFixed(2)}</div>
+                        </div>
+                    </a>
+                `).join('')}
+                ${seeMoreUrl ? `<a class="chatbot-chip chatbot-chip-see-more" href="${escapeHtml(seeMoreUrl)}">Shiko më shumë</a>` : ''}
+            </div>
+        `
+        : '';
+
+    const quickReplyRow = Array.isArray(quickReplies) && quickReplies.length
+        ? `
+            <div class="chatbot-chip-row">
+                ${quickReplies.slice(0, 8).map((reply) => buildChatbotChip(reply)).join('')}
+                ${seeMoreUrl ? buildChatbotChip('Shiko të gjitha', seeMoreUrl, 'chatbot-chip-see-more') : ''}
+            </div>
+        `
+        : '';
+
+    if (!productStrip && !quickReplyRow) return '';
+
+    return `
+        <div class="chatbot-attachments">
+            <button type="button" class="chatbot-attachments-close" aria-label="Mbyll sugjerimet">
+                <i class="fas fa-times"></i>
+            </button>
+            ${productStrip}
+            ${quickReplyRow}
+        </div>
+    `;
+}
+
+function normalizeAssistantMessage(value) {
+    if (typeof value === 'string') return value;
+    if (Array.isArray(value)) {
+        return value
+            .map((part) => {
+                if (typeof part === 'string') return part;
+                if (part && typeof part === 'object' && typeof part.text === 'string') return part.text;
+                return '';
+            })
+            .filter(Boolean)
+            .join('\n');
+    }
+    if (value && typeof value === 'object') {
+        if (typeof value.text === 'string') return value.text;
+        try {
+            return JSON.stringify(value);
+        } catch (_) {
+            return '';
+        }
+    }
+    return '';
+}
+
+function formatChatbotText(text) {
+    const safeText = escapeHtml(String(text || ''));
+    // Keep line breaks from LLM responses so long answers are readable end-to-end.
+    return safeText.replace(/\n/g, '<br>');
+}
+
+function showAttachments(html) {
+    const container = document.getElementById('chatbotAttachments');
+    if (!container) return;
+    container.innerHTML = html || '';
+    container.classList.remove('collapsed');
+    // keep focus on input and ensure attachments are visible
+    const { input, messages } = getChatbotElements();
+    if (messages) messages.scrollTop = messages.scrollHeight;
+    if (input) input.focus();
+}
+
+function addChatbotMessage(role, text, attachmentsHtml = '') {
+    const { messages } = getChatbotElements();
+    if (!messages) return null;
+
+    const row = document.createElement('div');
+    row.className = `chatbot-message ${role}`;
+    row.innerHTML = `
+        <div class="message-bubble">${formatChatbotText(text)}</div>
+    `;
+    messages.appendChild(row);
+    messages.scrollTop = messages.scrollHeight;
+    
+    // Hide welcome screen if visible
+    const welcome = document.getElementById('chatbotWelcome');
+    if (welcome) welcome.style.display = 'none';
+    
+    return row;
+}
+
+async function sendChatbotMessage(messageOverride = null) {
+    const { input, sendBtn } = getChatbotElements();
+    const typingIndicator = document.getElementById('typingIndicator');
+    if (!input) return;
+
+    const message = String(messageOverride !== null ? messageOverride : input.value).trim();
+    if (!message || chatbotState.busy) return;
+
+    if (!chatbotState.openedOnce) {
+        toggleChatbot(true);
+    }
+
+    // Hide clear button
+    const clearBtn = document.getElementById('clearBtn');
+    if (clearBtn) clearBtn.style.display = 'none';
+
+    addChatbotMessage('user', message);
+    input.value = '';
+    if (sendBtn) sendBtn.disabled = true;
+    chatbotState.busy = true;
+
+    // Show typing indicator
+    if (typingIndicator) typingIndicator.style.display = 'flex';
+
+    try {
+        const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+        const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
+
+        const response = await fetch('/api/chatbot', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken,
+            },
+            body: JSON.stringify({
+                message: message,
+                conversation_id: chatbotState.currentConversationId
+            })
+        });
+
+        const data = await response.json();
+        
+        // Hide typing indicator
+        if (typingIndicator) typingIndicator.style.display = 'none';
+
+        if (!data.success) {
+            addChatbotMessage('bot', 'Nuk munda ta përpunoj kërkesën. Provoni sërish.');
+            return;
+        }
+
+        // Update current conversation ID if this was a new conversation
+        if (data.conversation_id && data.conversation_id !== chatbotState.currentConversationId) {
+            chatbotState.currentConversationId = data.conversation_id;
+            await loadConversations(); // Refresh conversation list
+        }
+
+        const assistantMessage = normalizeAssistantMessage(data.message) || 'Ja disa opsione që mund t\'ju ndihmojnë.';
+        addChatbotMessage('bot', assistantMessage);
+        showAttachments(buildChatbotAttachments(data.quick_replies || [], data.products || [], data.see_more_url || ''));
+    } catch (error) {
+        console.error('Chatbot error:', error);
+        if (typingIndicator) typingIndicator.style.display = 'none';
+        addChatbotMessage('bot', 'Ndodhi një gabim gjatë kërkimit. Ju lutem provoni përsëri.');
+    } finally {
+        chatbotState.busy = false;
+        if (sendBtn) sendBtn.disabled = false;
+    }
+}
+
+// Conversation management functions
+window.loadConversations = async function() {
+    try {
+        const response = await fetch('/api/conversations');
+        const data = await response.json();
+        chatbotState.conversations = data.conversations || [];
+        updateConversationUI();
+    } catch (error) {
+        console.error('Error loading conversations:', error);
+    }
+}
+
+window.createNewConversation = async function(title = 'Biseda e re') {
+    try {
+        const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+        const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
+
+        const response = await fetch('/api/conversations', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify({ title })
+        });
+
+        const data = await response.json();
+        if (data.success) {
+            chatbotState.currentConversationId = data.conversation._id;
+            await loadConversations();
+            await loadConversationMessages(data.conversation._id);
+            return data.conversation;
+        }
+    } catch (error) {
+        console.error('Error creating conversation:', error);
+    }
+    return null;
+}
+
+window.loadConversationMessages = async function(conversationId) {
+    try {
+        const response = await fetch(`/api/conversations/${conversationId}`);
+        const data = await response.json();
+        
+        if (data.conversation) {
+            const { messages } = getChatbotElements();
+            if (messages) {
+                messages.innerHTML = ''; // Clear current messages
+                
+                // Load conversation history
+                data.conversation.messages.forEach(msg => {
+                    addChatbotMessage(msg.role, msg.content);
+                });
+                
+                // Scroll to bottom
+                messages.scrollTop = messages.scrollHeight;
+            }
+        }
+    } catch (error) {
+        console.error('Error loading conversation messages:', error);
+    }
+}
+
+window.switchToConversation = async function(conversationId) {
+    chatbotState.currentConversationId = conversationId;
+    await loadConversationMessages(conversationId);
+    updateConversationUI();
+}
+
+window.deleteConversation = async function(conversationId) {
+    if (!confirm('A jeni i sigurt që doni të fshini këtë bisedë?')) return;
+    
+    try {
+        const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+        const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
+
+        const response = await fetch(`/api/conversations/${conversationId}`, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRFToken': csrfToken
+            }
+        });
+
+        const data = await response.json();
+        if (data.success) {
+            if (chatbotState.currentConversationId === conversationId) {
+                chatbotState.currentConversationId = null;
+                const { messages } = getChatbotElements();
+                if (messages) messages.innerHTML = '';
+            }
+            await loadConversations();
+        }
+    } catch (error) {
+        console.error('Error deleting conversation:', error);
+    }
+}
+
+function updateConversationUI() {
+    const conversationList = document.getElementById('conversationList');
+    if (!conversationList) return;
+
+    if (chatbotState.conversations.length === 0) {
+        conversationList.innerHTML = `
+            <div class="conversation-empty">
+                <i class="fas fa-comments"></i>
+                <p>Asnjë bisedë akoma</p>
+            </div>
+        `;
+        return;
+    }
+
+    conversationList.innerHTML = chatbotState.conversations.map(conv => `
+        <div class="conversation-item ${conv._id === chatbotState.currentConversationId ? 'active' : ''} slide-in" 
+             data-id="${conv._id}">
+            <div class="conversation-avatar">
+                <i class="fas fa-robot"></i>
+            </div>
+            <div class="conversation-content" onclick="switchToConversation('${conv._id}')">
+                <div class="conversation-title">${escapeHtml(conv.title)}</div>
+                <div class="conversation-preview">${escapeHtml(conv.last_message || 'Bisedë e re')}</div>
+                <div class="conversation-meta">
+                    <span>${conv.message_count} mesazhe</span>
+                    <span>•</span>
+                    <span>${formatTime(conv.last_message_time || conv.created_at)}</span>
+                </div>
+            </div>
+            <button class="conversation-delete" onclick="event.stopPropagation(); deleteConversation('${conv._id}')" aria-label="Fshi bisedën">
+                <i class="fas fa-trash"></i>
+            </button>
+        </div>
+    `).join('');
+}
+
+function formatTime(timestamp) {
+    if (!timestamp) return '';
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    
+    if (diffMins < 1) return 'Tani';
+    if (diffMins < 60) return `${diffMins} min më parë`;
+    if (diffMins < 1440) return `${Math.floor(diffMins / 60)} orë më parë`;
+    return `${Math.floor(diffMins / 1440)} ditë më parë`;
+}
+
+window.toggleConversationList = function() {
+    const sidebar = document.getElementById('conversationPanel');
+    if (sidebar) {
+        sidebar.classList.toggle('active');
+    }
+}
+
+window.showConversationPanel = function() {
+    const sidebar = document.getElementById('conversationPanel');
+    if (sidebar) {
+        sidebar.classList.add('active');
+    }
+}
+
+window.hideConversationPanel = function() {
+    const sidebar = document.getElementById('conversationPanel');
+    if (sidebar) {
+        sidebar.classList.remove('active');
+    }
+}
+
+window.createNewConversationAndHide = async function() {
+    await createNewConversation();
+    hideConversationPanel();
+}
+
+window.clearChatInput = function() {
+    const input = document.getElementById('chatbotInput');
+    const clearBtn = document.getElementById('clearBtn');
+    if (input) input.value = '';
+    if (clearBtn) clearBtn.style.display = 'none';
+}
+
+window.toggleChatbot = function (forceOpen = null) {
+    const { panel, input } = getChatbotElements();
+    if (!panel) return;
+
+    const shouldOpen = forceOpen === null ? !panel.classList.contains('active') : Boolean(forceOpen);
+
+    if (shouldOpen) {
+        panel.classList.add('active');
+        panel.setAttribute('aria-hidden', 'false');
+        chatbotState.openedOnce = true;
+        
+        // Load conversations on first open
+        if (!panel.dataset.initialized) {
+            panel.dataset.initialized = 'true';
+            loadConversations();
+            // Show welcome screen - no initial message anymore
+        }
+        setTimeout(() => input && input.focus(), 50);
+    } else {
+        panel.classList.remove('active');
+        panel.setAttribute('aria-hidden', 'true');
+    }
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+    const { form, input } = getChatbotElements();
+    document.addEventListener('click', (event) => {
+        const chip = event.target.closest('.chatbot-chip');
+        if (chip && chip.tagName === 'BUTTON') {
+            const message = chip.textContent.trim();
+            if (message) {
+                const { input: chatbotInput } = getChatbotElements();
+                if (chatbotInput) {
+                    chatbotInput.value = message;
+                }
+                sendChatbotMessage(message);
+            }
+            return;
+        }
+
+        const closeButton = event.target.closest('.chatbot-attachments-close');
+        if (!closeButton) return;
+        const attachments = closeButton.closest('.chatbot-attachments');
+        if (attachments) {
+            attachments.classList.add('collapsed');
+        }
+    });
+    if (form) {
+        form.addEventListener('submit', (event) => {
+            event.preventDefault();
+            sendChatbotMessage();
+        });
+    }
+    if (input) {
+        input.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                sendChatbotMessage();
+            }
+        });
+        
+        // Show/hide clear button based on input
+        input.addEventListener('input', (event) => {
+            const clearBtn = document.getElementById('clearBtn');
+            if (clearBtn) {
+                clearBtn.style.display = event.target.value ? 'flex' : 'none';
+            }
+        });
+    }
+    
+    // Handle suggestion chips
+    document.addEventListener('click', (event) => {
+        const chip = event.target.closest('.suggestion-chip');
+        if (chip) {
+            const message = chip.querySelector('span')?.textContent || chip.textContent.trim();
+            if (message) {
+                sendChatbotMessage(message);
+            }
+        }
+    });
+});
+
+// ===== DYNAMIC SUGGESTIONS SYSTEM =====
+const SUGGESTION_TOPICS = {
+    default: [
+        { icon: 'fa-face-smile', text: 'Produkte për akne', keywords: ['akne', 'fytyre', 'kujdes'] },
+        { icon: 'fa-pills', text: 'Vitaminë C', keywords: ['vitamin', 'imunitet', 'shëndet'] },
+        { icon: 'fa-droplet', text: 'Krem hidratues', keywords: ['krem', 'hidratim', 'lëkurë'] },
+        { icon: 'fa-sun', text: 'Mbrojtje dielli', keywords: ['diell', 'spf', 'mbrojtje'] },
+        { icon: 'fa-heart', text: 'Produkte për zemër', keywords: ['zemër', 'qarkullim', 'shëndet'] },
+        { icon: 'fa-baby', text: 'Produkte për fëmijë', keywords: ['fëmijë', 'bebe', 'nënë'] }
+    ],
+    akne: [
+        { icon: 'fa-soap', text: 'Pastrues për akne', keywords: [] },
+        { icon: 'fa-pump-soap', text: 'Tonik për fytyrë', keywords: [] },
+        { icon: 'fa-sun', text: 'Krem me SPF për akne', keywords: [] },
+        { icon: 'fa-moon', text: 'Krem natë për akne', keywords: [] }
+    ],
+    vitamina: [
+        { icon: 'fa-capsules', text: 'Vitaminë D3', keywords: [] },
+        { icon: 'fa-pills', text: 'Vitaminë B12', keywords: [] },
+        { icon: 'fa-tablets', text: 'Multivitamina', keywords: [] },
+        { icon: 'fa-candy-cane', text: 'Vitaminë C + Zinc', keywords: [] }
+    ],
+    dielli: [
+        { icon: 'fa-pump-soap', text: 'Sunscreen SPF 50', keywords: [] },
+        { icon: 'fa-baby', text: 'Sunscreen për fëmijë', keywords: [] },
+        { icon: 'fa-face-smile', text: 'Sunscreen për fytyrë', keywords: [] },
+        { icon: 'fa-water', text: 'Sunscreen waterproof', keywords: [] }
+    ],
+    floket: [
+        { icon: 'fa-pump-soap', text: 'Shampo kundër zbokthit', keywords: [] },
+        { icon: 'fa-droplet', text: 'Maskë për flokë', keywords: [] },
+        { icon: 'fa-spray', text: 'Serum për flokë', keywords: [] },
+        { icon: 'fa-wind', text: 'Conditioner hidratues', keywords: [] }
+    ]
+};
+
+let currentSuggestionTopic = 'default';
+
+window.updateDynamicSuggestions = function(message, isUser = true) {
+    const container = document.getElementById('suggestionsContainer');
+    const list = document.getElementById('suggestionsList');
+    if (!container || !list) return;
+    
+    // Determine topic based on message content
+    const msg = message.toLowerCase();
+    let newTopic = 'default';
+    
+    if (msg.includes('akne') || msg.includes('puçrra') || msg.includes('fytyr')) newTopic = 'akne';
+    else if (msg.includes('vitamin') || msg.includes('suplement')) newTopic = 'vitamina';
+    else if (msg.includes('diell') || msg.includes('spf') || msg.includes('sun')) newTopic = 'dielli';
+    else if (msg.includes('flok') || msg.includes('shampo') || msg.includes('kondicioner')) newTopic = 'floket';
+    
+    currentSuggestionTopic = newTopic;
+    const suggestions = SUGGESTION_TOPICS[newTopic] || SUGGESTION_TOPICS.default;
+    
+    // Shuffle and pick 4 random suggestions
+    const shuffled = [...suggestions].sort(() => 0.5 - Math.random()).slice(0, 4);
+    
+    // Render suggestions
+    list.innerHTML = shuffled.map(s => `
+        <button class="suggestion-pill" onclick="sendChatbotMessage('${escapeHtml(s.text)}')">
+            <i class="fas ${s.icon}"></i>
+            <span>${escapeHtml(s.text)}</span>
+        </button>
+    `).join('');
+    
+    container.style.display = 'flex';
+    container.style.flexDirection = 'column';
+};
+
+window.refreshSuggestions = function() {
+    const refreshBtn = document.querySelector('.suggestions-refresh');
+    if (refreshBtn) refreshBtn.classList.add('spinning');
+    
+    // Get last message for context
+    const messages = document.querySelectorAll('.chatbot-message');
+    let lastMsg = '';
+    if (messages.length > 0) {
+        const lastBubble = messages[messages.length - 1].querySelector('.message-bubble');
+        if (lastBubble) lastMsg = lastBubble.textContent;
+    }
+    
+    updateDynamicSuggestions(lastMsg || 'default', false);
+    
+    setTimeout(() => {
+        if (refreshBtn) refreshBtn.classList.remove('spinning');
+    }, 500);
+};
+
+window.hideSuggestions = function() {
+    const container = document.getElementById('suggestionsContainer');
+    if (container) container.style.display = 'none';
+};
+
+// ===== CONVERSATION FILTERING =====
+window.filterConversations = function(searchTerm) {
+    const items = document.querySelectorAll('.conversation-item');
+    const term = searchTerm.toLowerCase().trim();
+    
+    items.forEach(item => {
+        const title = item.querySelector('.conversation-title')?.textContent.toLowerCase() || '';
+        const preview = item.querySelector('.conversation-preview')?.textContent.toLowerCase() || '';
+        
+        if (term === '' || title.includes(term) || preview.includes(term)) {
+            item.style.display = 'flex';
+        } else {
+            item.style.display = 'none';
+        }
+    });
+};
+
+// Update conversation count in sidebar
+function updateConversationCount() {
+    const countEl = document.getElementById('conversationCount');
+    if (countEl) {
+        const count = chatbotState.conversations?.length || 0;
+        countEl.textContent = `${count} bised${count === 1 ? 'ë' : 'a'}`;
+    }
+}
+
+// Override updateConversationUI to include count update
+const originalUpdateConversationUI = updateConversationUI;
+updateConversationUI = function() {
+    originalUpdateConversationUI();
+    updateConversationCount();
+};
+
+// Override sendChatbotMessage to show suggestions after response
+const originalSendChatbotMessage = sendChatbotMessage;
+sendChatbotMessage = async function(messageOverride = null) {
+    const input = document.getElementById('chatbotInput');
+    const message = String(messageOverride !== null ? messageOverride : input?.value).trim();
+    
+    // Update suggestions based on user message
+    if (message) {
+        updateDynamicSuggestions(message, true);
+    }
+    
+    await originalSendChatbotMessage(messageOverride);
+    
+    // Update suggestions based on AI response (after a short delay)
+    setTimeout(() => {
+        const messages = document.querySelectorAll('.chatbot-message.bot');
+        if (messages.length > 0) {
+            const lastMsg = messages[messages.length - 1].querySelector('.message-bubble')?.textContent || '';
+            updateDynamicSuggestions(lastMsg, false);
+        }
+    }, 100);
+};

@@ -10,6 +10,7 @@
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css', v=6) }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/mobile.css', v=6) }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/chatbot-new.css', v=2) }}">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -376,167 +377,6 @@
 
     <div id="toast-container" class="toast-container"></div>
 
-    <!-- Floating Contact Button -->
-    <div class="floating-contact-wrapper">
-        <div class="contact-options" id="contactOptions">
-            <a href="https://www.facebook.com/profile.php?id=100067645081992" target="_blank"
-                class="contact-option facebook" title="Na vizitoni në Facebook">
-                <i class="fab fa-facebook"></i>
-                <span>Facebook</span>
-            </a>
-            <a href="https://www.instagram.com/barnatoremeld/" target="_blank" class="contact-option instagram"
-                title="Na shkruani në Instagram">
-                <i class="fab fa-instagram"></i>
-                <span>Instagram</span>
-            </a>
-            <!-- You can add WhatsApp here easily if you have a number -->
-            <!-- <a href="https://wa.me/YOUR_NUMBER" target="_blank" class="contact-option whatsapp">...</a> -->
-        </div>
-        <button class="contact-main-btn" onclick="toggleContactMenu()" id="contactMainBtn">
-            <i class="fas fa-comment-dots"></i>
-            <i class="fas fa-times close-icon"></i>
-        </button>
-    </div>
-
-    <script>
-        function toggleContactMenu() {
-            const wrapper = document.querySelector('.floating-contact-wrapper');
-            wrapper.classList.toggle('active');
-        }
-
-        // Close menu when clicking outside
-        document.addEventListener('click', (e) => {
-            const wrapper = document.querySelector('.floating-contact-wrapper');
-            if (!wrapper.contains(e.target) && wrapper.classList.contains('active')) {
-                wrapper.classList.remove('active');
-            }
-        });
-    </script>
-
-    <style>
-        .floating-contact-wrapper {
-            position: fixed;
-            right: 30px;
-            bottom: 30px;
-            z-index: 9999;
-            display: flex;
-            flex-direction: column;
-            align-items: flex-end;
-            gap: 15px;
-        }
-
-        .contact-main-btn {
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            background: var(--primary);
-            color: white;
-            border: none;
-            box-shadow: 0 4px 15px rgba(5, 150, 105, 0.4);
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5rem;
-            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            position: relative;
-        }
-
-        .contact-main-btn:hover {
-            transform: scale(1.1);
-            background: var(--primary-dark);
-        }
-
-        .contact-main-btn .close-icon {
-            display: none;
-            position: absolute;
-        }
-
-        .floating-contact-wrapper.active .contact-main-btn {
-            background: #64748b;
-            transform: rotate(90deg);
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-        }
-
-        .floating-contact-wrapper.active .contact-main-btn .fas:first-child {
-            display: none;
-        }
-
-        .floating-contact-wrapper.active .contact-main-btn .close-icon {
-            display: block;
-        }
-
-        .contact-options {
-            display: flex;
-            flex-direction: column;
-            align-items: flex-end;
-            gap: 12px;
-            opacity: 0;
-            visibility: hidden;
-            transform: translateY(20px);
-            transition: all 0.3s ease;
-        }
-
-        .floating-contact-wrapper.active .contact-options {
-            opacity: 1;
-            visibility: visible;
-            transform: translateY(0);
-        }
-
-        .contact-option {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 10px 20px;
-            border-radius: 50px;
-            color: white;
-            text-decoration: none;
-            font-weight: 600;
-            font-size: 0.9rem;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-            transition: all 0.2s ease;
-            white-space: nowrap;
-            width: 150px;
-            /* Fixed width for uniform size */
-            justify-content: flex-start;
-        }
-
-        .contact-option:hover {
-            transform: translateX(-5px);
-            filter: brightness(1.1);
-        }
-
-        .contact-option.facebook {
-            background: #1877F2;
-        }
-
-        .contact-option.instagram {
-            background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
-        }
-
-        @media (max-width: 768px) {
-            .floating-contact-wrapper {
-                right: 20px;
-                bottom: 85px;
-                /* Above mobile bottom nav */
-            }
-
-            /* Adjust for Product Detail sticky bar */
-            body.has-sticky-bar .floating-contact-wrapper {
-                bottom: 140px;
-            }
-
-            .contact-main-btn {
-                width: 50px;
-                height: 50px;
-                font-size: 1.2rem;
-            }
-
-            .option-label {
-                font-size: 0.8rem;
-            }
-        }
-    </style>
 
     {% block footer %}
     <footer class="footer">
@@ -620,6 +460,138 @@
         <i class="fas fa-chevron-up"></i>
     </button>
 
+    <!-- AI Chatbot Widget -->
+    <div class="chatbot-launcher" id="chatbotLauncher">
+        <button class="chatbot-fab" id="chatbotFab" type="button" onclick="toggleChatbot()" aria-label="Hap chatbot-in">
+            <i class="fas fa-comment-dots"></i>
+        </button>
+    </div>
+
+    <!-- New Chatbot Panel with Tab Navigation -->
+    <div class="chatbot-panel" id="chatbotPanel" aria-hidden="true">
+        <!-- Panel Header with Close Button -->
+        <div class="chatbot-panel-header">
+            <div class="panel-header-title">
+                <i class="fas fa-robot"></i>
+                <span>Meld Pharm AI</span>
+            </div>
+            <button class="panel-close-btn" onclick="toggleChatbot()" aria-label="Mbyll">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <!-- Content Area -->
+        <div class="chatbot-content">
+            <!-- HOME TAB -->
+            <div class="tab-view home-view active" id="homeTab">
+                <!-- Greeting Section -->
+                <div class="home-greeting">
+                    <div class="greeting-brand">Meld Pharm</div>
+                    <div class="greeting-text">Përshëndetje! 👋</div>
+                    <div class="greeting-subtext">Si mund t'ju ndihmojmë sot?</div>
+                </div>
+
+                <!-- Social Links Section -->
+                <div class="social-section">
+                    <div class="social-title">Na kontaktoni</div>
+                    <div class="social-buttons">
+                        <a href="https://www.instagram.com/barnatoremeld/" target="_blank" rel="noopener" class="social-btn instagram">
+                            <i class="fab fa-instagram"></i>
+                            <span>Instagram</span>
+                        </a>
+                        <a href="https://www.facebook.com/profile.php?id=100067645081992" target="_blank" rel="noopener" class="social-btn facebook">
+                            <i class="fab fa-facebook-f"></i>
+                            <span>Facebook</span>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Recent Chat Section (if exists) -->
+                <div class="recent-chat-section" id="recentChatSection" style="display: none;">
+                    <div class="section-title">Biseda e fundit</div>
+                    <div class="recent-chat-card" onclick="continueRecentChat()">
+                        <div class="recent-chat-icon">
+                            <i class="fas fa-comment"></i>
+                        </div>
+                        <div class="recent-chat-info">
+                            <div class="recent-chat-title" id="recentChatTitle">Biseda e re</div>
+                            <div class="recent-chat-preview" id="recentChatPreview">Kliko për të vazhduar...</div>
+                        </div>
+                        <div class="recent-chat-arrow">
+                            <i class="fas fa-chevron-right"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AI Support Section -->
+                <div class="ai-support-section">
+                    <div class="ai-support-content">
+                        <div class="ai-avatar">
+                            <i class="fas fa-robot"></i>
+                        </div>
+                        <div class="ai-text">
+                            <div class="ai-title">Asistenti AI</div>
+                            <div class="ai-description">Përgjigje të shpejta 24/7 për çdo pyetje</div>
+                        </div>
+                    </div>
+                    <button class="ai-support-btn" onclick="startNewChat()">
+                        <i class="fas fa-comment-dots"></i>
+                        <span>Fillo Bisedën</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- MESSAGES TAB -->
+            <div class="tab-view messages-view" id="messagesTab">
+                <div class="messages-header">
+                    <span class="messages-title">Bisedat e mia</span>
+                </div>
+                <div class="messages-search">
+                    <input type="text" id="messagesSearch" placeholder="Kërko biseda..." oninput="filterMessageThreads(this.value)">
+                </div>
+                <div class="messages-list" id="messagesList">
+                    <!-- Conversations loaded here -->
+                </div>
+            </div>
+
+            <!-- CHAT VIEW -->
+            <div class="chat-view" id="chatView">
+                <div class="chat-header">
+                    <button class="chat-back-btn" onclick="showHomeTab()">
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+                    <div class="chat-header-info">
+                        <div class="chat-header-title" id="chatTitle">Meld Pharm AI</div>
+                        <div class="chat-header-status">
+                            <span style="width: 8px; height: 8px; background: #10b981; border-radius: 50%;"></span>
+                            <span>Online</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="chat-messages" id="chatMessages"></div>
+                <div class="chat-input-area">
+                    <form class="chat-input-form" id="chatForm" onsubmit="event.preventDefault(); sendNewChatMessage();">
+                        <input type="text" id="newChatInput" placeholder="Shkruani mesazhin..." autocomplete="off">
+                        <button type="submit" class="chat-send-btn">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Navigation -->
+        <div class="chatbot-nav">
+            <button class="nav-item active" id="navHome" onclick="showHomeTab()">
+                <i class="fas fa-home"></i>
+                <span>Asistenti</span>
+            </button>
+            <button class="nav-item" id="navMessages" onclick="showMessagesTab()">
+                <i class="fas fa-comment-alt"></i>
+                <span>Mesazhe</span>
+            </button>
+        </div>
+    </div>
+
     <script>
         // Back to Top functionality
         const backToTopBtn = document.getElementById('backToTop');
@@ -652,6 +624,274 @@
                     img.classList.add('loaded');
                 }
             });
+        });
+    </script>
+    <script>
+        // NEW CHATBOT TAB NAVIGATION
+        // Must use DOMContentLoaded to ensure this runs AFTER main.js (deferred)
+        document.addEventListener('DOMContentLoaded', function() {
+            let currentConversationId = null;
+            let conversations = [];
+
+            function showHomeTab() {
+                document.querySelectorAll('.tab-view').forEach(el => el.classList.remove('active'));
+                document.getElementById('chatView').classList.remove('active');
+                document.getElementById('homeTab').classList.add('active');
+                document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+                document.getElementById('navHome').classList.add('active');
+                loadRecentChat();
+            }
+
+            async function showMessagesTab() {
+                document.querySelectorAll('.tab-view').forEach(el => el.classList.remove('active'));
+                document.getElementById('chatView').classList.remove('active');
+                document.getElementById('messagesTab').classList.add('active');
+                document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+                document.getElementById('navMessages').classList.add('active');
+                await loadConversationsFromAPI();
+                loadMessageThreads();
+            }
+
+            function showChatView() {
+                document.querySelectorAll('.tab-view').forEach(el => el.classList.remove('active'));
+                document.getElementById('chatView').classList.add('active');
+                document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            }
+
+            async function startNewChat() {
+                try {
+                    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+                    const response = await fetch('/api/conversations', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': csrfToken
+                        },
+                        body: JSON.stringify({ title: 'Biseda e re' })
+                    });
+                    const data = await response.json();
+                    if (data.success) {
+                        currentConversationId = data.conversation._id;
+                        document.getElementById('chatTitle').textContent = data.conversation.title;
+                        document.getElementById('chatMessages').innerHTML = '';
+                        showChatView();
+                    }
+                } catch (e) {
+                    console.error('Error starting chat:', e);
+                }
+            }
+
+            function continueRecentChat() {
+                if (currentConversationId) {
+                    loadThreadMessages(currentConversationId).then(() => showChatView());
+                } else {
+                    startNewChat();
+                }
+            }
+
+            async function loadConversationsFromAPI() {
+                try {
+                    const response = await fetch('/api/conversations');
+                    const data = await response.json();
+                    conversations = data.conversations || [];
+                } catch (e) {
+                    console.error('Error loading conversations:', e);
+                }
+            }
+
+            async function loadRecentChat() {
+                try {
+                    await loadConversationsFromAPI();
+                    if (conversations.length > 0) {
+                        const recent = conversations[0];
+                        currentConversationId = recent._id;
+                        document.getElementById('recentChatTitle').textContent = recent.title;
+                        document.getElementById('recentChatPreview').textContent = recent.last_message || 'Kliko për të vazhduar...';
+                        document.getElementById('recentChatSection').style.display = 'block';
+                    } else {
+                        document.getElementById('recentChatSection').style.display = 'none';
+                    }
+                } catch (e) {
+                    console.error('Error loading recent chat:', e);
+                }
+            }
+
+            function loadMessageThreads() {
+                const list = document.getElementById('messagesList');
+
+                if (conversations.length === 0) {
+                    list.innerHTML = '<div class="empty-messages"><i class="fas fa-comments"></i><p>Nuk ka biseda akoma</p><span>Fillo një bisedë të re nga skeda Asistenti</span></div>';
+                    return;
+                }
+
+                list.innerHTML = conversations.map(conv => `
+                    <div class="message-thread ${conv._id === currentConversationId ? 'active' : ''}" onclick="openThread('${conv._id}')">
+                        <div class="thread-avatar"><i class="fas fa-robot"></i></div>
+                        <div class="thread-info">
+                            <div class="thread-title">${escapeHtml(conv.title)}</div>
+                            <div class="thread-preview">${escapeHtml(conv.last_message || 'Bisedë e re')}</div>
+                        </div>
+                        <div class="thread-meta">
+                            <div class="thread-time">${formatTime(conv.last_message_time || conv.created_at)}</div>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            async function openThread(id) {
+                currentConversationId = id;
+                const conv = conversations.find(c => c._id === id);
+                if (conv) {
+                    document.getElementById('chatTitle').textContent = conv.title;
+                }
+                document.getElementById('chatMessages').innerHTML = '';
+                showChatView();
+                await loadThreadMessages(id);
+            }
+
+            async function loadThreadMessages(id) {
+                try {
+                    const response = await fetch(`/api/conversations/${id}`);
+                    const data = await response.json();
+                    if (data.conversation && data.conversation.messages) {
+                        const container = document.getElementById('chatMessages');
+                        data.conversation.messages.forEach(msg => {
+                            addMessageToChat(msg.role, msg.content);
+                        });
+                    }
+                } catch (e) {
+                    console.error('Error loading messages:', e);
+                }
+            }
+
+            function addMessageToChat(role, content) {
+                const container = document.getElementById('chatMessages');
+                const div = document.createElement('div');
+                div.className = `message ${role}`;
+                div.innerHTML = `<div class="message-bubble">${escapeHtml(content)}</div>`;
+                container.appendChild(div);
+                container.scrollTop = container.scrollHeight;
+            }
+
+            async function sendNewChatMessage() {
+                const input = document.getElementById('newChatInput');
+                const message = input.value.trim();
+                if (!message) return;
+
+                input.value = '';
+                addMessageToChat('user', message);
+
+                try {
+                    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+                    const response = await fetch('/api/chatbot', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': csrfToken
+                        },
+                        body: JSON.stringify({
+                            message: message,
+                            conversation_id: currentConversationId
+                        })
+                    });
+                    const data = await response.json();
+                    if (data.success) {
+                        currentConversationId = data.conversation_id;
+                        addMessageToChat('bot', data.message);
+                        if (data.products && data.products.length > 0) {
+                            showProductCards(data.products);
+                        }
+                    }
+                } catch (e) {
+                    console.error('Error sending message:', e);
+                }
+            }
+
+            function showProductCards(products) {
+                const container = document.getElementById('chatMessages');
+                const cardsDiv = document.createElement('div');
+                cardsDiv.className = 'message bot';
+                cardsDiv.innerHTML = `
+                    <div class="message-bubble" style="background: transparent; padding: 0;">
+                        <div class="product-cards-container">
+                            ${products.slice(0, 4).map(p => `
+                                <div class="product-card-chat" onclick="window.location.href='/product/${p.id}'">
+                                    <img src="${p.image_url}" alt="${p.name}" onerror="this.src='/static/images/placeholder.png'">
+                                    <div class="product-card-info">
+                                        <div class="product-card-name">${escapeHtml(p.name)}</div>
+                                        <div class="product-card-price">€${p.price}</div>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+                container.appendChild(cardsDiv);
+                container.scrollTop = container.scrollHeight;
+            }
+
+            function sendQuickQuery(query) {
+                startNewChat().then(() => {
+                    setTimeout(() => {
+                        document.getElementById('newChatInput').value = query;
+                        sendNewChatMessage();
+                    }, 300);
+                });
+            }
+
+            function filterMessageThreads(searchTerm) {
+                const term = searchTerm.toLowerCase();
+                document.querySelectorAll('.message-thread').forEach(thread => {
+                    const title = thread.querySelector('.thread-title')?.textContent.toLowerCase() || '';
+                    const preview = thread.querySelector('.thread-preview')?.textContent.toLowerCase() || '';
+                    thread.style.display = (title.includes(term) || preview.includes(term)) ? 'flex' : 'none';
+                });
+            }
+
+            function escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+
+            function formatTime(timestamp) {
+                if (!timestamp) return '';
+                const date = new Date(timestamp);
+                const now = new Date();
+                const diffMs = now - date;
+                const diffMins = Math.floor(diffMs / 60000);
+                if (diffMins < 1) return 'Tani';
+                if (diffMins < 60) return `${diffMins} min`;
+                if (diffMins < 1440) return `${Math.floor(diffMins / 60)} orë`;
+                return `${Math.floor(diffMins / 1440)} ditë`;
+            }
+
+            // Override toggleChatbot AFTER main.js has defined it
+            window.toggleChatbot = function(forceOpen) {
+                const panel = document.getElementById('chatbotPanel');
+                if (!panel) return;
+                const isOpen = panel.classList.contains('active');
+                const shouldOpen = forceOpen === null || forceOpen === undefined ? !isOpen : Boolean(forceOpen);
+
+                if (shouldOpen && !isOpen) {
+                    panel.classList.add('active');
+                    panel.setAttribute('aria-hidden', 'false');
+                    showHomeTab();
+                } else if (!shouldOpen && isOpen) {
+                    panel.classList.remove('active');
+                    panel.setAttribute('aria-hidden', 'true');
+                }
+            };
+
+            // Expose functions globally for onclick handlers
+            window.showHomeTab = showHomeTab;
+            window.showMessagesTab = showMessagesTab;
+            window.startNewChat = startNewChat;
+            window.continueRecentChat = continueRecentChat;
+            window.openThread = openThread;
+            window.sendNewChatMessage = sendNewChatMessage;
+            window.sendQuickQuery = sendQuickQuery;
+            window.filterMessageThreads = filterMessageThreads;
         });
     </script>
 </body>
