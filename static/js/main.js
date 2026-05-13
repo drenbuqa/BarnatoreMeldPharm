@@ -1024,12 +1024,25 @@ document.addEventListener('DOMContentLoaded', () => {
                         const mobileItemTotal = row.querySelector('.item-total-mobile');
                         if (mobileItemTotal) mobileItemTotal.textContent = '€' + data.item_total.toFixed(2);
 
-                        // Individual Item Savings update
-                        const itemSavingsEl = row.querySelector('.savings-amount');
-                        if (itemSavingsEl && data.item_savings !== undefined) {
-                            itemSavingsEl.textContent = '€' + data.item_savings.toFixed(2);
-                            const label = itemSavingsEl.closest('.item-savings-label');
-                            if (label) label.style.display = data.item_savings > 0 ? 'block' : 'none';
+                        // Individual offer helper / savings update
+                        const savingsLabels = row.querySelectorAll('.item-savings-label');
+                        if (savingsLabels.length) {
+                            savingsLabels.forEach(label => {
+                                if (data.offer_type === 'multi_buy') {
+                                    label.style.display = 'flex';
+                                    label.innerHTML = `
+                                        <span style="background:#ecfeff; border:1px solid #99f6e4; padding:0.15rem 0.5rem; border-radius:999px; white-space:nowrap;">${data.offer_badge_text || '1+1'}</span>
+                                        <span>${data.offer_progress_text || 'Bli më shumë për të fituar një produkt falas.'}</span>
+                                    `;
+                                    label.style.color = '#0f766e';
+                                } else {
+                                    const itemSavingsEl = label.querySelector('.savings-amount');
+                                    if (itemSavingsEl && data.item_savings !== undefined) {
+                                        itemSavingsEl.textContent = '€' + data.item_savings.toFixed(2);
+                                        label.style.display = data.item_savings > 0 ? 'block' : 'none';
+                                    }
+                                }
+                            });
                         }
 
                         const container = row.querySelector('.quantity-selector') || row.querySelector('.quantity-control');
@@ -1474,6 +1487,11 @@ window.refreshMiniCart = function () {
                                     </button>
                                 </div>
                             </div>
+                            ${item.offer_type === 'multi_buy' ? `
+                            <div class="mini-item-offer-hint" style="margin-top: 0.35rem; color: #0f766e; font-size: 0.78rem; font-weight: 600; display: flex; gap: 0.4rem; align-items: center; flex-wrap: wrap;">
+                                <span style="background:#ecfeff; border:1px solid #99f6e4; padding:0.15rem 0.5rem; border-radius:999px; white-space:nowrap;">${item.offer_badge_text || '1+1'}</span>
+                                <span>${item.offer_detail_text || 'Merr 1 produkt falas kur blen këtë ofertë.'}</span>
+                            </div>` : ''}
                         </div>
                         <button class="remove-item-btn" onclick="updateMiniQty(event, '${item._id}', 'remove')" title="Hiqe">
                             <i class="far fa-trash-alt"></i>
@@ -1523,6 +1541,11 @@ window.refreshMiniCart = function () {
                         <div class="mobile-mini-cart-info">
                             <p class="name">${item.name}</p>
                             <p class="price">€${parseFloat(price).toFixed(2)}</p>
+                            ${item.offer_type === 'multi_buy' ? `
+                            <p class="offer-hint" style="margin: 0.2rem 0 0; color: #0f766e; font-size: 0.72rem; font-weight: 600; line-height: 1.3;">
+                                <span style="background:#ecfeff; border:1px solid #99f6e4; padding:0.12rem 0.45rem; border-radius:999px; margin-right:0.35rem; display:inline-block;">${item.offer_badge_text || '1+1'}</span>
+                                ${item.offer_detail_text || 'Merr 1 produkt falas kur blen këtë ofertë.'}
+                            </p>` : ''}
                             <div class="qty-control-mobile" onclick="event.stopPropagation()">
                                 <button class="qty-btn" onclick="updateMiniQty(event, '${item._id}', 'decrease')">-</button>
                                 <span class="qty-val">${item.quantity}</span>
@@ -1548,19 +1571,6 @@ window.updateMiniQty = function (event, productId, action) {
 
     // Support both desktop mini-cart and mobile modal cart
     const itemRows = document.querySelectorAll(`.mini-cart-item[data-id="${productId}"], .mobile-mini-cart-item[data-id="${productId}"]`);
-
-    itemRows.forEach(row => {
-        const qtySpan = row.querySelector('.qty-val');
-        const currentQty = qtySpan ? parseInt(qtySpan.textContent) : 1;
-
-        if (action === 'remove') {
-            row.style.opacity = '0.5';
-            row.style.pointerEvents = 'none';
-        } else if (qtySpan) {
-            if (action === 'increase') qtySpan.textContent = currentQty + 1;
-            else if (action === 'decrease' && currentQty > 1) qtySpan.textContent = currentQty - 1;
-        }
-    });
 
     const formData = new FormData();
     const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
@@ -1639,6 +1649,10 @@ window.updateMiniQty = function (event, productId, action) {
                     if (mobileFooter) mobileFooter.remove();
                 }
 
+                if (action === 'remove' || data.cart_count === 0) {
+                    window.refreshMiniCart();
+                }
+
                 if (window.location.pathname === '/cart/') {
                     window.location.reload();
                 }
@@ -1646,11 +1660,7 @@ window.updateMiniQty = function (event, productId, action) {
         })
         .catch(err => {
             console.error('Error updating mini cart:', err);
-            if (qtySpan) qtySpan.textContent = currentQty;
-            if (itemRow) {
-                itemRow.style.opacity = '1';
-                itemRow.style.pointerEvents = 'auto';
-            }
+            window.refreshMiniCart();
         });
 };
 

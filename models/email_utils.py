@@ -178,8 +178,23 @@ def send_order_confirmation_email(order_or_id):
     message.add_alternative(html_body, subtype="html")
 
     if logo_attachment:
-        html_part = message.get_payload()[-1]
-        html_part.add_related(logo_attachment, maintype="image", subtype="png", cid=logo_cid)
+        # Safely find the HTML alternative part and attach related image
+        html_part = None
+        try:
+            for part in message.iter_parts():
+                ctype = part.get_content_type()
+                if ctype == 'text/html' or part.get_content_subtype() == 'html':
+                    html_part = part
+                    break
+        except Exception:
+            html_part = None
+
+        if html_part is not None:
+            try:
+                html_part.add_related(logo_attachment, maintype="image", subtype="png", cid=logo_cid)
+            except Exception:
+                # If adding related fails for any reason, continue without breaking email send
+                pass
 
     try:
         with smtplib.SMTP(smtp_host, smtp_port, timeout=20) as server:

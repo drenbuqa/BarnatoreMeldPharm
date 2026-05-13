@@ -12,16 +12,16 @@ def calculate_shipping(total_price, country):
     country = country.lower() if country else 'kosova'
     
     if country in ['kosova', 'kosovë', 'kosovo']:
-        if total_price >= 50:
+        # Kosovo: delivery €2.50, free only when order is strictly over 50
+        if total_price > 50:
             return 0
-        return 2.0
-    elif country in ['shqipëria', 'shqiperia', 'albania', 'maqedonia', 'north macedonia']:
-        if total_price >= 100:
-            return 0
+        return 2.5
+    elif country in ['shqipëria', 'shqiperia', 'albania'] or country in ['maqedonia', 'north macedonia']:
+        # Albania and North Macedonia: flat €5.00 delivery, never free based on order total
         return 5.0
     
-    # Default fallback
-    return 2.0 if total_price < 50 else 0
+    # Default fallback: charge small fee unless over 50
+    return 2.5 if total_price <= 50 else 0
 
 def calculate_cart_totals(cart, country='Kosova'):
     total_price = 0
@@ -30,14 +30,12 @@ def calculate_cart_totals(cart, country='Kosova'):
     for product_id, quantity in cart.items():
         product = Product.get_by_id(product_id)
         if product:
-            price = product.get('discount_price') if product.get('discount_price') else product.get('price')
-            original_price = product.get('price') or 0
             qty_int = int(quantity)
-            
-            total_price += price * qty_int
+            pricing = Product.get_offer_pricing(product, qty_int)
+
+            total_price += pricing['item_total']
             total_items += qty_int
-            if product.get('discount_price'):
-                total_savings += (float(original_price) - float(price)) * qty_int
+            total_savings += pricing['item_savings']
                 
     delivery_fee = calculate_shipping(total_price, country)
     grand_total = total_price + delivery_fee
@@ -72,12 +70,10 @@ def view_cart():
     for product_id, quantity in cart.items():
         product = Product.get_by_id(product_id)
         if product:
-            price = product.get('discount_price') if product.get('discount_price') else product.get('price')
-            original_price = product.get('price') or 0
             qty_int = int(quantity)
-            
-            item_total = price * qty_int
-            item_savings = (float(original_price) - float(price)) * qty_int if product.get('discount_price') else 0
+            pricing = Product.get_offer_pricing(product, qty_int)
+            item_total = pricing['item_total']
+            item_savings = pricing['item_savings']
             
             total_price += item_total
             total_savings += item_savings
@@ -85,6 +81,11 @@ def view_cart():
             product['quantity'] = qty_int
             product['item_total'] = item_total
             product['item_savings'] = item_savings
+            product['display_price'] = pricing['unit_price']
+            product['offer_badge_text'] = pricing['offer_badge_text']
+            product['offer_detail_text'] = pricing['offer_detail_text']
+            product['offer_progress_text'] = pricing['offer_progress_text']
+            product['free_items'] = pricing['free_items']
             cart_items.append(product)
             
     country = current_user.country if current_user.is_authenticated and current_user.country else 'Kosova'
@@ -147,26 +148,27 @@ def get_mini_cart_data():
         for product_id, quantity in cart.items():
             product = products_db.get(str(product_id))
             if product:
-                price = product.get('discount_price') or product.get('price') or 0
-                original_price = product.get('price') or 0
                 qty = int(quantity)
-                item_total = float(price) * qty
-                
-                # Calculate item savings for AJAX response
-                item_savings = 0
-                if product.get('discount_price'):
-                    item_savings = (float(original_price) - float(price)) * qty
+                pricing = Product.get_offer_pricing(product, qty)
+                item_total = float(pricing['item_total'])
+                item_savings = float(pricing['item_savings'])
                 
                 total_price += item_total
                 cart_items.append({
                     '_id': str(product['_id']),
                     'name': product['name'],
                     'image_url': product['image_url'],
-                    'price': price,
-                    'original_price': original_price,
+                    'price': pricing['unit_price'],
+                    'original_price': pricing['original_price'],
                     'quantity': qty,
                     'item_total': item_total,
                     'item_savings': item_savings,
+                    'offer_type': pricing['offer_type'],
+                    'multi_buy_type': pricing['multi_buy_type'],
+                    'offer_badge_text': pricing['offer_badge_text'],
+                    'offer_detail_text': pricing['offer_detail_text'],
+                    'offer_progress_text': pricing['offer_progress_text'],
+                    'free_items': pricing['free_items'],
                     'size': product.get('size'),
                     'category': product.get('category'),
                     'brand': product.get('brand')
@@ -226,20 +228,20 @@ def update_quantity(product_id, action):
         total_price, total_items, total_savings, delivery_fee, grand_total = calculate_cart_totals(cart, country=country)
         # Get specific item totals
         product = Product.get_by_id(product_id)
+        pricing = None
         item_total = 0
         item_savings = 0
         new_item_qty = 0
         if product and product_id in cart:
-            price = product.get('discount_price') if product.get('discount_price') else product.get('price')
-            original_price = product.get('price') or 0
             new_item_qty = cart[product_id]
-            item_total = price * new_item_qty
-            if product.get('discount_price'):
-                item_savings = (float(original_price) - float(price)) * new_item_qty
+            pricing = Product.get_offer_pricing(product, new_item_qty)
+            item_total = pricing['item_total']
+            item_savings = pricing['item_savings']
             
         return jsonify({
             'success': True,
             'total_price': total_price,
+            'cart_total': total_price,
             'total_savings': total_savings,
             'delivery_fee': delivery_fee,
             'grand_total': grand_total,
@@ -249,6 +251,10 @@ def update_quantity(product_id, action):
             'quantity': new_item_qty,
             'action': action,
             'product_id': product_id,
+            'offer_type': pricing['offer_type'] if pricing else None,
+            'offer_badge_text': pricing['offer_badge_text'] if pricing else None,
+            'offer_progress_text': pricing['offer_progress_text'] if pricing else None,
+            'free_items': pricing['free_items'] if pricing else 0,
             'wishlist_count': get_wishlist_count()
         })
 
@@ -274,18 +280,18 @@ def set_quantity(product_id):
         country = current_user.country if current_user.is_authenticated and current_user.country else 'Kosova'
         total_price, total_items, total_savings, delivery_fee, grand_total = calculate_cart_totals(cart, country=country)
         product = Product.get_by_id(product_id)
+        pricing = None
         item_total = 0
         item_savings = 0
         if product:
-            price = product.get('discount_price') if product.get('discount_price') else product.get('price')
-            original_price = product.get('price') or 0
-            item_total = price * new_qty
-            if product.get('discount_price'):
-                item_savings = (float(original_price) - float(price)) * new_qty
+            pricing = Product.get_offer_pricing(product, new_qty)
+            item_total = pricing['item_total']
+            item_savings = pricing['item_savings']
             
         return jsonify({
             'success': True,
             'total_price': total_price,
+            'cart_total': total_price,
             'total_savings': total_savings,
             'delivery_fee': delivery_fee,
             'grand_total': grand_total,
@@ -293,6 +299,10 @@ def set_quantity(product_id):
             'item_total': item_total,
             'item_savings': item_savings,
             'quantity': new_qty,
+            'offer_type': pricing['offer_type'] if pricing else None,
+            'offer_badge_text': pricing['offer_badge_text'] if pricing else None,
+            'offer_progress_text': pricing['offer_progress_text'] if pricing else None,
+            'free_items': pricing['free_items'] if pricing else 0,
             'wishlist_count': get_wishlist_count()
         })
         
@@ -338,20 +348,22 @@ def checkout():
     for product_id, quantity in cart.items():
         product = Product.get_by_id(product_id)
         if product:
-            price = product.get('discount_price') if product.get('discount_price') else product.get('price')
-            original_price = product.get('price') or 0
             qty_int = int(quantity)
-            item_total = price * qty_int
+            pricing = Product.get_offer_pricing(product, qty_int)
+            item_total = pricing['item_total']
             
             # Calculate item savings for the template
-            item_savings = 0
-            if product.get('discount_price'):
-                item_savings = (float(original_price) - float(price)) * qty_int
+            item_savings = pricing['item_savings']
                 
             total_price += item_total
             product['quantity'] = qty_int
             product['item_total'] = item_total
             product['item_savings'] = item_savings
+            product['display_price'] = pricing['unit_price']
+            product['offer_badge_text'] = pricing['offer_badge_text']
+            product['offer_detail_text'] = pricing['offer_detail_text']
+            product['offer_progress_text'] = pricing['offer_progress_text']
+            product['free_items'] = pricing['free_items']
             cart_items.append(product)
             
     country = current_user.country if current_user.is_authenticated and current_user.country else 'Kosova'
@@ -404,15 +416,17 @@ def place_order():
     for product_id, quantity in cart.items():
         product = Product.get_by_id(product_id)
         if product:
-            price = product.get('discount_price') if product.get('discount_price') else product.get('price')
-            item_total = price * int(quantity)
+            pricing = Product.get_offer_pricing(product, int(quantity))
+            item_total = pricing['item_total']
             total_price += item_total
             order_items.append({
                 "product_id": str(product['_id']),
                 "name": product['name'],
-                "price": price,
+                "price": pricing['unit_price'],
                 "quantity": int(quantity),
-                "item_total": item_total
+                "item_total": item_total,
+                "offer_type": pricing['offer_type'],
+                "multi_buy_type": pricing['multi_buy_type']
             })
             
     if shipping_method == 'pickup':

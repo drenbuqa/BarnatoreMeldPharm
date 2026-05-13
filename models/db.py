@@ -1,8 +1,11 @@
 from flask_pymongo import PyMongo
+from typing import Any
 import certifi
 import ssl
 
-mongo = PyMongo()
+# Typing as Any to avoid static analysis errors where the DB attribute
+# may not be recognized by type checkers before app initialization.
+mongo: Any = PyMongo()
 
 def init_db(app):
     uri = app.config.get('MONGO_URI', '')

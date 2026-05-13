@@ -5,8 +5,150 @@ from datetime import datetime
 class Product:
 
     @staticmethod
+    def _offer_deadline_date(value):
+        if not value:
+            return None
+        if isinstance(value, datetime):
+            return value.date()
+        if hasattr(value, 'year') and hasattr(value, 'month') and hasattr(value, 'day'):
+            try:
+                return value
+            except Exception:
+                return None
+        if isinstance(value, str):
+            for fmt in ('%Y-%m-%d', '%Y-%m-%dT%H:%M:%S', '%Y-%m-%dT%H:%M:%S.%f'):
+                try:
+                    return datetime.strptime(value, fmt).date()
+                except ValueError:
+                    continue
+        return None
+
+    @staticmethod
+    def _offer_is_active(product):
+        if not product:
+            return False
+
+        status = str(product.get('offer_status') or '').strip().lower()
+        if status and status != 'active':
+            return False
+
+        deadline_date = Product._offer_deadline_date(product.get('discount_until'))
+        if deadline_date and deadline_date < datetime.now().date():
+            return False
+
+        return bool(product.get('discount_price') not in (None, 0, 0.0) or product.get('offer_name'))
+
+    @staticmethod
+    def _multi_buy_rules(multi_buy_type):
+        rules = {
+            '1+1': {'buy_qty': 1, 'free_qty': 1, 'label': '1+1', 'title': 'Bli 1, Merr 1 Falas'},
+            '2+1': {'buy_qty': 2, 'free_qty': 1, 'label': '2+1', 'title': 'Bli 2, Merr 1 Falas'},
+            '3+1': {'buy_qty': 3, 'free_qty': 1, 'label': '3+1', 'title': 'Bli 3, Merr 1 Falas'},
+            'buy2get50': {'buy_qty': 2, 'free_qty': 0, 'label': '2+1', 'title': 'Bli 2, Merr 50% Zbritje në Paketë'}
+        }
+        return rules.get(multi_buy_type)
+
+    @staticmethod
+    def get_offer_pricing(product, quantity=1):
+        """Return pricing details for discount and multi-buy offers."""
+        quantity = max(int(quantity or 1), 1)
+        original_price = float(product.get('price') or 0)
+        discount_price = product.get('discount_price')
+        offer_type = product.get('offer_type')
+        multi_buy_type = product.get('multi_buy_type')
+
+        if not Product._offer_is_active(product):
+            discount_price = None
+            offer_type = None
+            multi_buy_type = None
+
+        pricing = {
+            'original_price': original_price,
+            'unit_price': original_price,
+            'item_total': original_price * quantity,
+            'item_savings': 0,
+            'offer_badge_text': None,
+            'offer_detail_text': None,
+            'offer_progress_text': None,
+            'qualifies_for_free_item': False,
+            'free_items': 0,
+            'offer_type': offer_type,
+            'multi_buy_type': multi_buy_type
+        }
+
+        if offer_type == 'multi_buy' and multi_buy_type and original_price > 0:
+            rules = Product._multi_buy_rules(multi_buy_type)
+            if rules:
+                buy_qty = rules['buy_qty']
+                free_qty = rules['free_qty']
+                bundle_size = buy_qty + free_qty if free_qty else buy_qty
+                promo_text = rules['title']
+
+                if multi_buy_type == 'buy2get50':
+                    full_bundles = quantity // buy_qty
+                    remainder = quantity % buy_qty
+                    item_total = (full_bundles * original_price * 1.5) + (remainder * original_price)
+                    free_items = 0
+                    progress_text = f'U aplikua për paketën {rules["title"]}'
+                    qualifies = False
+                else:
+                    full_bundles = quantity // bundle_size
+                    remainder = quantity % bundle_size
+                    item_total = (full_bundles * buy_qty * original_price) + (remainder * original_price)
+                    free_items = full_bundles * free_qty
+                    qualifies = remainder == 0 and quantity >= bundle_size
+                    if remainder == 0:
+                        progress_text = f'U fitua {free_items} produkt falas'
+                    else:
+                        missing = bundle_size - remainder
+                        progress_text = f'Shto edhe {missing} për {free_qty} falas'
+
+                    if free_qty == 1:
+                        promo_text = f'Blini {buy_qty}, merrni {free_qty} falas'
+                    else:
+                        promo_text = f'Blini {buy_qty} dhe merrni {free_qty} falas'
+
+                pricing.update({
+                    'item_total': item_total,
+                    'item_savings': (quantity * original_price) - item_total,
+                    'offer_badge_text': rules['label'],
+                    'offer_detail_text': promo_text,
+                    'offer_progress_text': progress_text,
+                    'qualifies_for_free_item': qualifies,
+                    'free_items': free_items,
+                })
+                return pricing
+
+        if discount_price is not None and float(discount_price) > 0 and original_price > 0:
+            discount_price = float(discount_price)
+            pricing.update({
+                'unit_price': discount_price,
+                'item_total': discount_price * quantity,
+                'item_savings': (original_price - discount_price) * quantity,
+                'offer_badge_text': f'-{round(((original_price - discount_price) / original_price) * 100)}%',
+                'offer_detail_text': 'Zbritje speciale'
+            })
+
+        return pricing
+
+    @staticmethod
+    def apply_offer_context(product, quantity=1):
+        pricing = Product.get_offer_pricing(product, quantity)
+        product['display_price'] = pricing['unit_price']
+        product['display_original_price'] = pricing['original_price']
+        product['display_item_total'] = pricing['item_total']
+        product['display_item_savings'] = pricing['item_savings']
+        product['offer_badge_text'] = pricing['offer_badge_text']
+        product['offer_detail_text'] = pricing['offer_detail_text']
+        product['offer_progress_text'] = pricing['offer_progress_text']
+        product['qualifies_for_free_item'] = pricing['qualifies_for_free_item']
+        product['free_items'] = pricing['free_items']
+        return product
+
+    @staticmethod
 
     def get_all():
+        Product.revert_expired_offers()
 
         # Clean _id for json serialization if needed, or just return cursor list
 
@@ -16,6 +158,7 @@ class Product:
 
     @staticmethod
     def get_paginated(page=1, per_page=20, category=None, search_query=None, subcategory=None, sort=None, brand=None, min_price=None, max_price=None, discount_only=False, best_seller_only=False, no_discount=False, pharmacist_choice=False):
+        Product.revert_expired_offers()
         query = {"is_deleted": {"$ne": True}}
         if category and category != 'all':
             query["category"] = category
@@ -70,7 +213,8 @@ class Product:
                                 {"name": {"$regex": escaped_part, "$options": "i"}},
                                 {"brand": {"$regex": escaped_part, "$options": "i"}},
                                 {"category": {"$regex": escaped_part, "$options": "i"}},
-                                {"subcategory": {"$regex": escaped_part, "$options": "i"}}
+                                {"subcategory": {"$regex": escaped_part, "$options": "i"}},
+                                {"description": {"$regex": escaped_part, "$options": "i"}}
                             ]
                         }
                         and_parts.append(part_cond)
@@ -87,7 +231,8 @@ class Product:
                                 {"name": {"$regex": escaped_part, "$options": "i"}},
                                 {"brand": {"$regex": escaped_part, "$options": "i"}},
                                 {"category": {"$regex": escaped_part, "$options": "i"}},
-                                {"subcategory": {"$regex": escaped_part, "$options": "i"}}
+                                {"subcategory": {"$regex": escaped_part, "$options": "i"}},
+                                {"description": {"$regex": escaped_part, "$options": "i"}}
                             ]
                         }
                         and_parts.append(part_cond)
@@ -180,6 +325,8 @@ class Product:
         products = list(mongo.db.products.aggregate(pipeline))
         for p in products:
             p["_id"] = str(p["_id"])
+
+        products = Product._decorate_products(products)
         
         import math
         total_pages = math.ceil(total_products / per_page)
@@ -189,42 +336,68 @@ class Product:
 
 
     @staticmethod
+    def _decorate_product(product, quantity=1):
+        if not product:
+            return None
+        pricing = Product.get_offer_pricing(product, quantity)
+        product['display_price'] = pricing['unit_price']
+        product['display_original_price'] = pricing['original_price']
+        product['display_item_total'] = pricing['item_total']
+        product['display_item_savings'] = pricing['item_savings']
+        product['offer_badge_text'] = pricing['offer_badge_text']
+        product['offer_detail_text'] = pricing['offer_detail_text']
+        product['offer_progress_text'] = pricing['offer_progress_text']
+        product['qualifies_for_free_item'] = pricing['qualifies_for_free_item']
+        product['free_items'] = pricing['free_items']
+        return product
 
+    @staticmethod
+    def _decorate_products(products, quantity=1):
+        return [Product._decorate_product(product, quantity) for product in products]
+
+    @staticmethod
     def get_by_category(category):
-
-        return list(mongo.db.products.find({"category": category, "is_deleted": {"$ne": True}}))
+        products = list(mongo.db.products.find({"category": category, "is_deleted": {"$ne": True}}))
+        return Product._decorate_products(products)
 
 
 
     @staticmethod
     def get_by_id(product_id):
         try:
-            return mongo.db.products.find_one({"_id": ObjectId(product_id)})
+            Product.revert_expired_offers()
+            product = mongo.db.products.find_one({"_id": ObjectId(product_id)})
+            return Product._decorate_product(product)
         except:
             return None
 
     @staticmethod
 
     def get_featured(limit=15):
+        Product.revert_expired_offers()
 
         # Changed to return discounted products as per request
 
-        return list(mongo.db.products.find({
+        products = list(mongo.db.products.find({
 
             "discount_price": {"$ne": None, "$gt": 0},
             "is_deleted": {"$ne": True}
 
         }).limit(limit))
+        return Product._decorate_products(products)
 
     @staticmethod
     def get_best_sellers(limit=15):
-        return list(mongo.db.products.find({"is_best_seller": True, "is_deleted": {"$ne": True}}).limit(limit))
+        Product.revert_expired_offers()
+        products = list(mongo.db.products.find({"is_best_seller": True, "is_deleted": {"$ne": True}}).limit(limit))
+        return Product._decorate_products(products)
 
     @staticmethod
     def get_regular(limit=20):
+        Product.revert_expired_offers()
         # Returns products WITHOUT a discount_price
         # Align with get_paginated default sort (_id: -1)
-        return list(mongo.db.products.find({
+        products = list(mongo.db.products.find({
             "$or": [
                 {"discount_price": {"$exists": False}},
                 {"discount_price": None},
@@ -232,6 +405,7 @@ class Product:
             ],
             "is_deleted": {"$ne": True}
         }).sort([('_id', -1)]).limit(limit))
+        return Product._decorate_products(products)
 
     @staticmethod
     def get_regular_count():
@@ -250,13 +424,17 @@ class Product:
 
         try:
 
-            return list(mongo.db.products.find({
+            Product.revert_expired_offers()
+
+            products = list(mongo.db.products.find({
 
                 "category": category,
                 "is_deleted": {"$ne": True},
                 "_id": {"$ne": ObjectId(exclude_id)}
 
             }).limit(limit))
+
+            return Product._decorate_products(products)
 
         except:
 
@@ -353,19 +531,26 @@ class Product:
     @staticmethod
     def revert_expired_offers():
         now = datetime.now()
-        # Find products where discount_until is in the past
+        today = now.date()
+        # Evaluate in Python so date-only offers stay active through the end of the selected day.
         expired = mongo.db.products.find({
-            "discount_until": {"$lt": now},
-            "discount_price": {"$ne": None}
+            "discount_until": {"$ne": None},
+            "offer_status": {"$ne": "expired"},
+            "is_deleted": {"$ne": True}
         })
         
         count = 0
         for product in expired:
+            deadline_date = Product._offer_deadline_date(product.get('discount_until'))
+            if not deadline_date or deadline_date >= today:
+                continue
             mongo.db.products.update_one(
                 {"_id": product["_id"]},
                 {"$set": {
                     "discount_price": None,
                     "discount_until": None
+                    ,"offer_status": "expired",
+                    "offer_ended_at": now
                 }}
             )
             count += 1
@@ -373,13 +558,15 @@ class Product:
 
     @staticmethod
     def get_favorites_by_user(user_id):
+        Product.revert_expired_offers()
         products = list(mongo.db.products.find({"favorites": user_id}))
         for p in products:
             p["_id"] = str(p["_id"])
-        return products
+        return Product._decorate_products(products)
 
     @staticmethod
     def get_by_ids(id_list):
+        Product.revert_expired_offers()
         if not id_list:
             return []
         try:
@@ -388,7 +575,7 @@ class Product:
             products = list(mongo.db.products.find({"_id": {"$in": obj_ids}}))
             for p in products:
                 p["_id"] = str(p["_id"])
-            return products
+            return Product._decorate_products(products)
         except Exception as e:
             print(f"Error in get_by_ids: {e}")
             return []

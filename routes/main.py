@@ -35,43 +35,134 @@ def _normalize_chat_query(value):
     return str(value or '').strip()
 
 
-def _find_chatbot_products(query_text, limit=5):
-    query_text = _normalize_chat_query(query_text)
-    if not query_text:
+_CHATBOT_QUERY_EXPANSIONS = {
+    'akne': ['akne', 'pimples', 'blemish', 'blemishes', 'breakout', 'breakouts'],
+    'hidrat': ['hidrat', 'hydrat', 'moistur', 'dry skin', 'thatë', 'thate'],
+    'vitamin': ['vitamin', 'multivitamin', 'supplement', 'suplemente', 'omega', 'zink', 'minerale'],
+    'suplement': ['suplement', 'supplement', 'vitamin', 'omega', 'zink', 'minerale'],
+    'diell': ['diell', 'sun', 'spf', 'uv', 'sunscreen', 'solar'],
+    'flok': ['flok', 'hair', 'shampoo', 'shampo', 'conditioner'],
+    'baby': ['baby', 'fëmij', 'femij', 'pelen', 'formula', 'infant'],
+    'lëkur': ['lëkur', 'lekur', 'skin', 'derma', 'face', 'fytyr'],
+    'anti aging': ['anti aging', 'anti-aging', 'rrudhat', 'wrinkle', 'wrinkles', 'aging'],
+}
+
+
+def _expand_chatbot_query(query_text):
+    normalized = _normalize_chat_query(query_text).lower()
+    if not normalized:
+        return normalized, []
+
+    expanded_terms = []
+    for raw_term in re.split(r'\s+', normalized):
+        term = raw_term.strip()
+        if term:
+            expanded_terms.append(term)
+
+    for key, values in _CHATBOT_QUERY_EXPANSIONS.items():
+        if key in normalized:
+            expanded_terms.extend(values)
+
+    seen = set()
+    deduped_terms = []
+    for term in expanded_terms:
+        normalized_term = term.lower().strip()
+        if normalized_term and normalized_term not in seen:
+            seen.add(normalized_term)
+            deduped_terms.append(normalized_term)
+
+    return normalized, deduped_terms
+
+
+def _chatbot_search_terms(query_text):
+    return _expand_chatbot_query(query_text)
+
+
+def _load_chatbot_catalog_candidates(limit=120):
+    try:
+        products = Product.get_all() or []
+    except Exception:
+        products = []
+
+    if not products:
         return []
 
-    # Reuse the existing site search logic, then fall back to a direct regex search
-    products, _, _ = Product.get_paginated(
+    # Keep the candidate pool bounded so ranking stays cheap even if the catalog grows.
+    return products[:limit]
+
+
+def _rank_chatbot_products(products, query_text, prefer_offers=False, limit=5):
+    normalized, terms = _chatbot_search_terms(query_text)
+    ranked = []
+
+    for product in products or []:
+        name = str(product.get('name') or '').lower()
+        brand = str(product.get('brand') or '').lower()
+        category = str(product.get('category') or '').lower()
+        subcategory = str(product.get('subcategory') or '').lower()
+        size = str(product.get('size') or '').lower()
+        description = str(product.get('description') or '').lower()
+        searchable_text = ' '.join([name, brand, category, subcategory, size, description]).strip()
+
+        score = 0
+        if normalized and normalized in searchable_text:
+            score += 8
+
+        for term in terms:
+            if term in name:
+                score += 5
+            elif term in brand:
+                score += 4
+            elif term in subcategory:
+                score += 4
+            elif term in category:
+                score += 3
+            elif term in description:
+                score += 2
+            elif term in size:
+                score += 1
+
+        if product.get('is_best_seller'):
+            score += 1
+        if product.get('is_pharmacist_choice'):
+            score += 1
+
+        if not prefer_offers and product.get('discount_price') not in (None, 0, 0.0):
+            score -= 4
+
+        ranked.append((score, product))
+
+    ranked.sort(key=lambda item: (
+        item[0],
+        0 if item[1].get('discount_price') in (None, 0, 0.0) else 1,
+        str(item[1].get('_id') or '')
+    ), reverse=True)
+
+    return [product for _, product in ranked[:limit]]
+
+
+def _find_chatbot_products(query_text, limit=5):
+    normalized_query, terms = _expand_chatbot_query(query_text)
+    if not normalized_query:
+        return []
+
+    # Try the built-in search first, then rank against the broader catalog if it is too narrow.
+    exact_products, _, _ = Product.get_paginated(
         page=1,
         per_page=limit,
-        search_query=query_text,
+        search_query=normalized_query,
         sort='relevance'
     )
-    if products:
-        return products[:limit]
+    if exact_products:
+        ranked_exact = _rank_chatbot_products(exact_products, normalized_query, limit=limit)
+        if ranked_exact:
+            return ranked_exact
 
-    terms = [term for term in re.split(r'\s+', query_text) if term]
-    if not terms:
+    broad_candidates = _load_chatbot_catalog_candidates(limit=120)
+    if not broad_candidates:
         return []
 
-    and_parts = []
-    for term in terms:
-        escaped_term = re.escape(term)
-        and_parts.append({
-            '$or': [
-                {'name': {'$regex': escaped_term, '$options': 'i'}},
-                {'brand': {'$regex': escaped_term, '$options': 'i'}},
-                {'category': {'$regex': escaped_term, '$options': 'i'}},
-                {'subcategory': {'$regex': escaped_term, '$options': 'i'}},
-                {'size': {'$regex': escaped_term, '$options': 'i'}},
-            ]
-        })
-
-    search_query = {'$and': and_parts, 'is_deleted': {'$ne': True}}
-    products = list(mongo.db.products.find(search_query).limit(limit))
-    for product in products:
-        product['_id'] = str(product['_id'])
-    return products
+    return _rank_chatbot_products(broad_candidates, normalized_query, limit=limit)
 
 
 def _product_summary(product):
@@ -109,7 +200,7 @@ def _build_products_url(user_query='', category=None, subcategory=None):
     return url_for('main.products', **params) if params else url_for('main.products')
 
 
-def _call_openai_chat(user_query, products_context, conversation_history=None, selected_category=None, selected_subcategory=None):
+def _call_openai_chat(user_query, products_context, conversation_history=None, selected_category=None, selected_subcategory=None, include_offers=False, offers_context=None):
     api_key = (os.getenv('OPENAI_API_KEY') or os.getenv('GEMINI_API_KEY') or '').strip()
     if not api_key:
         return None
@@ -121,18 +212,29 @@ def _call_openai_chat(user_query, products_context, conversation_history=None, s
     for product in products_context[:8]:
         context_lines.append(product['summary'])
 
+    pharmacy_location = os.getenv('PHARMACY_LOCATION', 'Tiranë, Shqipëri')
+    
     system_prompt = (
-        'You are a professional pharmacy shopping assistant for Barnatore Meld Pharm. '
-        'Answer in Albanian. Help users find products based on their need, category, brand, size, or price. '
-        'Be concise, friendly, and practical. If you suggest products, list up to 3. '
-        'If no exact match is available, still answer naturally, explain the best next step, '
-        'and offer to browse more products. Never claim medical diagnosis. When relevant, '
-        'advise consulting a pharmacist or doctor.'
+        'You are a professional and knowledgeable pharmacy shopping assistant for Barnatore Meld Pharm. '
+        'Answer in Albanian. Your role is to confidently recommend products that match the customer\'s needs. '
+        'Be friendly, practical, and helpful. Always respond warmly to greetings. '
+        'If asked about location, tell users: "Kami ndodhet në ' + pharmacy_location + '". '
+        'When users ask about offers, provide specific examples from available products with discounts. '
+        'If no products are on offer, say: "Nuk kemi oferta në dispozicion tani, por oferta të reja do të shtohen shpejt." '
+        'IMPORTANT: When you have product recommendations available in the context, focus on recommending those products clearly and confidently. '
+        'List products with their key details (brand, size, price) in a well-structured format with line breaks. '
+        'Do NOT ask customers to provide more details when products are already available - just present the recommendations. '
+        'After showing products, you can ask if they want more specific options or alternatives. '
+        'Avoid markdown symbols like ** or ###. Keep text simple and readable. '
+        'You are an expert on these products and your recommendations are valuable - trust your expertise and present products confidently.'
     )
+    
+    if include_offers and offers_context:
+        system_prompt += '\n\nActive offers available: ' + offers_context
 
     user_prompt = f"User request: {user_query}"
     if context_lines:
-        user_prompt += "\n\nAvailable catalog context:\n- " + "\n- ".join(context_lines)
+        user_prompt += "\n\nYou have these products available to recommend:\n- " + "\n- ".join(context_lines)
 
     messages = []
     
@@ -155,7 +257,7 @@ def _call_openai_chat(user_query, products_context, conversation_history=None, s
         'model': model,
         'messages': messages,
         'temperature': 0.4,
-        'max_tokens': 2048,
+        'max_tokens': 4096,
         'top_p': 0.95,
     }
 
@@ -199,12 +301,97 @@ def _call_openai_chat(user_query, products_context, conversation_history=None, s
 
     # Join chunks preserving paragraph structure
     full_text = ''.join(chunk for chunk in text_chunks if chunk).strip()
+    
+    # Clean up markdown formatting (remove ** bold, ## headers, etc)
+    full_text = full_text.replace('**', '').replace('##', '').replace('###', '')
+    # Clean up excessive numbering and bullets to make it more readable
+    import re
+    full_text = re.sub(r'\*\s+', '', full_text)  # Remove bullet points
+    full_text = re.sub(r'^\d+\.\s+', '', full_text, flags=re.MULTILINE)  # Remove numbered lists
+    
     return full_text if full_text else None
+
+
+def _is_greeting(text):
+    """Check if the text is ONLY a greeting (not a greeting + a question)"""
+    greetings = ['përshëndetje', 'përshëndetje!', 'hello', 'hi', 'salam', 'hey', 'përshëndetjet', 'përshëndetjeje', 'çka zbarohet', 'si qenka']
+    lowered = text.lower().strip()
+    
+    # Only treat as pure greeting if text is very short and matches exactly
+    if len(lowered) > 30:
+        return False
+    
+    # Check for exact or near-exact match
+    for greeting in greetings:
+        if lowered == greeting or lowered == greeting + '!' or lowered == greeting + '?' or lowered.startswith(greeting + ' '):
+            # If it starts with greeting but has more text, only treat as pure greeting if very short
+            if len(lowered) <= 20:
+                return True
+    
+    return False
+
+
+def _is_location_query(text):
+    """Check if the text is asking about location"""
+    lowered = text.lower().strip()
+    location_patterns = [
+        r'\bku jeni\b',
+        r'\bku ndodhet\b',
+        r'\bku mund\b',
+        r'\badresa\b',
+        r'\blokacioni?\b',
+    ]
+    return any(re.search(pattern, lowered) for pattern in location_patterns)
+
+
+def _is_offer_query(text):
+    """Check if the text is asking about offers"""
+    lowered = text.lower().strip()
+    offer_keywords = [
+        'ofert', 'oferta', 'ofertë', 'oferte', 'zbrit', 'promoc', 'promo',
+        'special', 'me zbritje', 'a keni oferta', 'keni oferta', 'ofertat'
+    ]
+    return any(keyword in lowered for keyword in offer_keywords)
+
+
+def _get_active_offers_context():
+    """Get context about active offers for the AI"""
+    try:
+        Product.revert_expired_offers()
+        active_offers = list(mongo.db.products.find({
+            'is_deleted': {'$ne': True},
+            'offer_status': {'$ne': 'expired'},
+            '$or': [
+                {'discount_price': {'$exists': True, '$ne': None, '$gt': 0}},
+                {'offer_name': {'$exists': True, '$ne': None}},
+                {'offer_type': {'$exists': True, '$ne': None}},
+            ]
+        }).limit(10))
+        
+        if not active_offers:
+            return "No offers available."
+        
+        offer_list = []
+        for product in active_offers:
+            price = product.get('price', 0)
+            discount_price = product.get('discount_price', 0)
+            offer_name = product.get('offer_name') or product.get('offer_type')
+            if discount_price and price:
+                discount_percent = int(((price - discount_price) / price) * 100)
+                label = f"{offer_name}: " if offer_name else ""
+                offer_list.append(f"{label}{product.get('name', 'Produkt')} - {discount_percent}% zbritje: €{discount_price:.2f} (zakonisht €{price:.2f})")
+            elif offer_name:
+                offer_list.append(f"{offer_name}: {product.get('name', 'Produkt')}")
+        
+        return ' | '.join(offer_list[:5]) if offer_list else "No active offers currently."
+    except:
+        return "Unable to fetch offer information."
 
 
 def _build_chatbot_reply(user_query, conversation_id=None):
     normalized = _normalize_chat_query(user_query)
     lowered = normalized.lower()
+    prefer_offers = _is_offer_query(normalized)
     
     # Get conversation history if conversation_id is provided
     conversation_history = None
@@ -214,11 +401,78 @@ def _build_chatbot_reply(user_query, conversation_id=None):
 
     if not normalized:
         return {
-            'reply': 'Përshëndetje! Më shkruani çfarë po kërkoni dhe unë do t’ju sugjeroj produktet më të përshtatshme.',
+            "reply": "Përshëndetje! Më shkruani çfarë po kërkoni dhe unë do t'ju sugjeroj produktet më të përshtatshme.",
+            "products": [],
+            "quick_replies": ["Për akne", "Për hidratim", "Vitaminë C", "Më të shiturat"],
+            "needs_clarification": False
+        }
+
+    # Handle special cases
+    if _is_greeting(normalized):
+        greeting_replies = [
+            "Përshëndetje! Mirëpresim në Barnatore Meld Pharm. Si mund t'ju ndihmoj të gjeni produktin e duhur?",
+            "Përshëndetje! Jam këtu për t'ju ndihmuar me rekomandimet e produkteve. Çfarë po kërkoni?",
+            "Përshëndetje! Mirë se erdhët. Më tregoni se çfarë produktesh ju interesojnë."
+        ]
+        import random
+        return {
+            "reply": random.choice(greeting_replies),
+            "products": [],
+            "quick_replies": ["Për akne", "Për hidratim", "Vitaminë C", "Më të shiturat", "Oferta"],
+            "needs_clarification": False
+        }
+    
+    if _is_location_query(normalized):
+        pharmacy_location = os.getenv('PHARMACY_LOCATION', 'Tiranë, Shqipëri')
+        return {
+            'reply': f'Kami ndodhet në {pharmacy_location}. A dëshironi më shumë informacion apo kërkoni ndonjë produkt të caktuar?',
             'products': [],
-            'quick_replies': ['Për akne', 'Për hidratim', 'Vitaminë C', 'Më të shiturat'],
+            'quick_replies': ['Për akne', 'Për hidratim', 'Vitaminë C', 'Oferta'],
             'needs_clarification': False
         }
+    
+    if prefer_offers:
+        active_offers = _get_active_offers_context()
+        if active_offers.startswith("No offers") or active_offers.startswith("Unable to fetch"):
+            return {
+                'reply': 'Nuk kemi oferta në dispozicion tani, por oferta të reja do të shtohen shpejt. Ndërkohë, shikoni produktet tona më të shitur dhe të rekomanduara!',
+                'products': [],
+                'quick_replies': ['Më të shiturat', 'Për akne', 'Për hidratim', 'Suplement'],
+                'needs_clarification': False
+            }
+        else:
+            # Get products on offer
+            try:
+                products = Product.get_paginated(
+                    page=1,
+                    per_page=5,
+                    discount_only=True,
+                    sort='relevance'
+                )[0]
+                product_cards = [_product_summary(product) for product in _rank_chatbot_products(products, normalized, prefer_offers=True, limit=5)]
+            except:
+                product_cards = []
+            
+            return {
+                'reply': f'Këtu janë disa nga ofertat tona të disponueshme: {active_offers}',
+                'products': [
+                    {
+                        'id': card['id'],
+                        'name': card['name'],
+                        'brand': card['brand'],
+                        'category': card['category'],
+                        'subcategory': card['subcategory'],
+                        'size': card['size'],
+                        'price': card['price'],
+                        'discount_price': card['discount_price'],
+                        'image_url': card['image_url'],
+                    }
+                    for card in product_cards
+                ] if product_cards else [],
+                'quick_replies': ['Më shumë oferta', 'Për akne', 'Për hidratim', 'Suplement'],
+                'see_more_url': _build_products_url('', category=None, subcategory=None) + '?discount_only=true',
+                'needs_clarification': False
+            }
 
     category_hints = [
         ('akne', 'Dermokozmetikë', 'Kundër Akneve'),
@@ -264,18 +518,26 @@ def _build_chatbot_reply(user_query, conversation_id=None):
     else:
         products = _find_chatbot_products(search_terms, limit=5)
 
-    if not products:
-        products = _find_chatbot_products(search_terms, limit=5)
+    if not products and any(keyword in lowered for keyword in ['rekomand', 'sugjero', 'suggest', 'recommend', 'çfarë keni', 'cfare keni', 'show me', 'me trego', 'produkt']):
+        return {
+            'reply': 'Po ju ndihmoj me zgjedhjen më të saktë. Më tregoni përdorimin, markën ose kategorinë që kërkoni dhe unë do t'"'"'ju sjell produkte të përshtatshme nga katalogu ynë.',
+            'products': [],
+            'quick_replies': ['Për akne', 'Për hidratim', 'Vitaminë C', 'Mbrojtje nga dielli', 'Për fëmijë'],
+            'needs_clarification': True,
+            'see_more_url': _build_products_url(normalized, selected_category, selected_subcategory),
+        }
+
+    products = _rank_chatbot_products(products, normalized, prefer_offers=prefer_offers, limit=5)
 
     product_cards = [_product_summary(product) for product in products[:5]]
-    ai_reply = _call_openai_chat(normalized, product_cards, conversation_history, selected_category, selected_subcategory)
+    offers_context = _get_active_offers_context() if prefer_offers else None
+    ai_reply = _call_openai_chat(normalized, product_cards, conversation_history, selected_category, selected_subcategory, include_offers=prefer_offers, offers_context=offers_context)
 
     if product_cards:
-        reply = ai_reply or (
-            'Kam gjetur disa opsione që duken të përshtatshme. '
-            + '; '.join(card['summary'] for card in product_cards[:3])
-            + '.'
-        )
+        if ai_reply:
+            reply = ai_reply
+        else:
+            reply = 'Këtu janë disa rekomandime nga koleksioni ynë:'
         return {
             'reply': reply,
             'products': [
@@ -384,7 +646,7 @@ def products():
     )
     
     # Get all unique brands for the filter sidebar
-    filter_query = {"is_deleted": {"$ne": True}}
+    filter_query: dict[str, object] = {"is_deleted": {"$ne": True}}
     if category != 'all':
         filter_query["category"] = category
     if subcategory != 'all':
@@ -629,6 +891,31 @@ def search_api():
     return jsonify(results)
 
 
+def _generate_chat_title(user_query):
+    """Generate a meaningful title from the user's first message"""
+    query = user_query.strip()
+    if not query:
+        return 'Biseda e re'
+    
+    # Remove common filler words and focus on the main topic
+    filler_words = ['të lutem', 'më thuaj', 'a mund', 'cila', 'cilat', 'ku', 'kërkoj', 'kërkojë']
+    words = query.lower().split()
+    
+    # Find the first substantive word (not a filler)
+    for word in words:
+        if not any(filler in word for filler in filler_words):
+            # Capitalize and use as title
+            title_word = query.split(word)[0] + word + (' ' + ' '.join(query.split(word)[1].split()[:2]) if len(query.split(word)) > 1 else '')
+            title = title_word.strip().capitalize()
+            if len(title) > 50:
+                title = title[:47] + '...'
+            return title if title else 'Biseda e re'
+    
+    # Fallback: use first 40 characters
+    title = query[:40] + '...' if len(query) > 40 else query
+    return title.capitalize()
+
+
 @main.route('/api/chatbot', methods=['POST'])
 def chatbot_api():
     payload = request.get_json(silent=True) or {}
@@ -638,8 +925,8 @@ def chatbot_api():
     
     # Create new conversation if no conversation_id provided
     if not conversation_id:
-        # Auto-generate title from first message
-        title = user_query[:30] + '...' if len(user_query) > 30 else user_query
+        # Auto-generate title from first message with better logic
+        title = _generate_chat_title(user_query)
         conversation = Conversation.create_conversation(user_id, title)
         conversation_id = conversation['_id']
     

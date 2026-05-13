@@ -21,6 +21,36 @@ def admin_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
+
+def _form_float(field_name, default=0.0):
+    raw_value = request.form.get(field_name)
+    if raw_value is None or raw_value == '':
+        return default
+    try:
+        return float(raw_value)
+    except (TypeError, ValueError):
+        return default
+
+
+def _form_optional_float(field_name):
+    raw_value = request.form.get(field_name)
+    if raw_value is None or raw_value == '':
+        return None
+    try:
+        return float(raw_value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _form_optional_date(field_name):
+    raw_value = request.form.get(field_name)
+    if not raw_value:
+        return None
+    try:
+        return datetime.strptime(raw_value, '%Y-%m-%d')
+    except ValueError:
+        return None
+
 @admin.route('/orders')
 @login_required
 @admin_required
@@ -72,7 +102,7 @@ def dashboard():
 
     analytics = {
         'total_products': len(all_products),
-        'total_offers': len([p for p in all_products if p.get('discount_price')]),
+        'total_offers': len([p for p in all_products if Product._offer_is_active(p)]),
         'category_sales': {},
         'brand_distribution': {},
         'most_ordered': [],
@@ -149,9 +179,9 @@ def new_product():
             "category": request.form.get('category'),
             "subcategory": request.form.get('subcategory'),
             "size": request.form.get('size'),
-            "price": float(request.form.get('price')),
-            "discount_price": float(request.form.get('discount_price')) if request.form.get('discount_price') else None,
-            "discount_until": datetime.strptime(request.form.get('discount_until'), '%Y-%m-%d') if request.form.get('discount_until') else None,
+            "price": _form_float('price'),
+            "discount_price": _form_optional_float('discount_price'),
+            "discount_until": _form_optional_date('discount_until'),
             "description": request.form.get('description'),
             "image_url": main_img,
             "images": images,
@@ -194,9 +224,9 @@ def edit_product(product_id):
             "category": request.form.get('category'),
             "subcategory": request.form.get('subcategory'),
             "size": request.form.get('size'),
-            "price": float(request.form.get('price')),
-            "discount_price": float(request.form.get('discount_price')) if request.form.get('discount_price') else None,
-            "discount_until": datetime.strptime(request.form.get('discount_until'), '%Y-%m-%d') if request.form.get('discount_until') else None,
+            "price": _form_float('price'),
+            "discount_price": _form_optional_float('discount_price'),
+            "discount_until": _form_optional_date('discount_until'),
             "description": request.form.get('description'),
             "image_url": main_img,
             "images": images,
@@ -239,7 +269,7 @@ def bulk_offers():
             if target_name:
                 mongo.db.products.update_many(
                     {"offer_name": target_name},
-                    {"$set": {"discount_price": None, "discount_until": None, "offer_name": None}}
+                    {"$set": {"discount_price": None, "discount_until": None, "offer_status": "expired", "offer_ended_at": datetime.now(), "updated_at": datetime.now()}}
                 )
                 flash(f'Oferta "{target_name}" u fshi me sukses.', 'success')
             return redirect(url_for('admin.bulk_offers'))
@@ -250,7 +280,7 @@ def bulk_offers():
             return redirect(url_for('admin.bulk_offers'))
 
         try:
-            discount_percent = float(request.form.get('discount_percent', 0)) if action == 'apply' else 0
+            offer_type = request.form.get('offer_type', 'discount')
             discount_until = request.form.get('discount_until')
             query = {"_id": {"$in": [ObjectId(pid) for pid in selected_ids]}}
                 
@@ -262,20 +292,32 @@ def bulk_offers():
                 if action == 'apply':
                     price = float(p.get('price', 0))
                     if price > 0:
-                        discount_price = price * (1 - (discount_percent / 100))
                         update_data = {
-                            "discount_price": round(discount_price, 2),
                             "discount_until": expiry_date,
                             "offer_name": offer_name if offer_name else None,
-                            "offer_banner": request.form.get('banner_url') if request.form.get('banner_url') else None,
+                            "offer_type": offer_type,
+                            "offer_status": "active",
+                            "offer_ended_at": None,
                             "updated_at": datetime.now()
                         }
+                        
+                        if offer_type == 'discount':
+                            discount_percent = float(request.form.get('discount_percent', 0))
+                            discount_price = price * (1 - (discount_percent / 100))
+                            update_data['discount_price'] = round(discount_price, 2)
+                            update_data['multi_buy_type'] = None
+                        elif offer_type == 'multi_buy':
+                            multi_buy_type = request.form.get('multi_buy_type', '1+1')
+                            discount_price = calculate_multi_buy_price(price, multi_buy_type)
+                            update_data['discount_price'] = round(discount_price, 2)
+                            update_data['multi_buy_type'] = multi_buy_type
+                        
                         mongo.db.products.update_one({"_id": p["_id"]}, {"$set": update_data})
                         count += 1
                 else: # remove action
                     mongo.db.products.update_one(
                         {"_id": p["_id"]}, 
-                        {"$set": {"discount_price": None, "discount_until": None, "offer_name": None, "offer_banner": None, "updated_at": datetime.now()}}
+                        {"$set": {"discount_price": None, "discount_until": None, "offer_status": "expired", "offer_ended_at": datetime.now(), "updated_at": datetime.now()}}
                     )
                     count += 1
             
@@ -307,14 +349,15 @@ def bulk_offers():
     all_products = list(mongo.db.products.find({"is_deleted": {"$ne": True}}).sort("created_at", -1))
     
     # Enhanced Active Offers Aggregation
-    # We want Name, Discount (representative), Expiry (representative), Count, Banner
+    # We want Name, Type, Value, Expiry, Count
     pipeline = [
-        {"$match": {"offer_name": {"$ne": None}, "is_deleted": {"$ne": True}}},
+        {"$match": {"offer_name": {"$ne": None}, "offer_status": {"$ne": "expired"}, "is_deleted": {"$ne": True}}},
         {"$group": {
             "_id": "$offer_name",
             "count": {"$sum": 1},
             "expiry": {"$first": "$discount_until"},
-            "banner": {"$first": "$offer_banner"},
+            "type": {"$first": "$offer_type"},
+            "multi_buy_type": {"$first": "$multi_buy_type"},
             "discount_percent": {"$first": {"$round": [{"$multiply": [{"$subtract": [1, {"$divide": ["$discount_price", "$price"]}]}, 100]}, 0]}}
         }},
         {"$sort": {"_id": 1}}
@@ -322,12 +365,18 @@ def bulk_offers():
     raw_active = list(mongo.db.products.aggregate(pipeline))
     active_offers_info = []
     for r in raw_active:
+        offer_type = r.get("type", "discount")
+        if offer_type == "discount":
+            value = r.get("discount_percent", 0) or 0
+        else:
+            value = r.get("multi_buy_type", "1+1")
+        
         active_offers_info.append({
             "name": r["_id"],
             "count": r["count"],
             "expiry": r["expiry"].strftime('%Y-%m-%d') if r["expiry"] else None,
-            "banner": r["banner"],
-            "discount": r["discount_percent"] or 0
+            "type": offer_type,
+            "value": value
         })
 
     return render_template('admin/bulk_offers.html', 
@@ -335,6 +384,24 @@ def bulk_offers():
                          brands=brands, 
                          all_products=all_products,
                          active_offers_info=active_offers_info)
+
+
+def calculate_multi_buy_price(original_price, multi_buy_type):
+    """Calculate the effective price per unit based on multi-buy offer"""
+    if multi_buy_type == "1+1":
+        # Buy 1, Get 1 Free: effective price = original_price / 2
+        return original_price / 2
+    elif multi_buy_type == "2+1":
+        # Buy 2, Get 1 Free: effective price = 2 * original_price / 3
+        return (2 * original_price) / 3
+    elif multi_buy_type == "3+1":
+        # Buy 3, Get 1 Free: effective price = 3 * original_price / 4
+        return (3 * original_price) / 4
+    elif multi_buy_type == "buy2get50":
+        # Buy 2, Get 50% off: effective price when buying 2 = original_price + (original_price * 0.5)
+        # So per unit: (original_price + (original_price * 0.5)) / 2 = original_price * 0.75
+        return original_price * 0.75
+    return original_price
 
 
 @admin.route('/admin/banners', methods=['GET', 'POST'])

@@ -22,7 +22,9 @@
             {% for product in favorites %}
             <div class="product-card fade-in">
                 <div class="product-image">
-                    {% if product.discount_price %}
+                    {% if product.offer_type == 'multi_buy' %}
+                    <div class="special-offer-badge red-badge">{{ product.offer_badge_text or '1+1' }}</div>
+                    {% elif product.discount_price %}
                     <div class="special-offer-badge red-badge">Oferta Speciale</div>
                     {% endif %}
                     {% if product.is_best_seller %}
@@ -41,10 +43,12 @@
                     <h3 class="product-title">{{ product.name }}</h3>
                     {% if product.size %}<span class="product-size">{{ product.size }}</span>{% endif %}
                     <div class="price-container">
-                        {% if product.discount_price %}
+                        {% if product.offer_type == 'multi_buy' %}
+                        <span class="price">€{{ "%.2f"|format(product.price) }}</span>
+                        {% elif product.discount_price %}
                         <span class="price discounted">€{{ "%.2f"|format(product.discount_price) }}</span>
                         <span class="price original">€{{ "%.2f"|format(product.price) }}</span>
-                        <span class="discount-badge">-{{ ((product.price - product.discount_price) / product.price *
+                        <span class="discount-badge">{{ ((product.price - product.discount_price) / product.price *
                             100)|round|int }}%</span>
                         {% else %}
                         <span class="price">€{{ "%.2f"|format(product.price) }}</span>

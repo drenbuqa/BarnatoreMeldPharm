@@ -47,7 +47,13 @@
                                             style="display: block; font-size: 0.8rem; color: #64748b; margin-top: 2px;">{{
                                             item.size }}</span>{% endif %}
 
-                                        {% if item.discount_price %}
+                                        {% if item.offer_type == 'multi_buy' %}
+                                        <div class="item-savings-label"
+                                            style="color: #0f766e; font-size: 0.8rem; font-weight: 600; margin-top: 4px; display: flex; gap: 0.4rem; align-items: center; flex-wrap: wrap;">
+                                            <span style="background:#ecfeff; border:1px solid #99f6e4; padding: 0.2rem 0.55rem; border-radius: 999px;">{{ item.offer_badge_text or '1+1' }}</span>
+                                            <span>{{ item.offer_progress_text or 'Bli më shumë për të fituar një produkt falas.' }}</span>
+                                        </div>
+                                        {% elif item.discount_price %}
                                         <div class="item-savings-label"
                                             style="color: var(--primary); font-size: 0.8rem; font-weight: 500; margin-top: 4px;">
                                             Kursyet: <span class="savings-amount">€{{ "%.2f"|format(item.item_savings)
@@ -59,7 +65,9 @@
                             </td>
                             <td>
                                 <div class="cart-item-prices">
-                                    {% if item.discount_price %}
+                                    {% if item.offer_type == 'multi_buy' %}
+                                    <span class="new-price">€{{ "%.2f"|format(item.display_price or item.price) }}</span>
+                                    {% elif item.discount_price %}
                                     <span class="new-price">€{{ "%.2f"|format(item.discount_price) }}</span>
                                     <span class="old-price"
                                         style="text-decoration: line-through; color: #94a3b8; font-size: 0.85rem; margin-left: 5px;">€{{ "%.2f"|format(item.price) }}</span>
@@ -147,7 +155,13 @@
                             {% if item.size %}<span class="cart-item-size"
                                 style="display: block; font-size: 0.75rem; color: #64748b; margin-top: 1px;">{{
                                 item.size }}</span>{% endif %}
-                            {% if item.discount_price %}
+                            {% if item.offer_type == 'multi_buy' %}
+                            <div class="item-savings-label"
+                                style="color: #0f766e; font-size: 0.75rem; font-weight: 600; margin-top: 2px; display: flex; gap: 0.4rem; align-items: center; flex-wrap: wrap;">
+                                <span style="background:#ecfeff; border:1px solid #99f6e4; padding: 0.15rem 0.5rem; border-radius: 999px;">{{ item.offer_badge_text or '1+1' }}</span>
+                                <span>{{ item.offer_progress_text or 'Bli më shumë për të fituar një produkt falas.' }}</span>
+                            </div>
+                            {% elif item.discount_price %}
                             <div class="item-savings-label"
                                 style="color: var(--primary); font-size: 0.75rem; font-weight: 500; margin-top: 2px;">
                                 Kursyet: <span class="savings-amount">€{{ "%.2f"|format(item.item_savings) }}</span>
@@ -159,7 +173,9 @@
                     <!-- Middle Row: Price and Quantity Side-by-Side -->
                     <div class="cart-mobile-middle">
                         <div class="mobile-price">
-                            {% if item.discount_price %}
+                            {% if item.offer_type == 'multi_buy' %}
+                            <span class="new-price">€{{ "%.2f"|format(item.display_price or item.price) }}</span>
+                            {% elif item.discount_price %}
                             <span class="new-price">€{{ "%.2f"|format(item.discount_price) }}</span>
                             <span class="old-price"
                                 style="text-decoration: line-through; color: #94a3b8; font-size: 0.75rem; margin-left: 5px;">€{{ "%.2f"|format(item.price) }}</span>
