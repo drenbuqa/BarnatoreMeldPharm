@@ -157,6 +157,25 @@ class Product:
 
         return list(mongo.db.products.find({"is_deleted": {"$ne": True}}))
 
+    @staticmethod
+    def get_all_lean(projection=None):
+        """
+        Fetch all non-deleted products with an optional field projection.
+        Use this instead of get_all() whenever the full document is not needed —
+        it skips the revert_expired_offers() call and avoids loading large fields
+        such as description, images[], key_ingredients, and how_to_use.
+        """
+        default_projection = {
+            "name": 1, "brand": 1, "category": 1, "subcategory": 1,
+            "price": 1, "discount_price": 1, "offer_status": 1,
+            "offer_name": 1, "offer_type": 1, "multi_buy_type": 1,
+            "discount_until": 1, "is_best_seller": 1, "is_pharmacist_choice": 1,
+            "in_stock": 1, "favorites": 1, "image_url": 1, "size": 1,
+            "variant_group": 1, "created_at": 1, "is_deleted": 1,
+        }
+        proj = projection if projection is not None else default_projection
+        return list(mongo.db.products.find({"is_deleted": {"$ne": True}}, proj))
+
 
 
     @staticmethod

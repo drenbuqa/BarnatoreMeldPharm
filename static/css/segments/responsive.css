@@ -1342,8 +1342,8 @@
 
 @media (max-width: 768px) {
     .back-to-top {
-        bottom: 145px;
-        /* Above mobile chat button (85px bottom + 50px height + 10px gap) */
+        bottom: 162px;
+        /* Above mobile chatbot FAB: 92px (chatbot bottom) + 56px (FAB height) + 14px gap */
         right: 25px;
         /* Aligned with mobile chat */
         width: 40px;

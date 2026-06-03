@@ -65,8 +65,10 @@ def _form_optional_date(field_name):
 @login_required
 @admin_required
 def orders():
-    orders = Order.get_all()
-    return render_template('admin/orders.html', orders=orders)
+    page = request.args.get('page', 1, type=int)
+    per_page = 50
+    orders, total_pages, total = Order.get_paginated(page=page, per_page=per_page)
+    return render_template('admin/orders.html', orders=orders, page=page, total_pages=total_pages, total=total)
 
 @admin.route('/order/update_status/<order_id>', methods=['POST'])
 @login_required
@@ -90,12 +92,14 @@ def update_order_status(order_id):
 @login_required
 @admin_required
 def dashboard():
-    # Automatically revert expired offers
-    Product.revert_expired_offers(force=True)
+    # Revert expired offers (throttled — runs at most once every 15 minutes per worker)
+    Product.revert_expired_offers()
     
     show_analytics = request.args.get('view') == 'analytics'
     filter_on_offer = request.args.get('on_offer') == '1'
-    all_products = Product.get_all()
+
+    # Use a lean projection — avoids loading large text fields (description, how_to_use, etc.)
+    all_products = Product.get_all_lean()
     
     if filter_on_offer:
         products = [p for p in all_products if p.get('discount_price')]
@@ -103,7 +107,9 @@ def dashboard():
         products = all_products
 
     # --- Analytics: Sales at a Glance ---
-    orders = Order.get_all()
+    # get_recent(200) is enough for meaningful analytics and avoids loading
+    # the entire orders collection on every dashboard request.
+    orders = Order.get_recent(limit=200)
     
     def safe_float(val):
         try:
@@ -142,7 +148,7 @@ def dashboard():
     # 1. Most liked (top 5) - based on length of favorites list
     analytics['most_liked'] = sorted(all_products, key=lambda x: len(x.get('favorites', [])), reverse=True)[:5]
     
-    # 2. Most ordered (top 5 from actual orders)
+    # 2. Most ordered (top 5 from recent orders)
     product_order_counts = {}
     for o in orders:
         items = o.get('items', [])
@@ -358,7 +364,15 @@ def bulk_offers():
                 brand_map[norm] = b.strip()
     brands = sorted(brand_map.values(), key=lambda x: x.lower())
     
-    all_products = list(mongo.db.products.find({"is_deleted": {"$ne": True}}).sort("created_at", -1))
+    all_products = list(mongo.db.products.find(
+        {"is_deleted": {"$ne": True}},
+        {
+            "name": 1, "brand": 1, "category": 1, "subcategory": 1,
+            "price": 1, "discount_price": 1, "offer_name": 1, "offer_type": 1,
+            "offer_status": 1, "multi_buy_type": 1, "discount_until": 1,
+            "image_url": 1, "in_stock": 1, "created_at": 1,
+        }
+    ).sort("created_at", -1))
     
     # Enhanced Active Offers Aggregation
     # We want Name, Type, Value, Expiry, Count
@@ -399,7 +413,11 @@ def bulk_offers():
 
 
 def _get_banner_offer_options():
-    products = Product.get_all() or []
+    # Only fetch the fields needed to build the offer picker — no large text fields.
+    products = Product.get_all_lean(projection={
+        "name": 1, "offer_name": 1, "offer_type": 1,
+        "offer_status": 1, "discount_price": 1, "discount_until": 1,
+    }) or []
     offers = []
     seen = set()
     for product in products:
@@ -471,8 +489,8 @@ def manage_banners():
     raw_brands = mongo.db.products.distinct("brand")
     brands = [b for b in raw_brands if b]
     
-    # We need all products for the custom search dropdown
-    all_products = Product.get_all()
+    # Only fetch _id and name for the product picker dropdown — the full document is not needed.
+    all_products = Product.get_all_lean(projection={"name": 1, "image_url": 1})
     available_offers = _get_banner_offer_options()
     next_banner_order = (max([int(b.get('sort_order') or 0) for b in banners], default=0) + 1)
     return render_template('admin/banners.html', banners=banners, categories=categories, brands=brands, all_products=all_products, available_offers=available_offers, next_banner_order=next_banner_order)

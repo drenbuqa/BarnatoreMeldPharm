@@ -56,3 +56,23 @@ class Order:
     @staticmethod
     def get_all():
         return list(mongo.db.orders.find().sort("created_at", -1))
+
+    @staticmethod
+    def get_paginated(page=1, per_page=50):
+        """Return a paginated slice of orders, newest first."""
+        skip = (page - 1) * per_page
+        orders = list(
+            mongo.db.orders.find()
+            .sort("created_at", -1)
+            .skip(skip)
+            .limit(per_page)
+        )
+        total = mongo.db.orders.count_documents({})
+        import math
+        total_pages = math.ceil(total / per_page) if per_page else 1
+        return orders, total_pages, total
+
+    @staticmethod
+    def get_recent(limit=200):
+        """Fetch only the most recent orders — sufficient for dashboard analytics."""
+        return list(mongo.db.orders.find().sort("created_at", -1).limit(limit))

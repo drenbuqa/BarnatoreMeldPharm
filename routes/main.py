@@ -92,10 +92,35 @@ def _get_home_payload():
     if cached_payload and now < expires_at:
         return cached_payload
 
-    featured_products = Product.get_featured(limit=20)
-    best_sellers = Product.get_best_sellers(limit=20)
-    regular_products, has_more_regular = Product.get_regular_preview(limit=20)
+    # Run offer expiry cleanup once before the three product queries below,
+    # so each individual method doesn't repeat it (they're all throttled anyway,
+    # but an explicit single call avoids three monotonic clock reads).
+    Product.revert_expired_offers()
+
+    featured_products = list(mongo.db.products.find({
+        "discount_price": {"$ne": None, "$gt": 0},
+        "is_deleted": {"$ne": True}
+    }).sort([('_id', -1)]).limit(20))
+    featured_products = Product._decorate_products(featured_products)
+
+    best_sellers = list(mongo.db.products.find({
+        "is_best_seller": True,
+        "is_deleted": {"$ne": True}
+    }).sort([('_id', -1)]).limit(20))
+    best_sellers = Product._decorate_products(best_sellers)
+
+    _regular_rows = list(mongo.db.products.find({
+        "$or": [
+            {"discount_price": {"$exists": False}},
+            {"discount_price": None},
+            {"discount_price": 0}
+        ],
+        "is_deleted": {"$ne": True}
+    }).sort([('_id', -1)]).limit(21))
+    has_more_regular = len(_regular_rows) > 20
+    regular_products = Product._decorate_products(_regular_rows[:20])
     total_pages_regular = 2 if has_more_regular else 1
+
     offer_banners = Banner.get_active()
 
     payload = {

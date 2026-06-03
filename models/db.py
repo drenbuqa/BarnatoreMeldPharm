@@ -13,6 +13,7 @@ def _ensure_indexes():
     try:
         products = mongo.db.products
         banners = mongo.db.banners
+        orders = mongo.db.orders
 
         # Product query hotspots: listing filters, offers, favorites, and admin/dashboard lookups.
         products.create_index([("is_deleted", 1), ("_id", -1)], name="idx_products_deleted_id")
@@ -24,10 +25,20 @@ def _ensure_indexes():
         products.create_index([("offer_status", 1), ("offer_name", 1), ("is_deleted", 1)], name="idx_products_offer_status_name")
         products.create_index([("variant_group", 1), ("is_deleted", 1)], name="idx_products_variant_group")
         products.create_index([("favorites", 1)], name="idx_products_favorites")
+        # Offer expiry cleanup: only scan products with an active deadline
+        products.create_index(
+            [("discount_until", 1), ("offer_status", 1), ("is_deleted", 1)],
+            name="idx_products_discount_until"
+        )
 
         # Banner query hotspots: homepage active banners and admin ordering.
         banners.create_index([("is_active", 1), ("sort_order", 1)], name="idx_banners_active_sort")
         banners.create_index([("expires_at", 1)], name="idx_banners_expiry")
+
+        # Orders: the admin orders page sorts by created_at and the user orders page filters by user_id.
+        orders.create_index([("created_at", -1)], name="idx_orders_created_at")
+        orders.create_index([("user_id", 1), ("created_at", -1)], name="idx_orders_user_id")
+        orders.create_index([("status", 1)], name="idx_orders_status")
     except Exception as exc:
         logging.warning("Mongo index setup skipped: %s", exc)
 
