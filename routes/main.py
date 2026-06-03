@@ -17,11 +17,18 @@ import os
 import ssl
 import certifi
 from dotenv import load_dotenv
+import time
 
 # Load .env into environment for local development (keys remain on server only)
 load_dotenv()
 
 main = Blueprint('main', __name__)
+
+_HOME_CACHE_TTL_SECONDS = int(os.getenv('HOME_CACHE_TTL_SECONDS', '60'))
+_HOME_CACHE: dict[str, object] = {
+    'expires_at': 0.0,
+    'payload': None,
+}
 
 
 def _get_guest_id():
@@ -76,6 +83,31 @@ def _expand_chatbot_query(query_text):
 
 def _chatbot_search_terms(query_text):
     return _expand_chatbot_query(query_text)
+
+
+def _get_home_payload():
+    now = time.time()
+    cached_payload = _HOME_CACHE.get('payload')
+    expires_at = float(_HOME_CACHE.get('expires_at') or 0.0)
+    if cached_payload and now < expires_at:
+        return cached_payload
+
+    featured_products = Product.get_featured(limit=20)
+    best_sellers = Product.get_best_sellers(limit=20)
+    regular_products, has_more_regular = Product.get_regular_preview(limit=20)
+    total_pages_regular = 2 if has_more_regular else 1
+    offer_banners = Banner.get_active()
+
+    payload = {
+        'featured_products': featured_products,
+        'best_sellers': best_sellers,
+        'regular_products': regular_products,
+        'total_pages_regular': total_pages_regular,
+        'offer_banners': offer_banners,
+    }
+    _HOME_CACHE['payload'] = payload
+    _HOME_CACHE['expires_at'] = now + max(_HOME_CACHE_TTL_SECONDS, 1)
+    return payload
 
 
 def _load_chatbot_catalog_candidates(limit=120):
@@ -357,7 +389,6 @@ def _is_offer_query(text):
 def _get_active_offers_context():
     """Get context about active offers for the AI"""
     try:
-        Product.revert_expired_offers()
         active_offers = list(mongo.db.products.find({
             'is_deleted': {'$ne': True},
             'offer_status': {'$ne': 'expired'},
@@ -386,6 +417,13 @@ def _get_active_offers_context():
         return ' | '.join(offer_list[:5]) if offer_list else "No active offers currently."
     except:
         return "Unable to fetch offer information."
+
+
+def _get_offer_banner_target(link_value):
+    offer_name = str(link_value or '').strip()
+    if not offer_name:
+        return None
+    return url_for('main.products', discount_only='true', offer_name=offer_name)
 
 
 def _build_chatbot_reply(user_query, conversation_id=None):
@@ -584,24 +622,15 @@ def _build_chatbot_reply(user_query, conversation_id=None):
 
 @main.route('/')
 def index():
-    import math
-    featured_products = Product.get_featured(limit=20)
-    best_sellers = Product.get_best_sellers(limit=20)
-    
-    # Get regular products with count and total pages for pagination
-    # Changed from get_regular to get_paginated(page=1) to include all products and match store logic
-    regular_products, total_pages_regular, total_regular = Product.get_paginated(page=1, per_page=20)
-    
-    # Get active offer banners
-    offer_banners = Banner.get_active()
+    payload = _get_home_payload()
     
     return render_template('index.html', 
-                            featured_products=featured_products, 
-                            best_sellers=best_sellers,
-                            regular_products=regular_products,
-                            total_pages_regular=total_pages_regular,
+                            featured_products=payload['featured_products'], 
+                            best_sellers=payload['best_sellers'],
+                            regular_products=payload['regular_products'],
+                            total_pages_regular=payload['total_pages_regular'],
                             categories=CATEGORIES,
-                            offer_banners=offer_banners)
+                            offer_banners=payload['offer_banners'])
 
 @main.route('/guest_login')
 def guest_login():
@@ -615,13 +644,11 @@ def exit_guest():
 
 @main.route('/products')
 def products(): 
-    # Automatically revert expired offers
-    Product.revert_expired_offers()
-    
     page = request.args.get('page', 1, type=int)
     category = request.args.get('category', 'all')
     subcategory = request.args.get('subcategory', 'all')
     search_query = request.args.get('search') or request.args.get('q', '')
+    offer_name = request.args.get('offer_name', '').strip()
     
     # Custom products comma separated support
     comma_searches = [s.strip() for s in search_query.split(',')] if ',' in search_query else None
@@ -642,7 +669,8 @@ def products():
         page, per_page, category, search_query, subcategory, 
         sort=sort, brand=brand, min_price=min_price, max_price=max_price,
         discount_only=discount_only, best_seller_only=best_sellers,
-        no_discount=no_discount, pharmacist_choice=pharmacist_choice
+        no_discount=no_discount, pharmacist_choice=pharmacist_choice,
+        offer_name=offer_name or None
     )
     
     # Get all unique brands for the filter sidebar
@@ -713,7 +741,8 @@ def products():
                          categories=CATEGORIES,
                          brands=available_brands,
                          discount_only=discount_only,
-                         best_sellers=best_sellers)
+                         best_sellers=best_sellers,
+                         offer_name=offer_name)
 
     # Debug print
     print(f"Products found: {len(products)} on page {page} in category {category} subcategory {subcategory} search: {search_query}")

@@ -1,4 +1,5 @@
 Flask
+Flask-Compress
 Flask-Bcrypt
 Flask-Login
 Flask-PyMongo

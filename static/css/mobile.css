@@ -237,6 +237,10 @@
         box-shadow: 0 -4px 15px rgba(0, 0, 0, 0.05);
     }
 
+    .chatbot-launcher {
+        bottom: 92px;
+    }
+
     .bottom-nav-item {
         flex: 1;
         height: 100%;

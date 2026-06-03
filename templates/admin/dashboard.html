@@ -5,30 +5,7 @@
 {% block content %}
 <div class="admin-dashboard-container">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/segments/admin.css') }}">
-    <!-- Admin Navigation -->
-    <nav class="admin-v3-nav">
-        <div class="nav-brand">
-            <i class="fas fa-user-shield"></i> Admin Paneli
-        </div>
-        <div class="nav-links">
-            <a href="{{ url_for('admin.dashboard') }}" class="admin-nav-item active" id="nav-dashboard">
-                <i class="fas fa-th-large"></i> Dashboard
-            </a>
-            <a href="{{ url_for('admin.orders') }}" class="admin-nav-item">
-                <i class="fas fa-shopping-bag"></i> Porositë
-            </a>
-            <a href="{{ url_for('admin.bulk_offers') }}" class="admin-nav-item">
-                <i class="fas fa-tags"></i> Ofertat
-            </a>
-            <a href="{{ url_for('admin.manage_banners') }}" class="admin-nav-item">
-                <i class="fas fa-images"></i> Banerët
-            </a>
-            <a href="javascript:void(0)" onclick="toggleAnalytics()" class="admin-nav-item" id="nav-analytics">
-                <i class="fas fa-chart-pie"></i> Analitika
-            </a>
-        </div>
-        <div class="nav-right-spacer"></div>
-    </nav>
+    {% include 'admin/_nav.html' %}
 
     <div class="admin-header-v2" style="justify-content: flex-end; margin-bottom: 2rem; display: none;">
         <!-- Hidden as it's now in the nav -->
@@ -36,7 +13,7 @@
 
     <!-- Analytics Section -->
     <div id="analytics-section" class="admin-analytics-section"
-        style="margin-bottom: 3rem; scroll-margin-top: 2rem; display: none;">
+        style="margin-bottom: 3rem; scroll-margin-top: 2rem; display: {{ 'block' if show_analytics else 'none' }};">
 
         <div class="analytics-header-v3"
             style="margin-bottom: 2.5rem; border-bottom: 1px solid #f1f5f9; padding-bottom: 1.5rem;">
@@ -176,7 +153,7 @@
             font-weight: 700;
         }
     </style>
-    <div class="admin-actions-bar">
+    <div class="admin-actions-bar" style="display: {{ 'none' if show_analytics else 'flex' }};">
         <div class="search-and-filter">
             <div class="admin-search-wrapper" style="flex: 2; max-width: 800px;">
                 <i class="fas fa-search"></i>
@@ -206,7 +183,7 @@
         </div>
     </div>
 
-    <div class="admin-table-card">
+    <div class="admin-table-card" style="display: {{ 'none' if show_analytics else 'block' }};">
         <div class="table-responsive">
             <table class="premium-admin-table" id="productTable">
                 <thead>
@@ -1117,37 +1094,8 @@
     });
 
     function toggleAnalytics() {
-        const section = document.getElementById('analytics-section');
-        const actionsBar = document.querySelector('.admin-actions-bar');
-        const tableCard = document.querySelector('.admin-table-card');
-        const navDashboard = document.getElementById('nav-dashboard');
-        const navAnalytics = document.getElementById('nav-analytics');
-
-        if (section.style.display === 'none') {
-            section.style.display = 'block';
-            if (actionsBar) actionsBar.style.display = 'none';
-            if (tableCard) tableCard.style.display = 'none';
-
-            navDashboard.classList.remove('active');
-            navAnalytics.classList.add('active');
-
-            section.scrollIntoView({ behavior: 'smooth' });
-        } else {
-            section.style.display = 'none';
-            if (actionsBar) actionsBar.style.display = 'flex';
-            if (tableCard) tableCard.style.display = 'block';
-
-            navDashboard.classList.add('active');
-            navAnalytics.classList.remove('active');
-        }
+        window.location.href = "{{ url_for('admin.dashboard', view='analytics') }}";
     }
-
-    // Auto-open if hash is present
-    window.addEventListener('load', function () {
-        if (window.location.hash === '#analytics') {
-            toggleAnalytics();
-        }
-    });
 
     function confirmDelete(form) {
         return confirm('A jeni i sigurt që dëshironi të fshini këtë produkt? Ky veprim nuk mund të kthehet.');

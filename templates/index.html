@@ -36,7 +36,7 @@
             <div class="hero-carousel">
                 <!-- Dynamic Banners from Database -->
                 {% for offer in offer_banners %}
-                <a href="{% if offer.link_type == 'all_offers' %}{{ url_for('main.products', on_offer='1') }}{% elif offer.link_type == 'brand' %}{{ url_for('main.products', brand=offer.link_value) }}{% elif offer.link_type == 'category' %}{{ url_for('main.products', category=offer.link_value) }}{% elif offer.link_type == 'custom_products' %}{{ url_for('main.products', search=offer.link_value) }}{% else %}{{ url_for('main.products') }}{% endif %}"
+                <a href="{% if offer.link_type == 'all_offers' %}{{ url_for('main.products', on_offer='1') }}{% elif offer.link_type == 'brand' %}{{ url_for('main.products', brand=offer.link_value) }}{% elif offer.link_type == 'category' %}{{ url_for('main.products', category=offer.link_value) }}{% elif offer.link_type == 'custom_products' %}{{ url_for('main.products', search=offer.link_value) }}{% elif offer.link_type == 'offer' %}{{ url_for('main.products', discount_only='true', offer_name=offer.link_value) }}{% else %}{{ url_for('main.products') }}{% endif %}"
                     class="hero-slide {{ 'active' if loop.first else '' }}">
                     <div class="hero-content-wrapper banner-only">
                         <img src="{{ offer.image_url }}" alt="Banner" class="hero-img-full">

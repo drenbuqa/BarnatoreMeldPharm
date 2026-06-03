@@ -1,5 +1,6 @@
 import os
 import logging
+import time
 from datetime import timedelta
 from dotenv import load_dotenv
 from flask import Flask, render_template, request, jsonify, session
@@ -7,6 +8,10 @@ from flask_bcrypt import Bcrypt
 from flask_login import LoginManager, current_user
 from flask_wtf.csrf import CSRFProtect
 from werkzeug.middleware.proxy_fix import ProxyFix
+try:
+    from flask_compress import Compress
+except ImportError:
+    Compress = None
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -19,6 +24,7 @@ from routes.cart import cart_bp
 from routes.admin import admin
 
 csrf = CSRFProtect()
+compress = Compress() if Compress else None
 
 load_dotenv()
 
@@ -43,6 +49,8 @@ def make_session_permanent():
 
 # Initialize Extensions
 csrf.init_app(app)
+if compress:
+    compress.init_app(app)
 init_db(app)
 bcrypt = Bcrypt(app)
 login_manager = LoginManager(app)
@@ -140,6 +148,29 @@ def inject_cart_count():
         wishlist_count=int(wish_count), 
         global_categories=CATEGORIES
     )
+
+
+@app.before_request
+def _track_request_start_time():
+    request._start_time = time.perf_counter()
+
+
+@app.after_request
+def _log_slow_requests(response):
+    start_time = getattr(request, '_start_time', None)
+    if start_time is None:
+        return response
+
+    duration_ms = (time.perf_counter() - start_time) * 1000
+    if duration_ms >= 1000:
+        logging.warning(
+            "Slow request: %s %s -> %s in %.1fms",
+            request.method,
+            request.path,
+            response.status_code,
+            duration_ms,
+        )
+    return response
 
 # Register Blueprints
 app.register_blueprint(main)

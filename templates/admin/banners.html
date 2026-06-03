@@ -2,27 +2,188 @@
 {% block content %}
 <div class="admin-dashboard-container">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/segments/admin.css') }}">
-    <!-- Admin Navigation -->
-    <nav class="admin-v3-nav">
-        <div class="nav-brand">
-            <i class="fas fa-user-shield"></i> Admin Paneli
-        </div>
-        <div class="nav-links">
-            <a href="{{ url_for('admin.dashboard') }}" class="admin-nav-item">
-                <i class="fas fa-th-large"></i> Dashboard
-            </a>
-            <a href="{{ url_for('admin.orders') }}" class="admin-nav-item">
-                <i class="fas fa-shopping-bag"></i> Porositë
-            </a>
-            <a href="{{ url_for('admin.bulk_offers') }}" class="admin-nav-item">
-                <i class="fas fa-tags"></i> Ofertat
-            </a>
-            <a href="{{ url_for('admin.manage_banners') }}" class="admin-nav-item active">
-                <i class="fas fa-images"></i> Banerët
-            </a>
-        </div>
-        <div class="nav-right-spacer"></div>
-    </nav>
+    {% include 'admin/_nav.html' %}
+
+    <style>
+        .banner-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .banner-card {
+            background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+            border: 1px solid #e2e8f0;
+            border-radius: 24px;
+            padding: 1rem;
+            box-shadow: 0 16px 40px rgba(15, 23, 42, 0.08);
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            transition: transform 0.25s ease, box-shadow 0.25s ease;
+        }
+
+        .banner-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 22px 55px rgba(15, 23, 42, 0.12);
+        }
+
+        .banner-preview {
+            position: relative;
+            background: linear-gradient(135deg, #eef2ff, #f8fafc);
+            border-radius: 18px;
+            overflow: hidden;
+            min-height: 180px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.75rem;
+        }
+
+        .banner-preview img {
+            width: 100%;
+            height: 180px;
+            object-fit: contain;
+            font-size: 1rem;
+            font-weight: 800;
+            color: var(--text-main);
+            line-height: 1.35;
+        }
+
+        .banner-card-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .banner-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.45rem 0.8rem;
+            border-radius: 999px;
+            font-size: 0.8rem;
+            font-weight: 700;
+        }
+
+        .banner-pill.active {
+            background: #dcfce7;
+            color: #15803d;
+        }
+
+        .banner-pill.inactive {
+            background: #fee2e2;
+            color: #b91c1c;
+        }
+
+        .banner-pill.neutral {
+            background: #e2e8f0;
+            color: #475569;
+        }
+
+        .banner-actions {
+            display: grid;
+            grid-template-columns: auto auto 1fr;
+            gap: 0.75rem;
+            align-items: center;
+        }
+
+        .banner-icon-btn {
+            min-height: 48px;
+            border: none;
+            border-radius: 16px;
+            padding: 0.8rem 1rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            font-weight: 800;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+        }
+
+        .banner-icon-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .banner-icon-btn.edit {
+            background: linear-gradient(135deg, #eff6ff, #dbeafe);
+            color: #1d4ed8;
+            box-shadow: 0 8px 18px rgba(59, 130, 246, 0.14);
+        }
+
+        .banner-icon-btn.edit:hover {
+            background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+        }
+
+        .banner-icon-btn.delete {
+            width: 48px;
+            padding: 0;
+            background: linear-gradient(135deg, #fee2e2, #fecaca);
+            color: #b91c1c;
+            box-shadow: 0 8px 18px rgba(239, 68, 68, 0.12);
+        }
+
+        .banner-icon-btn.delete:hover {
+            background: linear-gradient(135deg, #fecaca, #fca5a5);
+        }
+
+        .banner-reorder-group {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .banner-reorder-btn {
+            width: 48px;
+            height: 48px;
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            background: #ffffff;
+            color: #475569;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .banner-reorder-btn:hover {
+            border-color: #94a3b8;
+            color: #0f172a;
+            box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
+        }
+
+        .banner-empty-state {
+            padding: 2rem;
+            text-align: center;
+            color: #64748b;
+            background: #f8fafc;
+            border: 1px dashed #cbd5e1;
+            border-radius: 18px;
+        }
+
+        .banner-form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        @media (max-width: 768px) {
+            .banner-grid,
+            .banner-form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .banner-actions {
+                grid-template-columns: 1fr;
+            }
+
+            .banner-reorder-group {
+                justify-content: flex-start;
+            }
+        }
+    </style>
 
     <div class="admin-content-area" style="padding: 2rem; max-width: 1400px; margin: 0 auto; margin-top: 1rem;">
     <div class="admin-header d-flex justify-content-between align-items-center" style="margin-bottom: 2rem;">
@@ -35,41 +196,85 @@
         </button>
     </div>
 
-    <div class="admin-cards-grid row" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem;">
+    <div class="banner-grid">
         {% for banner in banners %}
-        <div class="admin-card" style="background: #fff; padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border-light); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
-            <div style="height: 120px; overflow: hidden; border-radius: 8px; margin-bottom: 1rem; background: #f1f5f9; display: flex; align-items: center; justify-content: center;">
-                <img src="{{ banner.image_url }}" alt="Banner Image" style="max-width: 100%; max-height: 100%; object-fit: contain;">
+        <div class="banner-card">
+            <div class="banner-preview">
+                <img src="{{ banner.image_url }}" alt="Banner Image">
+                <div class="banner-order-chip">#{{ banner.sort_order or loop.index }}</div>
             </div>
-            <div style="margin-bottom: 1rem;">
-                <h4 style="font-size: 1.1rem; font-weight: 700; color: var(--text-main); margin-bottom: 0.5rem;">
+            <div>
+                <div class="banner-card-title">
                     {% if banner.link_type == 'category' %}
                     Kategoria: {{ banner.link_value }}
                     {% elif banner.link_type == 'brand' %}
                     Brendi: {{ banner.link_value }}
                     {% elif banner.link_type == 'custom_products' %}
                     Produkte Specifike
+                    {% elif banner.link_type == 'offer' %}
+                    Ofertë e veçantë: {{ banner.link_value }}
                     {% else %}
                     Të Gjitha Ofertat
                     {% endif %}
-                </h4>
-                <span class="badge" style="background: {{ '#10b981' if banner.is_active else '#ef4444' }}; color: #fff; padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.8rem; font-weight: 600;">
-                    {{ 'Aktiv' if banner.is_active else 'Jo Aktiv' }}
-                </span>
+                </div>
+                <div class="banner-card-meta" style="margin-top: 0.75rem;">
+                    <span class="banner-pill {{ 'active' if banner.is_active else 'inactive' }}">
+                        {{ 'Aktiv' if banner.is_active else 'Jo Aktiv' }}
+                    </span>
+                    {% if banner.expires_at %}
+                    <span class="banner-pill neutral">
+                        <i class="fas fa-calendar-day"></i> Skadon {{ banner.expires_at.strftime('%d/%m/%Y') }}
+                    </span>
+                    {% endif %}
+                </div>
             </div>
-            <div class="d-flex align-items-center" style="gap: 0.5rem;">
-                <button class="btn btn-outline" style="flex: 1; padding: 0.5rem; font-size: 0.9rem;" onclick="editBanner('{{ banner._id }}', '{{ banner.image_url }}', '{{ banner.link_type }}', '{{ banner.link_value }}', '{{ banner.is_active }}')">
-                    <i class="fas fa-edit"></i> Ndrysho
+            <div class="banner-actions">
+                <div class="banner-reorder-group">
+                    {% if not loop.first %}
+                    <form action="{{ url_for('admin.reorder_banner', banner_id=banner._id) }}" method="POST" style="margin: 0;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="direction" value="up">
+                        <button type="submit" class="banner-reorder-btn" title="Lëvize lart">
+                            <i class="fas fa-arrow-up"></i>
+                        </button>
+                    </form>
+                    {% endif %}
+                    {% if not loop.last %}
+                    <form action="{{ url_for('admin.reorder_banner', banner_id=banner._id) }}" method="POST" style="margin: 0;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="direction" value="down">
+                        <button type="submit" class="banner-reorder-btn" title="Lëvize poshtë">
+                            <i class="fas fa-arrow-down"></i>
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+                <button type="button" class="banner-icon-btn edit" 
+                    data-banner-id="{{ banner._id }}"
+                    data-image-url="{{ banner.image_url|e }}"
+                    data-link-type="{{ banner.link_type|e }}"
+                    data-link-value="{{ banner.link_value|default('', true)|e }}"
+                    data-active="{{ 'on' if banner.is_active else '' }}"
+                    data-expires-at="{{ banner.expires_at.strftime('%Y-%m-%d') if banner.expires_at else '' }}"
+                    data-sort-order="{{ banner.sort_order or loop.index }}"
+                    onclick="openEditBanner(this)">
+                    <i class="fas fa-pen-to-square"></i> Ndrysho
                 </button>
                 <form action="{{ url_for('admin.delete_banner', banner_id=banner._id) }}" method="POST" style="margin: 0;" onsubmit="return confirm('Jeni i sigurt qe doni ta fshini kete baner?');">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <button type="submit" class="btn btn-danger" style="padding: 0.5rem; font-size: 0.9rem;">
+                    <button type="submit" class="banner-icon-btn delete" title="Fshij banerin">
                         <i class="fas fa-trash"></i>
                     </button>
                 </form>
             </div>
         </div>
         {% endfor %}
+        {% if not banners %}
+        <div class="banner-empty-state">
+            <i class="fas fa-images fa-2x mb-3"></i>
+            <p>Nuk ka ende banerë të shtuar.</p>
+        </div>
+        {% endif %}
     </div>
 </div>
 
@@ -101,7 +306,19 @@
                     <option value="brand">Tek produktet e një Brendi</option>
                     <option value="category">Tek produktet e një Kategorie</option>
                     <option value="custom_products">Tek produkte Specifike (manualisht)</option>
+                    <option value="offer">Tek një ofertë specifike</option>
                 </select>
+            </div>
+
+            <div class="banner-form-grid">
+                <div class="form-group" style="margin-bottom: 1.5rem;">
+                    <label style="display: block; font-size: 0.95rem; font-weight: 600; color: var(--text-main); margin-bottom: 0.5rem;">Renditja në hero</label>
+                    <input type="number" name="sort_order" min="1" value="{{ next_banner_order }}" class="form-control" style="width: 100%; padding: 0.75rem 1rem; border: 1px solid var(--border-light); border-radius: 8px; font-size: 0.95rem;">
+                </div>
+                <div class="form-group" style="margin-bottom: 1.5rem;">
+                    <label style="display: block; font-size: 0.95rem; font-weight: 600; color: var(--text-main); margin-bottom: 0.5rem;">Hiqe pas datës</label>
+                    <input type="date" name="expires_at" class="form-control" style="width: 100%; padding: 0.75rem 1rem; border: 1px solid var(--border-light); border-radius: 8px; font-size: 0.95rem;">
+                </div>
             </div>
 
             <div class="form-group" id="addBrandGroup" style="display: none; margin-bottom: 1.5rem;">
@@ -136,6 +353,15 @@
                     </label>
                     {% endfor %}
                 </div>
+            </div>
+
+            <div class="form-group" id="addOfferGroup" style="display: none; margin-bottom: 1.5rem;">
+                <label style="display: block; font-size: 0.95rem; font-weight: 600; color: var(--text-main); margin-bottom: 0.5rem;">Zgjidh ofertën aktive</label>
+                <select name="link_value_offer" class="form-control" style="width: 100%; padding: 0.75rem 1rem; border: 1px solid var(--border-light); border-radius: 8px; font-size: 0.95rem;">
+                    {% for offer in available_offers %}
+                    <option value="{{ offer.value }}">{{ offer.label }}</option>
+                    {% endfor %}
+                </select>
             </div>
             
             <input type="hidden" name="link_value" id="addLinkValueFinal">
@@ -178,7 +404,19 @@
                     <option value="brand">Tek produktet e një Brendi</option>
                     <option value="category">Tek produktet e një Kategorie</option>
                     <option value="custom_products">Tek produkte Specifike (manualisht)</option>
+                    <option value="offer">Tek një ofertë specifike</option>
                 </select>
+            </div>
+
+            <div class="banner-form-grid">
+                <div class="form-group" style="margin-bottom: 1.5rem;">
+                    <label style="display: block; font-size: 0.95rem; font-weight: 600; color: var(--text-main); margin-bottom: 0.5rem;">Renditja në hero</label>
+                    <input type="number" name="sort_order" id="editSortOrder" min="1" class="form-control" style="width: 100%; padding: 0.75rem 1rem; border: 1px solid var(--border-light); border-radius: 8px; font-size: 0.95rem;">
+                </div>
+                <div class="form-group" style="margin-bottom: 1.5rem;">
+                    <label style="display: block; font-size: 0.95rem; font-weight: 600; color: var(--text-main); margin-bottom: 0.5rem;">Hiqe pas datës</label>
+                    <input type="date" name="expires_at" id="editExpiresAt" class="form-control" style="width: 100%; padding: 0.75rem 1rem; border: 1px solid var(--border-light); border-radius: 8px; font-size: 0.95rem;">
+                </div>
             </div>
 
             <div class="form-group" id="editBrandGroup" style="display: none; margin-bottom: 1.5rem;">
@@ -213,6 +451,15 @@
                     </label>
                     {% endfor %}
                 </div>
+            </div>
+
+            <div class="form-group" id="editOfferGroup" style="display: none; margin-bottom: 1.5rem;">
+                <label style="display: block; font-size: 0.95rem; font-weight: 600; color: var(--text-main); margin-bottom: 0.5rem;">Zgjidh ofertën aktive</label>
+                <select name="link_value_offer" id="editOfferSelect" class="form-control" style="width: 100%; padding: 0.75rem 1rem; border: 1px solid var(--border-light); border-radius: 8px; font-size: 0.95rem;">
+                    {% for offer in available_offers %}
+                    <option value="{{ offer.value }}">{{ offer.label }}</option>
+                    {% endfor %}
+                </select>
             </div>
             
             <input type="hidden" name="link_value" id="editLinkValueFinal">
@@ -259,25 +506,16 @@ function filterProductsEdit() {
     });
 }
 
-function toggleAddLinkValue(type) {
-    document.getElementById('addBrandGroup').style.display = type === 'brand' ? 'block' : 'none';
-    document.getElementById('addCategoryGroup').style.display = type === 'category' ? 'block' : 'none';
-    document.getElementById('addCustomGroup').style.display = type === 'custom_products' ? 'block' : 'none';
-}
+function openEditBanner(button) {
+    const dataset = button.dataset;
+    const id = dataset.bannerId;
+    const url = dataset.imageUrl || '';
+    const type = dataset.linkType || 'all_offers';
+    const value = dataset.linkValue || '';
+    const active = dataset.active || '';
+    const expiresAt = dataset.expiresAt || '';
+    const sortOrder = dataset.sortOrder || '';
 
-function prepareAddForm() {
-    const type = document.getElementById('addLinkType').value;
-    let finalValue = '';
-    if (type === 'brand') finalValue = document.querySelector('select[name="link_value_brand"]').value;
-    else if (type === 'category') finalValue = document.querySelector('select[name="link_value_category"]').value;
-    else if (type === 'custom_products') {
-        const checked = Array.from(document.querySelectorAll('.add-custom-product-cb:checked')).map(cb => cb.value);
-        finalValue = checked.join(', ');
-    }
-    document.getElementById('addLinkValueFinal').value = finalValue;
-}
-
-function editBanner(id, url, type, value, active) {
     document.getElementById('editBannerForm').action = "/admin/banners/edit/" + id;
     document.getElementById('editImageUrl').value = url;
     document.getElementById('editLinkType').value = type;
@@ -290,9 +528,13 @@ function editBanner(id, url, type, value, active) {
         document.querySelectorAll('.edit-custom-product-cb').forEach(cb => {
             cb.checked = values.includes(cb.value.trim());
         });
+    } else if (type === 'offer') {
+        document.getElementById('editOfferSelect').value = value;
     }
     
-    document.getElementById('editActive').checked = (active === 'True');
+    document.getElementById('editActive').checked = ['True', 'true', '1', 'on'].includes(active);
+    document.getElementById('editExpiresAt').value = expiresAt;
+    document.getElementById('editSortOrder').value = sortOrder;
     document.getElementById('editBannerModal').style.display = 'flex';
 }
 
@@ -300,6 +542,7 @@ function toggleEditLinkValue(type) {
     document.getElementById('editBrandGroup').style.display = type === 'brand' ? 'block' : 'none';
     document.getElementById('editCategoryGroup').style.display = type === 'category' ? 'block' : 'none';
     document.getElementById('editCustomGroup').style.display = type === 'custom_products' ? 'block' : 'none';
+    document.getElementById('editOfferGroup').style.display = type === 'offer' ? 'block' : 'none';
 }
 
 function prepareEditForm() {
@@ -310,8 +553,31 @@ function prepareEditForm() {
     else if (type === 'custom_products') {
         const checked = Array.from(document.querySelectorAll('.edit-custom-product-cb:checked')).map(cb => cb.value);
         finalValue = checked.join(', ');
+    } else if (type === 'offer') {
+        finalValue = document.getElementById('editOfferSelect').value;
     }
     document.getElementById('editLinkValueFinal').value = finalValue;
+}
+
+function toggleAddLinkValue(type) {
+    document.getElementById('addBrandGroup').style.display = type === 'brand' ? 'block' : 'none';
+    document.getElementById('addCategoryGroup').style.display = type === 'category' ? 'block' : 'none';
+    document.getElementById('addCustomGroup').style.display = type === 'custom_products' ? 'block' : 'none';
+    document.getElementById('addOfferGroup').style.display = type === 'offer' ? 'block' : 'none';
+}
+
+function prepareAddForm() {
+    const type = document.getElementById('addLinkType').value;
+    let finalValue = '';
+    if (type === 'brand') finalValue = document.querySelector('select[name="link_value_brand"]').value;
+    else if (type === 'category') finalValue = document.querySelector('select[name="link_value_category"]').value;
+    else if (type === 'custom_products') {
+        const checked = Array.from(document.querySelectorAll('.add-custom-product-cb:checked')).map(cb => cb.value);
+        finalValue = checked.join(', ');
+    } else if (type === 'offer') {
+        finalValue = document.querySelector('select[name="link_value_offer"]').value;
+    }
+    document.getElementById('addLinkValueFinal').value = finalValue;
 }
 </script>
     </div>

@@ -1,8 +1,11 @@
 from .db import mongo
 from bson import ObjectId
 from datetime import datetime
+import time
 
 class Product:
+    _expired_offer_cleanup_interval_seconds = 900
+    _last_expired_offer_cleanup_monotonic = 0.0
 
     @staticmethod
     def _offer_deadline_date(value):
@@ -157,7 +160,7 @@ class Product:
 
 
     @staticmethod
-    def get_paginated(page=1, per_page=20, category=None, search_query=None, subcategory=None, sort=None, brand=None, min_price=None, max_price=None, discount_only=False, best_seller_only=False, no_discount=False, pharmacist_choice=False):
+    def get_paginated(page=1, per_page=20, category=None, search_query=None, subcategory=None, sort=None, brand=None, min_price=None, max_price=None, discount_only=False, best_seller_only=False, no_discount=False, pharmacist_choice=False, offer_name=None):
         Product.revert_expired_offers()
         query = {"is_deleted": {"$ne": True}}
         if category and category != 'all':
@@ -188,6 +191,11 @@ class Product:
 
         if pharmacist_choice:
             query["is_pharmacist_choice"] = True
+
+        if offer_name and offer_name != 'all':
+            import re
+            escaped_offer = re.escape(offer_name.strip())
+            query["offer_name"] = {"$regex": f"^\\s*{escaped_offer}\\s*$", "$options": "i"}
 
         if min_price is not None or max_price is not None:
             # Match against effective_price instead of just price
@@ -383,13 +391,13 @@ class Product:
             "discount_price": {"$ne": None, "$gt": 0},
             "is_deleted": {"$ne": True}
 
-        }).limit(limit))
+        }).sort([('_id', -1)]).limit(limit))
         return Product._decorate_products(products)
 
     @staticmethod
     def get_best_sellers(limit=15):
         Product.revert_expired_offers()
-        products = list(mongo.db.products.find({"is_best_seller": True, "is_deleted": {"$ne": True}}).limit(limit))
+        products = list(mongo.db.products.find({"is_best_seller": True, "is_deleted": {"$ne": True}}).sort([('_id', -1)]).limit(limit))
         return Product._decorate_products(products)
 
     @staticmethod
@@ -406,6 +414,21 @@ class Product:
             "is_deleted": {"$ne": True}
         }).sort([('_id', -1)]).limit(limit))
         return Product._decorate_products(products)
+
+    @staticmethod
+    def get_regular_preview(limit=20):
+        Product.revert_expired_offers()
+        rows = list(mongo.db.products.find({
+            "$or": [
+                {"discount_price": {"$exists": False}},
+                {"discount_price": None},
+                {"discount_price": 0}
+            ],
+            "is_deleted": {"$ne": True}
+        }).sort([('_id', -1)]).limit(limit + 1))
+
+        has_more = len(rows) > limit
+        return Product._decorate_products(rows[:limit]), has_more
 
     @staticmethod
     def get_regular_count():
@@ -529,7 +552,15 @@ class Product:
         )
 
     @staticmethod
-    def revert_expired_offers():
+    def revert_expired_offers(force=False):
+        now_monotonic = time.monotonic()
+        if not force:
+            last_cleanup = getattr(Product, '_last_expired_offer_cleanup_monotonic', 0.0)
+            if now_monotonic - last_cleanup < Product._expired_offer_cleanup_interval_seconds:
+                return 0
+
+        Product._last_expired_offer_cleanup_monotonic = now_monotonic
+
         now = datetime.now()
         today = now.date()
         # Evaluate in Python so date-only offers stay active through the end of the selected day.

@@ -3,27 +3,7 @@
 {% block content %}
 <div class="admin-orders-container">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/segments/admin.css') }}">
-    <!-- Admin Navigation -->
-    <nav class="admin-v3-nav">
-        <div class="nav-brand">
-            <i class="fas fa-user-shield"></i> Admin Paneli
-        </div>
-        <div class="nav-links">
-            <a href="{{ url_for('admin.dashboard') }}" class="admin-nav-item">
-                <i class="fas fa-th-large"></i> Dashboard
-            </a>
-            <a href="{{ url_for('admin.orders') }}" class="admin-nav-item active">
-                <i class="fas fa-shopping-bag"></i> Porositë
-            </a>
-            <a href="{{ url_for('admin.bulk_offers') }}" class="admin-nav-item">
-                <i class="fas fa-tags"></i> Ofertat
-            </a>
-            <a href="{{ url_for('admin.dashboard') }}#analytics" class="admin-nav-item">
-                <i class="fas fa-chart-pie"></i> Analitika
-            </a>
-        </div>
-        <div class="nav-right-spacer"></div>
-    </nav>
+    {% include 'admin/_nav.html' %}
 
     <div class="admin-header-v2">
         <div class="header-main">

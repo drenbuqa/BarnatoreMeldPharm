@@ -42,6 +42,16 @@ def _form_optional_float(field_name):
         return None
 
 
+def _form_optional_int(field_name):
+    raw_value = request.form.get(field_name)
+    if raw_value is None or raw_value == '':
+        return None
+    try:
+        return int(raw_value)
+    except (TypeError, ValueError):
+        return None
+
+
 def _form_optional_date(field_name):
     raw_value = request.form.get(field_name)
     if not raw_value:
@@ -81,8 +91,9 @@ def update_order_status(order_id):
 @admin_required
 def dashboard():
     # Automatically revert expired offers
-    Product.revert_expired_offers()
+    Product.revert_expired_offers(force=True)
     
+    show_analytics = request.args.get('view') == 'analytics'
     filter_on_offer = request.args.get('on_offer') == '1'
     all_products = Product.get_all()
     
@@ -156,7 +167,8 @@ def dashboard():
     return render_template('admin/dashboard.html', 
                            products=products, 
                            filter_on_offer=filter_on_offer,
-                           analytics=analytics)
+                           analytics=analytics,
+                           show_analytics=show_analytics)
 
 @admin.route('/product/new', methods=['GET', 'POST'])
 @login_required
@@ -386,6 +398,26 @@ def bulk_offers():
                          active_offers_info=active_offers_info)
 
 
+def _get_banner_offer_options():
+    products = Product.get_all() or []
+    offers = []
+    seen = set()
+    for product in products:
+        if not Product._offer_is_active(product):
+            continue
+        offer_name = str(product.get('offer_name') or '').strip()
+        offer_type = str(product.get('offer_type') or '').strip()
+        label = offer_name or offer_type
+        if not label or label.lower() in seen:
+            continue
+        seen.add(label.lower())
+        offers.append({
+            'value': label,
+            'label': f"{label} - {product.get('name', 'Produkt')}"
+        })
+    return offers
+
+
 def calculate_multi_buy_price(original_price, multi_buy_type):
     """Calculate the effective price per unit based on multi-buy offer"""
     if multi_buy_type == "1+1":
@@ -404,23 +436,36 @@ def calculate_multi_buy_price(original_price, multi_buy_type):
     return original_price
 
 
-@admin.route('/admin/banners', methods=['GET', 'POST'])
+@admin.route('/banners', methods=['GET', 'POST'])
 @login_required
 @admin_required
 def manage_banners():
     if request.method == 'POST':
         # Create
+        current_banners = Banner.get_all()
+        if any(b.get('sort_order') is None for b in current_banners):
+            Banner.normalize_sort_order()
+            current_banners = Banner.get_all()
+
+        sort_order = _form_optional_int('sort_order')
+        if sort_order is None:
+            sort_order = (max([int(b.get('sort_order') or 0) for b in current_banners], default=0) + 1)
         data = {
             "image_url": request.form.get("image_url"),
             "link_type": request.form.get("link_type"), # 'brand', 'category', 'custom_products', 'all_offers'
             "link_value": request.form.get("link_value"), # 'Vichy', 'Dermokozmetikë', 'product_id_1,product_id_2'
-            "is_active": request.form.get("is_active") == 'on'
+            "is_active": request.form.get("is_active") == 'on',
+            "expires_at": _form_optional_date('expires_at'),
+            "sort_order": sort_order,
         }
         Banner.create(data)
         flash("Baneri u shtua me sukses!", "success")
         return redirect(url_for("admin.manage_banners"))
         
     banners = Banner.get_all()
+    if any(b.get('sort_order') is None for b in banners):
+        Banner.normalize_sort_order()
+        banners = Banner.get_all()
     # We should get existing brands and categories to populate the dropdowns
     categories = list(CATEGORIES.keys())
     raw_brands = mongo.db.products.distinct("brand")
@@ -428,9 +473,11 @@ def manage_banners():
     
     # We need all products for the custom search dropdown
     all_products = Product.get_all()
-    return render_template('admin/banners.html', banners=banners, categories=categories, brands=brands, all_products=all_products)
+    available_offers = _get_banner_offer_options()
+    next_banner_order = (max([int(b.get('sort_order') or 0) for b in banners], default=0) + 1)
+    return render_template('admin/banners.html', banners=banners, categories=categories, brands=brands, all_products=all_products, available_offers=available_offers, next_banner_order=next_banner_order)
 
-@admin.route('/admin/banners/edit/<banner_id>', methods=['POST'])
+@admin.route('/banners/edit/<banner_id>', methods=['POST'])
 @login_required
 @admin_required
 def edit_banner(banner_id):
@@ -438,13 +485,41 @@ def edit_banner(banner_id):
         "image_url": request.form.get("image_url"),
         "link_type": request.form.get("link_type"),
         "link_value": request.form.get("link_value"),
-        "is_active": request.form.get("is_active") == 'on'
+        "is_active": request.form.get("is_active") == 'on',
+        "expires_at": _form_optional_date('expires_at'),
+        "sort_order": _form_optional_int('sort_order'),
     }
     Banner.update(banner_id, data)
     flash("Baneri u perditesua!", "success")
     return redirect(url_for("admin.manage_banners"))
 
-@admin.route('/admin/banners/delete/<banner_id>', methods=['POST'])
+
+@admin.route('/banners/reorder/<banner_id>', methods=['POST'])
+@login_required
+@admin_required
+def reorder_banner(banner_id):
+    direction = request.form.get('direction', '')
+    banners = Banner.get_all()
+    current_index = next((index for index, banner in enumerate(banners) if str(banner.get('_id')) == str(banner_id)), None)
+    if current_index is None:
+        flash('Baneri nuk u gjet.', 'danger')
+        return redirect(url_for('admin.manage_banners'))
+
+    target_index = current_index - 1 if direction == 'up' else current_index + 1 if direction == 'down' else current_index
+    if target_index < 0 or target_index >= len(banners):
+        return redirect(url_for('admin.manage_banners'))
+
+    current_banner = banners[current_index]
+    target_banner = banners[target_index]
+    current_order = int(current_banner.get('sort_order') or current_index + 1)
+    target_order = int(target_banner.get('sort_order') or target_index + 1)
+
+    Banner.update(str(current_banner['_id']), {'sort_order': target_order})
+    Banner.update(str(target_banner['_id']), {'sort_order': current_order})
+    flash('Renditja e banerit u përditësua.', 'success')
+    return redirect(url_for('admin.manage_banners'))
+
+@admin.route('/banners/delete/<banner_id>', methods=['POST'])
 @login_required
 @admin_required
 def delete_banner(banner_id):
