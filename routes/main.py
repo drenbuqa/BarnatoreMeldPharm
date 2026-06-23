@@ -42,16 +42,80 @@ def _normalize_chat_query(value):
     return str(value or '').strip()
 
 
+# Maps symptom/need phrases → product ingredient/type keywords for database search
+_SYMPTOM_TO_SEARCH = {
+    'dhimbje koke': 'paracetamol ibuprofen analgjezik',
+    'headache': 'paracetamol ibuprofen analgjezik',
+    'migrenë': 'migraine paracetamol ibuprofen',
+    'grip': 'flu ftohje vitamin c zink echinacea',
+    'ftohje': 'grip flu vitamin c zink echinacea decongestant',
+    'kollë': 'cough syrup shurup kollë bronkit',
+    'alergjia': 'antihistamin loratadin cetirizin allergy rhinit',
+    'stomak': 'antacid gastrit omeprazol pantoprazol digestiv',
+    'refluks': 'antacid omeprazol refluks gastrit',
+    'diare': 'probiotik loperamide elektrolitë zorrë',
+    'konstipacion': 'laksativ fibra probiotik macrogol',
+    'gjumë': 'melatonin sleep relaksim valerian',
+    'stres': 'magnez ashwagandha stres relaksim b-complex',
+    'ankth': 'magnez valerian ashwagandha relaksim',
+    'lodhje': 'b12 hekur magnez energy fatigue multivitamin',
+    'presion': 'magnez omega 3 hipertension',
+    'kolesterol': 'omega 3 statin kolesterol berberine',
+    'diabet': 'glukozë sheqer chromium berberine metformin',
+    'imunitet': 'vitamin c zink echinacea propolis probiotik',
+    'dhimbje muskulore': 'magnez krem muskulor ibuprofen',
+    'plagë': 'antiseptik betadine kloheksidin bandazh',
+    'sy': 'pika sysh lacrime artificiale konjunktivit',
+    'vesh': 'pika veshësh otit cerumen',
+    'dhëmbë': 'pasta dhëmbësh gingival mouthwash',
+    'humbje peshe': 'diet slimming metabolism carnitine',
+    'shtatzëni': 'acid folik multivitamin prenatal hekur',
+}
+
 _CHATBOT_QUERY_EXPANSIONS = {
-    'akne': ['akne', 'pimples', 'blemish', 'blemishes', 'breakout', 'breakouts'],
-    'hidrat': ['hidrat', 'hydrat', 'moistur', 'dry skin', 'thatë', 'thate'],
-    'vitamin': ['vitamin', 'multivitamin', 'supplement', 'suplemente', 'omega', 'zink', 'minerale'],
-    'suplement': ['suplement', 'supplement', 'vitamin', 'omega', 'zink', 'minerale'],
-    'diell': ['diell', 'sun', 'spf', 'uv', 'sunscreen', 'solar'],
-    'flok': ['flok', 'hair', 'shampoo', 'shampo', 'conditioner'],
-    'baby': ['baby', 'fëmij', 'femij', 'pelen', 'formula', 'infant'],
-    'lëkur': ['lëkur', 'lekur', 'skin', 'derma', 'face', 'fytyr'],
-    'anti aging': ['anti aging', 'anti-aging', 'rrudhat', 'wrinkle', 'wrinkles', 'aging'],
+    # Skin
+    'akne': ['akne', 'acne', 'pimple', 'blemish', 'breakout', 'papule', 'comedone'],
+    'hidrat': ['hidratues', 'hydrat', 'moistur', 'dry skin', 'lëkurë e thatë'],
+    'diell': ['diell', 'sun', 'spf', 'uv', 'sunscreen', 'solar', 'bronzim'],
+    'lëkur': ['lëkur', 'lekur', 'skin', 'derma', 'face', 'fytyrë', 'serum', 'tonik'],
+    'anti aging': ['anti aging', 'anti-aging', 'rrudhat', 'wrinkle', 'aging', 'rinovim'],
+    'njolla': ['njolla', 'hiperpigmentim', 'dark spot', 'pigment', 'tone', 'brightening'],
+    'sensitive': ['sensitive', 'lëkurë e ndjeshme', 'ndjeshme', 'e kuqe', 'skuqje'],
+    # Hair & body
+    'flok': ['flok', 'hair', 'shampoo', 'shampo', 'conditioner', 'maskë flokësh', 'rënie flokësh'],
+    'trup': ['trup', 'body', 'locion', 'krem trupi', 'dush', 'shower'],
+    # Supplements & vitamins
+    'vitamin': ['vitamin', 'multivitamin', 'supplement', 'suplemente', 'omega', 'zink', 'minerale', 'magnez'],
+    'suplement': ['suplement', 'supplement', 'vitamin', 'omega', 'zink', 'minerale', 'magnez', 'probiotik'],
+    'probiotik': ['probiotik', 'probiotic', 'flora', 'zorrë', 'tretje', 'mikrobiotë'],
+    'imunitet': ['imunitet', 'imunitetin', 'immunity', 'echinacea', 'vitamin c', 'zink', 'propolis'],
+    'energji': ['energji', 'energy', 'lodhje', 'fatigue', 'b12', 'hekur', 'iron', 'magnez'],
+    'kolesterol': ['kolesterol', 'cholesterol', 'omega 3', 'trigliceride', 'zemër'],
+    'diabet': ['diabet', 'diabetes', 'sheqer', 'glukozë', 'insulin', 'glicemi'],
+    # Baby & family
+    'baby': ['baby', 'fëmij', 'femij', 'pelen', 'formula', 'infant', 'foshnjë', 'lodër'],
+    'shtatzëni': ['shtatzëni', 'shtatzen', 'shtatzani', 'graviditet', 'folat', 'acid folik', 'mami'],
+    # Pain & cold
+    'dhimbje': ['dhimbje', 'pain', 'ibuprofen', 'paracetamol', 'analgjezik', 'koke', 'muskulor'],
+    'dhimbje koke': ['headache', 'migrenë', 'migraine', 'tension', 'paracetamol', 'ibuprofen'],
+    'grip': ['grip', 'flu', 'ftohje', 'cold', 'hundë', 'kollë', 'temperature', 'ethe', 'febër'],
+    'kollë': ['kollë', 'cough', 'bronkit', 'frymëmarrje', 'syrup', 'shurup'],
+    'alergjia': ['alergjia', 'allergy', 'antihistamin', 'rhinit', 'sytë', 'hundë', 'sezonale'],
+    # Digestive
+    'stomak': ['stomak', 'stomach', 'gastrit', 'refluks', 'antacid', 'tretje', 'dispepsi'],
+    'konstipacion': ['konstipacion', 'constipation', 'laksativ', 'fibra', 'zorrë'],
+    'diare': ['diare', 'diarrhea', 'probiotik', 'elektrolitë', 'zorrë'],
+    # Sleep & stress
+    'gjumë': ['gjumë', 'sleep', 'insomni', 'melatonin', 'relaksim', 'ankth'],
+    'stres': ['stres', 'stress', 'ankth', 'anxiety', 'magnez', 'ashwagandha', 'relaksim'],
+    # Other
+    'sy': ['sy', 'eye', 'pika sysh', 'konjunktivit', 'lodhje sysh'],
+    'vesh': ['vesh', 'ear', 'pika veshësh', 'otit'],
+    'dhëmbë': ['dhëmbë', 'dheмbe', 'gojë', 'oral', 'pasta dhëmbësh', 'gingival'],
+    'plagë': ['plagë', 'wound', 'plaga', 'antiseptik', 'bandazh', 'dezinfektim'],
+    'presion': ['presion', 'blood pressure', 'hipertension', 'magnez', 'omega'],
+    'humbje peshe': ['humbje peshe', 'diete', 'diet', 'slimming', 'metabolism', 'kalorite'],
+    'muskulor': ['muskulor', 'muscle', 'kreme muskulore', 'kreatin', 'protein', 'sport', 'artitriti'],
 }
 
 
@@ -66,6 +130,13 @@ def _expand_chatbot_query(query_text):
         if term:
             expanded_terms.append(term)
 
+    # Symptom → product ingredient mapping (checked first for longest match)
+    for symptom, product_terms in sorted(_SYMPTOM_TO_SEARCH.items(), key=lambda x: -len(x[0])):
+        if symptom in normalized:
+            expanded_terms.extend(product_terms.split())
+            break  # one symptom match is enough to anchor the search
+
+    # General synonym expansion
     for key, values in _CHATBOT_QUERY_EXPANSIONS.items():
         if key in normalized:
             expanded_terms.extend(values)
@@ -180,12 +251,11 @@ def _rank_chatbot_products(products, query_text, prefer_offers=False, limit=5):
                 score += 1
 
         if product.get('is_best_seller'):
-            score += 1
+            score += 2
         if product.get('is_pharmacist_choice'):
-            score += 1
-
-        if not prefer_offers and product.get('discount_price') not in (None, 0, 0.0):
-            score -= 4
+            score += 2
+        if prefer_offers and product.get('discount_price') not in (None, 0, 0.0):
+            score += 3
 
         ranked.append((score, product))
 
@@ -269,7 +339,7 @@ def _call_openai_chat(user_query, products_context, conversation_history=None, s
     for product in products_context[:8]:
         context_lines.append(product['summary'])
 
-    pharmacy_location = os.getenv('PHARMACY_LOCATION', 'Tiranë, Shqipëri')
+    pharmacy_location = os.getenv('PHARMACY_LOCATION', 'Rruga Eqrem Çabej 72, Prishtinë, Kosovë')
     
     system_prompt = (
         'You are a professional and knowledgeable pharmacy shopping assistant for Barnatore Meld Pharm. '
@@ -486,7 +556,7 @@ def _build_chatbot_reply(user_query, conversation_id=None):
         }
     
     if _is_location_query(normalized):
-        pharmacy_location = os.getenv('PHARMACY_LOCATION', 'Tiranë, Shqipëri')
+        pharmacy_location = os.getenv('PHARMACY_LOCATION', 'Rruga Eqrem Çabej 72, Prishtinë, Kosovë')
         return {
             'reply': f'Kami ndodhet në {pharmacy_location}. A dëshironi më shumë informacion apo kërkoni ndonjë produkt të caktuar?',
             'products': [],
@@ -538,17 +608,51 @@ def _build_chatbot_reply(user_query, conversation_id=None):
             }
 
     category_hints = [
+        # Skin / Dermokozmetikë
         ('akne', 'Dermokozmetikë', 'Kundër Akneve'),
+        ('pimple', 'Dermokozmetikë', 'Kundër Akneve'),
         ('anti aging', 'Dermokozmetikë', 'Anti-aging & Rrudhat'),
         ('anti-aging', 'Dermokozmetikë', 'Anti-aging & Rrudhat'),
+        ('rrudhat', 'Dermokozmetikë', 'Anti-aging & Rrudhat'),
         ('hidrat', 'Dermokozmetikë', 'Hidratues'),
-        ('vitamin', 'Suplementë & Vitamina', None),
-        ('suplement', 'Suplementë & Vitamina', None),
-        ('baby', 'Baby & Mami', None),
-        ('fëmij', 'Baby & Mami', None),
-        ('flok', 'Flokët', None),
+        ('moistur', 'Dermokozmetikë', 'Hidratues'),
         ('diell', 'Dermokozmetikë', 'Mbrojtje nga Dielli'),
         ('spf', 'Dermokozmetikë', 'Mbrojtje nga Dielli'),
+        ('sunscreen', 'Dermokozmetikë', 'Mbrojtje nga Dielli'),
+        ('serum', 'Dermokozmetikë', None),
+        ('njolla', 'Dermokozmetikë', None),
+        ('pigment', 'Dermokozmetikë', None),
+        ('sensitive', 'Dermokozmetikë', None),
+        ('lëkur', 'Dermokozmetikë', None),
+        ('fytyrë', 'Dermokozmetikë', None),
+        # Hair
+        ('flok', 'Flokët', None),
+        ('shampoo', 'Flokët', None),
+        ('shampo', 'Flokët', None),
+        ('hair', 'Flokët', None),
+        # Supplements & vitamins
+        ('vitamin', 'Suplementë & Vitamina', None),
+        ('suplement', 'Suplementë & Vitamina', None),
+        ('omega', 'Suplementë & Vitamina', None),
+        ('magnez', 'Suplementë & Vitamina', None),
+        ('probiotik', 'Suplementë & Vitamina', None),
+        ('imunitet', 'Suplementë & Vitamina', None),
+        ('kolesterol', 'Suplementë & Vitamina', None),
+        ('hekur', 'Suplementë & Vitamina', None),
+        ('energji', 'Suplementë & Vitamina', None),
+        # Baby & family
+        ('baby', 'Baby & Mami', None),
+        ('fëmij', 'Baby & Mami', None),
+        ('femij', 'Baby & Mami', None),
+        ('foshnjë', 'Baby & Mami', None),
+        ('shtatzëni', 'Baby & Mami', None),
+        ('shtatzani', 'Baby & Mami', None),
+        ('mami', 'Baby & Mami', None),
+        # Oral
+        ('dhëmbë', 'Higjiena Gojore', None),
+        ('dheмbe', 'Higjiena Gojore', None),
+        ('pasta dhëmbësh', 'Higjiena Gojore', None),
+        ('gojë', 'Higjiena Gojore', None),
     ]
 
     selected_category = None
@@ -805,21 +909,10 @@ def product_detail(product_id):
     related_products = Product.get_related(product.get('category'), product.get('_id'), limit=12)
     # The limit is set to 12 directly inside get_related
 
-    # Fetch variants only when an explicit group code exists.
-    variants = []
-    variant_group = product.get('variant_group')
-    
-    all_variants = Product.get_variants(
-        variant_group,
-    )
-    if all_variants and len(all_variants) > 1:
-        variants = all_variants
-
-    return render_template('product_detail.html', 
-                            product=product, 
-                            related_products=related_products, 
-                            favorite_usernames=favorite_usernames,
-                            variants=variants)
+    return render_template('product_detail.html',
+                            product=product,
+                            related_products=related_products,
+                            favorite_usernames=favorite_usernames)
 
 @main.route('/about')
 def about():
@@ -871,8 +964,49 @@ def orders():
         flash('Ju lutem kyçuni për të parë historinë e porosive.', 'info')
         return redirect(url_for('auth.login'))
         
+    from datetime import datetime as _dt
     user_orders = Order.get_by_user(current_user.id)
-    return render_template('orders.html', orders=user_orders)
+    return render_template('orders.html', orders=user_orders, now=_dt.utcnow())
+
+
+@main.route('/order/<order_id>/cancel', methods=['POST'])
+@login_required
+def cancel_order(order_id):
+    from bson import ObjectId
+    from datetime import datetime as _dt, timedelta
+    try:
+        order = mongo.db.orders.find_one({'_id': ObjectId(order_id)})
+    except Exception:
+        flash('Porosia nuk u gjet.', 'danger')
+        return redirect(url_for('main.orders'))
+
+    if not order:
+        flash('Porosia nuk u gjet.', 'danger')
+        return redirect(url_for('main.orders'))
+
+    # Only the owner can cancel
+    if str(order.get('user_id', '')) != str(current_user.id):
+        flash('Nuk keni leje për të anuluar këtë porosi.', 'danger')
+        return redirect(url_for('main.orders'))
+
+    # Only cancellable if within 24h and still Pending or Konfirmuar
+    cancellable_statuses = ['Pending', 'Në Pritje', 'Konfirmuar']
+    if order.get('status') not in cancellable_statuses:
+        flash('Kjo porosi nuk mund të anulohet (statusi nuk lejon anulim).', 'warning')
+        return redirect(url_for('main.orders'))
+
+    created = order.get('created_at')
+    if created and (_dt.utcnow() - created) > timedelta(hours=24):
+        flash('Koha e anulimit (24 orë) ka kaluar. Kontaktoni barnatoren direkt.', 'warning')
+        return redirect(url_for('main.orders'))
+
+    mongo.db.orders.update_one(
+        {'_id': ObjectId(order_id)},
+        {'$set': {'status': 'Anuluar', 'cancel_reason': 'Anuluar nga klienti', 'updated_at': _dt.utcnow()}}
+    )
+    flash('Porosia u anulua me sukses.', 'success')
+    return redirect(url_for('main.orders'))
+
 
 @main.route('/product/favorite/<product_id>', methods=['POST'])
 def toggle_favorite(product_id):
@@ -1100,25 +1234,25 @@ def quiz():
 
 @main.route('/quiz/results')
 def quiz_results():
-    skin_type = request.args.get('skin_type', '')
-    concern = request.args.get('concern', '')
-    
-    # Advanced logic: Map concerns to specific subcategories
-    mapping = {
-        'Akne': 'Kundër Akneve',
-        'Anti-aging': 'Anti-aging & Rrudhat',
-        'Hidratim': 'Hidratues',
-        'Shkëlqim': 'Serume & Trajtime'
+    skin_type = request.args.get('skin_type', '').strip()
+    concern   = request.args.get('concern', '').strip()
+
+    # Each concern maps to the exact subcategory name used in the database
+    subcategory_map = {
+        'Akne':         'Kundër Akneve',
+        'Anti-aging':   'Anti-aging & Rrudhat',
+        'Hidratim':     'Hidratues',
+        'Shkëlqim':     'Pigmentim & Njolla',
+        'Diell':        'Kremra Dielli (SPF)',
+        'Sensitivitet': 'Lëkurë Sensitive',
     }
-    
-    subcategory = mapping.get(concern)
-    
+
+    subcategory = subcategory_map.get(concern)
+    kwargs = {'category': 'Dermokozmetikë'}
     if subcategory:
-        return redirect(url_for('main.products', category='Dermokozmetikë', subcategory=subcategory))
-    
-    # Fallback to general search if no direct subcategory match
-    query = f"{skin_type} {concern}".strip()
-    return redirect(url_for('main.products', category='Dermokozmetikë', q=query))
+        kwargs['subcategory'] = subcategory
+
+    return redirect(url_for('main.products', **kwargs))
 
 @main.route('/banner/<banner_id>')
 def click_banner(banner_id):
@@ -1126,7 +1260,16 @@ def click_banner(banner_id):
     banner = Banner.get_by_id(banner_id)
     if not banner:
         return redirect(url_for('main.index'))
-    
+
+    # Record click analytics
+    try:
+        mongo.db.banners.update_one(
+            {'_id': ObjectId(banner_id)},
+            {'$inc': {'click_count': 1}}
+        )
+    except Exception:
+        pass
+
     link_type = banner.get('link_type')
     link_value = banner.get('link_value')
     
@@ -1140,3 +1283,41 @@ def click_banner(banner_id):
     else:
         # all_offers
         return redirect(url_for('main.products', on_offer='1'))
+
+
+@main.route('/newsletter/subscribe', methods=['POST'])
+def newsletter_subscribe():
+    from flask import jsonify
+    email = (request.form.get('email') or request.json and request.json.get('email') or '').strip().lower()
+    if not email or '@' not in email:
+        return jsonify({'ok': False, 'message': 'Email i pavlefshëm.'}), 400
+
+    if current_user.is_authenticated:
+        User.set_newsletter(current_user.id, True)
+    else:
+        # Store guest subscriber (upsert to avoid duplicates)
+        mongo.db.newsletter_subscribers.update_one(
+            {'email': email},
+            {'$set': {'email': email, 'subscribed_at': __import__('datetime').datetime.utcnow()}},
+            upsert=True
+        )
+    return jsonify({'ok': True, 'message': 'U abonuat me sukses!'}), 200
+
+
+@main.route('/profile/newsletter', methods=['POST'])
+@login_required
+def profile_newsletter():
+    subscribed = request.form.get('subscribed') == '1'
+    User.set_newsletter(current_user.id, subscribed)
+    flash('Preferencat e abonimit u ruajtën.', 'success')
+    return redirect(url_for('main.profile'))
+
+
+@main.route('/privacy')
+def privacy():
+    return render_template('privacy.html')
+
+
+@main.route('/terms')
+def terms():
+    return render_template('terms.html')

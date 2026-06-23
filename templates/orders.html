@@ -52,10 +52,24 @@
                                 <span class="status-badge status-pending">Në Pritje</span>
                             {% endif %}
                         </td>
-                        <td>
+                        <td style="display:flex;gap:0.4rem;flex-wrap:wrap;align-items:center;">
                             <button class="btn btn-sm btn-info" onclick="toggleDetails('{{ order._id }}')">
                                 Detajet
                             </button>
+                            {% set cancellable = order.status in ['Pending', 'Në Pritje', 'Konfirmuar'] %}
+                            {% if cancellable %}
+                                {% set hours_old = ((now - order.created_at).total_seconds() / 3600) if order.created_at else 999 %}
+                                {% if hours_old < 24 %}
+                                <form method="POST" action="{{ url_for('main.cancel_order', order_id=order._id) }}"
+                                      onsubmit="return confirm('A jeni i sigurt që dëshironi të anuloni këtë porosi?');"
+                                      style="margin:0;">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="btn btn-sm btn-danger" style="font-size:0.75rem;">
+                                        <i class="fas fa-times"></i> Anulo
+                                    </button>
+                                </form>
+                                {% endif %}
+                            {% endif %}
                         </td>
                     </tr>
                     <tr id="details-{{ order._id }}" style="display: none; background-color: #f8fafc;">

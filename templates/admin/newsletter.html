@@ -1,0 +1,428 @@
+{% extends "admin/base.html" %}
+{% block title %}Buletini - Meld Pharm Admin{% endblock %}
+{% block page_title %}Buletini{% endblock %}
+
+{% block admin_content %}
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% for cat, msg in messages %}
+<div class="nl-alert nl-alert-{{ cat }}">
+  {% if cat == 'success' %}<i class="fas fa-check-circle"></i>{% elif cat == 'danger' %}<i class="fas fa-exclamation-circle"></i>{% else %}<i class="fas fa-info-circle"></i>{% endif %}
+  {{ msg }}
+</div>
+{% endfor %}
+{% endwith %}
+
+<form method="POST" id="nlForm">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+<div class="nl-builder-grid">
+
+  <!-- LEFT COLUMN: Settings -->
+  <div class="nl-left">
+
+    <!-- Subscriber stat -->
+    <div class="nl-stat-pill">
+      <i class="fas fa-users"></i>
+      <strong>{{ subscriber_count }}</strong> abonentë do të marrin këtë email
+      {% if subscriber_count == 0 %}<span style="color:#f59e0b;margin-left:0.5rem;"><i class="fas fa-exclamation-triangle"></i> Nuk ka abonentë</span>{% endif %}
+    </div>
+
+    <!-- Step 1: Subject -->
+    <div class="nl-card">
+      <div class="nl-card-header"><span class="nl-step">1</span> Titulli i Email-it</div>
+      <div class="nl-card-body">
+        <input type="text" name="subject" id="nlSubject" required
+          placeholder="Psh: Ofertat e Javës — Zbritje deri 40%!"
+          class="nl-input" oninput="schedulePreview()"
+          value="{{ default_subject }}">
+        <small style="color:#94a3b8;font-size:0.78rem;">Kjo shfaqet si subject në inbox-in e klientit.</small>
+      </div>
+    </div>
+
+    <!-- Step 2: Layout -->
+    <div class="nl-card">
+      <div class="nl-card-header"><span class="nl-step">2</span> Zgjedh Paraqitjen (Layout)</div>
+      <div class="nl-card-body">
+        <div class="layout-picker">
+          <label class="layout-option selected" data-val="grid">
+            <input type="radio" name="template" value="grid" checked style="display:none">
+            <div class="layout-thumb">
+              <div class="lt-row"><div class="lt-card"></div><div class="lt-card"></div></div>
+              <div class="lt-row"><div class="lt-card"></div><div class="lt-card"></div></div>
+            </div>
+            <span>Rrjet 2×2</span>
+          </label>
+          <label class="layout-option" data-val="list">
+            <input type="radio" name="template" value="list" style="display:none">
+            <div class="layout-thumb">
+              <div class="lt-list-item"></div>
+              <div class="lt-list-item"></div>
+              <div class="lt-list-item"></div>
+            </div>
+            <span>Lista</span>
+          </label>
+          <label class="layout-option" data-val="hero_grid">
+            <input type="radio" name="template" value="hero_grid" style="display:none">
+            <div class="layout-thumb">
+              <div class="lt-hero"></div>
+              <div class="lt-row" style="margin-top:4px;"><div class="lt-card sm"></div><div class="lt-card sm"></div></div>
+            </div>
+            <span>Hero + Rrjet</span>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 3: Headline & Intro -->
+    <div class="nl-card">
+      <div class="nl-card-header"><span class="nl-step">3</span> Titulli & Mesazhi Hyrës <span style="font-weight:400;font-size:0.78rem;color:#94a3b8;">(opsionale)</span></div>
+      <div class="nl-card-body" style="display:flex;flex-direction:column;gap:0.75rem;">
+        <input type="text" name="headline" id="nlHeadline"
+          placeholder="Psh: ☀️ Ofertat e Javës kanë ardhur!"
+          class="nl-input" oninput="schedulePreview()"
+          value="{{ default_headline }}">
+        <textarea name="intro_text" id="nlIntro" rows="3" class="nl-input"
+          placeholder="Psh: Kjo javë kemi zbritje të jashtëzakonshme mbi produktet tona më të mira..."
+          style="resize:vertical;" oninput="schedulePreview()">{{ default_intro }}</textarea>
+      </div>
+    </div>
+
+    <!-- Step 4: Product picker -->
+    <div class="nl-card">
+      <div class="nl-card-header"><span class="nl-step">4</span> Zgjidh Produktet <span style="font-weight:400;font-size:0.78rem;color:#94a3b8;">(max 8)</span></div>
+      <div class="nl-card-body" style="padding:0;">
+        <div style="padding:0.85rem 1rem;border-bottom:1px solid #f1f5f9;">
+          <div class="nl-prod-search-wrap">
+            <i class="fas fa-search"></i>
+            <input type="text" id="prodSearch" placeholder="Kërko produkt..." oninput="filterProducts(this.value)">
+          </div>
+          <div style="display:flex;gap:0.5rem;margin-top:0.6rem;flex-wrap:wrap;">
+            <button type="button" class="prod-filter-btn active" onclick="filterByOffer(this,'all')">Të gjitha</button>
+            <button type="button" class="prod-filter-btn" onclick="filterByOffer(this,'offer')"><i class="fas fa-tag"></i> Me Ofertë</button>
+          </div>
+        </div>
+        <div id="productPickerList" style="max-height:340px;overflow-y:auto;padding:0.5rem;">
+          {% for p in all_products %}
+          <label class="prod-picker-item {% if p.discount_price %}has-offer{% endif %}"
+                 data-name="{{ (p.name + ' ' + (p.brand or ''))|lower }}"
+                 data-offer="{{ '1' if p.discount_price else '0' }}">
+            <input type="checkbox" name="product_ids" value="{{ p._id }}" onchange="onProductSelect()">
+            <img src="{{ p.image_url }}" alt="{{ p.name }}" onerror="this.src='/static/img/placeholder.png'">
+            <div class="prod-picker-info">
+              <span class="prod-picker-name">{{ p.brand + ' — ' if p.brand else '' }}{{ p.name }}</span>
+              <span class="prod-picker-price">
+                {% if p.discount_price %}
+                <s style="color:#94a3b8;font-size:0.75rem;">€{{ "%.2f"|format(p.price) }}</s>
+                <strong style="color:#0f766e;">€{{ "%.2f"|format(p.discount_price) }}</strong>
+                <span class="offer-chip">-{{ ((p.price - p.discount_price) / p.price * 100)|round|int }}%</span>
+                {% else %}
+                <strong>€{{ "%.2f"|format(p.price) }}</strong>
+                {% endif %}
+              </span>
+            </div>
+            <i class="fas fa-check prod-check-icon"></i>
+          </label>
+          {% endfor %}
+        </div>
+        <div style="padding:0.75rem 1rem;border-top:1px solid #f1f5f9;background:#f8fafc;">
+          <span id="selectedCount" style="font-size:0.82rem;font-weight:700;color:#0f766e;">0 produkte zgjedhura</span>
+          <button type="button" onclick="clearProducts()" style="float:right;background:none;border:none;font-size:0.78rem;color:#94a3b8;cursor:pointer;">Fshi zgjedhjen</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Send button -->
+    <button type="button" onclick="sendNewsletter()" class="nl-send-btn">
+      <i class="fas fa-paper-plane"></i>
+      Dërgo Buletinin tek {{ subscriber_count }} abonentë
+    </button>
+
+  </div>
+
+  <!-- RIGHT COLUMN: Live preview -->
+  <div class="nl-right">
+    <div class="nl-card" style="position:sticky;top:1rem;">
+      <div class="nl-card-header" style="display:flex;align-items:center;justify-content:space-between;">
+        <span><i class="fas fa-eye" style="color:#0f766e;margin-right:0.4rem;"></i> Pamja Paraprake</span>
+        <span style="font-size:0.75rem;color:#94a3b8;font-weight:400;">Live preview</span>
+      </div>
+      <div style="padding:0;">
+        <!-- Fake email client chrome -->
+        <div style="background:#f1f5f9;padding:0.75rem 1rem;border-bottom:1px solid #e2e8f0;font-size:0.78rem;color:#64748b;">
+          <div><strong>Nga:</strong> Barnatore Meld Pharm</div>
+          <div><strong>Tek:</strong> abonenti@email.com</div>
+          <div><strong>Subject:</strong> <span id="previewSubjectLine" style="color:#1e293b;font-weight:600;">—</span></div>
+        </div>
+        <div id="emailPreviewFrame" style="height:560px;overflow-y:auto;background:#f8fafc;"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</form>
+
+<!-- Confirm send modal -->
+<div id="sendModal" class="nl-modal-overlay" style="display:none;">
+  <div class="nl-modal-box">
+    <h3><i class="fas fa-paper-plane" style="color:#0f766e;"></i> Konfirmo Dërgimin</h3>
+    <p id="sendModalText">Dërgon buletinin tek <strong>{{ subscriber_count }}</strong> abonentë?</p>
+    <div class="nl-modal-actions">
+      <button onclick="document.getElementById('sendModal').style.display='none'" class="nl-btn-cancel">Anulo</button>
+      <button onclick="document.getElementById('nlForm').submit()" class="nl-btn-send"><i class="fas fa-paper-plane"></i> Po, Dërgo</button>
+    </div>
+  </div>
+</div>
+
+<style>
+.nl-builder-grid { display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; align-items:start; }
+@media(max-width:900px){ .nl-builder-grid{ grid-template-columns:1fr; } }
+
+.nl-left, .nl-right { display:flex; flex-direction:column; gap:1rem; }
+
+.nl-alert { display:flex;align-items:center;gap:0.6rem;padding:0.9rem 1.1rem;border-radius:12px;margin-bottom:1rem;font-weight:600;font-size:0.9rem; }
+.nl-alert-success { background:#f0fdf4;color:#166534;border:1px solid #bbf7d0; }
+.nl-alert-danger  { background:#fef2f2;color:#991b1b;border:1px solid #fecaca; }
+.nl-alert-warning { background:#fffbeb;color:#92400e;border:1px solid #fde68a; }
+
+.nl-stat-pill { display:flex;align-items:center;gap:0.6rem;background:#f0fdf4;border:1px solid #a7f3d0;border-radius:12px;padding:0.8rem 1.1rem;font-size:0.87rem;color:#1e293b; }
+.nl-stat-pill i { color:#0f766e; }
+
+.nl-card { background:#fff;border-radius:16px;border:1px solid #e2e8f0;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.04); }
+.nl-card-header { padding:1rem 1.25rem;background:#f8fafc;border-bottom:1px solid #e2e8f0;font-weight:700;font-size:0.9rem;color:#1e293b;display:flex;align-items:center;gap:0.6rem; }
+.nl-card-body { padding:1.25rem; }
+.nl-step { display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:#0f766e;color:#fff;font-size:0.72rem;font-weight:800;flex-shrink:0; }
+
+.nl-input { width:100%;padding:0.72rem 1rem;border:1.5px solid #e2e8f0;border-radius:10px;font-size:0.88rem;color:#1e293b;background:#f8fafc;font-family:inherit;outline:none;transition:border-color 0.2s,background 0.2s;box-sizing:border-box; }
+.nl-input:focus { border-color:#0f766e;background:#fff; }
+
+/* Layout picker */
+.layout-picker { display:flex;gap:0.75rem;flex-wrap:wrap; }
+.layout-option { cursor:pointer;border:2px solid #e2e8f0;border-radius:12px;padding:0.75rem;text-align:center;flex:1;min-width:80px;transition:all 0.2s;background:#f8fafc; }
+.layout-option:hover { border-color:#0f766e; }
+.layout-option.selected { border-color:#0f766e;background:#f0fdf4; }
+.layout-option span { display:block;font-size:0.75rem;font-weight:700;color:#475569;margin-top:0.5rem; }
+.layout-thumb { background:#e2e8f0;border-radius:6px;padding:6px;min-height:56px;display:flex;flex-direction:column;gap:3px; }
+.lt-row { display:flex;gap:3px; }
+.lt-card { flex:1;height:20px;background:#94a3b8;border-radius:3px; }
+.lt-card.sm { height:14px; }
+.lt-list-item { height:10px;background:#94a3b8;border-radius:3px;margin-bottom:3px; }
+.lt-hero { height:28px;background:#0f766e;border-radius:4px;opacity:0.6; }
+
+/* Product picker */
+.nl-prod-search-wrap { position:relative; }
+.nl-prod-search-wrap i { position:absolute;left:0.75rem;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:0.85rem; }
+.nl-prod-search-wrap input { width:100%;padding:0.6rem 0.75rem 0.6rem 2.25rem;border:1.5px solid #e2e8f0;border-radius:9px;font-size:0.85rem;background:#f8fafc;outline:none;box-sizing:border-box; }
+.nl-prod-search-wrap input:focus { border-color:#0f766e; }
+
+.prod-filter-btn { padding:0.3rem 0.8rem;border-radius:20px;font-size:0.75rem;font-weight:700;border:1.5px solid #e2e8f0;background:#f1f5f9;color:#64748b;cursor:pointer;transition:all 0.18s; }
+.prod-filter-btn.active { background:#0f766e;color:#fff;border-color:#0f766e; }
+
+.prod-picker-item { display:flex;align-items:center;gap:0.7rem;padding:0.6rem 0.75rem;border-radius:10px;cursor:pointer;transition:background 0.15s;position:relative; }
+.prod-picker-item:hover { background:#f0fdf4; }
+.prod-picker-item input[type=checkbox] { display:none; }
+.prod-picker-item img { width:44px;height:44px;border-radius:8px;object-fit:cover;background:#e2e8f0;flex-shrink:0; }
+.prod-picker-info { flex:1;min-width:0; }
+.prod-picker-name { display:block;font-size:0.82rem;font-weight:600;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+.prod-picker-price { display:flex;align-items:center;gap:0.35rem;margin-top:2px; }
+.offer-chip { background:#fef3c7;color:#92400e;font-size:0.68rem;font-weight:700;padding:1px 5px;border-radius:5px; }
+.prod-check-icon { color:#e2e8f0;font-size:0.9rem;flex-shrink:0;transition:color 0.15s; }
+.prod-picker-item:has(input:checked) { background:#f0fdf4;border:1px solid #a7f3d0; }
+.prod-picker-item:has(input:checked) .prod-check-icon { color:#0f766e; }
+
+/* Send button */
+.nl-send-btn { width:100%;padding:1rem;background:linear-gradient(135deg,#0f766e,#14b8a6);color:#fff;border:none;border-radius:14px;font-size:0.95rem;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:0.6rem;transition:all 0.2s;box-shadow:0 4px 14px rgba(15,118,110,0.35); }
+.nl-send-btn:hover { opacity:0.92;transform:translateY(-1px); }
+
+/* Modal */
+.nl-modal-overlay { position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:9000;display:flex;align-items:center;justify-content:center;padding:1rem; }
+.nl-modal-box { background:#fff;border-radius:18px;padding:2rem;max-width:420px;width:100%;box-shadow:0 24px 64px rgba(0,0,0,0.18); }
+.nl-modal-box h3 { font-size:1.1rem;font-weight:800;color:#1e293b;margin:0 0 0.75rem;display:flex;align-items:center;gap:0.5rem; }
+.nl-modal-box p { font-size:0.9rem;color:#64748b;margin:0 0 1.5rem; }
+.nl-modal-actions { display:flex;gap:0.75rem;justify-content:flex-end; }
+.nl-btn-cancel { padding:0.6rem 1.25rem;border-radius:9px;background:#f1f5f9;color:#475569;border:none;font-weight:700;cursor:pointer; }
+.nl-btn-send { padding:0.6rem 1.5rem;border-radius:9px;background:#0f766e;color:#fff;border:none;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:0.4rem; }
+</style>
+
+<script>
+// Layout picker
+document.querySelectorAll('.layout-option').forEach(opt => {
+  opt.addEventListener('click', function() {
+    document.querySelectorAll('.layout-option').forEach(o => o.classList.remove('selected'));
+    this.classList.add('selected');
+    this.querySelector('input[type=radio]').checked = true;
+    schedulePreview();
+  });
+});
+
+// Product filter
+function filterProducts(term) {
+  term = term.toLowerCase().trim();
+  document.querySelectorAll('.prod-picker-item').forEach(el => {
+    const name = el.dataset.name || '';
+    el.style.display = (!term || name.includes(term)) ? '' : 'none';
+  });
+}
+
+let _offerMode = 'all';
+function filterByOffer(btn, mode) {
+  _offerMode = mode;
+  document.querySelectorAll('.prod-filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.prod-picker-item').forEach(el => {
+    if (mode === 'offer') {
+      el.style.display = el.dataset.offer === '1' ? '' : 'none';
+    } else {
+      el.style.display = '';
+    }
+  });
+}
+
+function onProductSelect() {
+  const checked = document.querySelectorAll('input[name=product_ids]:checked');
+  document.getElementById('selectedCount').textContent = checked.length + ' produkte zgjedhura';
+  if (checked.length > 8) {
+    this.checked = false;
+    alert('Maksimumi 8 produkte mund të zgjedhësh.');
+    return;
+  }
+  schedulePreview();
+}
+
+function clearProducts() {
+  document.querySelectorAll('input[name=product_ids]').forEach(c => c.checked = false);
+  document.getElementById('selectedCount').textContent = '0 produkte zgjedhura';
+  schedulePreview();
+}
+
+// Live preview
+let _previewTimer = null;
+function schedulePreview() {
+  clearTimeout(_previewTimer);
+  _previewTimer = setTimeout(buildPreview, 300);
+}
+
+const SITE_BASE = "{{ site_base_url }}";
+
+function buildPreview() {
+  const subject  = document.getElementById('nlSubject').value  || '';
+  const headline = document.getElementById('nlHeadline').value || '';
+  const intro    = document.getElementById('nlIntro').value    || '';
+  const template = document.querySelector('input[name=template]:checked')?.value || 'grid';
+
+  document.getElementById('previewSubjectLine').textContent = subject || '—';
+
+  // Collect selected products data from DOM
+  const selectedItems = [];
+  document.querySelectorAll('input[name=product_ids]:checked').forEach(cb => {
+    const label = cb.closest('.prod-picker-item');
+    if (!label) return;
+    const img   = label.querySelector('img')?.src || '';
+    const name  = label.querySelector('.prod-picker-name')?.textContent?.trim() || '';
+    const priceEl = label.querySelector('.prod-picker-price');
+    const priceHTML = priceEl ? priceEl.innerHTML : '';
+    selectedItems.push({ img, name, priceHTML, id: cb.value });
+  });
+
+  const frame = document.getElementById('emailPreviewFrame');
+  frame.innerHTML = buildPreviewHTML(template, headline, intro, selectedItems);
+}
+
+function buildPreviewHTML(template, headline, intro, products) {
+  const siteDomain = SITE_BASE.replace(/^https?:\/\//, '');
+  const header = `<div style="background:linear-gradient(135deg,#0f766e,#14b8a6);padding:24px 32px;text-align:center;">
+    <div style="font-size:18px;font-weight:800;color:#fff;">Barnatore Meld Pharm</div>
+  </div>`;
+
+  let hero = '';
+  if (headline || intro) {
+    hero = `<div style="padding:24px 28px 16px;text-align:center;border-bottom:1px solid #f1f5f9;">
+      ${headline ? `<h1 style="margin:0 0 8px;font-size:20px;font-weight:800;color:#1e293b;">${headline}</h1>` : ''}
+      ${intro    ? `<p style="margin:0;font-size:13px;color:#475569;line-height:1.6;">${intro}</p>` : ''}
+    </div>`;
+  }
+
+  let prodsHtml = '';
+  if (products.length) {
+    if (template === 'list') {
+      prodsHtml = '<div style="padding:16px 28px;">';
+      prodsHtml += '<div style="font-size:14px;font-weight:800;color:#1e293b;margin-bottom:12px;">🏷️ Ofertat e Limituara</div>';
+      products.forEach(p => {
+        prodsHtml += `<div style="display:flex;gap:12px;padding:10px 0;border-bottom:1px solid #f1f5f9;align-items:center;">
+          <img src="${p.img}" width="56" height="56" style="border-radius:8px;object-fit:cover;background:#e2e8f0;flex-shrink:0;">
+          <div>
+            <div style="font-size:12px;font-weight:700;color:#1e293b;">${p.name}</div>
+            <div style="font-size:11px;margin-top:4px;">${p.priceHTML}</div>
+            <a href="${SITE_BASE}/product/${p.id}" style="font-size:11px;color:#0f766e;font-weight:700;text-decoration:none;">Shiko →</a>
+          </div>
+        </div>`;
+      });
+      prodsHtml += '</div>';
+    } else if (template === 'hero_grid') {
+      const h = products[0];
+      prodsHtml = `<div style="padding:16px 20px;">
+        <a href="${SITE_BASE}/product/${h.id}" style="display:block;text-decoration:none;background:#f0fdf4;border-radius:12px;overflow:hidden;border:2px solid #a7f3d0;margin-bottom:12px;">
+          <img src="${h.img}" width="100%" style="display:block;height:160px;object-fit:cover;">
+          <div style="padding:12px 16px;">
+            <div style="font-size:14px;font-weight:800;color:#1e293b;margin-bottom:6px;">${h.name}</div>
+            <div style="font-size:12px;margin-bottom:8px;">${h.priceHTML}</div>
+            <div style="background:#0f766e;color:#fff;display:inline-block;padding:6px 16px;border-radius:8px;font-size:11px;font-weight:700;">Bli Tani →</div>
+          </div>
+        </a>`;
+      const rest = products.slice(1);
+      if (rest.length) {
+        prodsHtml += '<div style="display:flex;gap:8px;flex-wrap:wrap;">';
+        rest.forEach(p => {
+          prodsHtml += `<a href="${SITE_BASE}/product/${p.id}" style="text-decoration:none;flex:1;min-width:120px;background:#f8fafc;border-radius:10px;overflow:hidden;border:1px solid #e2e8f0;">
+            <img src="${p.img}" width="100%" style="display:block;height:90px;object-fit:cover;">
+            <div style="padding:8px 10px;">
+              <div style="font-size:11px;font-weight:700;color:#1e293b;margin-bottom:4px;">${p.name}</div>
+              <div style="font-size:10px;">${p.priceHTML}</div>
+            </div>
+          </a>`;
+        });
+        prodsHtml += '</div>';
+      }
+      prodsHtml += '</div>';
+    } else {
+      // grid
+      prodsHtml = '<div style="padding:16px 20px;"><div style="font-size:14px;font-weight:800;color:#1e293b;margin-bottom:12px;">🏷️ Ofertat e Limituara</div><div style="display:flex;gap:10px;flex-wrap:wrap;">';
+      products.forEach(p => {
+        prodsHtml += `<a href="${SITE_BASE}/product/${p.id}" style="text-decoration:none;flex:1;min-width:140px;max-width:48%;background:#f8fafc;border-radius:10px;overflow:hidden;border:1px solid #e2e8f0;display:block;">
+          <img src="${p.img}" width="100%" style="display:block;height:120px;object-fit:cover;background:#e2e8f0;">
+          <div style="padding:10px 12px;">
+            <div style="font-size:11px;font-weight:700;color:#1e293b;margin-bottom:5px;line-height:1.3;">${p.name}</div>
+            <div style="font-size:11px;margin-bottom:7px;">${p.priceHTML}</div>
+            <div style="background:#0f766e;color:#fff;text-align:center;padding:5px;border-radius:6px;font-size:10px;font-weight:700;">Shiko →</div>
+          </div>
+        </a>`;
+      });
+      prodsHtml += '</div></div>';
+    }
+  }
+
+  const cta = `<div style="padding:20px 28px;text-align:center;border-top:1px solid #f1f5f9;">
+    <a href="${SITE_BASE}/products" style="display:inline-block;background:linear-gradient(135deg,#0f766e,#14b8a6);color:#fff;text-decoration:none;font-size:13px;font-weight:700;padding:11px 28px;border-radius:10px;">🛒 Shiko Të Gjitha Produktet</a>
+  </div>`;
+
+  const footer = `<div style="background:#f8fafc;padding:16px 28px;text-align:center;border-top:1px solid #e2e8f0;">
+    <div style="font-size:11px;color:#94a3b8;">Barnatore Meld Pharm · 72 Eqrem Çabej, Prishtinë · +383 045 590455</div>
+  </div>`;
+
+  return `<div style="max-width:100%;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;color:#1f2937;">${header}${hero}${prodsHtml}${cta}${footer}</div>`;
+}
+
+function sendNewsletter() {
+  const subject = document.getElementById('nlSubject').value.trim();
+  if (!subject) {
+    document.getElementById('nlSubject').focus();
+    document.getElementById('nlSubject').style.borderColor = '#ef4444';
+    return;
+  }
+  document.getElementById('sendModal').style.display = 'flex';
+}
+
+// Init preview on load
+buildPreview();
+</script>
+{% endblock %}

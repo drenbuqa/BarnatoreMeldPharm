@@ -79,7 +79,7 @@
                             <td>
                                 <div class="quantity-selector" onclick="event.stopPropagation()">
                                     <form
-                                        action="{{ url_for('cart.update_quantity', product_id=item._id, action='decrease') }}"
+                                        action="{{ url_for('cart.update_quantity', cart_key=item.cart_key, action='decrease') }}"
                                         method="POST">
                                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                                         <button type="submit" class="qty-btn minus" {{ 'disabled' if item.quantity <=1
@@ -87,7 +87,7 @@
                                             <i class="fas fa-minus"></i>
                                         </button>
                                     </form>
-                                    <form action="{{ url_for('cart.set_quantity', product_id=item._id) }}" method="POST"
+                                    <form action="{{ url_for('cart.set_quantity', cart_key=item.cart_key) }}" method="POST"
                                         class="qty-set-form">
                                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                                         <input type="number" name="quantity" class="qty-input"
@@ -95,7 +95,7 @@
                                             %}disabled{% endif %}>
                                     </form>
                                     <form
-                                        action="{{ url_for('cart.update_quantity', product_id=item._id, action='increase') }}"
+                                        action="{{ url_for('cart.update_quantity', cart_key=item.cart_key, action='increase') }}"
                                         method="POST">
                                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                                         <button type="submit" class="qty-btn plus">
@@ -106,7 +106,7 @@
                             </td>
                             <td class="item-total-cell">€{{ "%.2f"|format(item.item_total) }}</td>
                             <td>
-                                <form action="{{ url_for('cart.remove_from_cart', product_id=item._id) }}" method="POST"
+                                <form action="{{ url_for('cart.remove_from_cart', cart_key=item.cart_key) }}" method="POST"
                                     onclick="event.stopPropagation()">
                                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                                     <button type="submit" class="btn-icon" title="Fshije">
@@ -139,7 +139,7 @@
                     <div class="cart-mobile-top">
                         <!-- Action (Delete) - Absolute Positioned -->
                         <div class="cart-col-action" onclick="event.stopPropagation()">
-                            <form action="{{ url_for('cart.remove_from_cart', product_id=item._id) }}" method="POST">
+                            <form action="{{ url_for('cart.remove_from_cart', cart_key=item.cart_key) }}" method="POST">
                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                                 <button type="submit" class="delete-btn" title="Fshije">
                                     <i class="fas fa-trash-alt"></i>
@@ -187,21 +187,21 @@
                         <div class="quantity-control-wrapper" onclick="event.stopPropagation()">
                             <div class="quantity-control">
                                 <form
-                                    action="{{ url_for('cart.update_quantity', product_id=item._id, action='decrease') }}"
+                                    action="{{ url_for('cart.update_quantity', cart_key=item.cart_key, action='decrease') }}"
                                     method="POST">
                                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                                     <button type="submit" class="qty-btn" {{ 'disabled' if item.quantity <=1 }}>
                                         <i class="fas fa-minus"></i>
                                     </button>
                                 </form>
-                                <form action="{{ url_for('cart.set_quantity', product_id=item._id) }}" method="POST"
+                                <form action="{{ url_for('cart.set_quantity', cart_key=item.cart_key) }}" method="POST"
                                     class="qty-form qty-set-form">
                                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                                     <input type="number" name="quantity" class="qty-input" value="{{ item.quantity }}"
                                         min="1" step="1" {% if item.in_stock==False %}disabled{% endif %}>
                                 </form>
                                 <form
-                                    action="{{ url_for('cart.update_quantity', product_id=item._id, action='increase') }}"
+                                    action="{{ url_for('cart.update_quantity', cart_key=item.cart_key, action='increase') }}"
                                     method="POST">
                                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                                     <button type="submit" class="qty-btn">

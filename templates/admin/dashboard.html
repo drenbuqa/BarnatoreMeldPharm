@@ -1,1104 +1,393 @@
-{% extends "base.html" %}
+{% extends "admin/base.html" %}
 
-{% block title %}Paneli i Administrimit - Meld Pharm{% endblock %}
+{% block title %}Dashboard - Meld Pharm Admin{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
 
-{% block content %}
-<div class="admin-dashboard-container">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/segments/admin.css') }}">
-    {% include 'admin/_nav.html' %}
+{% block page_action %}
+<a href="{{ url_for('admin.new_product') }}" class="topbar-btn">
+    <i class="fas fa-plus"></i> Produkt i Ri
+</a>
+{% endblock %}
 
-    <div class="admin-header-v2" style="justify-content: flex-end; margin-bottom: 2rem; display: none;">
-        <!-- Hidden as it's now in the nav -->
-    </div>
+{% block admin_content %}
 
-    <!-- Analytics Section -->
-    <div id="analytics-section" class="admin-analytics-section"
-        style="margin-bottom: 3rem; scroll-margin-top: 2rem; display: {{ 'block' if show_analytics else 'none' }};">
-
-        <div class="analytics-header-v3"
-            style="margin-bottom: 2.5rem; border-bottom: 1px solid #f1f5f9; padding-bottom: 1.5rem;">
-            <h1 class="admin-title-v2"
-                style="font-size: 2.5rem; font-weight: 800; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 1rem;">
-                <i class="fas fa-chart-line" style="color: var(--primary);"></i> Command Center
-            </h1>
-            <p class="admin-subtitle text-muted" style="font-size: 1.1rem;">Sales at a Glance | Monitorimi i
-                performancës në kohë reale.</p>
-        </div>
-        <div class="admin-grid-analytics">
-            <div class="analytics-card">
-                <div class="card-header-simple">
-                    <h3><i class="fas fa-th-large"></i> Kategoritë më të Populluara</h3>
-                </div>
-                <div class="chart-container-wrapper">
-                    <canvas id="categoryChart"></canvas>
-                </div>
-            </div>
-            <div class="analytics-card">
-                <div class="card-header-simple">
-                    <h3><i class="fas fa-crown"></i> Brendet më të preferuara</h3>
-                </div>
-                <div class="chart-container-wrapper">
-                    <canvas id="brandChart"></canvas>
-                </div>
-            </div>
-        </div>
-
-        <!-- Detailed Insights Grid -->
-        <div class="admin-insights-grid"
-            style="display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 2rem; margin-top: 2rem;">
-
-            <!-- Most Ordered -->
-            <div class="analytics-card">
-                <div class="card-header-simple">
-                    <h3><i class="fas fa-shopping-basket"></i> Më të Porosituara</h3>
-                </div>
-                <div class="analytics-list">
-                    {% for p in analytics.most_ordered %}
-                    <div class="list-item-stats">
-                        <img src="{{ p.image_url }}" alt="img">
-                        <div class="item-info">
-                            <span class="item-name">{{ p.name }}</span>
-                            <span class="item-meta">{{ p.order_count }} porosi</span>
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
-
-            <!-- Out of Stock / Stock Alerts -->
-            <div class="analytics-card">
-                <div class="card-header-simple">
-                    <h3 style="color: #ef4444;"><i class="fas fa-exclamation-triangle"></i> Produkte pa Stok</h3>
-                </div>
-                <div class="analytics-list">
-                    {% for p in analytics.out_of_stock %}
-                    <div class="list-item-stats">
-                        <img src="{{ p.image_url }}" alt="img">
-                        <div class="item-info">
-                            <span class="item-name">{{ p.name }}</span>
-                            <span class="item-meta" style="color: #ef4444;">Jo në stok</span>
-                        </div>
-                    </div>
-                    {% else %}
-                    <div class="text-center py-4">
-                        <i class="fas fa-check-circle fa-2x text-success mb-2"></i>
-                        <p class="text-muted">Të gjitha produktet janë në stok.</p>
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
-
-            <!-- Most Liked -->
-            <div class="analytics-card">
-                <div class="card-header-simple">
-                    <h3><i class="fas fa-heart"></i> Më të Pëlqyera (Favoritet)</h3>
-                </div>
-                <div class="analytics-list">
-                    {% for p in analytics.most_liked %}
-                    <div class="list-item-stats">
-                        <img src="{{ p.image_url }}" alt="img">
-                        <div class="item-info">
-                            <span class="item-name">{{ p.name }}</span>
-                            <span class="item-meta">{{ p.favorites|length }} pëlqime</span>
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
-
+<!-- KPI Cards -->
+<div class="kpi-grid" style="margin-bottom:1.5rem;">
+    <div class="kpi-card kpi-blue" style="cursor:pointer;" onclick="location.href='{{ url_for('admin.products_page') }}'">
+        <div class="kpi-icon"><i class="fas fa-boxes"></i></div>
+        <div class="kpi-body">
+            <div class="kpi-number">{{ analytics.total_products }}</div>
+            <div class="kpi-label">Gjithsej Produkte</div>
         </div>
     </div>
-
-    <style>
-        .analytics-list {
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-            padding: 1rem;
-        }
-
-        .list-item-stats {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            padding-bottom: 0.75rem;
-            border-bottom: 1px solid #f1f5f9;
-        }
-
-        .list-item-stats:last-child {
-            border-bottom: none;
-        }
-
-        .list-item-stats img {
-            width: 50px;
-            height: 50px;
-            border-radius: 8px;
-            object-fit: cover;
-        }
-
-        .item-info {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .item-name {
-            font-weight: 600;
-            font-size: 0.95rem;
-            color: #1e293b;
-        }
-
-        .item-meta {
-            font-size: 0.85rem;
-            color: #10b981;
-            font-weight: 700;
-        }
-    </style>
-    <div class="admin-actions-bar" style="display: {{ 'none' if show_analytics else 'flex' }};">
-        <div class="search-and-filter">
-            <div class="admin-search-wrapper" style="flex: 2; max-width: 800px;">
-                <i class="fas fa-search"></i>
-                <input type="text" id="adminProductSearch"
-                    placeholder="Kërko produkte sipas emrit, brendit ose kategorisë...">
-            </div>
-        </div>
-        <div class="primary-actions-v3" style="display: flex; align-items: center; gap: 1.5rem;">
-            <div class="mini-stats-v3" style="display: flex; gap: 1rem;">
-                <div class="mini-stat-card">
-                    <span class="mini-stat-val">{{ analytics.total_products }}</span>
-                    <span class="mini-stat-lbl">PRODUKTE</span>
-                </div>
-                <div class="mini-stat-card">
-                    <span class="mini-stat-val">{{ analytics.total_offers }}</span>
-                    <span class="mini-stat-lbl">OFERTA</span>
-                </div>
-            </div>
-            
-            <a href="{{ url_for('admin.dashboard', on_offer=1) if not filter_on_offer else url_for('admin.dashboard') }}"
-                    class="filter-chip {{ 'active' if filter_on_offer else '' }}">
-                    <i class="fas fa-tag"></i> Ofertat
-            </a>
-            <a href="{{ url_for('admin.new_product') }}" class="btn-plus-admin" title="Shto Produkt">
-                <i class="fas fa-plus"></i>
-            </a>
+    <div class="kpi-card kpi-orange" style="cursor:pointer;" onclick="location.href='{{ url_for('admin.orders', status='pending') }}'">
+        <div class="kpi-icon"><i class="fas fa-clock"></i></div>
+        <div class="kpi-body">
+            <div class="kpi-number">{{ pending_orders_count }}</div>
+            <div class="kpi-label">Porosi Në Pritje</div>
         </div>
     </div>
-
-    <div class="admin-table-card" style="display: {{ 'none' if show_analytics else 'block' }};">
-        <div class="table-responsive">
-            <table class="premium-admin-table" id="productTable">
-                <thead>
-                    <tr>
-                        <th style="width: 80px;">Imazhi</th>
-                        <th>Detajet e Produktit</th>
-                        <th>Kategoria</th>
-                        <th>Çmimi</th>
-                        <th>Statusi</th>
-                        <th style="text-align: right;">Veprime</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for product in products %}
-                    <tr class="product-row"
-                        data-name="{{ (product.name + ' ' + (product.brand if product.brand else ''))|lower }}"
-                        data-category="{{ product.category|lower }}"
-                        data-url="{{ url_for('main.product_detail', product_id=product._id) }}"
-                        style="cursor: pointer;">
-                        <td>
-                            <div class="table-product-img">
-                                <img src="{{ product.image_url }}" alt="{{ product.name }}"
-                                    onerror="this.src='/static/img/placeholder.png'">
-                            </div>
-                        </td>
-                        <td>
-                            <div class="table-product-info">
-                                <span class="table-brand">{{ product.brand if product.brand else 'Pa Brend'
-                                    }}</span>
-                                <span class="table-name">{{ product.name }}</span>
-                                {% if product.size %}<span class="table-size text-muted">{{ product.size }}</span>{%
-                                endif %}
-                            </div>
-                        </td>
-                        <td>
-                            <div class="table-cat-badge">{{ product.category }}</div>
-                        </td>
-                        <td>
-                            <div class="table-price-info">
-                                {% if product.discount_price %}
-                                <span class="price-old">€{{ "%.2f"|format(product.price) }}</span>
-                                <span class="price-new">€{{ "%.2f"|format(product.discount_price) }}</span>
-                                <span class="discount-badge-mini">-{{ ((product.price - product.discount_price) /
-                                    product.price * 100)|round|int }}%</span>
-                                {% else %}
-                                <span class="price-normal">€{{ "%.2f"|format(product.price) }}</span>
-                                {% endif %}
-                            </div>
-                        </td>
-                        <td>
-                            <div class="status-badges">
-                                {% if product.in_stock %}
-                                <span class="status-badge success"><i class="fas fa-check"></i> Në Stok</span>
-                                {% else %}
-                                <span class="status-badge danger"><i class="fas fa-times"></i> Jo Stok</span>
-                                {% endif %}
-
-                                {% if product.featured %}
-                                <span class="status-badge info"><i class="fas fa-star"></i> Featured</span>
-                                {% endif %}
-                            </div>
-                        </td>
-                        <td>
-                            <div class="table-actions">
-                                <a href="{{ url_for('admin.edit_product', product_id=product._id) }}"
-                                    class="action-btn edit" title="Ndrysho" onclick="event.stopPropagation();">
-                                    <i class="fas fa-pen"></i>
-                                </a>
-                                <form action="{{ url_for('admin.delete_product', product_id=product._id) }}"
-                                    method="POST" onsubmit="return confirmDelete(this);"
-                                    onclick="event.stopPropagation();">
-                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-                                    <button type="submit" class="action-btn delete" title="Fshije">
-                                        <i class="fas fa-trash-alt"></i>
-                                    </button>
-                                </form>
-                            </div>
-                        </td>
-                    </tr>
-                    {% else %}
-                    <tr>
-                        <td colspan="6" class="text-center py-5">
-                            <div class="empty-table-state">
-                                <i class="fas fa-box-open fa-3x mb-3 text-muted"></i>
-                                <p>Nuk u gjet asnjë produkt.</p>
-                                <a href="{{ url_for('admin.new_product') }}" class="btn btn-primary mt-2">Shto
-                                    produktin
-                                    e parë</a>
-                            </div>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+    <div class="kpi-card kpi-red" style="cursor:pointer;" onclick="location.href='{{ url_for('admin.products_page', stock='out') }}'">
+        <div class="kpi-icon"><i class="fas fa-exclamation-triangle"></i></div>
+        <div class="kpi-body">
+            <div class="kpi-number">{{ analytics.out_of_stock|length }}</div>
+            <div class="kpi-label">Pa Stok</div>
+        </div>
+    </div>
+    <div class="kpi-card kpi-green" style="cursor:pointer;" onclick="location.href='{{ url_for('admin.dashboard', view='analytics') }}'">
+        <div class="kpi-icon"><i class="fas fa-euro-sign"></i></div>
+        <div class="kpi-body">
+            <div class="kpi-number">€{{ "%.0f"|format(analytics.revenue_month) }}</div>
+            <div class="kpi-label">Të Ardhura Këtë Muaj</div>
+        </div>
+    </div>
+    <div class="kpi-card kpi-purple" style="cursor:pointer;" onclick="location.href='{{ url_for('admin.newsletter') }}'">
+        <div class="kpi-icon"><i class="fas fa-paper-plane"></i></div>
+        <div class="kpi-body">
+            <div class="kpi-number">{{ newsletter_count }}</div>
+            <div class="kpi-label">Abonentë Buletini</div>
+        </div>
+    </div>
+    <div class="kpi-card kpi-teal" style="cursor:pointer;" onclick="location.href='{{ url_for('admin.bulk_offers') }}'">
+        <div class="kpi-icon"><i class="fas fa-tags"></i></div>
+        <div class="kpi-body">
+            <div class="kpi-number">{{ analytics.total_offers }}</div>
+            <div class="kpi-label">Oferta Aktive</div>
         </div>
     </div>
 </div>
 
+<!-- Analytics Section (charts) -->
+<div id="analytics-section" style="display: {{ 'block' if show_analytics else 'none' }}; margin-bottom:2rem;">
+    <!-- Revenue KPI row -->
+    <div class="kpi-grid" style="margin-bottom:1.5rem;">
+        <div class="kpi-card kpi-green">
+            <div class="kpi-icon"><i class="fas fa-euro-sign"></i></div>
+            <div class="kpi-body">
+                <div class="kpi-number">€{{ "%.0f"|format(analytics.total_revenue) }}</div>
+                <div class="kpi-label">Të Ardhura Totale ({{ analytics.total_orders }} porosi)</div>
+            </div>
+        </div>
+        <div class="kpi-card kpi-blue">
+            <div class="kpi-icon"><i class="fas fa-calendar-alt"></i></div>
+            <div class="kpi-body">
+                <div class="kpi-number">€{{ "%.0f"|format(analytics.revenue_month) }}</div>
+                <div class="kpi-label">Këtë Muaj ({{ analytics.orders_month }} porosi)</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Trend chart -->
+    <div class="analytics-card" style="margin-bottom:1.5rem;">
+        <div class="card-header-simple">
+            <h3><i class="fas fa-chart-line"></i> Tendenca — 6 Muajt e Fundit</h3>
+        </div>
+        <div style="height:220px; padding:0.5rem;">
+            <canvas id="trendChart"></canvas>
+        </div>
+    </div>
+
+    <div class="admin-grid-analytics">
+        <div class="analytics-card">
+            <div class="card-header-simple">
+                <h3><i class="fas fa-th-large"></i> Kategoritë më të Populluara</h3>
+            </div>
+            <div class="chart-container-wrapper">
+                <canvas id="categoryChart"></canvas>
+            </div>
+        </div>
+        <div class="analytics-card">
+            <div class="card-header-simple">
+                <h3><i class="fas fa-crown"></i> Brendet më të Preferuara</h3>
+            </div>
+            <div class="chart-container-wrapper">
+                <canvas id="brandChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:1.5rem; margin-top:1.5rem;">
+        <div class="analytics-card">
+            <div class="card-header-simple"><h3><i class="fas fa-shopping-basket"></i> Më të Porosituara</h3></div>
+            <div class="analytics-list">
+                {% for p in analytics.most_ordered %}
+                <div class="list-item-stats">
+                    <img src="{{ p.image_url }}" alt="" onerror="this.src='/static/img/placeholder.png'">
+                    <div class="item-info">
+                        <span class="item-name">{{ p.name }}</span>
+                        <span class="item-meta">{{ p.order_count }} porosi</span>
+                    </div>
+                </div>
+                {% else %}
+                <p style="color:#94a3b8;text-align:center;padding:1rem;">Nuk ka të dhëna.</p>
+                {% endfor %}
+            </div>
+        </div>
+        <div class="analytics-card">
+            <div class="card-header-simple"><h3><i class="fas fa-heart"></i> Më të Pëlqyera</h3></div>
+            <div class="analytics-list">
+                {% for p in analytics.most_liked %}
+                <div class="list-item-stats">
+                    <img src="{{ p.image_url }}" alt="" onerror="this.src='/static/img/placeholder.png'">
+                    <div class="item-info">
+                        <span class="item-name">{{ p.name }}</span>
+                        <span class="item-meta">{{ p.favorites|length }} pëlqime</span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        <div class="analytics-card">
+            <div class="card-header-simple"><h3 style="color:#ef4444;"><i class="fas fa-exclamation-triangle"></i> Pa Stok</h3></div>
+            <div class="analytics-list">
+                {% for p in analytics.out_of_stock %}
+                <div class="list-item-stats">
+                    <img src="{{ p.image_url }}" alt="" onerror="this.src='/static/img/placeholder.png'">
+                    <div class="item-info">
+                        <span class="item-name">{{ p.name }}</span>
+                        <span class="item-meta" style="color:#ef4444;">Jo në stok</span>
+                    </div>
+                </div>
+                {% else %}
+                <div style="text-align:center;padding:1.5rem;">
+                    <i class="fas fa-check-circle fa-2x" style="color:#10b981;display:block;margin-bottom:0.5rem;"></i>
+                    <p style="color:#64748b;margin:0;">Të gjitha produktet janë në stok.</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Overview Section (shown when not in analytics view) -->
+<div style="display: {{ 'none' if show_analytics else 'block' }};">
+
+    <div style="display:grid; grid-template-columns:1.2fr 1fr; gap:1.5rem; margin-bottom:1.5rem;">
+
+        <!-- Pending Orders -->
+        <div class="analytics-card">
+            <div class="card-header-simple" style="display:flex; align-items:center; justify-content:space-between;">
+                <h3><i class="fas fa-clock" style="color:#f59e0b;"></i> Porosi Në Pritje</h3>
+                <a href="{{ url_for('admin.orders', status='pending') }}" style="font-size:0.82rem; color:#0f766e; font-weight:700; text-decoration:none;">Shiko të gjitha →</a>
+            </div>
+            {% if recent_pending %}
+            <div style="display:flex; flex-direction:column; gap:0;">
+                {% for o in recent_pending %}
+                <div style="display:flex; align-items:center; justify-content:space-between; padding:0.85rem 1rem; border-bottom:1px solid #f1f5f9;">
+                    <div>
+                        <div style="font-weight:700; font-size:0.92rem; color:#1e293b;">{{ o.fullname }}</div>
+                        <div style="font-size:0.78rem; color:#94a3b8;">{{ o.city or '—' }} · {{ o.created_at.strftime('%d.%m %H:%M') if o.created_at else '' }}</div>
+                    </div>
+                    <div style="font-weight:800; color:#0f766e;">€{{ "%.2f"|format(o.grand_total) }}</div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div style="text-align:center; padding:2rem; color:#94a3b8;">
+                <i class="fas fa-check-circle fa-2x" style="color:#10b981; display:block; margin-bottom:0.75rem;"></i>
+                Nuk ka porosi në pritje.
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Quick Actions + Alerts -->
+        <div style="display:flex; flex-direction:column; gap:1rem;">
+
+            <!-- Quick Actions -->
+            <div class="analytics-card" style="padding:1.25rem;">
+                <div class="card-header-simple"><h3><i class="fas fa-bolt" style="color:#f59e0b;"></i> Veprime të Shpejta</h3></div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.6rem; padding:0.75rem 0 0;">
+                    <a href="{{ url_for('admin.new_product') }}" class="quick-action-btn">
+                        <i class="fas fa-plus-circle"></i> Produkt i Ri
+                    </a>
+                    <a href="{{ url_for('admin.orders') }}" class="quick-action-btn">
+                        <i class="fas fa-shopping-bag"></i> Porositë
+                    </a>
+                    <a href="{{ url_for('admin.manage_banners') }}" class="quick-action-btn">
+                        <i class="fas fa-images"></i> Banerët
+                    </a>
+                    <a href="{{ url_for('admin.newsletter') }}" class="quick-action-btn">
+                        <i class="fas fa-paper-plane"></i> Buletini
+                    </a>
+                    <a href="{{ url_for('admin.bulk_offers') }}" class="quick-action-btn">
+                        <i class="fas fa-tags"></i> Ofertat
+                    </a>
+                    <a href="{{ url_for('admin.dashboard', view='analytics') }}" class="quick-action-btn">
+                        <i class="fas fa-chart-bar"></i> Analitika
+                    </a>
+                </div>
+
+                <!-- Digest buttons -->
+                <div style="margin-top:1rem; padding-top:1rem; border-top:1px solid #f1f5f9;">
+                    <div style="font-size:0.75rem; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:0.6rem;">Digest Email</div>
+                    <div style="display:flex; gap:0.5rem;">
+                        <form action="{{ url_for('admin.send_digest') }}" method="POST" style="flex:1;">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <input type="hidden" name="period" value="today">
+                            <button type="submit" class="digest-btn">
+                                <i class="fas fa-envelope"></i> Sot
+                            </button>
+                        </form>
+                        <form action="{{ url_for('admin.send_digest') }}" method="POST" style="flex:1;">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <input type="hidden" name="period" value="week">
+                            <button type="submit" class="digest-btn">
+                                <i class="fas fa-calendar-week"></i> 7 Ditët
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Out of stock alert -->
+            {% if analytics.out_of_stock %}
+            <div class="analytics-card" style="padding:1.25rem; border-left:4px solid #ef4444;">
+                <div class="card-header-simple" style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.75rem;">
+                    <h3 style="color:#ef4444;"><i class="fas fa-exclamation-triangle"></i> Stok i Mbaruar ({{ analytics.out_of_stock|length }})</h3>
+                    <a href="{{ url_for('admin.products_page', stock='out') }}" style="font-size:0.82rem; color:#ef4444; font-weight:700; text-decoration:none;">Shiko →</a>
+                </div>
+                {% for p in analytics.out_of_stock[:3] %}
+                <div style="display:flex; align-items:center; gap:0.6rem; padding:0.4rem 0; font-size:0.85rem; color:#475569;">
+                    <i class="fas fa-times-circle" style="color:#ef4444; flex-shrink:0;"></i>
+                    {{ p.name }}
+                </div>
+                {% endfor %}
+                {% if analytics.out_of_stock|length > 3 %}
+                <div style="font-size:0.8rem; color:#94a3b8; margin-top:0.4rem;">dhe {{ analytics.out_of_stock|length - 3 }} të tjera...</div>
+                {% endif %}
+            </div>
+            {% endif %}
+
+        </div>
+    </div>
+
+    <!-- Most ordered + most liked -->
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem;">
+        <div class="analytics-card">
+            <div class="card-header-simple"><h3><i class="fas fa-shopping-basket"></i> Produktet më të Porosituara</h3></div>
+            <div class="analytics-list">
+                {% for p in analytics.most_ordered %}
+                <div class="list-item-stats">
+                    <img src="{{ p.image_url }}" alt="" onerror="this.src='/static/img/placeholder.png'">
+                    <div class="item-info">
+                        <span class="item-name">{{ p.name }}</span>
+                        <span class="item-meta">{{ p.order_count }} porosi</span>
+                    </div>
+                </div>
+                {% else %}
+                <p style="color:#94a3b8;text-align:center;padding:1rem;">Nuk ka të dhëna ende.</p>
+                {% endfor %}
+            </div>
+        </div>
+        <div class="analytics-card">
+            <div class="card-header-simple"><h3><i class="fas fa-heart"></i> Produktet më të Pëlqyera</h3></div>
+            <div class="analytics-list">
+                {% for p in analytics.most_liked %}
+                <div class="list-item-stats">
+                    <img src="{{ p.image_url }}" alt="" onerror="this.src='/static/img/placeholder.png'">
+                    <div class="item-info">
+                        <span class="item-name">{{ p.name }}</span>
+                        <span class="item-meta">{{ p.favorites|length }} pëlqime</span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+</div>
 
 <style>
-    .admin-nav-item.active {
-        background: #059669;
-        color: white !important;
-        box-shadow: 0 8px 20px rgba(5, 150, 105, 0.25);
-    }
-
-    .btn-plus-admin {
-        width: 52px;
-        height: 52px;
-        background: #059669;
-        color: white !important;
-        border-radius: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.4rem;
-        text-decoration: none !important;
-        transition: all 0.3s;
-        box-shadow: 0 4px 12px rgba(5, 150, 105, 0.15);
-        border: none;
-    }
-
-    .btn-plus-admin:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 18px rgba(5, 150, 105, 0.25);
-        background: #047857;
-    }
-
-    .mini-stat-card {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        background: white;
-        padding: 0.6rem 1.2rem;
-        border-radius: 14px;
-        border: 1px solid #f1f5f9;
-        min-width: 100px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
-    }
-
-    .mini-stat-val {
-        font-size: 1.5rem;
-        font-weight: 800;
-        color: #10b981;
-        line-height: 1;
-    }
-
-    .mini-stat-lbl {
-        font-size: 0.6rem;
-        font-weight: 700;
-        color: #94a3b8;
-        margin-top: 0.3rem;
-        letter-spacing: 0.8px;
-        text-transform: uppercase;
-    }
-
-    .admin-header-v2 {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 2.5rem;
-        gap: 2rem;
-    }
-
-    .admin-title-v2 {
-        font-size: 2.5rem;
-        font-weight: 800;
-        margin-bottom: 0.5rem;
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-    }
-
-    .admin-title-v2 i {
-        color: var(--primary);
-    }
-
-    .header-stats {
-        display: flex;
-        gap: 1.5rem;
-    }
-
-    .stat-card {
-        background: white;
-        padding: 1.25rem 2rem;
-        border-radius: 16px;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-        border: 1px solid #f1f5f9;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        min-width: 120px;
-    }
-
-    .stat-value {
-        font-size: 1.75rem;
-        font-weight: 800;
-        color: var(--text-main);
-    }
-
-    .stat-label {
-        font-size: 0.85rem;
-        font-weight: 600;
-        color: var(--text-muted);
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-
-    .stat-card.accent .stat-value {
-        color: var(--primary);
-    }
-
-    /* Actions Bar */
-    .admin-actions-bar {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        background: white;
-        padding: 1.25rem;
-        border-radius: 20px;
-        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
-        margin-bottom: 2rem;
-        border: 1px solid #f1f5f9;
-        gap: 1.5rem;
-        flex-wrap: wrap;
-    }
-
-    .search-and-filter {
-        display: flex;
-        align-items: center;
-        gap: 1.5rem;
-        flex: 1;
-        width: 100%;
-    }
-
-    .admin-search-wrapper {
-        position: relative;
-        flex: 1;
-        max-width: 500px;
-    }
-
-    .admin-search-wrapper i {
-        position: absolute;
-        left: 1.25rem;
-        top: 50%;
-        transform: translateY(-50%);
-        color: #94a3b8;
-        font-size: 1.1rem;
-    }
-
-    .admin-search-wrapper input {
-        width: 100%;
-        padding: 0.85rem 1rem 0.85rem 3rem;
-        background: #f8fafc;
-        border: 2px solid #f1f5f9;
-        border-radius: 14px;
-        font-size: 1rem;
-        transition: all 0.3s ease;
-    }
-
-    .admin-search-wrapper input:focus {
-        background: white;
-        border-color: var(--primary);
-        box-shadow: 0 0 0 4px rgba(5, 150, 105, 0.08);
-        outline: none;
-    }
-
-    .filter-chip {
-        padding: 0.6rem 1.25rem;
-        background: #f1f5f9;
-        border-radius: 12px;
-        font-weight: 600;
-        color: #64748b;
-        text-decoration: none !important;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        transition: all 0.2s;
-        font-size: 0.9rem;
-    }
-
-    .filter-chip:hover {
-        background: #e2e8f0;
-        color: var(--text-main);
-    }
-
-    .filter-chip.active {
-        background: #fee2e2;
-        color: #ef4444;
-    }
-
-    .primary-actions {
-        display: flex;
-        gap: 1rem;
-    }
-
-    .btn-primary-admin {
-        background: var(--primary);
-        color: white !important;
-        padding: 0.85rem 1.5rem;
-        border-radius: 14px;
-        font-weight: 700;
-        text-decoration: none !important;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        transition: all 0.3s;
-        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
-    }
-
-    .btn-primary-admin:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 15px rgba(16, 185, 129, 0.3);
-    }
-
-    .btn-outline-admin {
-        background: white;
-        border: 2px solid #f1f5f9;
-        color: var(--text-main) !important;
-        padding: 0.85rem 1.5rem;
-        border-radius: 14px;
-        font-weight: 700;
-        text-decoration: none !important;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        transition: all 0.2s;
-    }
-
-    .btn-outline-admin:hover {
-        border-color: #cbd5e1;
-        background: #f8fafc;
-    }
-
-    /* Table Styling */
-    .admin-table-card {
-        background: white;
-        border-radius: 20px;
-        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
-        border: 1px solid #f1f5f9;
-        overflow: hidden;
-    }
-
-    .premium-admin-table {
-        width: 100%;
-        border-collapse: collapse;
-    }
-
-    .premium-admin-table th {
-        background: #f8fafc;
-        padding: 1.25rem 1.5rem;
-        text-align: left;
-        font-weight: 700;
-        color: #64748b;
-        font-size: 0.85rem;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        border-bottom: 1px solid #f1f5f9;
-    }
-
-    .premium-admin-table td {
-        padding: 1.5rem;
-        border-bottom: 1px solid #f8fafc;
-        vertical-align: middle;
-    }
-
-    .premium-admin-table tr:hover td {
-        background: #fbfdfc;
-    }
-
-    .table-product-img {
-        width: 64px;
-        height: 64px;
-        border-radius: 10px;
-        overflow: hidden;
-        border: 1px solid #f1f5f9;
-        background: white;
-    }
-
-    .table-product-img img {
-        width: 100%;
-        height: 100%;
-        object-fit: contain;
-        padding: 4px;
-    }
-
-    .table-product-info {
-        display: flex;
-        flex-direction: column;
-        gap: 0.25rem;
-    }
-
-    .table-brand {
-        font-size: 0.75rem;
-        font-weight: 800;
-        color: var(--primary);
-        text-transform: uppercase;
-    }
-
-    .table-name {
-        font-weight: 700;
-        color: var(--text-main);
-        font-size: 1rem;
-        line-height: 1.2;
-    }
-
-    .table-size {
-        font-size: 0.8rem;
-    }
-
-    .table-cat-badge {
-        display: inline-block;
-        padding: 0.4rem 0.85rem;
-        background: #f1f5f9;
-        border-radius: 30px;
-        font-size: 0.85rem;
-        font-weight: 600;
-        color: #475569;
-    }
-
-    .table-price-info {
-        display: flex;
-        flex-direction: column;
-        gap: 0.2rem;
-    }
-
-    .price-normal {
-        font-weight: 800;
-        color: var(--text-main);
-    }
-
-    .price-new {
-        font-weight: 800;
-        color: #10b981;
-    }
-
-    .price-old {
-        font-size: 0.85rem;
-        color: #94a3b8;
-        text-decoration: line-through;
-    }
-
-    .discount-badge-mini {
-        color: #ef4444;
-        font-weight: 800;
-        font-size: 0.75rem;
-    }
-
-    .status-badges {
-        display: flex;
-        flex-direction: column;
-        gap: 0.4rem;
-    }
-
-    .status-badge {
-        font-size: 0.75rem;
-        font-weight: 700;
-        display: flex;
-        align-items: center;
-        gap: 0.3rem;
-    }
-
-    .status-badge.success {
-        color: #10b981;
-    }
-
-    .status-badge.danger {
-        color: #ef4444;
-    }
-
-    .status-badge.info {
-        color: #3b82f6;
-    }
-
-    .table-actions {
-        display: flex;
-        gap: 0.75rem;
-        justify-content: flex-end;
-    }
-
-    .action-btn {
-        width: 36px;
-        height: 36px;
-        border-radius: 10px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border: none;
-        cursor: pointer;
-        transition: all 0.2s;
-        text-decoration: none !important;
-    }
-
-    .action-btn.edit {
-        background: #f1f5f9;
-        color: #3b82f6;
-    }
-
-    .action-btn.edit:hover {
-        background: #3b82f6;
-        color: white;
-    }
-
-    .action-btn.delete {
-        background: #fee2e2;
-        color: #ef4444;
-    }
-
-    .action-btn.delete:hover {
-        background: #ef4444;
-        color: white;
-    }
-
-    /* Analytics Grid */
-    .admin-grid-analytics {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 2rem;
-    }
-
-    .analytics-card {
-        background: white;
-        border-radius: 20px;
-        padding: 1.5rem;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-        border: 1px solid #f1f5f9;
-    }
-
-    .card-header-simple {
-        margin-bottom: 1.5rem;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-    }
-
-    .card-header-simple h3 {
-        font-size: 1.1rem;
-        font-weight: 700;
-        margin: 0;
-        color: #1e293b;
-    }
-
-    .card-header-simple i {
-        color: var(--primary);
-    }
-
-    .chart-container-wrapper {
-        position: relative;
-        height: 300px;
-        width: 100%;
-    }
-
-    @media (max-width: 992px) {
-        .admin-grid-analytics {
-            grid-template-columns: 1fr;
-        }
-    }
-
-    @media (max-width: 768px) {
-        .admin-dashboard-container {
-            padding: 0 0.75rem;
-            margin: 1rem auto;
-        }
-
-        .admin-title-v2 {
-            font-size: 1.8rem;
-            gap: 0.75rem;
-        }
-
-        .admin-actions-bar {
-            padding: 1rem 0.75rem !important;
-            flex-direction: column !important;
-            gap: 1.25rem !important;
-            align-items: center !important;
-            width: 100% !important;
-            box-sizing: border-box !important;
-        }
-
-        .search-and-filter {
-            flex-direction: column !important;
-            gap: 0.75rem !important;
-            width: 100% !important;
-        }
-
-        .admin-search-wrapper {
-            max-width: 100% !important;
-            width: 100% !important;
-            flex: none !important;
-        }
-
-        .admin-search-wrapper input {
-            width: 100% !important;
-            box-sizing: border-box !important;
-        }
-
-        .quick-filters {
-            width: 100% !important;
-            display: flex !important;
-            justify-content: center !important;
-        }
-
-        .filter-chip {
-            width: 100% !important;
-            justify-content: center !important;
-            padding: 0.6rem !important;
-            font-size: 0.85rem !important;
-        }
-
-        .primary-actions-v3 {
-            width: 100% !important;
-            justify-content: space-between !important;
-            gap: 0.75rem !important;
-        }
-
-        .mini-stats-v3 {
-            flex: 1 !important;
-            gap: 0.5rem !important;
-        }
-
-        .mini-stat-card {
-            min-width: 0 !important;
-            flex: 1 !important;
-            padding: 0.4rem 0.5rem !important;
-            border-radius: 10px !important;
-        }
-
-        .mini-stat-val {
-            font-size: 1.1rem !important;
-        }
-
-        .mini-stat-lbl {
-            font-size: 0.5rem !important;
-            margin-top: 0.15rem !important;
-        }
-
-        .btn-plus-admin {
-            width: 42px !important;
-            height: 42px !important;
-            font-size: 1.1rem !important;
-            flex-shrink: 0 !important;
-        }
-
-        /* List View for Products on Mobile */
-        .premium-admin-table tbody {
-            display: flex !important;
-            flex-direction: column !important;
-            gap: 0.75rem !important;
-            padding: 0 !important;
-        }
-
-        .premium-admin-table thead {
-            display: none !important;
-        }
-
-        .premium-admin-table tr.product-row {
-            display: grid !important;
-            grid-template-columns: 85px 1fr auto !important;
-            grid-template-areas:
-                "img info actions"
-                "img price actions"
-                "img status actions";
-            column-gap: 0.75rem !important;
-            row-gap: 0.15rem !important;
-            background: white !important;
-            border: 1px solid #f1f5f9 !important;
-            border-radius: 16px !important;
-            padding: 0.75rem !important;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.04) !important;
-            align-items: center !important;
-            height: auto !important;
-            margin-bottom: 0 !important;
-        }
-
-        .premium-admin-table td {
-            display: block !important;
-            width: auto !important;
-            padding: 0 !important;
-            border: none !important;
-        }
-
-        /* Cell area mapping */
-        .premium-admin-table td:nth-child(1) {
-            grid-area: img;
-        }
-
-        .premium-admin-table td:nth-child(2) {
-            grid-area: info;
-            align-self: start;
-        }
-
-        .premium-admin-table td:nth-child(4) {
-            grid-area: price;
-        }
-
-        .premium-admin-table td:nth-child(5) {
-            grid-area: status;
-        }
-
-        .premium-admin-table td:nth-child(6) {
-            grid-area: actions;
-        }
-
-        .premium-admin-table td:nth-child(3) {
-            display: none !important;
-        }
-
-        .table-product-img {
-            width: 85px !important;
-            height: 85px !important;
-            border-radius: 10px !important;
-            margin: 0 !important;
-            background: #f8fafc;
-            overflow: hidden;
-        }
-
-        .table-product-img img {
-            width: 100% !important;
-            height: 100% !important;
-            object-fit: contain !important;
-            padding: 4px;
-        }
-
-        .table-product-info {
-            text-align: left !important;
-            padding: 0 !important;
-        }
-
-        .table-brand {
-            font-size: 0.7rem !important;
-            font-weight: 800 !important;
-            margin: 0 !important;
-        }
-
-        .table-name {
-            font-size: 0.95rem !important;
-            font-weight: 700 !important;
-            line-height: 1.25 !important;
-            height: auto !important;
-            margin: 0 0 0.1rem 0 !important;
-            display: -webkit-box !important;
-            -webkit-line-clamp: 2 !important;
-            line-clamp: 2 !important;
-            -webkit-box-orient: vertical !important;
-            overflow: hidden !important;
-            white-space: normal !important;
-        }
-
-        .table-size {
-            font-size: 0.75rem !important;
-            color: #64748b !important;
-            font-weight: 600 !important;
-        }
-
-        .table-price-info {
-            flex-direction: row !important;
-            align-items: center !important;
-            gap: 0.5rem !important;
-            margin: 0 !important;
-        }
-
-        .price-new,
-        .price-normal {
-            font-size: 0.95rem !important;
-            font-weight: 800 !important;
-        }
-
-        .price-old {
-            font-size: 0.75rem !important;
-        }
-
-        .discount-badge-mini {
-            font-size: 0.7rem !important;
-            padding: 0 0.3rem !important;
-        }
-
-        .status-badges {
-            flex-direction: row !important;
-            gap: 0.5rem !important;
-            margin: 0 !important;
-        }
-
-        .status-badge {
-            font-size: 0.65rem !important;
-            font-weight: 700 !important;
-            padding: 0.15rem 0.4rem !important;
-            border-radius: 6px !important;
-            background: #f1f5f9;
-        }
-
-        .table-actions {
-            flex-direction: column !important;
-            gap: 0.6rem !important;
-            padding: 0 !important;
-            border: none !important;
-            margin: 0 !important;
-            justify-content: center !important;
-            align-items: center !important;
-        }
-
-        .action-btn {
-            width: 38px !important;
-            height: 38px !important;
-            font-size: 0.9rem !important;
-            border-radius: 10px !important;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05) !important;
-        }
-
-        .btn-plus-admin {
-            width: 44px !important;
-            height: 44px !important;
-            font-size: 1.2rem !important;
-        }
-    }
+.analytics-list { display:flex; flex-direction:column; gap:1rem; padding:1rem; }
+.list-item-stats { display:flex; align-items:center; gap:1rem; padding-bottom:0.75rem; border-bottom:1px solid #f1f5f9; }
+.list-item-stats:last-child { border-bottom:none; }
+.list-item-stats img { width:48px; height:48px; border-radius:8px; object-fit:cover; flex-shrink:0; }
+.item-info { display:flex; flex-direction:column; }
+.item-name { font-weight:600; font-size:0.92rem; color:#1e293b; }
+.item-meta { font-size:0.82rem; color:#10b981; font-weight:700; }
+.analytics-card { background:#fff; border:1px solid #e2e8f0; border-radius:16px; overflow:hidden; }
+.card-header-simple { padding:1rem 1.25rem; border-bottom:1px solid #f1f5f9; }
+.card-header-simple h3 { margin:0; font-size:0.95rem; font-weight:700; color:#1e293b; display:flex; align-items:center; gap:0.5rem; }
+.admin-grid-analytics { display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; }
+.chart-container-wrapper { height:240px; padding:1rem; }
+.kpi-card.kpi-purple { border-top:4px solid #8b5cf6; }
+.kpi-card.kpi-purple .kpi-icon { background:#f5f3ff; color:#8b5cf6; }
+.kpi-card.kpi-purple .kpi-number { color:#6d28d9; }
+.kpi-card.kpi-teal { border-top:4px solid #0f766e; }
+.kpi-card.kpi-teal .kpi-icon { background:#f0fdfa; color:#0f766e; }
+.kpi-card.kpi-teal .kpi-number { color:#0f766e; }
+.quick-action-btn {
+    display:flex; align-items:center; gap:0.5rem; padding:0.65rem 0.85rem;
+    background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:10px;
+    font-size:0.82rem; font-weight:700; color:#475569; text-decoration:none;
+    transition:all 0.18s;
+}
+.quick-action-btn:hover { background:#0f766e; border-color:#0f766e; color:#fff; }
+.quick-action-btn i { font-size:0.9rem; }
+.digest-btn {
+    width:100%; padding:0.55rem 0.5rem; border-radius:9px; font-size:0.8rem; font-weight:700;
+    background:#f0fdfa; color:#0f766e; border:1.5px solid #99f6e4;
+    cursor:pointer; display:flex; align-items:center; justify-content:center; gap:0.4rem;
+    transition:all 0.18s;
+}
+.digest-btn:hover { background:#0f766e; color:#fff; border-color:#0f766e; }
+@media(max-width:900px) {
+    .admin-grid-analytics,
+    div[style*="grid-template-columns:1.2fr"] { grid-template-columns:1fr !important; }
+}
 </style>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    // Initialize Charts
-    document.addEventListener('DOMContentLoaded', function () {
-        const catCtx = document.getElementById('categoryChart').getContext('2d');
-        const brandCtx = document.getElementById('brandChart').getContext('2d');
+document.addEventListener('DOMContentLoaded', function () {
+    const catCanvas   = document.getElementById('categoryChart');
+    const brandCanvas = document.getElementById('brandChart');
+    const trendCanvas = document.getElementById('trendChart');
 
-        // Safely parse data from Jinja
-        const categoryLabels = JSON.parse('{{ analytics.category_sales.keys()|list|tojson|safe }}');
-        const categoryValues = JSON.parse('{{ analytics.category_sales.values()|list|tojson|safe }}');
-        const brandLabels = JSON.parse('{{ analytics.brand_distribution.keys()|list|tojson|safe }}');
-        const brandValues = JSON.parse('{{ analytics.brand_distribution.values()|list|tojson|safe }}');
+    const categoryLabels = JSON.parse('{{ analytics.category_sales.keys()|list|tojson|safe }}');
+    const categoryValues = JSON.parse('{{ analytics.category_sales.values()|list|tojson|safe }}');
+    const brandLabels    = JSON.parse('{{ analytics.brand_distribution.keys()|list|tojson|safe }}');
+    const brandValues    = JSON.parse('{{ analytics.brand_distribution.values()|list|tojson|safe }}');
+    const trendLabels    = JSON.parse('{{ analytics.trend_labels|tojson|safe }}');
+    const trendRevenue   = JSON.parse('{{ analytics.trend_revenue|tojson|safe }}');
+    const trendOrders    = JSON.parse('{{ analytics.trend_orders|tojson|safe }}');
 
-        // Category Chart
-        new Chart(catCtx, {
-            type: 'doughnut',
+    if (trendCanvas) {
+        new Chart(trendCanvas.getContext('2d'), {
+            type: 'line',
             data: {
-                labels: categoryLabels,
-                datasets: [{
-                    data: categoryValues,
-                    backgroundColor: ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#6366f1'],
-                    borderWidth: 0
-                }]
+                labels: trendLabels,
+                datasets: [
+                    { label:'Të Ardhura (€)', data:trendRevenue, borderColor:'#0f766e', backgroundColor:'rgba(15,118,110,0.08)', fill:true, tension:0.4, pointBackgroundColor:'#0f766e', pointRadius:4, yAxisID:'yRev' },
+                    { label:'Porosi', data:trendOrders, borderColor:'#3b82f6', backgroundColor:'rgba(59,130,246,0.06)', fill:true, tension:0.4, pointBackgroundColor:'#3b82f6', pointRadius:4, yAxisID:'yOrd' }
+                ]
             },
             options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { position: 'bottom', labels: { usePointStyle: true, padding: 20 } }
-                },
-                cutout: '70%'
-            }
-        });
-
-        // Brand Chart
-        new Chart(brandCtx, {
-            type: 'bar',
-            data: {
-                labels: brandLabels,
-                datasets: [{
-                    label: 'Produkte',
-                    data: brandValues,
-                    backgroundColor: '#10b981',
-                    borderRadius: 8
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
+                responsive:true, maintainAspectRatio:false,
+                interaction:{ mode:'index', intersect:false },
                 scales: {
-                    y: { beginAtZero: true, grid: { display: false } },
-                    x: { grid: { display: false } }
+                    yRev:{ position:'left', beginAtZero:true, grid:{ color:'#f1f5f9' }, ticks:{ callback:v=>'€'+v } },
+                    yOrd:{ position:'right', beginAtZero:true, grid:{ display:false } },
+                    x:{ grid:{ display:false } }
                 },
-                plugins: {
-                    legend: { display: false }
-                }
+                plugins:{ legend:{ position:'top', labels:{ usePointStyle:true } } }
             }
         });
-    });
-
-    document.getElementById('adminProductSearch').addEventListener('input', function (e) {
-        const term = e.target.value.toLowerCase().trim();
-        const rows = document.querySelectorAll('#productTable tbody tr');
-
-        rows.forEach(row => {
-            if (row.querySelector('.empty-table-state')) return;
-
-            const name = row.getAttribute('data-name') || '';
-            const category = row.getAttribute('data-category') || '';
-            const textContent = row.textContent.toLowerCase();
-
-            const terms = term.split(' ').filter(t => t);
-            const matches = terms.every(t => name.includes(t) || category.includes(t) || textContent.includes(t));
-            if (terms.length === 0 || matches) {
-                row.style.display = '';
-            } else {
-                row.style.display = 'none';
-            }
-        });
-    });
-
-    // Handle row clicks for product details
-    document.querySelectorAll('.product-row').forEach(row => {
-        row.addEventListener('click', function (e) {
-            // Prevent click if an action button or link was clicked
-            if (e.target.closest('.admin-actions') || e.target.closest('button') || e.target.closest('a')) {
-                return;
-            }
-            const url = this.getAttribute('data-url');
-            if (url) window.location.href = url;
-        });
-    });
-
-    function toggleAnalytics() {
-        window.location.href = "{{ url_for('admin.dashboard', view='analytics') }}";
     }
-
-    function confirmDelete(form) {
-        return confirm('A jeni i sigurt që dëshironi të fshini këtë produkt? Ky veprim nuk mund të kthehet.');
+    if (catCanvas) {
+        new Chart(catCanvas.getContext('2d'), {
+            type:'doughnut',
+            data:{ labels:categoryLabels, datasets:[{ data:categoryValues, backgroundColor:['#10b981','#3b82f6','#f59e0b','#ef4444','#8b5cf6','#6366f1'], borderWidth:0 }] },
+            options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'bottom', labels:{ usePointStyle:true, padding:20 }}}, cutout:'70%' }
+        });
     }
+    if (brandCanvas) {
+        new Chart(brandCanvas.getContext('2d'), {
+            type:'bar',
+            data:{ labels:brandLabels, datasets:[{ label:'Produkte', data:brandValues, backgroundColor:'#10b981', borderRadius:8 }] },
+            options:{ responsive:true, maintainAspectRatio:false, scales:{ y:{ beginAtZero:true, grid:{ display:false }}, x:{ grid:{ display:false }}}, plugins:{ legend:{ display:false }}}
+        });
+    }
+});
 </script>
 {% endblock %}

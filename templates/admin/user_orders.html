@@ -1,0 +1,107 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Porositë e {{ user.username }} - Meld Pharm Admin{% endblock %}
+{% block page_title %}Porositë e Klientit{% endblock %}
+
+{% block page_action %}
+<a href="{{ url_for('admin.users') }}" class="topbar-btn" style="background:#334155; color:#fff;">
+    <i class="fas fa-arrow-left"></i> Kthehu te Përdoruesit
+</a>
+{% endblock %}
+
+{% block admin_content %}
+
+<!-- User info card -->
+<div class="admin-table-card" style="padding:1.5rem; margin-bottom:1.5rem; display:flex; align-items:center; gap:1.25rem;">
+    <div style="width:56px; height:56px; border-radius:50%; background:linear-gradient(135deg,#0f766e,#0ea5e9); color:#fff; font-size:1.4rem; font-weight:800; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+        {{ (user.username or user.email or 'U')[0]|upper }}
+    </div>
+    <div style="flex:1;">
+        <div style="font-weight:800; font-size:1.1rem; color:#1e293b;">{{ user.username or '—' }}</div>
+        <div style="font-size:0.88rem; color:#64748b;">{{ user.email or '—' }}</div>
+        {% if user.phone %}<div style="font-size:0.82rem; color:#94a3b8;"><i class="fas fa-phone" style="font-size:0.7rem;"></i> {{ user.phone }}</div>{% endif %}
+    </div>
+    <div style="text-align:right;">
+        <div style="font-size:1.6rem; font-weight:800; color:#0f766e;">{{ orders|length }}</div>
+        <div style="font-size:0.78rem; color:#94a3b8; font-weight:700; text-transform:uppercase; letter-spacing:0.5px;">Porosi Gjithsej</div>
+    </div>
+    {% set total_spent = orders|sum(attribute='grand_total') %}
+    <div style="text-align:right; padding-left:1.5rem; border-left:1px solid #e2e8f0;">
+        <div style="font-size:1.6rem; font-weight:800; color:#1e293b;">€{{ "%.2f"|format(total_spent) }}</div>
+        <div style="font-size:0.78rem; color:#94a3b8; font-weight:700; text-transform:uppercase; letter-spacing:0.5px;">Shpenzuar Gjithsej</div>
+    </div>
+</div>
+
+{% if orders %}
+<div class="admin-table-card">
+    <div class="table-responsive">
+        <table class="premium-admin-table">
+            <thead>
+                <tr>
+                    <th>ID / Data</th>
+                    <th>Produktet</th>
+                    <th>Totali</th>
+                    <th>Pagesa</th>
+                    <th>Statusi</th>
+                    <th>Shënim Admin</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in orders %}
+                {% set st = order.status | lower %}
+                <tr>
+                    <td>
+                        <div style="display:flex; flex-direction:column; gap:0.15rem;">
+                            <span style="font-weight:800; font-family:monospace; font-size:0.9rem; color:#1e293b;">#{{ order._id|string|truncate(8,True,'') }}</span>
+                            <span style="font-size:0.78rem; color:#94a3b8;">{{ order.created_at.strftime('%d.%m.%Y %H:%M') if order.created_at else '—' }}</span>
+                        </div>
+                    </td>
+                    <td>
+                        <div style="display:flex; flex-direction:column; gap:0.2rem;">
+                            {% for item in (order.get('items') or [])[:3] %}
+                            <span style="font-size:0.82rem; color:#475569;">{{ item.quantity }}× {{ item.name }}</span>
+                            {% endfor %}
+                            {% if (order.get('items') or [])|length > 3 %}
+                            <span style="font-size:0.78rem; color:#94a3b8;">+{{ (order.get('items')|length) - 3 }} të tjera</span>
+                            {% endif %}
+                        </div>
+                    </td>
+                    <td><strong style="color:#0f766e;">€{{ "%.2f"|format(order.grand_total) }}</strong></td>
+                    <td><span style="font-size:0.82rem; background:#f1f5f9; padding:0.25rem 0.6rem; border-radius:6px; font-weight:700; color:#475569;">{{ order.payment_method or '—' }}</span></td>
+                    <td>
+                        {% if st in ['pending', 'në pritje'] %}
+                        <span class="uo-status-badge" style="background:#fef3c7; color:#92400e;">⏳ Në Pritje</span>
+                        {% elif st in ['konfirmuar', 'confirmed', 'pranuar'] %}
+                        <span class="uo-status-badge" style="background:#eff6ff; color:#1d4ed8;">✅ Konfirmuar</span>
+                        {% elif st in ['delivering', 'në dërgesë'] %}
+                        <span class="uo-status-badge" style="background:#f5f3ff; color:#6d28d9;">🚚 Në Dërgesë</span>
+                        {% elif st in ['delivered', 'dorezuar'] %}
+                        <span class="uo-status-badge" style="background:#f0fdf4; color:#16a34a;">📦 Dorëzuar</span>
+                        {% else %}
+                        <span class="uo-status-badge" style="background:#fef2f2; color:#dc2626;">✖ {{ order.status }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if order.get('admin_note') %}
+                        <span style="font-size:0.82rem; color:#64748b; font-style:italic;">{{ order.admin_note }}</span>
+                        {% else %}
+                        <span style="color:#cbd5e1;">—</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% else %}
+<div class="admin-table-card" style="padding:4rem; text-align:center;">
+    <i class="fas fa-shopping-cart fa-3x" style="color:#cbd5e1; display:block; margin-bottom:1rem;"></i>
+    <p style="color:#94a3b8; font-size:1rem; margin:0;">Ky përdorues nuk ka porosi ende.</p>
+</div>
+{% endif %}
+
+<style>
+.uo-status-badge { display:inline-flex; align-items:center; gap:0.3rem; padding:0.3rem 0.7rem; border-radius:8px; font-size:0.78rem; font-weight:700; }
+</style>
+{% endblock %}

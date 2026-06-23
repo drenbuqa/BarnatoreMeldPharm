@@ -101,6 +101,21 @@
                         </label>
                     </div>
 
+                    <!-- Pickup location info shown when pickup selected -->
+                    <div id="pickup-location-box" style="display:none;margin-bottom:1.5rem;border-radius:14px;overflow:hidden;border:1.5px solid #d1fae5;background:#f0fdf4;">
+                        <div style="padding:1rem 1.25rem;display:flex;align-items:center;gap:0.9rem;background:#ecfdf5;">
+                            <i class="fas fa-map-marker-alt" style="color:#0f766e;font-size:1.2rem;flex-shrink:0;"></i>
+                            <div>
+                                <div style="font-weight:700;color:#0f172a;font-size:0.92rem;">Barnatore Meld Pharm</div>
+                                <div style="color:#475569;font-size:0.83rem;">72 Eqrem Çabej, Prishtinë 10000</div>
+                                <div style="color:#64748b;font-size:0.8rem;margin-top:2px;"><i class="fas fa-clock" style="margin-right:4px;color:#0f766e;"></i>E Hënë–E Shtunë: 08:00–22:00 &nbsp;|&nbsp; E Diel: 08:00–21:00</div>
+                            </div>
+                        </div>
+                        <iframe src="https://maps.google.com/maps?q=72%20Eqrem%20%C3%87abej,%20Prishtina&t=&z=15&ie=UTF8&iwloc=&output=embed"
+                            width="100%" height="180" style="border:0;display:block;" allowfullscreen="" loading="lazy"
+                            referrerpolicy="no-referrer-when-downgrade"></iframe>
+                    </div>
+
                     <h3 style="margin-bottom: 1.5rem;">Të dhënat Personale</h3>
 
                     <div class="form-group">
@@ -273,8 +288,10 @@
         const cityInput = document.getElementById('city');
         const countrySelect = document.getElementById('country');
 
+        const pickupBox = document.getElementById('pickup-location-box');
         if (method === 'pickup') {
             addressContainer.style.display = 'none';
+            if (pickupBox) pickupBox.style.display = 'block';
             addressInput.required = false;
             cityInput.required = false;
             countrySelect.required = false;
@@ -283,6 +300,7 @@
             updateSummaryForPickup(true);
         } else {
             addressContainer.style.display = 'block';
+            if (pickupBox) pickupBox.style.display = 'none';
             addressInput.required = true;
             cityInput.required = true;
             countrySelect.required = true;
@@ -318,21 +336,14 @@
         const grandTotalDisplay = document.getElementById('grand-total-display');
 
         let fee = 0;
-        let threshold = 50;
-        let baseFee = 2;
+        const countryLower = country.toLowerCase();
+        const isAlbaniaMacedonia = ['shqipëria','shqiperia','albania','maqedonia','north macedonia'].includes(countryLower);
 
-        if (country === 'Kosova') {
-            threshold = 50;
-            baseFee = 2;
+        if (isAlbaniaMacedonia) {
+            fee = 5; // flat, never free
         } else {
-            threshold = 100;
-            baseFee = 5;
-        }
-
-        if (subtotal >= threshold) {
-            fee = 0;
-        } else {
-            fee = baseFee;
+            // Kosovo and default: €2.50, free above €50
+            fee = subtotal > 50 ? 0 : 2.5;
         }
 
         if (fee === 0) {

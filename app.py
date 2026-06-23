@@ -7,6 +7,8 @@ from flask import Flask, render_template, request, jsonify, session
 from flask_bcrypt import Bcrypt
 from flask_login import LoginManager, current_user
 from flask_wtf.csrf import CSRFProtect
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 from werkzeug.middleware.proxy_fix import ProxyFix
 try:
     from flask_compress import Compress
@@ -25,6 +27,10 @@ from routes.admin import admin
 
 csrf = CSRFProtect()
 compress = Compress() if Compress else None
+limiter = Limiter(key_func=get_remote_address, default_limits=[], storage_uri="memory://")
+
+from authlib.integrations.flask_client import OAuth
+oauth = OAuth()
 
 load_dotenv()
 
@@ -39,16 +45,21 @@ app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev_secret_key')
 app.config['MONGO_URI'] = os.getenv('MONGO_URI', 'mongodb://localhost:27017/meldpharm')
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
-app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=31) # Keep cart for 31 days
-# Secure cookies only if explicit or safely on Render (HTTPS)
-app.config['SESSION_COOKIE_SECURE'] = os.getenv('RENDER') is not None 
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=31)
+app.config['SESSION_COOKIE_SECURE'] = os.getenv('RENDER') is not None
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16 MB upload limit
+
+# Google OAuth
+app.config['GOOGLE_CLIENT_ID'] = os.getenv('GOOGLE_CLIENT_ID', '')
+app.config['GOOGLE_CLIENT_SECRET'] = os.getenv('GOOGLE_CLIENT_SECRET', '')
 
 @app.before_request
 def make_session_permanent():
-    session.permanent = True 
+    session.permanent = True
 
 # Initialize Extensions
 csrf.init_app(app)
+limiter.init_app(app)
 if compress:
     compress.init_app(app)
 init_db(app)
@@ -57,9 +68,46 @@ login_manager = LoginManager(app)
 login_manager.login_view = 'auth.login'
 login_manager.login_message_category = 'info'
 
+# Initialize OAuth once — must happen after app config is set
+oauth.init_app(app)
+oauth.register(
+    name='google',
+    client_id=app.config['GOOGLE_CLIENT_ID'],
+    client_secret=app.config['GOOGLE_CLIENT_SECRET'],
+    server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
+    client_kwargs={'scope': 'openid email profile'},
+)
+
 @login_manager.user_loader
 def load_user(user_id):
     return User.get_by_id(user_id)
+
+# ------------------------------------------------------------------
+# Security headers on every response
+# ------------------------------------------------------------------
+@app.after_request
+def set_security_headers(response):
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    response.headers['X-Frame-Options'] = 'SAMEORIGIN'
+    response.headers['X-XSS-Protection'] = '1; mode=block'
+    response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+    # Block common scraper/bot user agents
+    ua = request.headers.get('User-Agent', '')
+    bot_keywords = ('scrapy', 'wget', 'curl', 'python-requests', 'go-http-client',
+                    'httpclient', 'libwww', 'lynx', 'zgrab', 'masscan')
+    if any(k in ua.lower() for k in bot_keywords):
+        from flask import abort
+        abort(403)
+    return response
+
+# ------------------------------------------------------------------
+# Rate limit error handler
+# ------------------------------------------------------------------
+@app.errorhandler(429)
+def ratelimit_handler(e):
+    if request.is_json or request.path.startswith('/api/'):
+        return jsonify(error="Shumë kërkesa. Provoni përsëri pas pak."), 429
+    return render_template('errors/429.html'), 429
 
 @app.context_processor
 def inject_cart_count():
@@ -67,8 +115,7 @@ def inject_cart_count():
     from models.categories import CATEGORIES
     from flask_login import current_user
     import logging
-    
-    # 1. Initialize Defaults
+
     cart_count = 0
     cart_items = []
     cart_total = 0.0
@@ -78,7 +125,6 @@ def inject_cart_count():
     wish_count = 0
 
     try:
-        # 2. Calculate Wishlist Count FIRST (Standalone block)
         try:
             from models.db import mongo
             if current_user.is_authenticated:
@@ -91,7 +137,6 @@ def inject_cart_count():
         except Exception as we:
             logging.error(f"Wishlist calculation failed: {we}")
 
-        # 3. Process Cart (Independent block)
         try:
             cart = session.get('cart', {})
             if cart and mongo and mongo.db:
@@ -100,11 +145,11 @@ def inject_cart_count():
                 for pid in cart.keys():
                     if pid and ObjectId.is_valid(str(pid)):
                         product_ids.append(ObjectId(str(pid)))
-                        
+
                 if product_ids:
                     products_cursor = list(mongo.db.products.find({"_id": {"$in": product_ids}}))
                     products_db = {str(p['_id']): p for p in products_cursor}
-                    
+
                     for pid, qty in cart.items():
                         product = products_db.get(str(pid))
                         if product:
@@ -113,21 +158,18 @@ def inject_cart_count():
                                 p_price = float(product.get('discount_price') or product.get('price') or 0.0)
                                 original_price = float(product.get('price') or 0.0)
                                 qty_int = int(qty)
-                                
                                 item_total = p_price * qty_int
                                 item_savings = (original_price - p_price) * qty_int if product.get('discount_price') else 0.0
-                                
                                 cart_total += item_total
                                 cart_savings += item_savings
                                 cart_count += qty_int
-                                
                                 product['quantity'] = qty_int
                                 product['item_total'] = item_total
                                 product['item_savings'] = item_savings
                                 cart_items.append(product)
-                            except: continue
+                            except:
+                                continue
 
-                # 4. Delivery
                 from routes.cart import calculate_shipping
                 country = current_user.country if current_user.is_authenticated and current_user.country else 'Kosova'
                 delivery_fee = calculate_shipping(cart_total, country)
@@ -139,13 +181,13 @@ def inject_cart_count():
         logging.error(f"Critical error in context processor: {e}")
 
     return dict(
-        cart_count=int(cart_count), 
+        cart_count=int(cart_count),
         cart_items=cart_items,
         cart_total=float(cart_total),
         cart_savings=float(cart_savings),
         delivery_fee=float(delivery_fee),
         grand_total=float(grand_total),
-        wishlist_count=int(wish_count), 
+        wishlist_count=int(wish_count),
         global_categories=CATEGORIES
     )
 
@@ -160,17 +202,14 @@ def _log_slow_requests(response):
     start_time = getattr(request, '_start_time', None)
     if start_time is None:
         return response
-
     duration_ms = (time.perf_counter() - start_time) * 1000
     if duration_ms >= 1000:
         logging.warning(
             "Slow request: %s %s -> %s in %.1fms",
-            request.method,
-            request.path,
-            response.status_code,
-            duration_ms,
+            request.method, request.path, response.status_code, duration_ms,
         )
     return response
+
 
 # Register Blueprints
 app.register_blueprint(main)

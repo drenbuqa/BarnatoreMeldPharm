@@ -1,0 +1,305 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Produktet - Meld Pharm Admin{% endblock %}
+{% block page_title %}Produktet{% endblock %}
+
+{% block page_action %}
+<a href="{{ url_for('admin.new_product') }}" class="topbar-btn">
+    <i class="fas fa-plus"></i> Produkt i Ri
+</a>
+{% endblock %}
+
+{% block admin_content %}
+
+<!-- Stats row -->
+<div style="display:flex; align-items:center; gap:1rem; margin-bottom:1.25rem; flex-wrap:wrap;">
+    <div class="prod-stat-pill prod-stat-blue">
+        <i class="fas fa-boxes"></i>
+        <span>{{ total_count }} produkte gjithsej</span>
+    </div>
+    {% if filter_category or filter_brand or filter_on_offer or filter_stock %}
+    <div class="prod-stat-pill prod-stat-teal">
+        <i class="fas fa-filter"></i>
+        <span>{{ products|length }} rezultate</span>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Filter bar -->
+<div class="products-filter-bar">
+    <!-- Top row: search + filter toggle + quick chips -->
+    <div style="display:flex; align-items:center; gap:0.75rem; flex-wrap:wrap;">
+        <div class="prod-search-wrapper" style="flex:1; min-width:200px;">
+            <i class="fas fa-search"></i>
+            <input type="text" id="adminProductSearch" placeholder="Kërko sipas emrit ose brendit...">
+        </div>
+        <button type="button" class="filter-toggle-btn {{ 'active' if filter_category or filter_brand }}" onclick="toggleFilterPanel()" id="filterToggleBtn">
+            <i class="fas fa-sliders-h"></i>
+            Filtrat
+            {% if filter_category or filter_brand %}
+            <span class="filter-active-dot"></span>
+            {% endif %}
+        </button>
+        <a href="{{ url_for('admin.products_page', category=filter_category, brand=filter_brand, on_offer='' if filter_on_offer else 1) }}"
+           class="toggle-chip {{ 'on' if filter_on_offer }}">
+            <i class="fas fa-tag"></i> Oferta
+        </a>
+        {% if filter_category or filter_brand or filter_on_offer %}
+        <a href="{{ url_for('admin.products_page') }}" class="toggle-chip clear">
+            <i class="fas fa-times"></i> Fshi
+        </a>
+        {% endif %}
+    </div>
+
+    <!-- Collapsible filter panel -->
+    <div id="filterPanel" style="display:{{ 'flex' if filter_category or filter_brand else 'none' }}; flex-direction:column; gap:0.85rem; padding-top:1rem; border-top:1px solid #f1f5f9; margin-top:0.75rem;">
+        <!-- Category pills -->
+        <div class="filter-group">
+            <span class="filter-group-label">Kategoria</span>
+            <div class="filter-pills-scroll">
+                <a href="{{ url_for('admin.products_page', brand=filter_brand, on_offer=1 if filter_on_offer else '') }}"
+                   class="filter-pill {{ 'active' if not filter_category }}">Të gjitha</a>
+                {% for cat in all_categories %}
+                <a href="{{ url_for('admin.products_page', category=cat, brand=filter_brand, on_offer=1 if filter_on_offer else '') }}"
+                   class="filter-pill {{ 'active' if filter_category == cat }}">{{ cat }}</a>
+                {% endfor %}
+            </div>
+        </div>
+        <!-- Brand pills -->
+        <div class="filter-group">
+            <span class="filter-group-label">Brendi</span>
+            <div class="filter-pills-scroll">
+                <a href="{{ url_for('admin.products_page', category=filter_category, on_offer=1 if filter_on_offer else '') }}"
+                   class="filter-pill {{ 'active' if not filter_brand }}">Të gjitha</a>
+                {% for br in all_brands %}
+                <a href="{{ url_for('admin.products_page', category=filter_category, brand=br, on_offer=1 if filter_on_offer else '') }}"
+                   class="filter-pill {{ 'active' if filter_brand == br }}">{{ br }}</a>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Products table -->
+<div class="admin-table-card">
+    <div class="table-responsive">
+        <table class="premium-admin-table" id="productTable">
+            <thead>
+                <tr>
+                    <th style="width:72px;">Foto</th>
+                    <th>Produkti</th>
+                    <th>Kategoria</th>
+                    <th>Çmimi</th>
+                    <th style="width:70px; text-align:center;">Stoku</th>
+                    <th style="text-align:right;">Veprime</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for product in products %}
+                <tr class="product-row"
+                    data-name="{{ (product.name + ' ' + (product.brand or ''))|lower }}"
+                    data-url="{{ url_for('main.product_detail', product_id=product._id) }}"
+                    style="cursor:pointer;">
+                    <td>
+                        <div class="table-product-img">
+                            <img src="{{ product.image_url }}" alt="{{ product.name }}"
+                                onerror="this.src='/static/img/placeholder.png'">
+                        </div>
+                    </td>
+                    <td>
+                        <div class="table-product-info">
+                            <span class="table-brand">{{ product.brand or 'Pa Brend' }}</span>
+                            <span class="table-name">{{ product.name }}</span>
+                            {% if product.size %}<span class="table-size text-muted">{{ product.size }}</span>{% endif %}
+                        </div>
+                    </td>
+                    <td>
+                        <div style="display:flex; flex-direction:column; gap:0.2rem;">
+                            <span class="table-cat-badge">{{ product.category }}</span>
+                            {% if product.subcategory %}<span style="font-size:0.75rem; color:#94a3b8;">{{ product.subcategory }}</span>{% endif %}
+                        </div>
+                    </td>
+                    <td>
+                        <div class="table-price-info">
+                            {% if product.discount_price %}
+                            <span class="price-old">€{{ "%.2f"|format(product.price) }}</span>
+                            <span class="price-new">€{{ "%.2f"|format(product.discount_price) }}</span>
+                            <span class="discount-badge-mini">-{{ ((product.price - product.discount_price) / product.price * 100)|round|int }}%</span>
+                            {% else %}
+                            <span class="price-normal">€{{ "%.2f"|format(product.price) }}</span>
+                            {% endif %}
+                        </div>
+                    </td>
+                    <td style="text-align:center;" onclick="event.stopPropagation();">
+                        <form action="{{ url_for('admin.toggle_stock', product_id=product._id) }}" method="POST" style="display:inline;">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                            <button type="submit"
+                                class="stock-toggle-btn {{ 'btn-stock-on' if product.in_stock else 'btn-stock-off' }}"
+                                title="{{ 'Në Stok — kliko për të hequr' if product.in_stock else 'Jo Stok — kliko për të shtuar' }}">
+                                <i class="fas {{ 'fa-toggle-on' if product.in_stock else 'fa-toggle-off' }}"></i>
+                            </button>
+                        </form>
+                    </td>
+                    <td>
+                        <div class="table-actions" style="justify-content:flex-end;">
+                            <a href="{{ url_for('admin.edit_product', product_id=product._id) }}"
+                               class="action-btn edit" title="Ndrysho" onclick="event.stopPropagation();">
+                                <i class="fas fa-pen"></i>
+                            </a>
+                            <form action="{{ url_for('admin.delete_product', product_id=product._id) }}"
+                                  method="POST" onsubmit="return confirmDelete(this);"
+                                  onclick="event.stopPropagation();">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                                <button type="submit" class="action-btn delete" title="Fshije">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7" style="text-align:center; padding:3.5rem;">
+                        <i class="fas fa-box-open fa-3x" style="color:#cbd5e1; display:block; margin-bottom:1rem;"></i>
+                        <p style="color:#94a3b8; font-size:1rem; margin:0 0 1rem;">Nuk u gjet asnjë produkt.</p>
+                        <a href="{{ url_for('admin.products_page') }}" style="color:#0f766e; font-weight:600; font-size:0.9rem;">Hiq filtrat</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<style>
+/* Filter bar */
+.products-filter-bar {
+    background:#fff; border:1px solid #e2e8f0; border-radius:16px;
+    padding:1.25rem 1.5rem; margin-bottom:1.25rem;
+    display:flex; flex-direction:column; gap:1rem;
+}
+.prod-search-wrapper {
+    position:relative;
+}
+.prod-search-wrapper i {
+    position:absolute; left:1rem; top:50%; transform:translateY(-50%); color:#94a3b8; font-size:0.9rem;
+}
+.prod-search-wrapper input {
+    width:100%; padding:0.7rem 1rem 0.7rem 2.75rem;
+    border:1.5px solid #e2e8f0; border-radius:10px;
+    background:#f8fafc; font-size:0.9rem; color:#334155;
+    outline:none; transition:border-color 0.2s, background 0.2s;
+    box-sizing:border-box;
+}
+.prod-search-wrapper input:focus { border-color:#0f766e; background:#fff; }
+
+.filter-group { display:flex; align-items:flex-start; gap:0.75rem; }
+.filter-group-label {
+    font-size:0.72rem; font-weight:800; text-transform:uppercase; letter-spacing:0.6px;
+    color:#94a3b8; white-space:nowrap; padding-top:0.45rem; min-width:68px;
+}
+.filter-pills-scroll {
+    display:flex; flex-wrap:nowrap; gap:0.4rem;
+    overflow-x:auto; padding-bottom:0.25rem;
+    scrollbar-width:none;
+}
+.filter-pills-scroll::-webkit-scrollbar { display:none; }
+.filter-pill {
+    display:inline-flex; align-items:center;
+    padding:0.38rem 0.9rem; border-radius:20px; font-size:0.8rem; font-weight:600;
+    background:#f1f5f9; color:#475569; text-decoration:none;
+    border:1.5px solid transparent; transition:all 0.18s; white-space:nowrap;
+}
+.filter-pill:hover { background:#e2e8f0; color:#1e293b; }
+.filter-pill.active { background:#0f766e; color:#fff; border-color:#0f766e; }
+
+.filter-toggles { display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap; padding-top:0.25rem; border-top:1px solid #f1f5f9; }
+.toggle-chip {
+    display:inline-flex; align-items:center; gap:0.4rem;
+    padding:0.4rem 0.85rem; border-radius:20px; font-size:0.8rem; font-weight:700;
+    background:#f1f5f9; color:#64748b; text-decoration:none;
+    border:1.5px solid #e2e8f0; transition:all 0.18s;
+}
+.toggle-chip:hover { background:#e2e8f0; }
+.toggle-chip.on { background:#0f766e; color:#fff; border-color:#0f766e; }
+.toggle-chip.on.danger { background:#ef4444; border-color:#ef4444; }
+.toggle-chip.clear { background:#fee2e2; color:#dc2626; border-color:#fca5a5; }
+.toggle-chip.clear:hover { background:#fca5a5; }
+
+/* Stat pills */
+.prod-stat-pill {
+    display:inline-flex; align-items:center; gap:0.45rem;
+    padding:0.4rem 1rem; border-radius:20px; font-size:0.83rem; font-weight:700;
+}
+.prod-stat-blue { background:#eff6ff; color:#1d4ed8; }
+.prod-stat-teal { background:#f0fdfa; color:#0f766e; }
+
+/* Offer expiry badge */
+.offer-expiry-badge {
+    display:inline-flex; align-items:center; gap:0.3rem;
+    padding:0.3rem 0.65rem; background:#fef3c7; color:#92400e;
+    border-radius:8px; font-size:0.75rem; font-weight:700;
+}
+
+/* Stock toggle — single large icon, color-coded */
+.stock-toggle-btn { background:none; border:none; cursor:pointer; font-size:1.7rem; padding:0; line-height:1; transition:color 0.18s, transform 0.15s; display:block; }
+.btn-stock-on  { color:#10b981; }
+.btn-stock-off { color:#cbd5e1; }
+.btn-stock-on:hover  { color:#059669; transform:scale(1.1); }
+.btn-stock-off:hover { color:#f59e0b; transform:scale(1.1); }
+
+/* Filter toggle button */
+.filter-toggle-btn {
+    display:inline-flex; align-items:center; gap:0.45rem;
+    padding:0.5rem 1rem; border-radius:10px; font-size:0.84rem; font-weight:700;
+    background:#f1f5f9; color:#475569; border:1.5px solid #e2e8f0;
+    cursor:pointer; transition:all 0.18s; white-space:nowrap; position:relative;
+}
+.filter-toggle-btn:hover, .filter-toggle-btn.active { background:#1e293b; color:#fff; border-color:#1e293b; }
+.filter-active-dot {
+    width:7px; height:7px; border-radius:50%; background:#10b981;
+    position:absolute; top:6px; right:6px;
+}
+
+/* Offer expiry badge (kept for CSS completeness, column removed) */
+.offer-expiry-badge { display:inline-flex; align-items:center; gap:0.3rem; padding:0.3rem 0.65rem; background:#fef3c7; color:#92400e; border-radius:8px; font-size:0.75rem; font-weight:700; }
+
+@media(max-width:768px) {
+    .filter-group { flex-direction:column; gap:0.4rem; }
+    .filter-group-label { min-width:unset; }
+}
+</style>
+
+<script>
+function toggleFilterPanel() {
+    const panel = document.getElementById('filterPanel');
+    const btn   = document.getElementById('filterToggleBtn');
+    const open  = panel.style.display === 'none';
+    panel.style.display = open ? 'flex' : 'none';
+    btn.classList.toggle('active', open);
+}
+
+document.getElementById('adminProductSearch').addEventListener('input', function(e) {
+    const term = e.target.value.toLowerCase().trim();
+    document.querySelectorAll('#productTable tbody tr').forEach(row => {
+        if (row.querySelector('td[colspan]')) return;
+        const name = row.getAttribute('data-name') || '';
+        const text = row.textContent.toLowerCase();
+        const terms = term.split(' ').filter(t => t);
+        row.style.display = (!terms.length || terms.every(t => name.includes(t) || text.includes(t))) ? '' : 'none';
+    });
+});
+
+document.querySelectorAll('.product-row').forEach(row => {
+    row.addEventListener('click', function(e) {
+        if (e.target.closest('.table-actions') || e.target.closest('form')) return;
+        const url = this.getAttribute('data-url');
+        if (url) window.open(url, '_blank');
+    });
+});
+
+function confirmDelete(form) {
+    return confirm('A jeni i sigurt që dëshironi të fshini këtë produkt? Ky veprim nuk mund të kthehet.');
+}
+</script>
+{% endblock %}

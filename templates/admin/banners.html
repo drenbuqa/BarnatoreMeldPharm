@@ -1,8 +1,9 @@
-{% extends "base.html" %}
-{% block content %}
+{% extends "admin/base.html" %}
+{% block title %}Banerët e Faqes - Meld Pharm Admin{% endblock %}
+{% block page_title %}Banerët e Faqes{% endblock %}
+
+{% block admin_content %}
 <div class="admin-dashboard-container">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/segments/admin.css') }}">
-    {% include 'admin/_nav.html' %}
 
     <style>
         .banner-grid {
@@ -226,27 +227,24 @@
                         <i class="fas fa-calendar-day"></i> Skadon {{ banner.expires_at.strftime('%d/%m/%Y') }}
                     </span>
                     {% endif %}
+                    <span class="banner-pill neutral" title="Klikime totale">
+                        <i class="fas fa-mouse-pointer"></i> {{ banner.click_count or 0 }} klikime
+                    </span>
                 </div>
             </div>
             <div class="banner-actions">
-                <div class="banner-reorder-group">
+                <div class="banner-reorder-group" data-banner-id="{{ banner._id }}" data-csrf="{{ csrf_token() }}">
                     {% if not loop.first %}
-                    <form action="{{ url_for('admin.reorder_banner', banner_id=banner._id) }}" method="POST" style="margin: 0;">
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                        <input type="hidden" name="direction" value="up">
-                        <button type="submit" class="banner-reorder-btn" title="Lëvize lart">
-                            <i class="fas fa-arrow-up"></i>
-                        </button>
-                    </form>
+                    <button type="button" class="banner-reorder-btn" title="Lëvize lart"
+                        onclick="reorderBanner('{{ banner._id }}', 'up', '{{ csrf_token() }}', this)">
+                        <i class="fas fa-arrow-up"></i>
+                    </button>
                     {% endif %}
                     {% if not loop.last %}
-                    <form action="{{ url_for('admin.reorder_banner', banner_id=banner._id) }}" method="POST" style="margin: 0;">
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                        <input type="hidden" name="direction" value="down">
-                        <button type="submit" class="banner-reorder-btn" title="Lëvize poshtë">
-                            <i class="fas fa-arrow-down"></i>
-                        </button>
-                    </form>
+                    <button type="button" class="banner-reorder-btn" title="Lëvize poshtë"
+                        onclick="reorderBanner('{{ banner._id }}', 'down', '{{ csrf_token() }}', this)">
+                        <i class="fas fa-arrow-down"></i>
+                    </button>
                     {% endif %}
                 </div>
                 <button type="button" class="banner-icon-btn edit" 
@@ -578,6 +576,48 @@ function prepareAddForm() {
         finalValue = document.querySelector('select[name="link_value_offer"]').value;
     }
     document.getElementById('addLinkValueFinal').value = finalValue;
+}
+
+function reorderBanner(bannerId, direction, csrf, btn) {
+    btn.disabled = true;
+    btn.style.opacity = '0.5';
+
+    const formData = new FormData();
+    formData.append('csrf_token', csrf);
+    formData.append('direction', direction);
+
+    fetch(`/admin/banners/reorder/${bannerId}`, {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        body: formData
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.ok) {
+            // Swap card DOM nodes without a page reload
+            const grid = document.querySelector('.banner-grid');
+            const cards = Array.from(grid.children);
+            const idx = cards.findIndex(c => c.querySelector(`[onclick*="${bannerId}"]`));
+            if (idx === -1) { location.reload(); return; }
+            const card = cards[idx];
+            if (direction === 'up' && idx > 0) {
+                grid.insertBefore(card, cards[idx - 1]);
+            } else if (direction === 'down' && idx < cards.length - 1) {
+                grid.insertBefore(cards[idx + 1], card);
+            }
+            // Update order chips
+            Array.from(grid.children).forEach((c, i) => {
+                const chip = c.querySelector('.banner-order-chip');
+                if (chip) chip.textContent = '#' + (i + 1);
+            });
+        }
+        btn.disabled = false;
+        btn.style.opacity = '1';
+    })
+    .catch(() => {
+        btn.disabled = false;
+        btn.style.opacity = '1';
+    });
 }
 </script>
     </div>

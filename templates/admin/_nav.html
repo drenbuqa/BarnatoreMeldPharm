@@ -19,6 +19,9 @@
         <a href="{{ url_for('admin.dashboard', view='analytics') }}" class="admin-nav-item {{ 'active' if request.args.get('view') == 'analytics' else '' }}" id="nav-analytics">
             <i class="fas fa-chart-pie"></i> Analitika
         </a>
+        <a href="{{ url_for('admin.newsletter') }}" class="admin-nav-item {{ 'active' if request.endpoint == 'admin.newsletter' else '' }}">
+            <i class="fas fa-paper-plane"></i> Buletini
+        </a>
     </div>
     <div class="nav-right-spacer"></div>
 </nav>

@@ -1,733 +1,536 @@
-{% extends "base.html" %}
+{% extends "admin/base.html" %}
 
-{% block content %}
-<div class="admin-orders-container">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/segments/admin.css') }}">
-    {% include 'admin/_nav.html' %}
+{% block title %}Menaxhimi i Porosive - Meld Pharm Admin{% endblock %}
+{% block page_title %}Menaxhimi i Porosive{% endblock %}
 
-    <div class="admin-header-v2">
-        <div class="header-main">
-            <h1 class="admin-title-v2">
-                <i class="fas fa-shopping-bag"></i> Menaxhimi i Porosive
-            </h1>
-            <p class="admin-subtitle text-muted">Mbikëqyrni porositë e klientëve dhe ndryshoni statusin e tyre.</p>
-        </div>
-        <div class="header-stats">
-            <div class="stat-card">
-                <span class="stat-value">{{ total if total is defined else orders|length }}</span>
-                <span class="stat-label">Gjithsej</span>
-            </div>
-            <div class="stat-card warning">
-                <span class="stat-value">{% set ns = namespace(pending=0) %}{% for order in orders %}{% if order.status in ['Pending', 'Delivering'] %}{% set ns.pending = ns.pending + 1 %}{% endif %}{% endfor %}{{ ns.pending }}</span>
-                <span class="stat-label">Në Pritje</span>
-            </div>
+{% block admin_content %}
+
+<!-- KPI Cards -->
+<div class="kpi-grid" style="margin-bottom:1.5rem;">
+    <div class="kpi-card kpi-blue" style="cursor:pointer;" onclick="location.href='{{ url_for('admin.orders') }}'">
+        <div class="kpi-icon"><i class="fas fa-shopping-bag"></i></div>
+        <div class="kpi-body">
+            <div class="kpi-number">{{ counts.total }}</div>
+            <div class="kpi-label">Gjithsej Porosi</div>
         </div>
     </div>
-
-    <div class="admin-actions-bar wide-search-bar">
-        <div class="search-and-filter" style="width: 100%;">
-            <div class="admin-search-wrapper" style="max-width: 100%; flex: 1;">
-                <i class="fas fa-search"></i>
-                <input type="text" id="adminOrderSearch"
-                    placeholder="Kërko sipas ID-së, Klientit, Qytetit ose Statusit...">
-            </div>
+    <div class="kpi-card kpi-orange" style="cursor:pointer;" onclick="location.href='{{ url_for('admin.orders', status='pending') }}'">
+        <div class="kpi-icon"><i class="fas fa-clock"></i></div>
+        <div class="kpi-body">
+            <div class="kpi-number">{{ counts.pending }}</div>
+            <div class="kpi-label">Në Pritje</div>
         </div>
     </div>
-
-    {% if orders %}
-    <div class="admin-table-card">
-        <div class="table-responsive">
-            <table class="premium-admin-table" id="orderTable">
-                <thead>
-                    <tr>
-                        <th>ID / Data</th>
-                        <th>Klienti</th>
-                        <th>Adresa</th>
-                        <th>Pagesa</th>
-                        <th>Totali</th>
-                        <th>Statusi</th>
-                        <th style="text-align: right;">Veprime</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for order in orders %}
-                    <tr class="order-parent-row" data-id="{{ order._id|string }}"
-                        data-fullname="{{ order.fullname|lower }}" data-city="{{ order.city|lower }}"
-                        data-status="{{ order.status|lower }}">
-                        <td>
-                            <div class="order-id-group">
-                                <span class="order-id">#{{ order._id|string|truncate(8, True, '') }}</span>
-                                <span class="order-date text-muted">{{ order.created_at.strftime('%d.%m.%Y - %H:%M')
-                                    }}</span>
-                            </div>
-                        </td>
-                        <td>
-                            <div class="order-customer-info">
-                                <span class="customer-name">{{ order.fullname }}</span>
-                                <span class="customer-tel text-muted"><i class="fas fa-phone"></i> {{ order.phone
-                                    }}</span>
-                            </div>
-                        </td>
-                        <td>
-                            <div class="order-location">
-                                <span class="location-city">{{ order.city }}</span>
-                                <span class="location-address text-muted">{{ order.address|truncate(30) }}</span>
-                            </div>
-                        </td>
-                        <td>
-                            <div class="payment-badge">{{ order.payment_method }}</div>
-                        </td>
-                        <td>
-                            <div class="order-total-val">€{{ "%.2f"|format(order.grand_total) }}</div>
-                        </td>
-                        <td>
-                            <form action="{{ url_for('admin.update_order_status', order_id=order._id) }}" method="POST"
-                                id="form-{{ order._id }}">
-                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-                                <div class="premium-select-wrapper">
-                                    <select name="status" class="premium-status-select {{ order.status|lower }}"
-                                        onchange="this.form.submit()">
-                                        <option value="Pending" {{ 'selected' if order.status in ['Pending', 'Delivering'] else '' }}>
-                                            Në Pritje</option>
-                                        <option value="Pranuar" {{ 'selected' if order.status in ['Pranuar', 'Confirmed'] else '' }}>
-                                            Pranuar</option>
-                                        <option value="Delivering" {{ 'selected' if order.status=='Delivering' else '' }}>
-                                            Në Dërgesë</option>
-                                        <option value="Cancelled" {{ 'selected' if order.status=='Cancelled' else '' }}>
-                                            Anuluar</option>
-                                    </select>
-                                </div>
-                            </form>
-                        </td>
-                        <td>
-                            <div class="table-actions">
-                                <button class="action-btn toggle-details" onclick="toggleDetails('{{ order._id }}')"
-                                    title="Shiko detajet">
-                                    <i class="fas fa-eye"></i>
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-                    <tr id="details-{{ order._id }}" class="details-row" style="display: none;">
-                        <td colspan="7">
-                            <div class="order-expanded-details">
-                                <div class="details-grid">
-                                    <div class="details-col">
-                                        <h4 class="details-subtitle"><i class="fas fa-user-circle"></i> Klienti dhe
-                                            Dërgesa</h4>
-                                        <div class="details-list">
-                                            <div class="details-item"><span>Emri:</span> <strong>{{ order.fullname
-                                                    }}</strong></div>
-                                            <div class="details-item"><span>Email:</span> <strong>{{ order.email if
-                                                    order.email else 'Nuk ka' }}</strong></div>
-                                            <div class="details-item"><span>Tel:</span> <strong>{{ order.phone
-                                                    }}</strong></div>
-                                            <div class="details-item"><span>Qyteti:</span> <strong>{{ order.city
-                                                    }}</strong></div>
-                                            <div class="details-item"><span>Adresa:</span> <strong>{{ order.address
-                                                    }}</strong></div>
-                                        </div>
-                                    </div>
-                                    <div class="details-col">
-                                        <h4 class="details-subtitle"><i class="fas fa-box"></i> Produktet e Porositura
-                                        </h4>
-                                        <div class="order-items-list">
-                                            {% for item in order['items'] %}
-                                            <div class="order-item-product">
-                                                <span class="item-qty">{{ item.quantity }}x</span>
-                                                <span class="item-name">{{ item.name }}</span>
-                                                <span class="item-price">€{{ "%.2f"|format(item.item_total) }}</span>
-                                            </div>
-                                            {% endfor %}
-                                            <div class="order-item-summary mt-2">
-                                                <div class="details-item total-row"><span>Totali:</span> <strong>€{{
-                                                        "%.2f"|format(order.grand_total) }}</strong></div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+    <div class="kpi-card kpi-purple" style="cursor:pointer;" onclick="location.href='{{ url_for('admin.orders', status='dergese') }}'">
+        <div class="kpi-icon"><i class="fas fa-truck"></i></div>
+        <div class="kpi-body">
+            <div class="kpi-number">{{ counts.dergese }}</div>
+            <div class="kpi-label">Në Dërgesë</div>
         </div>
     </div>
-
-    <!-- Pagination -->
-    {% if total_pages and total_pages > 1 %}
-    <div class="admin-pagination">
-        {% if page > 1 %}
-        <a href="{{ url_for('admin.orders', page=page-1) }}" class="page-btn"><i class="fas fa-chevron-left"></i></a>
-        {% endif %}
-        {% for p in range(1, total_pages + 1) %}
-            {% if p == page %}
-            <span class="page-btn active">{{ p }}</span>
-            {% elif p == 1 or p == total_pages or (p >= page - 2 and p <= page + 2) %}
-            <a href="{{ url_for('admin.orders', page=p) }}" class="page-btn">{{ p }}</a>
-            {% elif p == page - 3 or p == page + 3 %}
-            <span class="page-btn dots">…</span>
-            {% endif %}
-        {% endfor %}
-        {% if page < total_pages %}
-        <a href="{{ url_for('admin.orders', page=page+1) }}" class="page-btn"><i class="fas fa-chevron-right"></i></a>
-        {% endif %}
-    </div>
-    {% endif %}
-    {% else %}
-    <div class="admin-table-card">
-        <div class="empty-table-state py-5">
-            <i class="fas fa-shopping-cart fa-3x mb-3 text-muted"></i>
-            <p>Nuk u gjet asnjë porosi në sistem.</p>
+    <div class="kpi-card kpi-green" style="cursor:pointer;" onclick="location.href='{{ url_for('admin.orders', status='dorezuar') }}'">
+        <div class="kpi-icon"><i class="fas fa-check-circle"></i></div>
+        <div class="kpi-body">
+            <div class="kpi-number">{{ counts.dorezuar }}</div>
+            <div class="kpi-label">Dorëzuar</div>
         </div>
     </div>
-    {% endif %}
 </div>
 
+<!-- Status Filter Tabs + Search + Export -->
+<div class="admin-table-card" style="padding:1.25rem 1.5rem; margin-bottom:1rem; border-radius:16px;">
+    <div style="display:flex; align-items:center; gap:1rem; flex-wrap:wrap;">
+        <div class="admin-search-wrapper" style="flex:1; min-width:200px; max-width:360px;">
+            <i class="fas fa-search"></i>
+            <input type="text" id="adminOrderSearch" placeholder="Kërko sipas emrit, qytetit, ID...">
+        </div>
+        <div class="order-status-tabs" style="flex:1;">
+            <a href="{{ url_for('admin.orders') }}" class="status-tab {{ 'active' if not status_filter }}">Të gjitha</a>
+            <a href="{{ url_for('admin.orders', status='pending') }}" class="status-tab tab-orange {{ 'active' if status_filter == 'pending' }}">Në Pritje <span class="tab-count">{{ counts.pending }}</span></a>
+            <a href="{{ url_for('admin.orders', status='konfirmuar') }}" class="status-tab tab-blue {{ 'active' if status_filter == 'konfirmuar' }}">Konfirmuar <span class="tab-count">{{ counts.konfirmuar }}</span></a>
+            <a href="{{ url_for('admin.orders', status='dergese') }}" class="status-tab tab-purple {{ 'active' if status_filter == 'dergese' }}">Në Dërgesë <span class="tab-count">{{ counts.dergese }}</span></a>
+            <a href="{{ url_for('admin.orders', status='dorezuar') }}" class="status-tab tab-green {{ 'active' if status_filter == 'dorezuar' }}">Dorëzuar <span class="tab-count">{{ counts.dorezuar }}</span></a>
+            <a href="{{ url_for('admin.orders', status='anuluar') }}" class="status-tab tab-red {{ 'active' if status_filter == 'anuluar' }}">Anuluar/Refuzuar <span class="tab-count">{{ counts.anuluar }}</span></a>
+        </div>
+        <a href="{{ url_for('admin.export_orders', status=status_filter) }}"
+           class="export-btn" title="Shkarko CSV">
+            <i class="fas fa-file-csv"></i> Eksporto CSV
+        </a>
+    </div>
+</div>
+
+{% if orders %}
+<!-- Bulk action bar (hidden until selection) -->
+<form method="POST" action="{{ url_for('admin.bulk_order_status') }}" id="bulkForm">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="status_filter" value="{{ status_filter }}">
+    <div id="bulkBar" style="display:none;" class="bulk-bar">
+        <span id="bulkCount" class="bulk-count">0 të zgjedhura</span>
+        <div style="display:flex;align-items:center;gap:0.6rem;">
+            <select name="status" class="bulk-status-select">
+                <option value="">-- Zgjidh statusin e ri --</option>
+                <option value="Pending">⏳ Në Pritje</option>
+                <option value="Konfirmuar">✅ Konfirmuar</option>
+                <option value="Delivering">🚚 Në Dërgesë</option>
+                <option value="Delivered">📦 Dorëzuar</option>
+                <option value="Anuluar">✖ Anuluar</option>
+                <option value="Refuzuar">↩ Refuzuar</option>
+            </select>
+            <button type="button" onclick="submitBulk()" class="bulk-apply-btn"><i class="fas fa-check"></i> Apliko</button>
+        </div>
+        <button type="button" onclick="clearSelection()" class="bulk-clear-btn"><i class="fas fa-times"></i> Anulo</button>
+    </div>
+
+<div class="admin-table-card">
+    <div class="table-responsive">
+        <table class="premium-admin-table" id="orderTable">
+            <thead>
+                <tr>
+                    <th style="width:40px;"><input type="checkbox" id="selectAll" onclick="toggleAll(this)" style="width:16px;height:16px;cursor:pointer;accent-color:#0f766e;"></th>
+                    <th>ID / Data</th>
+                    <th>Klienti</th>
+                    <th>Qyteti</th>
+                    <th>Pagesa</th>
+                    <th>Totali</th>
+                    <th>Statusi</th>
+                    <th style="text-align:right;">Veprime</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in orders %}
+                {% set st = order.status | lower %}
+                <tr class="order-parent-row"
+                    data-id="{{ order._id|string }}"
+                    data-fullname="{{ order.fullname|lower }}"
+                    data-city="{{ (order.city or '')|lower }}"
+                    data-status="{{ st }}">
+                    <td onclick="event.stopPropagation();">
+                        <input type="checkbox" name="order_ids" value="{{ order._id }}"
+                            class="order-checkbox" onchange="updateBulkBar()"
+                            style="width:16px;height:16px;cursor:pointer;accent-color:#0f766e;">
+                    </td>
+                    <td>
+                        <div class="order-id-group">
+                            <span class="order-id">#{{ order._id|string|truncate(8, True, '') }}</span>
+                            <span class="order-date text-muted">{{ order.created_at.strftime('%d.%m.%Y %H:%M') }}</span>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="order-customer-info">
+                            <span class="customer-name">{{ order.fullname }}</span>
+                            <span class="customer-tel text-muted"><i class="fas fa-phone" style="font-size:0.7rem;"></i> {{ order.phone }}</span>
+                        </div>
+                    </td>
+                    <td>
+                        <span style="font-weight:600;">{{ order.city or '—' }}</span>
+                    </td>
+                    <td>
+                        <div class="payment-badge">{{ order.payment_method or '—' }}</div>
+                    </td>
+                    <td>
+                        <div class="order-total-val">€{{ "%.2f"|format(order.grand_total) }}</div>
+                    </td>
+                    <td>
+                        <form action="{{ url_for('admin.update_order_status', order_id=order._id) }}" method="POST" id="form-{{ order._id }}">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                            <div class="premium-select-wrapper">
+                                <select name="status"
+                                    class="premium-status-select st-{{ st }}"
+                                    onchange="this.form.submit()">
+                                    <option value="Pending"     {{ 'selected' if order.status in ['Pending','Në Pritje'] }}>⏳ Në Pritje</option>
+                                    <option value="Konfirmuar"  {{ 'selected' if order.status in ['Konfirmuar','Confirmed','Pranuar'] }}>✅ Konfirmuar</option>
+                                    <option value="Delivering"  {{ 'selected' if order.status in ['Delivering','Në Dërgesë'] }}>🚚 Në Dërgesë</option>
+                                    <option value="Delivered"   {{ 'selected' if order.status in ['Delivered','Dorezuar'] }}>📦 Dorëzuar</option>
+                                    <option value="Anuluar"     {{ 'selected' if order.status in ['Cancelled','Anuluar'] }}>✖ Anuluar</option>
+                                    <option value="Refuzuar"    {{ 'selected' if order.status == 'Refuzuar' }}>↩ Refuzuar</option>
+                                </select>
+                            </div>
+                        </form>
+                    </td>
+                    <td>
+                        <div class="table-actions" style="justify-content:flex-end;">
+                            <button class="action-btn" onclick="toggleDetails('{{ order._id }}')" title="Shiko detajet">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                <tr id="details-{{ order._id }}" class="details-row" style="display:none;">
+                    <td colspan="8">
+                        <div class="order-expanded-details">
+                            <div class="details-grid">
+                                <div class="details-col">
+                                    <h4 class="details-subtitle"><i class="fas fa-user-circle"></i> Klienti & Dërgesa</h4>
+                                    <div class="details-list">
+                                        <div class="details-item"><span>Emri:</span> <strong>{{ order.fullname }}</strong></div>
+                                        <div class="details-item"><span>Email:</span> <strong>{{ order.email or 'Nuk ka' }}</strong></div>
+                                        <div class="details-item"><span>Tel:</span> <strong>{{ order.phone }}</strong></div>
+                                        <div class="details-item"><span>Qyteti:</span> <strong>{{ order.city or '—' }}</strong></div>
+                                        <div class="details-item"><span>Adresa:</span> <strong>{{ order.address or '—' }}</strong></div>
+                                        {% if order.shipping_method %}<div class="details-item"><span>Dërgesa:</span> <strong>{{ order.shipping_method }}</strong></div>{% endif %}
+                                        {% if order.get('tracking_number') %}<div class="details-item"><span>Tracking:</span> <strong>{{ order.tracking_number }}</strong></div>{% endif %}
+                                        {% if order.get('notes') %}<div class="details-item"><span>Shënim Klienti:</span> <strong>{{ order.notes }}</strong></div>{% endif %}
+                                        {% if order.get('cancel_reason') %}<div class="details-item"><span>Arsyeja:</span> <strong style="color:#dc2626;">{{ order.cancel_reason }}</strong></div>{% endif %}
+                                    </div>
+
+                                    <!-- Admin note -->
+                                    <div style="margin-top:1.25rem;">
+                                        <h4 class="details-subtitle"><i class="fas fa-sticky-note" style="color:#f59e0b;"></i> Shënim Interno (Admin)</h4>
+                                        <div class="admin-note-wrapper" data-order-id="{{ order._id }}">
+                                            <textarea class="admin-note-textarea" rows="3"
+                                                placeholder="Shto shënim intern (p.sh. 'klienti thirri, vonesë në dërgesë')...">{{ order.admin_note or '' }}</textarea>
+                                            <button type="button" class="admin-note-save-btn" onclick="saveNote(this)">
+                                                <i class="fas fa-save"></i> Ruaj
+                                            </button>
+                                            <span class="note-saved-msg" style="display:none; color:#10b981; font-size:0.8rem; font-weight:700;">✓ U ruajt</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="details-col">
+                                    <h4 class="details-subtitle"><i class="fas fa-box"></i> Produktet e Porositura</h4>
+                                    <div class="order-items-list">
+                                        {% for item in order['items'] %}
+                                        <div class="order-item-product">
+                                            <span class="item-qty">{{ item.quantity }}x</span>
+                                            <span class="item-name">{{ item.name }}</span>
+                                            <span class="item-price">€{{ "%.2f"|format(item.item_total) }}</span>
+                                        </div>
+                                        {% endfor %}
+                                        <div style="margin-top:0.75rem; padding-top:0.75rem; border-top:2px solid #e2e8f0; display:flex; justify-content:space-between; font-weight:800; font-size:1.05rem;">
+                                            <span>Totali:</span>
+                                            <span style="color:#0f766e;">€{{ "%.2f"|format(order.grand_total) }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+</form>
+
+<!-- Pagination -->
+{% if total_pages and total_pages > 1 %}
+<div class="admin-pagination">
+    {% if page > 1 %}<a href="{{ url_for('admin.orders', page=page-1, status=status_filter) }}" class="page-btn"><i class="fas fa-chevron-left"></i></a>{% endif %}
+    {% for p in range(1, total_pages + 1) %}
+        {% if p == page %}<span class="page-btn active">{{ p }}</span>
+        {% elif p == 1 or p == total_pages or (p >= page-2 and p <= page+2) %}<a href="{{ url_for('admin.orders', page=p, status=status_filter) }}" class="page-btn">{{ p }}</a>
+        {% elif p == page-3 or p == page+3 %}<span class="page-btn dots">…</span>{% endif %}
+    {% endfor %}
+    {% if page < total_pages %}<a href="{{ url_for('admin.orders', page=page+1, status=status_filter) }}" class="page-btn"><i class="fas fa-chevron-right"></i></a>{% endif %}
+</div>
+{% endif %}
+
+{% else %}
+<div class="admin-table-card" style="padding:4rem; text-align:center;">
+    <i class="fas fa-shopping-cart fa-3x" style="color:#cbd5e1; margin-bottom:1rem;"></i>
+    <p style="color:#94a3b8; font-size:1.1rem;">Nuk u gjet asnjë porosi{% if status_filter %} me këtë status{% endif %}.</p>
+    {% if status_filter %}<a href="{{ url_for('admin.orders') }}" style="color:#0f766e; font-weight:600;">Shiko të gjitha porositë</a>{% endif %}
+</div>
+{% endif %}
+
 <style>
-    .admin-orders-container {
-        max-width: 1400px;
-        margin: 2rem auto;
-        padding: 0 1.5rem;
-    }
-
-    .admin-nav-item.active {
-        background: #059669;
-        color: white !important;
-        box-shadow: 0 8px 20px rgba(5, 150, 105, 0.25);
-    }
-
-    /* Top Navigation */
-    .admin-top-nav {
-        margin-bottom: 2rem;
-        display: flex;
-        justify-content: flex-start;
-    }
-
-    .btn-top-back {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-        padding: 0.75rem 1.25rem;
-        background: white;
-        border: 1px solid #e2e8f0;
-        border-radius: 12px;
-        color: #64748b !important;
-        font-weight: 600;
-        text-decoration: none !important;
-        transition: all 0.2s;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
-    }
-
-    .btn-top-back:hover {
-        background: #f8fafc;
-        border-color: #cbd5e1;
-        transform: translateX(-4px);
-        color: var(--primary) !important;
-    }
-
-    /* Shared Admin Header */
-    .admin-header-v2 {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 2.5rem;
-        gap: 2rem;
-    }
-
-    .admin-title-v2 {
-        font-size: 2.5rem;
-        font-weight: 800;
-        margin-bottom: 0.5rem;
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-    }
-
-    .admin-title-v2 i {
-        color: var(--primary);
-    }
-
-    .header-stats {
-        display: flex;
-        gap: 1.5rem;
-    }
-
-    .stat-card {
-        background: white;
-        padding: 1.25rem 2rem;
-        border-radius: 16px;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-        border: 1px solid #f1f5f9;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        min-width: 120px;
-    }
-
-    .stat-value {
-        font-size: 1.75rem;
-        font-weight: 800;
-        color: var(--text-main);
-    }
-
-    .stat-label {
-        font-size: 0.85rem;
-        font-weight: 600;
-        color: var(--text-muted);
-        text-transform: uppercase;
-    }
-
-    .stat-card.warning .stat-value {
-        color: #f59e0b;
-    }
-
-    /* Actions Bar */
-    .admin-actions-bar {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        background: white;
-        padding: 1.25rem;
-        border-radius: 20px;
-        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
-        margin-bottom: 2rem;
-        border: 1px solid #f1f5f9;
-        gap: 1.5rem;
-        flex-wrap: wrap;
-    }
-
-    .admin-search-wrapper {
-        position: relative;
-        flex: 1;
-        max-width: 600px;
-    }
-
-    .admin-search-wrapper i {
-        position: absolute;
-        left: 1.25rem;
-        top: 50%;
-        transform: translateY(-50%);
-        color: #94a3b8;
-    }
-
-    .admin-search-wrapper input {
-        width: 100%;
-        padding: 0.85rem 1rem 0.85rem 3rem;
-        background: #f8fafc;
-        border: 2px solid #f1f5f9;
-        border-radius: 14px;
-        font-size: 1rem;
-        transition: all 0.3s;
-    }
-
-    .admin-search-wrapper input:focus {
-        background: white;
-        border-color: var(--primary);
-        outline: none;
-        box-shadow: 0 0 0 4px rgba(5, 150, 105, 0.08);
-    }
-
-    .btn-outline-admin {
-        background: white;
-        border: 2px solid #f1f5f9;
-        color: var(--text-main) !important;
-        padding: 0.85rem 1.5rem;
-        border-radius: 14px;
-        font-weight: 700;
-        text-decoration: none !important;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        transition: all 0.2s;
-    }
-
-    .btn-outline-admin:hover {
-        border-color: #cbd5e1;
-        background: #f8fafc;
-    }
-
-    /* Table Styles */
-    .admin-table-card {
-        background: white;
-        border-radius: 20px;
-        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
-        border: 1px solid #f1f5f9;
-        overflow: hidden;
-    }
-
-    .premium-admin-table {
-        width: 100%;
-        border-collapse: collapse;
-    }
-
-    .premium-admin-table th {
-        background: #f8fafc;
-        padding: 1.25rem 1.5rem;
-        text-align: left;
-        font-weight: 700;
-        color: #64748b;
-        font-size: 0.85rem;
-        text-transform: uppercase;
-        border-bottom: 1px solid #f1f5f9;
-    }
-
-    .premium-admin-table td {
-        padding: 1.5rem;
-        border-bottom: 1px solid #f8fafc;
-        vertical-align: middle;
-    }
-
-    .premium-admin-table tr.order-parent-row:hover td {
-        background: #fbfdfc;
-        cursor: pointer;
-    }
-
-    .order-id-group {
-        display: flex;
-        flex-direction: column;
-    }
-
-    .order-id {
-        font-weight: 700;
-        color: var(--text-main);
-        font-family: monospace;
-        font-size: 1rem;
-    }
-
-    .order-date {
-        font-size: 0.8rem;
-    }
-
-    .order-customer-info {
-        display: flex;
-        flex-direction: column;
-    }
-
-    .customer-name {
-        font-weight: 700;
-        color: var(--text-main);
-    }
-
-    .customer-tel {
-        font-size: 0.8rem;
-    }
-
-    .order-location {
-        display: flex;
-        flex-direction: column;
-    }
-
-    .location-city {
-        font-weight: 700;
-        color: var(--text-main);
-    }
-
-    .location-address {
-        font-size: 0.8rem;
-    }
-
-    .payment-badge {
-        display: inline-block;
-        padding: 0.35rem 0.75rem;
-        background: #f1f5f9;
-        border-radius: 8px;
-        font-size: 0.8rem;
-        font-weight: 700;
-        color: #475569;
-    }
-
-    .order-total-val {
-        font-weight: 800;
-        color: var(--text-main);
-        font-size: 1.1rem;
-    }
-
-    /* Status Select */
-    .premium-select-wrapper {
-        position: relative;
-    }
-
-    .premium-status-select {
-        appearance: none;
-        padding: 0.5rem 2rem 0.5rem 0.75rem;
-        border-radius: 10px;
-        font-weight: 700;
-        font-size: 0.85rem;
-        border: 2px solid transparent;
-        cursor: pointer;
-        width: 140px;
-    }
-
-    .premium-status-select.delivering {
-        background: #fffbeb;
-        color: #d97706;
-        border-color: #fef3c7;
-    }
-
-    .premium-status-select.pending {
-        background: #fef3c7;
-        color: #92400e;
-        border-color: #fde68a;
-    }
-
-    .premium-status-select.confirmed {
-        background: #eff6ff;
-        color: #1d4ed8;
-        border-color: #dbeafe;
-    }
-
-    .premium-status-select.pranuar {
-        background: #eff6ff;
-        color: #1d4ed8;
-        border-color: #dbeafe;
-    }
-
-    .premium-status-select.received {
-        background: #f0fdf4;
-        color: #16a34a;
-        border-color: #dcfce7;
-    }
-
-    .premium-status-select.cancelled {
-        background: #fef2f2;
-        color: #dc2626;
-        border-color: #fee2e2;
-    }
-
-    .premium-select-wrapper::after {
-        content: '\f107';
-        font-family: 'Font Awesome 5 Free';
-        font-weight: 900;
-        position: absolute;
-        right: 0.75rem;
-        top: 50%;
-        transform: translateY(-50%);
-        pointer-events: none;
-        opacity: 0.6;
-    }
-
-    .action-btn {
-        width: 36px;
-        height: 36px;
-        border-radius: 10px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border: none;
-        cursor: pointer;
-        transition: all 0.2s;
-        background: #f1f5f9;
-        color: var(--primary);
-    }
-
-    .action-btn:hover {
-        background: var(--primary);
-        color: white;
-    }
-
-    /* Details Styling */
-    .details-row td {
-        padding: 0 !important;
-        background: #f8fafc !important;
-    }
-
-    .order-expanded-details {
-        padding: 2rem;
-        border-top: 1px solid #e2e8f0;
-        border-bottom: 2px solid #e2e8f0;
-    }
-
-    .details-grid {
-        display: grid;
-        grid-template-columns: 1fr 1.5fr;
-        gap: 3rem;
-    }
-
-    .details-subtitle {
-        font-size: 1.1rem;
-        font-weight: 700;
-        margin-bottom: 1.25rem;
-        display: flex;
-        align-items: center;
-        gap: 0.6rem;
-        color: var(--text-main);
-    }
-
-    .details-subtitle i {
-        color: var(--primary);
-    }
-
-    .details-list {
-        display: flex;
-        flex-direction: column;
-        gap: 0.75rem;
-    }
-
-    .details-item {
-        display: flex;
-        justify-content: flex-start;
-        gap: 1rem;
-        font-size: 0.95rem;
-    }
-
-    .details-item span {
-        color: #64748b;
-    }
-
-    .details-item.total-row {
-        padding-top: 1rem;
-        border-top: 1px solid #e2e8f0;
-        font-size: 1.2rem;
-        justify-content: space-between !important;
-    }
-
-    .order-items-list {
-        background: white;
-        border-radius: 12px;
-        padding: 1rem;
-        border: 1px solid #e2e8f0;
-    }
-
-    .order-item-product {
-        display: flex;
-        justify-content: space-between;
-        padding: 0.75rem 0;
-        border-bottom: 1px solid #f1f5f9;
-        align-items: center;
-        gap: 1rem;
-    }
-
-    .order-item-product:last-child {
-        border-bottom: none;
-    }
-
-    .item-qty {
-        font-weight: 800;
-        color: var(--primary);
-        background: #f0fdf4;
-        padding: 0.25rem 0.5rem;
-        border-radius: 6px;
-        font-size: 0.8rem;
-    }
-
-    .item-name {
-        flex: 1;
-        font-weight: 600;
-        font-size: 0.9rem;
-    }
-
-    .item-price {
-        font-weight: 700;
-        color: var(--text-main);
-    }
-
-    @media (max-width: 992px) {
-        .admin-header-v2 {
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 1.5rem;
-        }
-
-        .header-stats {
-            width: 100%;
-        }
-
-        .stat-card {
-            flex: 1;
-        }
-
-        .details-grid {
-            grid-template-columns: 1fr;
-            gap: 2rem;
-        }
-    }
-
-    /* Pagination */
-    .admin-pagination {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        gap: 0.5rem;
-        margin-top: 2rem;
-        flex-wrap: wrap;
-    }
-
-    .page-btn {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        min-width: 40px;
-        height: 40px;
-        padding: 0 0.75rem;
-        border-radius: 10px;
-        background: #fff;
-        border: 1px solid #e2e8f0;
-        color: var(--text-main);
-        font-weight: 600;
-        text-decoration: none;
-        transition: all 0.2s;
-    }
-
-    .page-btn:hover {
-        background: #f1f5f9;
-        border-color: #cbd5e1;
-        color: var(--primary);
-    }
-
-    .page-btn.active {
-        background: var(--primary);
-        border-color: var(--primary);
-        color: #fff;
-    }
-
-    .page-btn.dots {
-        background: transparent;
-        border-color: transparent;
-        pointer-events: none;
-    }
+/* Status filter tabs */
+.order-status-tabs { display:flex; gap:0.4rem; flex-wrap:wrap; }
+.status-tab {
+    padding:0.45rem 0.9rem; border-radius:20px; font-size:0.8rem; font-weight:700;
+    text-decoration:none !important; background:#f1f5f9; color:#64748b;
+    transition:all 0.2s; border:2px solid transparent;
+}
+.status-tab:hover { background:#e2e8f0; color:#1e293b; }
+.status-tab.active { background:#1e293b; color:#fff; }
+.status-tab.tab-orange.active { background:#f59e0b; color:#fff; }
+.status-tab.tab-blue.active   { background:#3b82f6; color:#fff; }
+.status-tab.tab-purple.active { background:#8b5cf6; color:#fff; }
+.status-tab.tab-green.active  { background:#10b981; color:#fff; }
+.status-tab.tab-red.active    { background:#ef4444; color:#fff; }
+.tab-count { background:rgba(0,0,0,0.12); border-radius:10px; padding:0.05rem 0.4rem; font-size:0.7rem; margin-left:0.3rem; }
+
+/* Color-coded status select */
+.premium-select-wrapper { position:relative; }
+.premium-select-wrapper::after { content:'\f107'; font-family:'Font Awesome 5 Free'; font-weight:900; position:absolute; right:0.6rem; top:50%; transform:translateY(-50%); pointer-events:none; opacity:0.6; font-size:0.8rem; }
+.premium-status-select { appearance:none; padding:0.5rem 2rem 0.5rem 0.7rem; border-radius:10px; font-weight:700; font-size:0.8rem; border:2px solid transparent; cursor:pointer; width:148px; }
+.premium-status-select.st-pending,
+.premium-status-select.st-në\ pritje   { background:#fef3c7; color:#92400e; border-color:#fde68a; }
+.premium-status-select.st-konfirmuar,
+.premium-status-select.st-confirmed,
+.premium-status-select.st-pranuar      { background:#eff6ff; color:#1d4ed8; border-color:#dbeafe; }
+.premium-status-select.st-delivering,
+.premium-status-select.st-në\ dërgesë  { background:#f5f3ff; color:#6d28d9; border-color:#ede9fe; }
+.premium-status-select.st-delivered,
+.premium-status-select.st-dorezuar     { background:#f0fdf4; color:#16a34a; border-color:#bbf7d0; }
+.premium-status-select.st-cancelled,
+.premium-status-select.st-anuluar,
+.premium-status-select.st-refuzuar     { background:#fef2f2; color:#dc2626; border-color:#fee2e2; }
+
+/* KPI purple */
+.kpi-card.kpi-purple { border-top:4px solid #8b5cf6; }
+.kpi-card.kpi-purple .kpi-icon { background:#f5f3ff; color:#8b5cf6; }
+.kpi-card.kpi-purple .kpi-number { color:#6d28d9; }
+
+/* Shared table styles */
+.admin-search-wrapper { position:relative; }
+.admin-search-wrapper i { position:absolute; left:1rem; top:50%; transform:translateY(-50%); color:#94a3b8; }
+.admin-search-wrapper input { width:100%; padding:0.75rem 1rem 0.75rem 2.75rem; border:2px solid #f1f5f9; border-radius:12px; background:#f8fafc; font-size:0.9rem; }
+.admin-search-wrapper input:focus { outline:none; border-color:#0f766e; background:#fff; }
+.order-id-group,.order-customer-info { display:flex; flex-direction:column; gap:0.15rem; }
+.order-id { font-weight:800; font-family:monospace; font-size:0.95rem; color:#1e293b; }
+.order-date,.customer-tel,.text-muted { font-size:0.78rem; color:#94a3b8; }
+.customer-name { font-weight:700; color:#1e293b; }
+.payment-badge { display:inline-block; padding:0.3rem 0.65rem; background:#f1f5f9; border-radius:8px; font-size:0.78rem; font-weight:700; color:#475569; }
+.order-total-val { font-weight:800; color:#1e293b; font-size:1rem; }
+.action-btn { width:34px; height:34px; border-radius:9px; display:flex; align-items:center; justify-content:center; border:none; cursor:pointer; background:#f1f5f9; color:#0f766e; transition:all 0.2s; }
+.action-btn:hover { background:#0f766e; color:#fff; }
+.details-row td { padding:0 !important; background:#f8fafc !important; }
+.order-expanded-details { padding:1.5rem 2rem; border-top:2px solid #e2e8f0; }
+.details-grid { display:grid; grid-template-columns:1fr 1.4fr; gap:2.5rem; }
+.details-subtitle { font-size:1rem; font-weight:700; margin-bottom:1rem; display:flex; align-items:center; gap:0.5rem; color:#1e293b; }
+.details-subtitle i { color:#0f766e; }
+.details-list { display:flex; flex-direction:column; gap:0.6rem; }
+.details-item { display:flex; gap:0.75rem; font-size:0.9rem; }
+.details-item span { color:#64748b; min-width:70px; }
+.order-items-list { background:#fff; border-radius:10px; padding:0.75rem 1rem; border:1px solid #e2e8f0; }
+.order-item-product { display:flex; align-items:center; justify-content:space-between; padding:0.6rem 0; border-bottom:1px solid #f1f5f9; gap:0.75rem; }
+.order-item-product:last-child { border-bottom:none; }
+.item-qty { font-weight:800; color:#0f766e; background:#f0fdf4; padding:0.2rem 0.45rem; border-radius:6px; font-size:0.78rem; white-space:nowrap; }
+.item-name { flex:1; font-weight:600; font-size:0.87rem; }
+.item-price { font-weight:700; font-size:0.9rem; white-space:nowrap; }
+.admin-pagination { display:flex; justify-content:center; align-items:center; gap:0.4rem; margin-top:2rem; flex-wrap:wrap; }
+.page-btn { display:inline-flex; align-items:center; justify-content:center; min-width:38px; height:38px; padding:0 0.6rem; border-radius:9px; background:#fff; border:1px solid #e2e8f0; color:#1e293b; font-weight:600; text-decoration:none; transition:all 0.2s; }
+.page-btn:hover { background:#f1f5f9; color:#0f766e; }
+.page-btn.active { background:#0f766e; border-color:#0f766e; color:#fff; }
+.page-btn.dots { background:transparent; border-color:transparent; pointer-events:none; }
+@media(max-width:900px){ .details-grid { grid-template-columns:1fr; gap:1.5rem; } }
+/* Export button */
+.export-btn { display:inline-flex; align-items:center; gap:0.45rem; padding:0.55rem 1rem; background:#f0fdf4; color:#15803d; border:1.5px solid #bbf7d0; border-radius:10px; font-size:0.82rem; font-weight:700; text-decoration:none; white-space:nowrap; transition:all 0.2s; }
+.export-btn:hover { background:#15803d; color:#fff; border-color:#15803d; }
+/* Admin note */
+.admin-note-wrapper { display:flex; flex-direction:column; gap:0.5rem; }
+.admin-note-textarea { width:100%; padding:0.7rem 0.9rem; border:1.5px solid #e2e8f0; border-radius:10px; font-size:0.85rem; resize:vertical; font-family:inherit; color:#334155; background:#f8fafc; transition:border-color 0.2s; box-sizing:border-box; }
+.admin-note-textarea:focus { outline:none; border-color:#f59e0b; background:#fff; }
+.admin-note-save-btn { align-self:flex-start; padding:0.45rem 1rem; background:#f59e0b; color:#fff; border:none; border-radius:8px; font-size:0.82rem; font-weight:700; cursor:pointer; transition:background 0.2s; }
+.admin-note-save-btn:hover { background:#d97706; }
+/* Bulk action bar */
+.bulk-bar {
+    display:flex; align-items:center; gap:1rem; flex-wrap:wrap;
+    background:#1e293b; color:#fff; border-radius:14px;
+    padding:0.85rem 1.25rem; margin-bottom:1rem;
+}
+.bulk-count { font-weight:800; font-size:0.9rem; white-space:nowrap; }
+.bulk-status-select {
+    padding:0.5rem 0.9rem; border-radius:9px; font-size:0.85rem; font-weight:700;
+    border:none; background:#334155; color:#fff; cursor:pointer; outline:none;
+}
+.bulk-apply-btn {
+    padding:0.5rem 1.1rem; border-radius:9px; font-size:0.85rem; font-weight:700;
+    background:#0f766e; color:#fff; border:none; cursor:pointer; white-space:nowrap;
+    transition:background 0.2s;
+}
+.bulk-apply-btn:hover { background:#0d6460; }
+.bulk-clear-btn {
+    margin-left:auto; padding:0.4rem 0.9rem; border-radius:9px; font-size:0.82rem; font-weight:700;
+    background:transparent; color:#94a3b8; border:1px solid #475569; cursor:pointer;
+    transition:all 0.2s;
+}
+.bulk-clear-btn:hover { background:#334155; color:#fff; }
+/* Cancel reason modal */
+.cancel-modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:9000; display:flex; align-items:center; justify-content:center; padding:1rem; }
+.cancel-modal-box { background:#fff; border-radius:16px; padding:2rem; max-width:440px; width:100%; box-shadow:0 24px 64px rgba(0,0,0,0.18); }
+.cancel-modal-box h3 { font-size:1.1rem; font-weight:800; color:#1e293b; margin:0 0 0.5rem; display:flex; align-items:center; gap:0.5rem; }
+.cancel-modal-box p { font-size:0.88rem; color:#64748b; margin:0 0 1.25rem; }
+.cancel-modal-box textarea { width:100%; padding:0.75rem; border:1.5px solid #e2e8f0; border-radius:10px; font-size:0.9rem; resize:vertical; font-family:inherit; box-sizing:border-box; }
+.cancel-modal-box textarea:focus { outline:none; border-color:#ef4444; }
+.cancel-modal-actions { display:flex; gap:0.75rem; margin-top:1rem; justify-content:flex-end; }
+.cancel-modal-actions button { padding:0.55rem 1.25rem; border-radius:9px; font-weight:700; font-size:0.88rem; cursor:pointer; border:none; }
+.btn-cancel-proceed { background:#ef4444; color:#fff; }
+.btn-cancel-dismiss { background:#f1f5f9; color:#475569; }
 </style>
 
+<!-- Tracking number modal (hidden) -->
+<div id="trackingModal" class="cancel-modal-overlay" style="display:none;">
+    <div class="cancel-modal-box">
+        <h3><i class="fas fa-truck" style="color:#8b5cf6;"></i> Numri i Gjurmimit (Tracking)</h3>
+        <p>Opsionale — shkruani numrin e gjurmimit të kurierit. Klienti do të marrë email me statusin e dërgesës.</p>
+        <input type="text" id="trackingNumberInput" placeholder="Psh: TN123456789AL"
+            style="width:100%; padding:0.75rem; border:1.5px solid #e2e8f0; border-radius:10px; font-size:0.9rem; box-sizing:border-box; font-family:monospace;">
+        <div class="cancel-modal-actions">
+            <button class="btn-cancel-dismiss" onclick="dismissTrackingModal()">Anulo</button>
+            <button class="btn-cancel-proceed" style="background:#8b5cf6;" onclick="confirmTrackingStatus()">Ndrysho Statusin</button>
+        </div>
+    </div>
+</div>
+
+<!-- Cancel reason modal (hidden) -->
+<div id="cancelReasonModal" class="cancel-modal-overlay" style="display:none;">
+    <div class="cancel-modal-box">
+        <h3><i class="fas fa-times-circle" style="color:#ef4444;"></i> Arsyeja e Anulimit</h3>
+        <p>Shkruani arsyen pse kjo porosi është anuluar ose refuzuar. Ky informacion ruhet vetëm për administratorët.</p>
+        <textarea id="cancelReasonText" rows="3" placeholder="Psh: klienti nuk u kontaktua, produkti mbaroi stoku..."></textarea>
+        <div class="cancel-modal-actions">
+            <button class="btn-cancel-dismiss" onclick="dismissCancelModal()">Anulo</button>
+            <button class="btn-cancel-proceed" onclick="confirmCancelStatus()">Ruaj & Ndrysho Statusin</button>
+        </div>
+    </div>
+</div>
+
 <script>
-    document.getElementById('adminOrderSearch').addEventListener('input', function (e) {
-        const term = e.target.value.toLowerCase().trim();
-        const rows = document.querySelectorAll('#orderTable tbody tr.order-parent-row');
+function updateBulkBar() {
+    const checked = document.querySelectorAll('.order-checkbox:checked');
+    const bar = document.getElementById('bulkBar');
+    bar.style.display = checked.length > 0 ? 'flex' : 'none';
+    document.getElementById('bulkCount').textContent = checked.length + ' të zgjedhura';
+    document.getElementById('selectAll').indeterminate =
+        checked.length > 0 && checked.length < document.querySelectorAll('.order-checkbox').length;
+    document.getElementById('selectAll').checked =
+        checked.length === document.querySelectorAll('.order-checkbox').length;
+}
 
-        rows.forEach(row => {
-            const id = row.getAttribute('data-id') || '';
-            const fullname = row.getAttribute('data-fullname') || '';
-            const city = row.getAttribute('data-city') || '';
-            const status = row.getAttribute('data-status') || '';
-            const textContent = row.textContent.toLowerCase();
+function toggleAll(cb) {
+    document.querySelectorAll('.order-checkbox').forEach(c => c.checked = cb.checked);
+    updateBulkBar();
+}
 
-            if (term === '' || id.includes(term) || fullname.includes(term) || city.includes(term) || status.includes(term) || textContent.includes(term)) {
-                row.style.display = '';
-            } else {
-                row.style.display = 'none';
-                const details = document.getElementById('details-' + row.getAttribute('data-id'));
-                if (details) details.style.display = 'none';
-            }
-        });
-    });
+function clearSelection() {
+    document.querySelectorAll('.order-checkbox').forEach(c => c.checked = false);
+    document.getElementById('selectAll').checked = false;
+    updateBulkBar();
+}
 
-    function toggleDetails(id) {
-        const el = document.getElementById('details-' + id);
-        const parentRow = el.previousElementSibling;
-        if (el.style.display === 'none') {
-            el.style.display = 'table-row';
-        } else {
-            el.style.display = 'none';
+function submitBulk() {
+    const sel = document.querySelector('.bulk-status-select').value;
+    if (!sel) { alert('Zgjidh statusin e ri.'); return; }
+    const checked = document.querySelectorAll('.order-checkbox:checked');
+    if (!checked.length) return;
+    if (!confirm(`Ndrysho statusin e ${checked.length} porosive në "${sel}"?`)) return;
+    document.getElementById('bulkForm').submit();
+}
+
+let _pendingForm = null;
+let _pendingSelect = null;
+let _previousValue = null;
+
+document.querySelectorAll('.premium-status-select').forEach(sel => {
+    sel.addEventListener('change', function() {
+        const val = this.value;
+        _pendingForm   = this.form;
+        _pendingSelect = this;
+        _previousValue = null;
+        for (const opt of this.options) {
+            if (opt.defaultSelected) { _previousValue = opt.value; break; }
         }
-    }
 
-    // Allow clicking the parent row to toggle (except on the select/buttons)
-    document.querySelectorAll('.order-parent-row').forEach(row => {
-        row.addEventListener('click', function (e) {
-            if (!e.target.closest('form') && !e.target.closest('.action-btn')) {
-                toggleDetails(this.getAttribute('data-id'));
-            }
-        });
+        if (val === 'Delivering' || val === 'Në Dërgesë') {
+            document.getElementById('trackingNumberInput').value = '';
+            document.getElementById('trackingModal').style.display = 'flex';
+            setTimeout(() => document.getElementById('trackingNumberInput').focus(), 100);
+        } else if (val === 'Anuluar' || val === 'Refuzuar') {
+            document.getElementById('cancelReasonText').value = '';
+            document.getElementById('cancelReasonModal').style.display = 'flex';
+        } else {
+            this.form.submit();
+        }
     });
+});
+
+function dismissTrackingModal() {
+    document.getElementById('trackingModal').style.display = 'none';
+    if (_pendingSelect && _previousValue) _pendingSelect.value = _previousValue;
+    _pendingForm = _pendingSelect = null;
+}
+
+function confirmTrackingStatus() {
+    if (!_pendingForm) return;
+    const tracking = document.getElementById('trackingNumberInput').value.trim();
+    if (tracking) {
+        let inp = _pendingForm.querySelector('input[name="tracking_number"]');
+        if (!inp) {
+            inp = document.createElement('input');
+            inp.type = 'hidden'; inp.name = 'tracking_number';
+            _pendingForm.appendChild(inp);
+        }
+        inp.value = tracking;
+    }
+    document.getElementById('trackingModal').style.display = 'none';
+    _pendingForm.submit();
+}
+
+function dismissCancelModal() {
+    document.getElementById('cancelReasonModal').style.display = 'none';
+    if (_pendingSelect && _previousValue) _pendingSelect.value = _previousValue;
+    _pendingForm = _pendingSelect = null;
+}
+
+function confirmCancelStatus() {
+    if (!_pendingForm) return;
+    const reason = document.getElementById('cancelReasonText').value.trim();
+    let inp = _pendingForm.querySelector('input[name="cancel_reason"]');
+    if (!inp) {
+        inp = document.createElement('input');
+        inp.type = 'hidden'; inp.name = 'cancel_reason';
+        _pendingForm.appendChild(inp);
+    }
+    inp.value = reason;
+    document.getElementById('cancelReasonModal').style.display = 'none';
+    _pendingForm.submit();
+}
+
+function saveNote(btn) {
+    const wrapper = btn.closest('.admin-note-wrapper');
+    const orderId = wrapper.dataset.orderId;
+    const note = wrapper.querySelector('.admin-note-textarea').value;
+    const msg  = wrapper.querySelector('.note-saved-msg');
+    btn.disabled = true;
+
+    const fd = new FormData();
+    fd.append('csrf_token', document.querySelector('meta[name="csrf-token"]') ?
+        document.querySelector('meta[name="csrf-token"]').content :
+        document.querySelector('input[name="csrf_token"]').value);
+    fd.append('note', note);
+
+    fetch(`/admin/order/${orderId}/note`, {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        body: fd
+    }).then(r => r.json()).then(data => {
+        btn.disabled = false;
+        if (data.ok) {
+            msg.style.display = 'inline';
+            setTimeout(() => msg.style.display = 'none', 2500);
+        }
+    }).catch(() => { btn.disabled = false; });
+}
+
+document.getElementById('adminOrderSearch').addEventListener('input', function(e) {
+    const term = e.target.value.toLowerCase().trim();
+    document.querySelectorAll('#orderTable tbody tr.order-parent-row').forEach(row => {
+        const match = !term
+            || (row.dataset.id||'').includes(term)
+            || (row.dataset.fullname||'').includes(term)
+            || (row.dataset.city||'').includes(term)
+            || (row.dataset.status||'').includes(term)
+            || row.textContent.toLowerCase().includes(term);
+        row.style.display = match ? '' : 'none';
+        const det = document.getElementById('details-' + row.dataset.id);
+        if (det && !match) det.style.display = 'none';
+    });
+});
+
+function toggleDetails(id) {
+    const el = document.getElementById('details-' + id);
+    el.style.display = el.style.display === 'none' ? 'table-row' : 'none';
+}
+
+document.querySelectorAll('.order-parent-row').forEach(row => {
+    row.addEventListener('click', function(e) {
+        if (!e.target.closest('form') && !e.target.closest('.action-btn')) {
+            toggleDetails(this.dataset.id);
+        }
+    });
+});
 </script>
 {% endblock %}

@@ -526,7 +526,12 @@
                         <span class="product-category" style="color: var(--primary); font-weight: 700;">{{ product.brand
                             if product.brand else product.category }}</span>
                         <h3 class="product-title">{{ product.name }}</h3>
-                        {% if product.size %}<span class="product-size">{{ product.size }}</span>{% endif %}
+                        {% if product.variants and product.variants|length > 0 %}
+                        {% set og = (product.option_groups[0]) if product.option_groups and product.option_groups|length > 0 else none %}
+                        {% if og %}{% set vals = og.values|map(attribute='value')|list %}{% set label = og.name %}
+                        {% else %}{% set attr_types = [] %}{% for v in product.variants %}{% for k in v.get('attributes',{}).keys() %}{% if k not in attr_types %}{% set _ = attr_types.append(k) %}{% endif %}{% endfor %}{% endfor %}{% set vals = [] %}{% if attr_types %}{% set first_key = attr_types[0] %}{% for v in product.variants %}{% set vv = v.get('attributes',{}).get(first_key) %}{% if vv and vv not in vals %}{% set _ = vals.append(vv) %}{% endif %}{% endfor %}{% endif %}{% set label = attr_types[0] if attr_types else '' %}{% endif %}
+                        {% if vals %}<div class="variant-values-row">{% for val in vals[:3] %}<span class="vv-chip">{{ val }}</span>{% endfor %}{% if vals|length > 3 %}<span class="vv-more">+{{ vals|length - 3 }}</span>{% endif %}</div>{% endif %}
+                        {% elif product.size %}<span class="product-size">{{ product.size }}</span>{% endif %}
 
                         <div class="price-container">
                             {% if product.offer_type == 'multi_buy' %}

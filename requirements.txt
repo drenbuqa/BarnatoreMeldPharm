@@ -4,9 +4,12 @@ Flask-Bcrypt
 Flask-Login
 Flask-PyMongo
 Flask-WTF
+Flask-Limiter
 python-dotenv
 gunicorn
 pymongo
 dnspython
 certifi
 email-validator
+authlib
+requests

@@ -104,49 +104,8 @@
                 product.brand }}</div>
             {% endif %}
 
-            {% if variants and variants|length > 1 %}
-            <div class="product-variants-container" style="margin-bottom: 1.5rem;">
-                <label
-                    style="display: block; font-size: 0.85rem; font-weight: 700; color: #64748b; margin-bottom: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">Zgjidhni
-                    Madhësinë / Sasinë:</label>
-                <div class="variant-pills" style="display: flex; flex-wrap: wrap; gap: 0.75rem;">
-                    {% for v in variants %}
-                    <a href="{{ url_for('main.product_detail', product_id=v._id) }}"
-                        class="variant-pill {{ 'active' if v._id|string == product._id|string else '' }}"
-                        style="text-decoration: none !important;">
-                        {{ v.size if v.size else 'Sasi tjetër' }}
-                    </a>
-                    {% endfor %}
-                </div>
-            </div>
-
-            <style>
-                .variant-pill {
-                    padding: 0.6rem 1.2rem;
-                    border: 2px solid #f1f5f9;
-                    border-radius: 12px;
-                    font-size: 0.9rem;
-                    font-weight: 700;
-                    color: #475569;
-                    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-                    background: white;
-                    display: inline-block;
-                }
-
-                .variant-pill:hover {
-                    border-color: var(--primary);
-                    color: var(--primary);
-                    transform: translateY(-2px);
-                    box-shadow: 0 4px 12px rgba(5, 150, 105, 0.1);
-                }
-
-                .variant-pill.active {
-                    background: var(--primary);
-                    border-color: var(--primary);
-                    color: white !important;
-                    box-shadow: 0 4px 12px rgba(5, 150, 105, 0.2);
-                }
-            </style>
+            {% if product.variants and product.variants|length > 0 %}
+            <div id="product-variants-ui" style="margin-bottom: 1.5rem;"></div>
             {% elif product.size %}
             <div class="product-size-detail"
                 style="font-size: 0.9rem; color: #64748b; margin-top: -0.25rem; margin-bottom: 0.5rem; font-weight: 500;">
@@ -352,17 +311,244 @@
     </div>
 </div>
 
+<script id="product-variants-json" type="application/json">
+{{ (product.variants if product.variants else []) | tojson | safe }}
+</script>
+
 <script>
+// ── Variant selector ─────────────────────────────────────────────────────────
+(function() {
+    const PRODUCT_ID = '{{ product._id }}';
+    const BASE_PRICE = {{ product.price | float }};
+    const BASE_DISCOUNT = {{ (product.discount_price | float) if product.discount_price else 'null' }};
+    const BASE_IMAGE = '{{ product.image_url | default("") }}';
+
+    let productVariants = [];
+    try {
+        productVariants = JSON.parse(document.getElementById('product-variants-json').textContent) || [];
+    } catch(e) {}
+
+    let selectedVariantId = null;
+
+    function getAttrTypes() {
+        const types = [];
+        productVariants.forEach(v => {
+            Object.keys(v.attributes || {}).forEach(k => {
+                if (!types.includes(k)) types.push(k);
+            });
+        });
+        return types;
+    }
+
+    function getValuesForAttr(attrType, currentSelections) {
+        // Return values that are available given what's already selected
+        const values = new Set();
+        productVariants.forEach(v => {
+            const attrs = v.attributes || {};
+            // Check if this variant matches all other already-selected attrs
+            let match = true;
+            Object.entries(currentSelections).forEach(([k, val]) => {
+                if (k !== attrType && attrs[k] !== val) match = false;
+            });
+            if (match && attrs[attrType] != null && attrs[attrType] !== '') {
+                values.add(attrs[attrType]);
+            }
+        });
+        return [...values];
+    }
+
+    function findVariant(selections) {
+        return productVariants.find(v => {
+            const attrs = v.attributes || {};
+            return Object.entries(selections).every(([k, val]) => attrs[k] === val);
+        }) || null;
+    }
+
+    // Current selections: { attrType: value }
+    const selections = {};
+
+    function renderVariantUI() {
+        const container = document.getElementById('product-variants-ui');
+        if (!container || productVariants.length === 0) return;
+
+        const attrTypes = getAttrTypes();
+        container.innerHTML = '';
+
+        attrTypes.forEach(attrType => {
+            const values = getValuesForAttr(attrType, {});
+            if (values.length === 0) return;
+
+            const wrapper = document.createElement('div');
+            wrapper.style.cssText = 'margin-bottom:1.25rem;';
+
+            const label = document.createElement('div');
+            label.style.cssText = 'font-size:0.85rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:0.75rem;';
+            const selectedVal = selections[attrType];
+            label.textContent = attrType + (selectedVal ? ': ' : ':');
+            if (selectedVal) {
+                const sel = document.createElement('span');
+                sel.style.cssText = 'color:var(--text-main);text-transform:none;font-weight:800;';
+                sel.textContent = selectedVal;
+                label.appendChild(sel);
+            }
+
+            const pills = document.createElement('div');
+            pills.style.cssText = 'display:flex;flex-wrap:wrap;gap:0.6rem;';
+
+            values.forEach(val => {
+                // Check if this value leads to an in-stock variant
+                const testSel = Object.assign({}, selections, {[attrType]: val});
+                const attrTypes2 = getAttrTypes();
+                const isFullySelected = attrTypes2.every(t => testSel[t] != null);
+                let inStock = true;
+                if (isFullySelected) {
+                    const v = findVariant(testSel);
+                    inStock = !v || v.in_stock !== false;
+                }
+
+                const pill = document.createElement('button');
+                pill.type = 'button';
+                pill.className = 'vpill' + (selections[attrType] === val ? ' vpill-active' : '') + (!inStock ? ' vpill-oos' : '');
+                pill.textContent = val;
+                if (!inStock) pill.title = 'Jashtë stokut';
+                pill.onclick = () => selectAttr(attrType, val);
+                pills.appendChild(pill);
+            });
+
+            wrapper.appendChild(label);
+            wrapper.appendChild(pills);
+            container.appendChild(wrapper);
+        });
+
+        // Check if we have a full selection
+        const attrTypes2 = getAttrTypes();
+        const fullySelected = attrTypes2.length > 0 && attrTypes2.every(t => selections[t] != null);
+        if (fullySelected) {
+            const v = findVariant(selections);
+            applyVariant(v);
+        } else {
+            applyVariant(null);
+        }
+    }
+
+    function selectAttr(attrType, val) {
+        if (selections[attrType] === val) {
+            delete selections[attrType];
+        } else {
+            selections[attrType] = val;
+        }
+        renderVariantUI();
+    }
+
+    function applyVariant(v) {
+        selectedVariantId = v ? v.id : null;
+
+        // Update price display
+        const price = v ? (v.price || BASE_PRICE) : BASE_PRICE;
+        const discount = v ? (v.discount_price || null) : BASE_DISCOUNT;
+
+        updatePriceDisplay(price, discount);
+
+        // Update image if variant has one
+        if (v && v.image_url) {
+            swapMainImage(v.image_url);
+        }
+
+        // Update stock status
+        const inStock = !v || v.in_stock !== false;
+        updateStockStatus(inStock);
+    }
+
+    function fmt(n) { return parseFloat(n).toFixed(2); }
+
+    function updatePriceDisplay(price, discount) {
+        const containers = document.querySelectorAll('.price-container');
+        containers.forEach(c => {
+            if (discount && parseFloat(discount) > 0) {
+                const pct = Math.round((price - discount) / price * 100);
+                c.innerHTML = `
+                    <span class="price original" style="font-size:1rem;text-decoration:line-through;color:#94a3b8;font-weight:500;">€${fmt(price)}</span>
+                    <span class="price discounted" style="font-size:1.8rem;color:var(--primary);font-weight:800;line-height:1;">€${fmt(discount)}</span>
+                    <span class="discount-badge" style="background:#ef4444;color:white;padding:0.35rem 0.6rem;border-radius:8px;font-weight:700;font-size:0.9rem;margin-bottom:0.2rem;transform:translateY(-2px);">-${pct}%</span>`;
+            } else {
+                c.innerHTML = `<span class="price main-price" style="font-size:1.8rem;color:var(--primary);font-weight:800;line-height:1;">€${fmt(price)}</span>`;
+            }
+        });
+    }
+
+    function swapMainImage(url) {
+        const track = document.querySelector('.carousel-track');
+        if (!track) return;
+        const imgs = track.querySelectorAll('img');
+        if (imgs.length > 0) imgs[0].src = url;
+    }
+
+    function updateStockStatus(inStock) {
+        const badge = document.querySelector('.stock-status');
+        if (badge) {
+            badge.textContent = inStock ? 'Në Stok' : 'Jashtë Stokut';
+            badge.className = 'stock-status ' + (inStock ? 'in-stock' : 'out-of-stock');
+        }
+        document.querySelectorAll('button[onclick^="addToCartWithQty"], button[onclick^="buyNowWithQty"]').forEach(btn => {
+            btn.disabled = !inStock;
+        });
+    }
+
+    // Expose selected variant id for cart functions
+    window._getSelectedVariantId = () => selectedVariantId;
+
+    // Init — render UI then auto-select the first variant's attributes
+    if (productVariants.length > 0) {
+        renderVariantUI();
+        // Pre-select every attribute of the first variant so the page loads with price/image applied
+        const first = productVariants[0];
+        const attrTypes = getAttrTypes();
+        attrTypes.forEach(t => { selections[t] = (first.attributes || {})[t]; });
+        renderVariantUI(); // re-render with selections applied
+    }
+})();
+
+// ── Cart / buy functions ─────────────────────────────────────────────────────
     function addToCartWithQty(productId, btn) {
+        const variantId = window._getSelectedVariantId ? window._getSelectedVariantId() : null;
+
+        // If product has variants and none fully selected, warn
+        const variantsEl = document.getElementById('product-variants-json');
+        let hasVariants = false;
+        try { hasVariants = JSON.parse(variantsEl.textContent).length > 0; } catch(e) {}
+        if (hasVariants && !variantId) {
+            const ui = document.getElementById('product-variants-ui');
+            if (ui) {
+                ui.style.animation = 'none';
+                ui.style.outline = '2px solid #ef4444';
+                ui.style.borderRadius = '8px';
+                setTimeout(() => { ui.style.outline = ''; }, 1500);
+            }
+            return;
+        }
+
         const container = btn.closest('.desktop-action-container') || btn.closest('.mobile-action-bar');
         const qty = container.querySelector('.qty-input').value;
-        window.addToCartAJAX(productId, qty);
+        window.addToCartAJAX(productId, qty, variantId);
     }
 
     function buyNowWithQty(productId, btn) {
+        const variantId = window._getSelectedVariantId ? window._getSelectedVariantId() : null;
+        const variantsEl = document.getElementById('product-variants-json');
+        let hasVariants = false;
+        try { hasVariants = JSON.parse(variantsEl.textContent).length > 0; } catch(e) {}
+        if (hasVariants && !variantId) {
+            const ui = document.getElementById('product-variants-ui');
+            if (ui) {
+                ui.style.outline = '2px solid #ef4444';
+                ui.style.borderRadius = '8px';
+                setTimeout(() => { ui.style.outline = ''; }, 1500);
+            }
+            return;
+        }
         const container = btn.closest('.desktop-action-container') || btn.closest('.mobile-action-bar');
         const qty = container.querySelector('.qty-input').value;
-        window.buyNow(productId, qty);
+        window.buyNow(productId, qty, variantId);
     }
 
     function toggleAccordion(header) {
@@ -408,6 +594,22 @@
 {% block footer %}{% endblock %}
 
 <style>
+    /* Variant pills */
+    .vpill {
+        padding: 0.55rem 1.1rem;
+        border: 2px solid #e2e8f0;
+        border-radius: 10px;
+        font-size: 0.9rem;
+        font-weight: 700;
+        color: #475569;
+        background: white;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .vpill:hover { border-color: var(--primary); color: var(--primary); }
+    .vpill-active { background: var(--primary) !important; border-color: var(--primary) !important; color: white !important; }
+    .vpill-oos { opacity: 0.45; text-decoration: line-through; cursor: not-allowed; }
+
     /* Product Card Link Fix for Detail Page Related Products */
     .product-card {
         position: relative;
@@ -513,7 +715,12 @@
                 <div class="product-info">
                     <span class="product-category">{{ related.category }}</span>
                     <h3 class="product-title">{{ related.name }}</h3>
-                    {% if related.size %}<span class="product-size">{{ related.size }}</span>{% endif %}
+                    {% if related.variants and related.variants|length > 0 %}
+                    {% set og = (related.option_groups[0]) if related.option_groups and related.option_groups|length > 0 else none %}
+                    {% if og %}{% set vals = og.values|map(attribute='value')|list %}{% set label = og.name %}
+                    {% else %}{% set attr_types = [] %}{% for v in related.variants %}{% for k in v.get('attributes',{}).keys() %}{% if k not in attr_types %}{% set _ = attr_types.append(k) %}{% endif %}{% endfor %}{% endfor %}{% set vals = [] %}{% if attr_types %}{% set first_key = attr_types[0] %}{% for v in related.variants %}{% set vv = v.get('attributes',{}).get(first_key) %}{% if vv and vv not in vals %}{% set _ = vals.append(vv) %}{% endif %}{% endfor %}{% endif %}{% set label = attr_types[0] if attr_types else '' %}{% endif %}
+                    {% if vals %}<div class="variant-values-row">{% for val in vals[:3] %}<span class="vv-chip">{{ val }}</span>{% endfor %}{% if vals|length > 3 %}<span class="vv-more">+{{ vals|length - 3 }}</span>{% endif %}</div>{% endif %}
+                    {% elif related.size %}<span class="product-size">{{ related.size }}</span>{% endif %}
                     <div class="price-container" style="margin-top: 0.75rem;">
                         {% if related.discount_price %}
                         <span class="price discounted">€{{ "%.2f"|format(related.discount_price) }}</span>

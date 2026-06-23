@@ -1484,6 +1484,17 @@
         font-weight: 500 !important;
     }
 
+    .variant-values-row {
+        margin-bottom: 0.4rem !important;
+    }
+    .vv-chip {
+        font-size: 0.68rem !important;
+        padding: 0.08rem 0.35rem !important;
+    }
+    .vv-label, .vv-more {
+        font-size: 0.68rem !important;
+    }
+
     .price-container {
         margin-bottom: 0 !important;
         gap: 0.4rem !important;

@@ -1,0 +1,145 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Menaxhimi i Përdoruesve - Meld Pharm Admin{% endblock %}
+{% block page_title %}Menaxhimi i Përdoruesve{% endblock %}
+
+{% block admin_content %}
+
+<!-- KPI -->
+<div class="kpi-grid" style="margin-bottom:1.5rem; grid-template-columns: repeat(3, 1fr);">
+    <div class="kpi-card kpi-blue">
+        <div class="kpi-icon"><i class="fas fa-users"></i></div>
+        <div class="kpi-body">
+            <div class="kpi-number">{{ users|length }}</div>
+            <div class="kpi-label">Gjithsej Përdorues</div>
+        </div>
+    </div>
+    <div class="kpi-card kpi-orange">
+        <div class="kpi-icon"><i class="fas fa-user-shield"></i></div>
+        <div class="kpi-body">
+            <div class="kpi-number">{{ users|selectattr('is_admin')|list|length }}</div>
+            <div class="kpi-label">Administratorë</div>
+        </div>
+    </div>
+    <div class="kpi-card kpi-green">
+        <div class="kpi-icon"><i class="fas fa-paper-plane"></i></div>
+        <div class="kpi-body">
+            <div class="kpi-number">{{ users|selectattr('newsletter_subscribed', 'defined')|selectattr('newsletter_subscribed')|list|length }}</div>
+            <div class="kpi-label">Abonentë Buletini</div>
+        </div>
+    </div>
+</div>
+
+<!-- Search -->
+<div class="admin-actions-bar" style="margin-bottom:1.5rem;">
+    <div class="search-and-filter" style="width:100%;">
+        <div class="admin-search-wrapper" style="max-width:100%; flex:1;">
+            <i class="fas fa-search"></i>
+            <input type="text" id="userSearch" placeholder="Kërko sipas emrit ose email-it...">
+        </div>
+    </div>
+</div>
+
+<!-- Users Table -->
+<div class="admin-table-card">
+    <div class="table-responsive">
+        <table class="premium-admin-table" id="usersTable">
+            <thead>
+                <tr>
+                    <th>Përdoruesi</th>
+                    <th>Email</th>
+                    <th>Regjistruar më</th>
+                    <th>Porosi</th>
+                    <th>Roli</th>
+                    <th style="text-align:right;">Veprime</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                <tr data-name="{{ user.username|lower if user.username else '' }}" data-email="{{ user.email|lower if user.email else '' }}">
+                    <td>
+                        <div class="user-cell">
+                            <div class="user-avatar">{{ (user.username or user.email or 'U')[0]|upper }}</div>
+                            <span class="user-name">{{ user.username or '—' }}</span>
+                        </div>
+                    </td>
+                    <td>
+                        <span style="color:#475569; font-size:0.9rem;">{{ user.email or '—' }}</span>
+                    </td>
+                    <td>
+                        <span style="color:#64748b; font-size:0.85rem;">
+                            {% if user.created_at %}{{ user.created_at.strftime('%d.%m.%Y') }}{% else %}—{% endif %}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="table-cat-badge">{{ user.order_count if user.order_count is defined else 0 }}</span>
+                    </td>
+                    <td>
+                        {% if user.is_admin %}
+                        <span class="role-badge role-admin"><i class="fas fa-shield-alt"></i> Admin</span>
+                        {% else %}
+                        <span class="role-badge role-user"><i class="fas fa-user"></i> Përdorues</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="table-actions" style="justify-content:flex-end;">
+                            <a href="{{ url_for('admin.user_orders', user_id=user._id) }}"
+                               class="action-btn" title="Shiko Porositë" style="text-decoration:none;">
+                                <i class="fas fa-shopping-bag"></i>
+                            </a>
+                            <form action="{{ url_for('admin.toggle_admin', user_id=user._id) }}" method="POST"
+                                  onsubmit="return confirmToggleAdmin(this, '{{ user.username or user.email }}', {{ 'true' if user.is_admin else 'false' }});">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                                <button type="submit"
+                                    class="action-btn {{ 'btn-remove-admin' if user.is_admin else 'btn-make-admin' }}"
+                                    title="{{ 'Hiq të drejtat Admin' if user.is_admin else 'Bëje Admin' }}">
+                                    <i class="fas {{ 'fa-user-minus' if user.is_admin else 'fa-user-plus' }}"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" style="text-align:center; padding:3rem;">
+                        <i class="fas fa-users fa-3x" style="color:#cbd5e1; display:block; margin-bottom:1rem;"></i>
+                        <p style="color:#94a3b8;">Nuk u gjet asnjë përdorues.</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<style>
+.user-cell { display:flex; align-items:center; gap:0.75rem; }
+.user-avatar { width:38px; height:38px; border-radius:50%; background:linear-gradient(135deg,#0f766e,#0ea5e9); color:white; font-weight:800; font-size:1rem; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.user-name { font-weight:700; color:#1e293b; }
+.role-badge { display:inline-flex; align-items:center; gap:0.35rem; padding:0.35rem 0.75rem; border-radius:20px; font-size:0.78rem; font-weight:700; }
+.role-admin { background:#eff6ff; color:#1d4ed8; }
+.role-user  { background:#f1f5f9; color:#475569; }
+.btn-make-admin   { background:#eff6ff; color:#1d4ed8; }
+.btn-make-admin:hover { background:#1d4ed8; color:white; }
+.btn-remove-admin { background:#fef2f2; color:#dc2626; }
+.btn-remove-admin:hover { background:#dc2626; color:white; }
+</style>
+
+<script>
+document.getElementById('userSearch').addEventListener('input', function(e) {
+    const term = e.target.value.toLowerCase().trim();
+    document.querySelectorAll('#usersTable tbody tr').forEach(row => {
+        const name = row.getAttribute('data-name') || '';
+        const email = row.getAttribute('data-email') || '';
+        row.style.display = (!term || name.includes(term) || email.includes(term)) ? '' : 'none';
+    });
+});
+
+function confirmToggleAdmin(form, username, isAdmin) {
+    const msg = isAdmin
+        ? `A jeni i sigurt që dëshironi të hiqni të drejtat Admin nga "${username}"?`
+        : `A dëshironi ta bëni "${username}" Administrator?`;
+    return confirm(msg);
+}
+</script>
+{% endblock %}

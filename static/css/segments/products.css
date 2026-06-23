@@ -570,6 +570,45 @@
     font-weight: 500;
 }
 
+.variant-values-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    margin-bottom: 0.6rem;
+    min-height: 1.4rem;
+}
+
+.vv-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+    margin-right: 0.1rem;
+}
+
+.vv-chip {
+    display: inline-block;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #475569;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+    padding: 0.1rem 0.4rem;
+    white-space: nowrap;
+}
+
+.vv-more {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--primary);
+    white-space: nowrap;
+    padding: 0.1rem 0.2rem;
+}
+
 /* Product Detail Styles */
 .product-detail-grid {
     display: grid;
@@ -1447,3 +1486,31 @@ input:checked+.slider:before {
 .dropdown-item.sort-trigger.active i {
     color: var(--primary);
 }
+
+/* ── Skeleton screens ─────────────────────────────── */
+@keyframes skeletonShimmer {
+    0% { background-position: -400px 0; }
+    100% { background-position: 400px 0; }
+}
+.skeleton-card {
+    background: #fff;
+    border-radius: 16px;
+    overflow: hidden;
+    pointer-events: none;
+}
+.skel-img {
+    width: 100%; height: 190px;
+    background: linear-gradient(90deg,#f0f0f0 25%,#e8e8e8 50%,#f0f0f0 75%);
+    background-size: 800px 100%;
+    animation: skeletonShimmer 1.4s infinite linear;
+}
+.skel-line {
+    margin: 0.75rem 1rem 0;
+    border-radius: 6px;
+    background: linear-gradient(90deg,#f0f0f0 25%,#e8e8e8 50%,#f0f0f0 75%);
+    background-size: 800px 100%;
+    animation: skeletonShimmer 1.4s infinite linear;
+}
+.skel-title { height: 14px; width: 80%; }
+.skel-sub   { height: 12px; width: 55%; margin-top: 0.5rem; }
+.skel-price { height: 18px; width: 40%; margin: 0.75rem 1rem 1rem; }

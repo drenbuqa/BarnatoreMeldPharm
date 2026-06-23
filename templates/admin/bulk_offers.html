@@ -1,11 +1,10 @@
-{% extends "base.html" %}
+{% extends "admin/base.html" %}
 
-{% block title %}Menaxhimi i Ofertave në Masë - Meld Pharm{% endblock %}
+{% block title %}Menaxhimi i Ofertave në Masë - Meld Pharm Admin{% endblock %}
+{% block page_title %}Menaxhimi i Ofertave{% endblock %}
 
-{% block content %}
+{% block admin_content %}
 <div class="admin-page-container">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/segments/admin.css') }}">
-    {% include 'admin/_nav.html' %}
 
     <div class="bulk-header-v4">
         <div class="header-info">

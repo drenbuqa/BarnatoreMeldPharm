@@ -1,23 +1,15 @@
-{% extends "base.html" %}
+{% extends "admin/base.html" %}
 
-{% block content %}
-<div class="admin-page-container">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/segments/admin.css') }}">
-    {% include 'admin/_nav.html' %}
+{% block title %}{{ 'Ndrysho Produktin' if product else 'Shto Produkt Të Ri' }} - Meld Pharm Admin{% endblock %}
+{% block page_title %}{{ 'Ndrysho Produktin' if product else 'Shto Produkt Të Ri' }}{% endblock %}
+{% block page_action %}
+<a href="{{ url_for('admin.dashboard') }}" class="topbar-btn" style="background:#334155; color:#fff;">
+    <i class="fas fa-arrow-left"></i> Kthehu
+</a>
+{% endblock %}
 
-    <div class="admin-header" style="display: flex; justify-content: space-between; align-items: center;">
-        <div class="admin-header-content">
-            <h2 class="admin-title">
-                <i class="fas fa-box-open"></i>
-                {{ 'Ndrysho Produktin' if product else 'Shto Produkt Të Ri' }}
-            </h2>
-            <p class="admin-subtitle text-muted">Plotësoni të dhënat më poshtë për të menaxhuar katalogun e produkteve.
-            </p>
-        </div>
-        <a href="{{ url_for('admin.dashboard') }}" class="btn-close-form" title="Mbyll">
-            <i class="fas fa-times"></i>
-        </a>
-    </div>
+{% block admin_content %}
+<div class="admin-page-container" style="max-width:1300px; margin:0 auto; padding:0;">
 
     <form method="POST" class="premium-product-form">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
@@ -73,19 +65,10 @@
                         </div>
 
                         <div class="form-group">
-                            <label for="size">Sasia / Madhësia</label>
+                            <label for="size">Sasia / Madhësia (vetëm nëse produkti nuk ka variante)</label>
                             <input type="text" id="size" name="size" class="form-control premium-input"
                                 value="{{ product.size if product else '' }}" placeholder="Psh: 50ml, 100g, 30 Kapsula">
-                        </div>
-
-                        <div class="form-group">
-                            <label for="variant_group">Kodi i Grupit (Varianti)</label>
-                            <input type="text" id="variant_group" name="variant_group"
-                                class="form-control premium-input"
-                                value="{{ product.variant_group if product else '' }}"
-                                placeholder="Psh: eucerin-night-group (Lidh produkte me këtë kod)">
-                            <small class="helper-text"><i class="fas fa-link"></i> Vendosni të njëjtin kod për të lidhur
-                                produkte si variante (psh: madhësi të ndryshme).</small>
+                            <small class="helper-text"><i class="fas fa-info-circle"></i> Lëre bosh nëse produkti ka variante të ndryshme (shih seksionin më poshtë).</small>
                         </div>
                     </div>
                 </div>
@@ -135,39 +118,62 @@
                     </div>
                 </div>
 
+                <!-- Variants — directly below pricing -->
+                <div class="form-card">
+                    <div class="card-header">
+                        <i class="fas fa-layer-group"></i> Variante
+                        <span style="margin-left:auto;font-size:0.78rem;font-weight:500;color:#94a3b8;">Sasi · Ngjyra · Numra · etj.</span>
+                    </div>
+                    <div class="card-body" style="padding: 1rem 1.25rem;">
+                        <div id="option-groups-container"></div>
+                        <button type="button" onclick="addOptionGroup()" class="btn-add-opt-group" id="btn-add-opt-group">
+                            <i class="fas fa-plus"></i> Shto Opsion
+                        </button>
+                        <input type="hidden" name="option_groups_json" id="option_groups_json">
+                    </div>
+                </div>
+
                 <div class="form-card">
                     <div class="card-header">
                         <i class="fas fa-sliders-h"></i> Cilësimet e Shfaqjes
                     </div>
                     <div class="card-body">
-                        <div class="settings-grid">
-                            <label class="switch-container">
-                                <input type="checkbox" id="in_stock" name="in_stock" {% if product is none or
-                                    product.in_stock %}checked{% endif %}>
-                                <span class="switch-slider"></span>
-                                <span class="switch-label">Në Stok</span>
-                            </label>
+                        <label class="switch-container" style="margin-bottom: 0.75rem;">
+                            <input type="checkbox" id="in_stock" name="in_stock" {% if product is none or product.in_stock %}checked{% endif %}>
+                            <span class="switch-slider"></span>
+                            <span class="switch-label">Në Stok</span>
+                        </label>
 
-                            <label class="switch-container">
-                                <input type="checkbox" id="featured" name="featured" {% if product and product.featured
-                                    %}checked{% endif %}>
-                                <span class="switch-slider"></span>
-                                <span class="switch-label">Veçuar (Featured)</span>
-                            </label>
-
-                            <label class="switch-container">
-                                <input type="checkbox" id="is_best_seller" name="is_best_seller" {% if product and
-                                    product.is_best_seller %}checked{% endif %}>
-                                <span class="switch-slider"></span>
-                                <span class="switch-label">Më i Shituri</span>
-                            </label>
-
-                            <label class="switch-container">
-                                <input type="checkbox" id="is_pharmacist_choice" name="is_pharmacist_choice" {% if
-                                    product and product.is_pharmacist_choice %}checked{% endif %}>
-                                <span class="switch-slider"></span>
-                                <span class="switch-label">Zgjedhja e Farmacistit</span>
-                            </label>
+                        <!-- Visual Label Badges -->
+                        <div style="margin-top: 1rem;">
+                            <label style="font-size: 0.8rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 0.75rem;">Etiketat e Produktit — kliko për të zgjedhur</label>
+                            <div class="label-badges-grid" id="label-badges-grid">
+                                {% set active_labels = product.labels if product and product.labels else [] %}
+                                {% set preset_labels = [
+                                    ('best_seller', 'fas fa-fire', '#f59e0b', '#fef3c7', 'Më i Shituri'),
+                                    ('pharmacist_choice', 'fas fa-user-md', '#059669', '#d1fae5', 'Zgjedhja e Farmacistit'),
+                                    ('featured', 'fas fa-star', '#8b5cf6', '#ede9fe', 'Veçuar'),
+                                    ('new_arrival', 'fas fa-sparkles', '#0ea5e9', '#e0f2fe', 'I Ri'),
+                                    ('limited', 'fas fa-clock', '#ef4444', '#fee2e2', 'I Kufizuar'),
+                                    ('sale', 'fas fa-tag', '#ec4899', '#fce7f3', 'Ofertë')
+                                ] %}
+                                {% for key, icon, color, bg, label_name in preset_labels %}
+                                {% set is_active = key in active_labels
+                                    or (key == 'best_seller' and product and product.is_best_seller)
+                                    or (key == 'pharmacist_choice' and product and product.is_pharmacist_choice)
+                                    or (key == 'featured' and product and product.featured) %}
+                                <button type="button"
+                                    class="label-badge-btn {{ 'label-active' if is_active else '' }}"
+                                    data-key="{{ key }}"
+                                    data-color="{{ color }}"
+                                    data-bg="{{ bg }}"
+                                    style="--lc: {{ color }}; --lbg: {{ bg }};"
+                                    onclick="toggleLabel(this)">
+                                    <i class="{{ icon }}"></i> {{ label_name }}
+                                </button>
+                                {% endfor %}
+                            </div>
+                            <input type="hidden" name="labels_json" id="labels_json">
                         </div>
                     </div>
                 </div>
@@ -237,7 +243,7 @@
                     </div>
                 </div>
 
-                <div class="actions-card">
+                <div class="actions-card" style="margin-top: 2rem;">
                     <button type="submit" class="btn-submit-premium">
                         {{ 'Ruaj Ndryshimet' if product else 'Krijo Produktin' }}
                         <i class="fas fa-check-circle"></i>
@@ -246,7 +252,6 @@
             </div>
         </div>
     </form>
-</div>
 
 <style>
     /* Admin General Layout */
@@ -336,8 +341,16 @@
         border-radius: 16px;
         border: 1px solid #f1f5f9;
         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-        margin-bottom: 2rem;
+        margin-bottom: 2.5rem;
         overflow: hidden;
+    }
+
+    .card-body {
+        padding: 1.75rem !important;
+    }
+
+    .form-group {
+        margin-bottom: 1.5rem;
     }
 
     .card-header {
@@ -570,6 +583,288 @@
     .input-with-icon input {
         padding-left: 2.5rem !important;
     }
+
+    /* ── Variants / Option Groups ─────────────────────── */
+    .variants-section { margin-top: 0; }
+
+    .opt-group {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        margin-bottom: 0.9rem;
+        overflow: hidden;
+    }
+
+    .opt-group-header {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.75rem 1rem;
+        background: #f1f5f9;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    .opt-group-header select,
+    .opt-group-header input[type="text"] {
+        flex: 1;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 0.45rem 0.75rem;
+        font-size: 0.9rem;
+        font-weight: 600;
+        background: white;
+        color: var(--text-main);
+        outline: none;
+    }
+
+    .opt-group-header select:focus,
+    .opt-group-header input[type="text"]:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(5,150,105,0.08);
+    }
+
+    .btn-rm-group {
+        background: none;
+        border: none;
+        color: #94a3b8;
+        cursor: pointer;
+        font-size: 1.1rem;
+        padding: 0.2rem 0.4rem;
+        border-radius: 6px;
+        transition: all 0.2s;
+        flex-shrink: 0;
+    }
+    .btn-rm-group:hover { color: #ef4444; background: #fee2e2; }
+
+    /* Tag/chip input for values */
+    .opt-tags-area {
+        padding: 0.75rem 1rem 0.5rem;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    .tags-wrap {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+        align-items: center;
+        min-height: 36px;
+        border: 1.5px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 0.35rem 0.5rem;
+        background: white;
+        cursor: text;
+    }
+    .tags-wrap:focus-within { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(5,150,105,0.08); }
+
+    .tag-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        background: var(--primary);
+        color: white;
+        border-radius: 6px;
+        padding: 0.2rem 0.5rem;
+        font-size: 0.8rem;
+        font-weight: 700;
+        white-space: nowrap;
+        user-select: none;
+    }
+    .tag-chip button {
+        background: none;
+        border: none;
+        color: rgba(255,255,255,0.8);
+        cursor: pointer;
+        font-size: 0.85rem;
+        padding: 0;
+        line-height: 1;
+        transition: color 0.15s;
+    }
+    .tag-chip button:hover { color: white; }
+
+    .tag-input {
+        border: none;
+        outline: none;
+        font-size: 0.88rem;
+        min-width: 80px;
+        flex: 1;
+        background: transparent;
+        color: var(--text-main);
+    }
+
+    .tags-hint {
+        font-size: 0.75rem;
+        color: #94a3b8;
+        margin-top: 0.3rem;
+    }
+
+    /* Per-value price/stock rows */
+    .opt-values-table {
+        padding: 0.5rem 1rem 0.75rem;
+    }
+
+    .opt-value-row {
+        display: grid;
+        grid-template-columns: 1fr 90px 90px auto auto;
+        gap: 0.5rem;
+        align-items: center;
+        padding: 0.3rem 0;
+        border-bottom: 1px solid #f1f5f9;
+        font-size: 0.85rem;
+    }
+    .opt-value-row:last-child { border-bottom: none; }
+
+    .opt-val-label {
+        font-weight: 600;
+        color: var(--text-main);
+        font-size: 0.85rem;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .opt-val-input {
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        padding: 0.3rem 0.5rem;
+        font-size: 0.82rem;
+        width: 100%;
+        background: white;
+        outline: none;
+        color: var(--text-main);
+    }
+    .opt-val-input:focus { border-color: var(--primary); }
+
+    .opt-table-header {
+        display: grid;
+        grid-template-columns: 1fr 90px 90px auto auto;
+        gap: 0.5rem;
+        padding: 0.25rem 0 0.4rem;
+        font-size: 0.7rem;
+        font-weight: 700;
+        color: #94a3b8;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        border-bottom: 1px solid #e2e8f0;
+        margin-bottom: 0.25rem;
+    }
+
+    /* colour-swatch circle next to value label */
+    .color-swatch {
+        width: 14px; height: 14px;
+        border-radius: 50%;
+        border: 1px solid rgba(0,0,0,0.15);
+        display: inline-block;
+        margin-right: 5px;
+        flex-shrink: 0;
+        vertical-align: middle;
+    }
+
+    /* img preview in value row */
+    .opt-img-preview {
+        width: 28px; height: 28px;
+        border-radius: 5px;
+        object-fit: contain;
+        border: 1px solid #e2e8f0;
+        background: white;
+        display: none;
+    }
+
+    .btn-img-toggle {
+        background: none;
+        border: 1px dashed #cbd5e1;
+        border-radius: 6px;
+        color: #94a3b8;
+        font-size: 0.7rem;
+        cursor: pointer;
+        padding: 0.2rem 0.4rem;
+        white-space: nowrap;
+        transition: all 0.2s;
+    }
+    .btn-img-toggle:hover { border-color: var(--primary); color: var(--primary); }
+
+    .stock-toggle-sm {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        cursor: pointer;
+        white-space: nowrap;
+    }
+    .stock-toggle-sm input { display: none; }
+    .stock-dot {
+        width: 28px; height: 15px;
+        border-radius: 10px;
+        background: #cbd5e1;
+        position: relative;
+        transition: background 0.2s;
+        flex-shrink: 0;
+    }
+    .stock-dot::after {
+        content: '';
+        position: absolute;
+        width: 11px; height: 11px;
+        border-radius: 50%;
+        background: white;
+        top: 2px; left: 2px;
+        transition: transform 0.2s;
+    }
+    .stock-toggle-sm input:checked + .stock-dot { background: var(--primary); }
+    .stock-toggle-sm input:checked + .stock-dot::after { transform: translateX(13px); }
+
+    .btn-add-opt-group {
+        margin-top: 0.5rem;
+        background: white;
+        border: 2px dashed #cbd5e1;
+        color: #64748b;
+        border-radius: 10px;
+        padding: 0.65rem 1.25rem;
+        font-size: 0.88rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .btn-add-opt-group:hover { border-color: var(--primary); color: var(--primary); background: #f0fdf4; }
+
+    /* ── Label Badges ────────────────────────────────── */
+    .label-badges-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .label-badge-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.35rem 0.85rem;
+        border-radius: 20px;
+        font-size: 0.82rem;
+        font-weight: 700;
+        cursor: pointer;
+        border: 2px solid transparent;
+        background: #f1f5f9;
+        color: #64748b;
+        transition: all 0.2s;
+        user-select: none;
+    }
+    .label-badge-btn:hover {
+        background: var(--lbg, #f1f5f9);
+        color: var(--lc, #64748b);
+        border-color: var(--lc, #64748b);
+    }
+    .label-badge-btn.label-active {
+        background: var(--lbg, #f1f5f9) !important;
+        color: var(--lc, #64748b) !important;
+        border-color: var(--lc, #64748b) !important;
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--lc) 15%, transparent);
+    }
+    .label-badge-btn.label-active::after {
+        content: ' ✓';
+        font-size: 0.75rem;
+    }
 </style>
 
 <script id="product-form-config" type="application/json">
@@ -682,4 +977,316 @@
     updateMainPreview();
     updateGalleryPreviews();
 </script>
+<script id="existing-option-groups" type="application/json">
+{{ (product.option_groups if product and product.option_groups else []) | tojson | safe }}
+</script>
+<script id="existing-variants-fallback" type="application/json">
+{{ (product.variants if product and product.variants else []) | tojson | safe }}
+</script>
+
+<script>
+// ── Option Groups Manager (Shopify-style) ────────────────────────────────────
+const PRESET_NAMES = ['Sasia', 'Ngjyra', 'Numri', 'Numri Këpucës', 'Madhësia Rrobave', 'Paketa'];
+const COLOR_MAP = {
+    'e kuqe':'#ef4444','kuqe':'#ef4444','red':'#ef4444',
+    'e zezë':'#1e293b','zezë':'#1e293b','black':'#1e293b','zi':'#1e293b',
+    'e bardhë':'#f8fafc','bardhë':'#f8fafc','white':'#f8fafc','e bardhe':'#f8fafc',
+    'e kaltër':'#3b82f6','kaltër':'#3b82f6','blue':'#3b82f6','kalter':'#3b82f6',
+    'e gjelbër':'#22c55e','gjelbër':'#22c55e','green':'#22c55e','gjelber':'#22c55e',
+    'e verdhë':'#eab308','verdhë':'#eab308','yellow':'#eab308','verdhe':'#eab308',
+    'rozë':'#ec4899','pink':'#ec4899','roze':'#ec4899',
+    'portokalli':'#f97316','orange':'#f97316',
+    'vjollcë':'#a855f7','purple':'#a855f7','vjollce':'#a855f7',
+    'kafe':'#92400e','brown':'#92400e',
+    'gri':'#6b7280','grey':'#6b7280','gray':'#6b7280',
+    'e argjendtë':'#94a3b8','silver':'#94a3b8','argjend':'#94a3b8',
+    'e artë':'#d97706','gold':'#d97706','arte':'#d97706',
+};
+
+let optionGroups = []; // [{name, values:[{value,price,discount_price,image_url,in_stock}]}]
+
+function escH(s) {
+    return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function colorFor(val) {
+    return COLOR_MAP[val.toLowerCase().trim()] || null;
+}
+
+function isColorGroup(name) {
+    return name.toLowerCase().includes('ngjyr') || name.toLowerCase().includes('color');
+}
+
+function renderAllGroups() {
+    const container = document.getElementById('option-groups-container');
+    container.innerHTML = '';
+    optionGroups.forEach((og, gi) => renderGroup(container, og, gi));
+    syncHidden();
+}
+
+function renderGroup(container, og, gi) {
+    const hasColor = isColorGroup(og.name);
+    const showImg = hasColor || og.values.some(v => v.image_url);
+    const isPrimary = gi === 0; // first group owns price
+
+    const el = document.createElement('div');
+    el.className = 'opt-group';
+    el.dataset.gi = gi;
+
+    // Header: name selector + remove button
+    const nameOptions = PRESET_NAMES.map(n =>
+        `<option value="${escH(n)}" ${og.name===n?'selected':''}>${escH(n)}</option>`
+    ).join('');
+    const isCustom = og.name && !PRESET_NAMES.includes(og.name);
+
+    el.innerHTML = `
+    <div class="opt-group-header">
+        <select onchange="changeGroupName(${gi}, this)" style="max-width:200px;">
+            ${nameOptions}
+            <option value="__custom__" ${isCustom?'selected':''}>Tjetër (shkruaj)…</option>
+        </select>
+        ${isCustom ? `<input type="text" value="${escH(og.name)}" placeholder="Emri i opsionit" oninput="setGroupName(${gi},this.value)" style="max-width:160px;">` : ''}
+        <span style="font-size:0.75rem;color:#94a3b8;margin-left:auto;margin-right:0.5rem;">
+            ${isPrimary ? '• çmimi vendoset këtu' : '• çmimi nga opsioni i parë'}
+        </span>
+        <button type="button" class="btn-rm-group" onclick="removeGroup(${gi})" title="Hiq opsionin"><i class="fas fa-times"></i></button>
+    </div>
+
+    <div class="opt-tags-area">
+        <label style="font-size:0.72rem;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.4px;display:block;margin-bottom:0.4rem;">
+            Vlerat — shtype dhe shtyp <kbd style="background:#f1f5f9;border:1px solid #e2e8f0;border-radius:3px;padding:1px 4px;font-size:0.7rem;">Enter</kbd> ose <kbd style="background:#f1f5f9;border:1px solid #e2e8f0;border-radius:3px;padding:1px 4px;font-size:0.7rem;">,</kbd> për të shtuar
+        </label>
+        <div class="tags-wrap" onclick="this.querySelector('.tag-input').focus()">
+            ${og.values.map((v,vi) => tagChipHtml(gi,vi,v.value,hasColor)).join('')}
+            <input class="tag-input" type="text"
+                placeholder="${og.values.length===0 ? (og.name==='Numri'||og.name==='Madhësia Këpucës' ? 'psh: 38, 39, 40, 41' : og.name==='Ngjyra' ? 'psh: E kuqe, E zezë, E bardhë' : 'Shtype vlerën…') : ''}"
+                onkeydown="handleTagInput(event, ${gi})"
+                oninput="this.style.width = Math.max(80, this.value.length*9)+'px'">
+        </div>
+        <div class="tags-hint">Shembull: ${og.name==='Numri'||og.name==='Madhësia Këpucës'?'38, 39, 40, 41, 42':og.name==='Ngjyra'?'E kuqe, E zezë, E bardhë':'25ml, 50ml, 100ml, 200ml'}</div>
+    </div>
+
+    ${og.values.length > 0 ? `
+    <div class="opt-values-table">
+        <div class="opt-table-header">
+            <span>Vlera</span>
+            ${isPrimary ? '<span>Çmimi €</span><span>Zbritje €</span>' : '<span></span><span></span>'}
+            <span>Stok</span>
+            <span>${showImg ? 'Foto' : ''}</span>
+        </div>
+        ${og.values.map((v,vi) => valueRowHtml(gi, vi, v, isPrimary, showImg, hasColor)).join('')}
+    </div>` : ''}
+    `;
+    container.appendChild(el);
+}
+
+function tagChipHtml(gi, vi, val, hasColor) {
+    const swatch = hasColor && colorFor(val)
+        ? `<span class="color-swatch" style="background:${colorFor(val)};"></span>`
+        : '';
+    return `<span class="tag-chip">${swatch}${escH(val)}<button type="button" onclick="removeValue(${gi},${vi})" tabindex="-1">×</button></span>`;
+}
+
+function valueRowHtml(gi, vi, v, isPrimary, showImg, hasColor) {
+    const swatch = hasColor && colorFor(v.value)
+        ? `<span class="color-swatch" style="background:${colorFor(v.value)};"></span>`
+        : '';
+    const imgPreview = v.image_url
+        ? `<img class="opt-img-preview" src="${escH(v.image_url)}" style="display:block;" onerror="this.style.display='none'">`
+        : `<img class="opt-img-preview">`;
+
+    return `<div class="opt-value-row" data-gi="${gi}" data-vi="${vi}">
+        <span class="opt-val-label">${swatch}${escH(v.value)}</span>
+        ${isPrimary ? `
+        <input class="opt-val-input" type="number" step="0.01" min="0" placeholder="0.00"
+            value="${v.price||''}" oninput="updateVal(${gi},${vi},'price',this.value)">
+        <input class="opt-val-input" type="number" step="0.01" min="0" placeholder="—"
+            value="${v.discount_price||''}" oninput="updateVal(${gi},${vi},'discount_price',this.value)"
+            title="Çmimi me zbritje (opsionale)">
+        ` : '<span></span><span></span>'}
+        <label class="stock-toggle-sm" title="${v.in_stock!==false?'Në Stok':'Jashtë Stokut'}">
+            <input type="checkbox" ${v.in_stock!==false?'checked':''}
+                onchange="updateVal(${gi},${vi},'in_stock',this.checked)">
+            <span class="stock-dot"></span>
+        </label>
+        ${showImg ? `
+        <div style="display:flex;align-items:center;gap:0.3rem;">
+            ${imgPreview}
+            <button type="button" class="btn-img-toggle" onclick="toggleImgInput(this,${gi},${vi})"
+                title="URL e imazhit për këtë vlerë"><i class="fas fa-image"></i></button>
+        </div>` : '<span></span>'}
+    </div>
+    <div class="img-url-row" id="img-row-${gi}-${vi}" style="display:${v.image_url?'flex':'none'};padding:0.3rem 0 0.4rem;gap:0.5rem;align-items:center;">
+        <input class="opt-val-input" type="url" placeholder="URL e imazhit…" style="flex:1;"
+            value="${escH(v.image_url||'')}" oninput="updateVal(${gi},${vi},'image_url',this.value);updateImgPreview(this,${gi},${vi})">
+    </div>`;
+}
+
+function handleTagInput(e, gi) {
+    if (e.key === 'Enter' || e.key === ',') {
+        e.preventDefault();
+        const input = e.target;
+        const raw = input.value.replace(/,/g,'').trim();
+        if (!raw) return;
+        // Support pasting comma-separated values like "38,39,40"
+        const parts = raw.split(/[,،\s]+/).map(s=>s.trim()).filter(Boolean);
+        parts.forEach(p => addValue(gi, p));
+        input.value = '';
+        input.style.width = '80px';
+    }
+}
+
+function addValue(gi, val) {
+    if (!val) return;
+    const og = optionGroups[gi];
+    if (og.values.some(v => v.value.toLowerCase() === val.toLowerCase())) return; // no duplicates
+    og.values.push({ value: val, price: og.values.length > 0 ? og.values[0].price : 0, discount_price: null, image_url: null, in_stock: true });
+    renderAllGroups();
+    // Restore focus to tag input
+    setTimeout(() => {
+        const el = document.querySelector(`.opt-group[data-gi="${gi}"] .tag-input`);
+        if (el) el.focus();
+    }, 20);
+}
+
+function removeValue(gi, vi) {
+    optionGroups[gi].values.splice(vi, 1);
+    renderAllGroups();
+}
+
+function updateVal(gi, vi, field, val) {
+    const v = optionGroups[gi].values[vi];
+    if (field === 'in_stock') v.in_stock = Boolean(val);
+    else if (field === 'price' || field === 'discount_price') {
+        const f = parseFloat(val);
+        v[field] = isNaN(f) || val==='' ? null : f;
+    } else {
+        v[field] = val || null;
+    }
+    syncHidden();
+}
+
+function updateImgPreview(input, gi, vi) {
+    const row = document.getElementById(`img-row-${gi}-${vi}`);
+    const prev = row ? row.previousElementSibling.querySelector('.opt-img-preview') : null;
+    if (prev) {
+        prev.src = input.value;
+        prev.style.display = input.value ? 'block' : 'none';
+    }
+}
+
+function toggleImgInput(btn, gi, vi) {
+    const row = document.getElementById(`img-row-${gi}-${vi}`);
+    if (!row) return;
+    const shown = row.style.display !== 'none';
+    row.style.display = shown ? 'none' : 'flex';
+    if (!shown) row.querySelector('input').focus();
+}
+
+function changeGroupName(gi, select) {
+    if (select.value === '__custom__') {
+        optionGroups[gi].name = '';
+    } else {
+        optionGroups[gi].name = select.value;
+    }
+    renderAllGroups();
+}
+
+function setGroupName(gi, val) {
+    optionGroups[gi].name = val;
+    syncHidden();
+}
+
+function removeGroup(gi) {
+    optionGroups.splice(gi, 1);
+    renderAllGroups();
+}
+
+function addOptionGroup() {
+    optionGroups.push({ name: 'Madhësia', values: [] });
+    renderAllGroups();
+    setTimeout(() => {
+        const inputs = document.querySelectorAll('.tag-input');
+        if (inputs.length) inputs[inputs.length-1].focus();
+    }, 30);
+}
+
+function syncHidden() {
+    document.getElementById('option_groups_json').value = JSON.stringify(optionGroups);
+}
+
+// Reconstruct option_groups from variants when option_groups not stored yet
+function optGroupsFromVariants(variants) {
+    if (!variants || variants.length === 0) return [];
+    const attrKeys = [];
+    variants.forEach(v => Object.keys(v.attributes||{}).forEach(k => { if (!attrKeys.includes(k)) attrKeys.push(k); }));
+    return attrKeys.map((key, ki) => {
+        const seen = new Set();
+        const values = [];
+        variants.forEach(v => {
+            const val = (v.attributes||{})[key];
+            if (val && !seen.has(val)) {
+                seen.add(val);
+                values.push({
+                    value: val,
+                    price: ki === 0 ? (v.price || 0) : null,
+                    discount_price: ki === 0 ? (v.discount_price || null) : null,
+                    image_url: v.image_url || null,
+                    in_stock: v.in_stock !== false,
+                });
+            }
+        });
+        return { name: key, values };
+    });
+}
+
+// Init
+(function() {
+    try {
+        let raw = JSON.parse(document.getElementById('existing-option-groups').textContent);
+        if (Array.isArray(raw) && raw.length > 0) {
+            optionGroups = raw;
+        } else {
+            // Fall back: reconstruct from variants
+            const variants = JSON.parse(document.getElementById('existing-variants-fallback').textContent);
+            optionGroups = optGroupsFromVariants(variants);
+        }
+    } catch(e) { optionGroups = []; }
+    renderAllGroups();
+})();
+
+document.querySelector('form.premium-product-form').addEventListener('submit', syncHidden);
+
+// ── Label Badges ─────────────────────────────────────────────────────────────
+const activeLabels = new Set(
+    (() => { try { return JSON.parse({{ (product.labels if product and product.labels else []) | tojson | safe }}); } catch(e) { return []; } })()
+);
+// Also seed from legacy bool fields
+{% if product and product.is_best_seller %}activeLabels.add('best_seller');{% endif %}
+{% if product and product.is_pharmacist_choice %}activeLabels.add('pharmacist_choice');{% endif %}
+{% if product and product.featured %}activeLabels.add('featured');{% endif %}
+
+function syncLabels() {
+    document.getElementById('labels_json').value = JSON.stringify([...activeLabels]);
+}
+
+function toggleLabel(btn) {
+    const key = btn.dataset.key;
+    if (activeLabels.has(key)) {
+        activeLabels.delete(key);
+        btn.classList.remove('label-active');
+    } else {
+        activeLabels.add(key);
+        btn.classList.add('label-active');
+    }
+    syncLabels();
+}
+
+// Apply initial active state to buttons
+document.querySelectorAll('.label-badge-btn').forEach(btn => {
+    if (activeLabels.has(btn.dataset.key)) btn.classList.add('label-active');
+});
+syncLabels();
+</script>
+</div>
 {% endblock %}

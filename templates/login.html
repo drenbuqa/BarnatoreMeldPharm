@@ -1,20 +1,85 @@
 {% extends "base.html" %}
-
+{% block navbar %}{% endblock %}
+{% block footer %}{% endblock %}
 {% block content %}
-<div class="form-container">
-    <h2 style="text-align: center; margin-bottom: 20px;">Kyçuni</h2>
-    <form method="POST">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-        <div class="form-group">
-            <label for="email">Email</label>
-            <input type="email" name="email" id="email" class="form-control" required>
+<div class="auth-page">
+    <div class="auth-card">
+        <div class="auth-logo">
+            <img src="{{ url_for('static', filename='favicon.png') }}" alt="Meld Pharm" width="48">
+            <span>Barnatore Meld Pharm</span>
         </div>
-        <div class="form-group">
-            <label for="password">Fjalëkalimi</label>
-            <input type="password" name="password" id="password" class="form-control" required>
+
+        <h2 class="auth-title">Kyçuni</h2>
+
+        <form method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <div class="aform-group">
+                <label>Email</label>
+                <div class="ainput-wrap"><i class="fas fa-envelope"></i>
+                    <input type="email" name="email" class="form-control" required placeholder="emaili@juaj.com">
+                </div>
+            </div>
+            <div class="aform-group">
+                <label>Fjalëkalimi</label>
+                <div class="ainput-wrap"><i class="fas fa-lock"></i>
+                    <input type="password" name="password" class="form-control" required placeholder="Fjalëkalimi juaj">
+                </div>
+            </div>
+            <button type="submit" class="auth-btn"><i class="fas fa-sign-in-alt"></i> Kyçuni</button>
+        </form>
+        <div style="text-align:left;margin-top:0.6rem;">
+            <a href="{{ url_for('auth.forgot_password') }}" style="font-size:0.82rem;color:#64748b;text-decoration:none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">Keni harruar fjalëkalimin?</a>
         </div>
-        <button type="submit" class="btn btn-primary" style="width: 100%;">Kyçuni</button>
-    </form>
-    <p style="margin-top: 15px; text-align: center;">Nuk keni llogari? <a href="{{ url_for('auth.register') }}" class="hover-underline" style="color: var(--primary);">Regjistrohuni</a></p>
+
+        <div class="auth-divider"><span>ose</span></div>
+
+        <a href="{{ url_for('auth.google_login') }}" class="google-btn">
+            <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.36-8.16 2.36-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+            Kyçuni me Google
+        </a>
+
+        <div class="auth-guest">
+            <p style="margin:0 0 0.5rem;font-size:0.85rem;color:#64748b;">Nuk keni llogari? <a href="{{ url_for('auth.register') }}" style="color:#0f766e;font-weight:600;text-decoration:none;">Regjistrohuni falas</a></p>
+            <a href="{{ url_for('main.products') }}"><i class="fas fa-arrow-right"></i> Vazhdo si vizitor — nuk kërkohet llogari</a>
+        </div>
+    </div>
 </div>
+<style>
+.main-content { margin-top:0 !important; }
+.auth-page { min-height:100vh; display:flex; align-items:center; justify-content:center; padding:1.5rem 1rem; background:linear-gradient(135deg,#f0fdf4,#f8fafc); }
+.auth-card { background:#fff; border-radius:20px; box-shadow:0 16px 48px rgba(0,0,0,0.10); padding:2rem 1.75rem; width:100%; max-width:420px; }
+@media(max-width:480px){
+  .auth-card { padding:1.5rem 1.25rem; border-radius:16px; }
+  .auth-logo { margin-bottom:1.25rem; }
+  .auth-title { font-size:1.2rem; }
+  .auth-sub { margin-bottom:1.1rem; }
+  .aform-group { margin-bottom:0.75rem; }
+  .auth-btn { padding:0.75rem; margin-top:0.75rem; }
+  .auth-divider { margin:0.9rem 0; }
+  .auth-guest { margin-top:1rem; padding-top:1rem; }
+}
+.auth-logo { display:flex; align-items:center; gap:0.75rem; margin-bottom:1.75rem; font-weight:700; font-size:0.95rem; color:#0f766e; }
+.auth-logo img { border-radius:10px; background:rgba(15,118,110,0.08); padding:5px; }
+.auth-title { font-size:1.4rem; font-weight:700; color:#0f172a; margin-bottom:1.5rem; }
+.auth-sub { color:#64748b; font-size:0.87rem; margin-bottom:1.6rem; }
+.auth-sub a { color:#0f766e; font-weight:600; text-decoration:none; }
+.aform-group { margin-bottom:1rem; }
+.aform-group label { display:block; font-size:0.83rem; font-weight:600; color:#374151; margin-bottom:0.3rem; }
+.ainput-wrap { position:relative; }
+.ainput-wrap i { position:absolute; left:0.9rem; top:50%; transform:translateY(-50%); color:#94a3b8; font-size:0.8rem; pointer-events:none; }
+.ainput-wrap .form-control { padding-left:2.4rem !important; border-radius:10px !important; border:1.5px solid #e2e8f0 !important; height:44px; font-size:0.9rem; width:100%; }
+.ainput-wrap .form-control:focus { border-color:#14b8a6 !important; box-shadow:0 0 0 3px rgba(20,184,166,0.12) !important; outline:none; }
+.auth-btn { width:100%; padding:0.85rem; margin-top:1rem; background:linear-gradient(135deg,#0f766e,#14b8a6); color:#fff; border:none; border-radius:12px; font-size:0.95rem; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:0.5rem; transition:opacity 0.2s,transform 0.2s; }
+.auth-btn:hover { opacity:0.92; transform:translateY(-1px); }
+.auth-divider { display:flex; align-items:center; gap:12px; margin:1.2rem 0; }
+.auth-divider::before,.auth-divider::after { content:''; flex:1; height:1px; background:#e5e7eb; }
+.auth-divider span { font-size:0.8rem; color:#94a3b8; }
+.google-btn { display:flex; align-items:center; justify-content:center; gap:10px; width:100%; padding:11px 16px; border:1.5px solid #e5e7eb; border-radius:10px; background:#fff; color:#374151; font-size:0.9rem; font-weight:600; text-decoration:none; transition:border-color 0.2s; box-sizing:border-box; }
+.google-btn:hover { border-color:#0f766e; }
+.auth-guest { text-align:center; margin-top:1.25rem; padding-top:1.25rem; border-top:1px solid #f1f5f9; }
+.auth-guest a { color:#94a3b8; font-size:0.85rem; text-decoration:none; display:inline-flex; align-items:center; gap:6px; }
+.auth-guest a:hover { color:#0f766e; text-decoration:underline; }
+.auth-guest p a:hover { text-decoration:underline; }
+.auth-guest i { font-size:0.72rem; }
+</style>
 {% endblock %}

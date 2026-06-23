@@ -1332,17 +1332,16 @@ window.toggleProfileDropdown = function () {
 
 // --- CART AJAX & MINI-CART FUNCTIONS ---
 
-window.addToCartAJAX = function (productId, quantity = 1) {
+window.addToCartAJAX = function (productId, quantity = 1, variantId = null) {
     const formData = new FormData();
     formData.append('quantity', quantity);
     formData.append('csrf_token', document.querySelector('meta[name="csrf-token"]').content);
+    if (variantId) formData.append('variant_id', variantId);
 
     fetch(`/cart/add/${productId}`, {
         method: 'POST',
         body: formData,
-        headers: {
-            'X-Requested-With': 'XMLHttpRequest'
-        }
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
     })
         .then(res => res.json())
         .then(data => {
@@ -1354,17 +1353,16 @@ window.addToCartAJAX = function (productId, quantity = 1) {
         .catch(err => console.error('Error adding to cart:', err));
 };
 
-window.buyNow = function (productId, quantity = 1) {
+window.buyNow = function (productId, quantity = 1, variantId = null) {
     const formData = new FormData();
     formData.append('quantity', quantity);
     formData.append('csrf_token', document.querySelector('meta[name="csrf-token"]').content);
+    if (variantId) formData.append('variant_id', variantId);
 
     fetch(`/cart/add/${productId}`, {
         method: 'POST',
         body: formData,
-        headers: {
-            'X-Requested-With': 'XMLHttpRequest'
-        }
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
     })
         .then(res => res.json())
         .then(data => {
