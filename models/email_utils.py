@@ -532,11 +532,14 @@ def send_new_order_notification(order: dict):
 
     items_html = ""
     for it in items:
+        variant_span = (
+            '  <span style="color:#94a3b8;font-size:11px;">(' + it["variant"] + ')</span>'
+            if it.get("variant") else ""
+        )
         items_html += (
             f'<tr>'
             f'<td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;font-size:13px;">'
-            f'{it.get("quantity",1)}× {it.get("name","")}'
-            f'{"  <span style=\'color:#94a3b8;font-size:11px;\'>(" + it["variant"] + ")</span>" if it.get("variant") else ""}'
+            f'{it.get("quantity",1)}× {it.get("name","")}{variant_span}'
             f'</td>'
             f'<td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;font-size:13px;text-align:right;font-weight:700;color:#0f766e;">'
             f'€{float(it.get("item_total",0)):.2f}</td>'
