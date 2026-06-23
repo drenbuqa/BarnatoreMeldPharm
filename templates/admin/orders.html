@@ -60,14 +60,19 @@
 </div>
 
 {% if orders %}
-<!-- Bulk action bar (hidden until selection) -->
-<form method="POST" action="{{ url_for('admin.bulk_order_status') }}" id="bulkForm">
+<!-- Hidden form used only for bulk submission — NOT wrapping the table -->
+<form method="POST" action="{{ url_for('admin.bulk_order_status') }}" id="bulkForm" style="display:none;">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <input type="hidden" name="status_filter" value="{{ status_filter }}">
+    <input type="hidden" name="status" id="bulkStatusHidden">
+</form>
+
+<!-- Bulk action bar (hidden until selection) -->
+<div>
     <div id="bulkBar" style="display:none;" class="bulk-bar">
         <span id="bulkCount" class="bulk-count">0 të zgjedhura</span>
         <div style="display:flex;align-items:center;gap:0.6rem;">
-            <select name="status" class="bulk-status-select">
+            <select id="bulkStatusSelect" class="bulk-status-select">
                 <option value="">-- Zgjidh statusin e ri --</option>
                 <option value="Pending">⏳ Në Pritje</option>
                 <option value="Konfirmuar">✅ Konfirmuar</option>
@@ -211,7 +216,7 @@
         </table>
     </div>
 </div>
-</form>
+</div>
 
 <!-- Pagination -->
 {% if total_pages and total_pages > 1 %}
@@ -402,12 +407,25 @@ function clearSelection() {
 }
 
 function submitBulk() {
-    const sel = document.querySelector('.bulk-status-select').value;
+    const sel = document.getElementById('bulkStatusSelect').value;
     if (!sel) { alert('Zgjidh statusin e ri.'); return; }
     const checked = document.querySelectorAll('.order-checkbox:checked');
     if (!checked.length) return;
     if (!confirm(`Ndrysho statusin e ${checked.length} porosive në "${sel}"?`)) return;
-    document.getElementById('bulkForm').submit();
+
+    const form = document.getElementById('bulkForm');
+    // Remove any previously injected order_id inputs
+    form.querySelectorAll('input[name="order_ids"]').forEach(el => el.remove());
+    // Inject one hidden input per selected order
+    checked.forEach(cb => {
+        const inp = document.createElement('input');
+        inp.type = 'hidden';
+        inp.name = 'order_ids';
+        inp.value = cb.value;
+        form.appendChild(inp);
+    });
+    document.getElementById('bulkStatusHidden').value = sel;
+    form.submit();
 }
 
 let _pendingForm = null;

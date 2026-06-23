@@ -505,3 +505,98 @@ def send_admin_digest(recipient_email, period_label, stats):
 
     html = _email_html(subject, content_html, cfg)
     return _send_simple_email(cfg, recipient_email, subject, text_body, html)
+
+
+def send_new_order_notification(order: dict):
+    """Send an instant email to the admin when a new order is placed."""
+    notify_email = (
+        os.getenv("ORDER_NOTIFY_EMAIL")
+        or os.getenv("ADMIN_DIGEST_EMAIL")
+        or os.getenv("SMTP_USER")
+        or os.getenv("MAIL_USERNAME")
+    )
+    if not notify_email:
+        return
+
+    cfg = _get_smtp_config()
+    fullname = order.get("fullname", "—")
+    phone    = order.get("phone", "—")
+    city     = order.get("city", "—")
+    address  = order.get("address", "—")
+    payment  = order.get("payment_method", "—")
+    shipping = order.get("shipping_method", "delivery")
+    grand    = float(order.get("grand_total", 0))
+    items    = order.get("items", [])
+
+    subject = f"🛒 Porosi e Re — {fullname} — €{grand:.2f}"
+
+    items_html = ""
+    for it in items:
+        items_html += (
+            f'<tr>'
+            f'<td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;font-size:13px;">'
+            f'{it.get("quantity",1)}× {it.get("name","")}'
+            f'{"  <span style=\'color:#94a3b8;font-size:11px;\'>(" + it["variant"] + ")</span>" if it.get("variant") else ""}'
+            f'</td>'
+            f'<td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;font-size:13px;text-align:right;font-weight:700;color:#0f766e;">'
+            f'€{float(it.get("item_total",0)):.2f}</td>'
+            f'</tr>'
+        )
+
+    content_html = f"""
+    <h2 style="font-size:1.2rem;font-weight:800;color:#1e293b;margin:0 0 1.25rem;">
+      🛒 Porosi e Re ka Ardhur
+    </h2>
+
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:1.25rem;">
+      <tr>
+        <td style="width:50%;padding:0 8px 0 0;">
+          <div style="background:#f8fafc;border-radius:12px;padding:14px 16px;">
+            <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;color:#94a3b8;margin-bottom:8px;">Klienti</div>
+            <div style="font-size:14px;font-weight:700;color:#1e293b;">{fullname}</div>
+            <div style="font-size:12px;color:#475569;margin-top:3px;">{phone}</div>
+            <div style="font-size:12px;color:#475569;margin-top:2px;">{address}, {city}</div>
+          </div>
+        </td>
+        <td style="width:50%;padding:0 0 0 8px;">
+          <div style="background:#f8fafc;border-radius:12px;padding:14px 16px;">
+            <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;color:#94a3b8;margin-bottom:8px;">Detajet</div>
+            <div style="font-size:12px;color:#475569;"><strong>Pagesa:</strong> {payment}</div>
+            <div style="font-size:12px;color:#475569;margin-top:3px;"><strong>Dërgesa:</strong> {"Marrje në dyqan" if shipping == "pickup" else "Dërgesë"}</div>
+            <div style="font-size:16px;font-weight:800;color:#0f766e;margin-top:8px;">€{grand:.2f}</div>
+          </div>
+        </td>
+      </tr>
+    </table>
+
+    <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;margin-bottom:1.5rem;">
+      <thead>
+        <tr style="background:#f8fafc;">
+          <th style="padding:10px 12px;text-align:left;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;">Produkti</th>
+          <th style="padding:10px 12px;text-align:right;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;">Çmimi</th>
+        </tr>
+      </thead>
+      <tbody>{items_html}</tbody>
+    </table>
+
+    <div style="text-align:center;">
+      <a href="{SITE_BASE_URL}/admin/orders" style="display:inline-block;background:linear-gradient(135deg,#0f766e,#14b8a6);color:#fff;text-decoration:none;font-size:14px;font-weight:700;padding:12px 32px;border-radius:10px;">
+        Shiko Porosinë në Panel →
+      </a>
+    </div>
+    """
+
+    text_body = (
+        f"Porosi e Re: {fullname} — €{grand:.2f}\n"
+        f"Telefoni: {phone}\n"
+        f"Adresa: {address}, {city}\n"
+        f"Pagesa: {payment}\n\n"
+        + "\n".join(f"  {it.get('quantity',1)}x {it.get('name','')} — €{float(it.get('item_total',0)):.2f}" for it in items)
+        + f"\n\nShiko: {SITE_BASE_URL}/admin/orders"
+    )
+
+    html = _email_html(subject, content_html, cfg)
+    try:
+        _send_simple_email(cfg, notify_email, subject, text_body, html)
+    except Exception:
+        pass  # never block the order from being placed
