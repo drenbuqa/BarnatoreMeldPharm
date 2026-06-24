@@ -150,16 +150,7 @@ def _email_html(title, body_html, cfg):
 
 
 def _send_simple_email(cfg, recipient_email, subject, text_body, html_body):
-    """Send an email using the shared SMTP config. Returns (success, message)."""
-    if not cfg["smtp_host"] or not cfg["smtp_user"] or not cfg["smtp_password"] or not cfg["sender_email"]:
-        return False, "SMTP configuration incomplete. Check .env variables."
-    msg = EmailMessage()
-    msg["Subject"] = subject
-    msg["From"] = f"{cfg['sender_name']} <{cfg['sender_email']}>"
-    msg["To"] = recipient_email
-    msg["Reply-To"] = cfg["reply_to"]
-    msg.set_content(text_body)
-    msg.add_alternative(html_body, subtype="html")
+    """Send an email using Resend API (preferred) or SMTP fallback."""
     resend_key = os.getenv("RESEND_API_KEY")
     if resend_key:
         # Use Resend HTTP API — works on all cloud hosts including Render
@@ -169,7 +160,7 @@ def _send_simple_email(cfg, recipient_email, subject, text_body, html_body):
             resp = _req.post(
                 "https://api.resend.com/emails",
                 headers={"Authorization": f"Bearer {resend_key}", "Content-Type": "application/json"},
-                json={"from": from_addr, "to": [recipient_email], "subject": msg["Subject"],
+                json={"from": from_addr, "to": [recipient_email], "subject": subject,
                       "html": html_body, "text": text_body},
                 timeout=15,
             )
@@ -181,6 +172,15 @@ def _send_simple_email(cfg, recipient_email, subject, text_body, html_body):
             return False, str(exc)
 
     # Fallback: SMTP (works locally, blocked on Render)
+    if not cfg["smtp_host"] or not cfg["smtp_user"] or not cfg["smtp_password"] or not cfg["sender_email"]:
+        return False, "SMTP configuration incomplete. Check .env variables."
+    msg = EmailMessage()
+    msg["Subject"] = subject
+    msg["From"] = f"{cfg['sender_name']} <{cfg['sender_email']}>"
+    msg["To"] = recipient_email
+    msg["Reply-To"] = cfg["reply_to"]
+    msg.set_content(text_body)
+    msg.add_alternative(html_body, subtype="html")
     host = cfg["smtp_host"]
     port = cfg["smtp_port"]
     try:
