@@ -160,10 +160,29 @@ def _send_simple_email(cfg, recipient_email, subject, text_body, html_body):
     msg["Reply-To"] = cfg["reply_to"]
     msg.set_content(text_body)
     msg.add_alternative(html_body, subtype="html")
+    resend_key = os.getenv("RESEND_API_KEY")
+    if resend_key:
+        # Use Resend HTTP API — works on all cloud hosts including Render
+        try:
+            import requests as _req
+            from_addr = f"{cfg['sender_name']} <noreply@barnatoremeldpharm.com>"
+            resp = _req.post(
+                "https://api.resend.com/emails",
+                headers={"Authorization": f"Bearer {resend_key}", "Content-Type": "application/json"},
+                json={"from": from_addr, "to": [recipient_email], "subject": msg["Subject"],
+                      "html": html_body, "text": text_body},
+                timeout=15,
+            )
+            if resp.status_code in (200, 201):
+                return True, "Email sent."
+            return False, f"Resend error {resp.status_code}: {resp.text}"
+        except Exception as exc:
+            logging.exception("Resend API failed")
+            return False, str(exc)
+
+    # Fallback: SMTP (works locally, blocked on Render)
     host = cfg["smtp_host"]
     port = cfg["smtp_port"]
-    # Try SSL (port 465) first — more reliable on cloud hosting (Render, Railway, etc.)
-    # Fall back to STARTTLS (port 587) if SSL fails
     try:
         ssl_port = 465 if port == 587 else port
         with smtplib.SMTP_SSL(host, ssl_port, timeout=8) as server:
