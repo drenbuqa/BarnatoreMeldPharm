@@ -572,17 +572,16 @@ def place_order():
     if current_user.is_authenticated:
         User.update_cart(current_user.id, {})
 
-    # Notify admin of new order (non-blocking)
+    # Notify admin of new order
     try:
         from models.email_utils import send_new_order_notification
-        import threading
         order_snapshot = {
             "fullname": fullname, "phone": phone, "email": email,
             "address": address, "city": city, "payment_method": method,
             "shipping_method": shipping_method, "items": order_items,
             "grand_total": grand_total,
         }
-        threading.Thread(target=send_new_order_notification, args=(order_snapshot,), daemon=True).start()
+        send_new_order_notification(order_snapshot)
     except Exception:
         pass
 
