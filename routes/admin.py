@@ -964,6 +964,28 @@ def newsletter_generate():
             return jsonify({'error': f'Gabim: {err[:250]}'}), 500
 
 
+@admin.route('/test-email')
+@login_required
+@admin_required
+def test_email():
+    """Send a test email to verify SMTP is working. Visit /admin/test-email"""
+    import os as _os
+    from models.email_utils import _get_smtp_config, _send_simple_email
+    cfg = _get_smtp_config()
+    recipient = _os.getenv('ORDER_NOTIFY_EMAIL') or cfg['sender_email']
+    ok, msg = _send_simple_email(
+        cfg, recipient,
+        'Test Email — Meld Pharm',
+        'Ky është një email testues nga Meld Pharm.',
+        '<p>Ky është një <strong>email testues</strong> nga Meld Pharm. SMTP po funksionon!</p>'
+    )
+    if ok:
+        flash(f'Email testues u dërgua me sukses tek {recipient}!', 'success')
+    else:
+        flash(f'SMTP dështoi: {msg}', 'danger')
+    return redirect(url_for('admin.dashboard'))
+
+
 @admin.route('/cleanup/chats', methods=['POST'])
 @login_required
 @admin_required

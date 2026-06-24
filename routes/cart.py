@@ -575,6 +575,7 @@ def place_order():
     # Notify admin of new order
     try:
         from models.email_utils import send_new_order_notification
+        import logging
         order_snapshot = {
             "fullname": fullname, "phone": phone, "email": email,
             "address": address, "city": city, "payment_method": method,
@@ -582,8 +583,9 @@ def place_order():
             "grand_total": grand_total,
         }
         send_new_order_notification(order_snapshot)
-    except Exception:
-        pass
+    except Exception as _e:
+        import logging
+        logging.error(f"Admin order notification failed: {_e}")
 
     flash(f'Faleminderit {fullname}, porosia u realizua me sukses!', 'success')
     return redirect(url_for('main.index'))

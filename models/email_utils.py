@@ -51,9 +51,9 @@ def _get_smtp_config():
 PHARMACY_PHONE = "+383 045 559 911"
 PHARMACY_EMAIL_CONTACT = "meldpharm@hotmail.com"
 PHARMACY_ADDRESS = "72 Eqrem Çabej, Prishtinë 10000"
-SITE_BASE_URL = os.getenv("SITE_BASE_URL", "https://barnatora.meldpharm.com")
+SITE_BASE_URL = os.getenv("SITE_BASE_URL", "https://barnatoremeldpharm.com")
 # Always use the deployed domain for email images — localhost URLs break in email clients
-_EMAIL_BASE = "https://barnatora.meldpharm.com"
+_EMAIL_BASE = os.getenv("SITE_BASE_URL", "https://barnatoremeldpharm.com").rstrip("/")
 LOGO_URL = f"{_EMAIL_BASE}/static/favicon.png"
 
 
