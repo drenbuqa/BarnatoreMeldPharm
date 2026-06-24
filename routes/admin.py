@@ -12,6 +12,7 @@ from models.email_utils import (
     send_order_cancelled_email,
     send_newsletter_email,
     send_admin_digest,
+    send_email_in_background,
 )
 from models.categories import CATEGORIES
 from functools import wraps
@@ -133,17 +134,17 @@ def update_order_status(order_id):
     mongo.db.orders.update_one({'_id': _ObjId(order_id)}, {'$set': update_fields})
 
     if new_status in ('Konfirmuar', 'Confirmed', 'Pranuar') and old_status not in ('Konfirmuar', 'Confirmed', 'Pranuar'):
-        sent, msg = send_order_confirmation_email(order_id)
-        flash('Porosia u konfirmua dhe emaili u dërgua te klienti.' if sent else f'Konfirmuar, por emaili nuk u dërgua: {msg}', 'success' if sent else 'warning')
+        send_email_in_background(send_order_confirmation_email, order_id)
+        flash('Porosia u konfirmua dhe emaili po dërgohet te klienti.', 'success')
     elif new_status in ('Delivering', 'Në Dërgesë') and old_status not in ('Delivering', 'Në Dërgesë'):
-        sent, msg = send_order_shipped_email(order_id, tracking_number=tracking_number)
-        flash('Emaili i dërgesës u dërgua te klienti.' if sent else f'Statusi u ndryshua, por emaili nuk u dërgua: {msg}', 'success' if sent else 'warning')
+        send_email_in_background(send_order_shipped_email, order_id, tracking_number=tracking_number)
+        flash('Statusi u ndryshua dhe emaili i dërgesës po dërgohet.', 'success')
     elif new_status in ('Delivered', 'Dorezuar') and old_status not in ('Delivered', 'Dorezuar'):
-        sent, msg = send_order_delivered_email(order_id)
-        flash('Emaili i dorëzimit u dërgua te klienti.' if sent else f'Statusi u ndryshua, por emaili nuk u dërgua: {msg}', 'success' if sent else 'warning')
+        send_email_in_background(send_order_delivered_email, order_id)
+        flash('Statusi u ndryshua dhe emaili i dorëzimit po dërgohet.', 'success')
     elif new_status in ('Cancelled', 'Anuluar', 'Refuzuar') and old_status not in ('Cancelled', 'Anuluar', 'Refuzuar'):
-        sent, msg = send_order_cancelled_email(order_id)
-        flash('Emaili i anulimit u dërgua te klienti.' if sent else f'Statusi u ndryshua, por emaili nuk u dërgua: {msg}', 'success' if sent else 'warning')
+        send_email_in_background(send_order_cancelled_email, order_id)
+        flash('Statusi u ndryshua dhe emaili i anulimit po dërgohet.', 'success')
     else:
         flash(f'Statusi i porosisë u ndryshua në {new_status}.', 'success')
 

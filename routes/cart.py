@@ -572,17 +572,16 @@ def place_order():
     if current_user.is_authenticated:
         User.update_cart(current_user.id, {})
 
-    # Notify admin of new order
+    # Notify admin of new order (non-blocking background thread)
     try:
-        from models.email_utils import send_new_order_notification
-        import logging
+        from models.email_utils import send_new_order_notification, send_email_in_background
         order_snapshot = {
             "fullname": fullname, "phone": phone, "email": email,
             "address": address, "city": city, "payment_method": method,
             "shipping_method": shipping_method, "items": order_items,
             "grand_total": grand_total,
         }
-        send_new_order_notification(order_snapshot)
+        send_email_in_background(send_new_order_notification, order_snapshot)
     except Exception as _e:
         import logging
         logging.error(f"Admin order notification failed: {_e}")

@@ -1,6 +1,7 @@
 import logging
 import os
 import smtplib
+import threading
 from datetime import datetime
 from email.message import EmailMessage
 from email.utils import make_msgid
@@ -159,19 +160,34 @@ def _send_simple_email(cfg, recipient_email, subject, text_body, html_body):
     msg["Reply-To"] = cfg["reply_to"]
     msg.set_content(text_body)
     msg.add_alternative(html_body, subtype="html")
+    host = cfg["smtp_host"]
+    port = cfg["smtp_port"]
+    # Try SSL (port 465) first — more reliable on cloud hosting (Render, Railway, etc.)
+    # Fall back to STARTTLS (port 587) if SSL fails
     try:
-        with smtplib.SMTP(cfg["smtp_host"], cfg["smtp_port"], timeout=20) as server:
-            if cfg["use_tls"]:
-                server.starttls()
+        ssl_port = 465 if port == 587 else port
+        with smtplib.SMTP_SSL(host, ssl_port, timeout=8) as server:
             server.login(cfg["smtp_user"], cfg["smtp_password"])
             server.send_message(msg)
         return True, "Email sent."
     except SMTPAuthenticationError as exc:
         logging.exception("SMTP auth failed")
         return False, str(exc)
-    except Exception as exc:
-        logging.exception("Failed to send email")
-        return False, str(exc)
+    except Exception as ssl_exc:
+        logging.warning(f"SSL email failed ({ssl_exc}), trying STARTTLS...")
+        try:
+            with smtplib.SMTP(host, port, timeout=8) as server:
+                if cfg["use_tls"]:
+                    server.starttls()
+                server.login(cfg["smtp_user"], cfg["smtp_password"])
+                server.send_message(msg)
+            return True, "Email sent."
+        except SMTPAuthenticationError as exc:
+            logging.exception("SMTP auth failed (STARTTLS)")
+            return False, str(exc)
+        except Exception as exc:
+            logging.exception("Failed to send email (both SSL and STARTTLS)")
+            return False, str(exc)
 
 
 def _infer_smtp_defaults(sender_email):
@@ -603,3 +619,13 @@ def send_new_order_notification(order: dict):
         _send_simple_email(cfg, notify_email, subject, text_body, html)
     except Exception:
         pass  # never block the order from being placed
+
+
+def send_email_in_background(func, *args, **kwargs):
+    """Run an email-sending function in a non-daemon background thread.
+
+    The calling request returns immediately; the thread completes on its own.
+    Non-daemon so gunicorn workers don't kill it before it finishes.
+    """
+    t = threading.Thread(target=func, args=args, kwargs=kwargs, daemon=False)
+    t.start()
