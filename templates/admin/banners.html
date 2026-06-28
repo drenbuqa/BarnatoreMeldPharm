@@ -206,14 +206,16 @@
             </div>
             <div>
                 <div class="banner-card-title">
+                    {% set _needs_value = banner.link_type in ('category', 'brand', 'offer', 'custom_products') %}
+                    {% set _missing = _needs_value and not banner.link_value %}
                     {% if banner.link_type == 'category' %}
-                    Kategoria: {{ banner.link_value }}
+                    Kategoria: {% if banner.link_value %}<strong>{{ banner.link_value }}</strong>{% else %}<span style="color:#dc2626;font-weight:700;">⚠ E PAZGJEDHUR — Klikimi nuk do funksionojë!</span>{% endif %}
                     {% elif banner.link_type == 'brand' %}
-                    Brendi: {{ banner.link_value }}
+                    Brendi: {% if banner.link_value %}<strong>{{ banner.link_value }}</strong>{% else %}<span style="color:#dc2626;font-weight:700;">⚠ E PAZGJEDHUR — Klikimi nuk do funksionojë!</span>{% endif %}
                     {% elif banner.link_type == 'custom_products' %}
-                    Produkte Specifike
+                    Produkte Specifike{% if not banner.link_value %} — <span style="color:#dc2626;font-weight:700;">⚠ E PAZGJEDHUR</span>{% endif %}
                     {% elif banner.link_type == 'offer' %}
-                    Ofertë e veçantë: {{ banner.link_value }}
+                    Ofertë e veçantë: {% if banner.link_value %}<strong>{{ banner.link_value }}</strong>{% else %}<span style="color:#dc2626;font-weight:700;">⚠ E PAZGJEDHUR — Klikimi nuk do funksionojë!</span>{% endif %}
                     {% else %}
                     Të Gjitha Ofertat
                     {% endif %}
@@ -289,7 +291,7 @@
             </h3>
         </div>
 
-        <form action="{{ url_for('admin.manage_banners') }}" method="POST">
+        <form action="{{ url_for('admin.manage_banners') }}" method="POST" onsubmit="prepareAddForm()">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             
             <div class="form-group" style="margin-bottom: 1.5rem;">
@@ -369,7 +371,7 @@
                 <label for="addActive" style="font-size: 0.95rem; font-weight: 500; color: var(--text-main); cursor: pointer; user-select: none;">Baneri është Aktiv</label>
             </div>
 
-            <button type="submit" class="btn btn-primary" style="width: 100%; padding: 1rem; font-size: 1rem; font-weight: 700; border-radius: 8px; border: none; cursor: pointer; transition: all 0.3s ease;" onclick="prepareAddForm()">Ruaj Banerin</button>
+            <button type="submit" class="btn btn-primary" style="width: 100%; padding: 1rem; font-size: 1rem; font-weight: 700; border-radius: 8px; border: none; cursor: pointer; transition: all 0.3s ease;">Ruaj Banerin</button>
         </form>
     </div>
 </div>
@@ -387,7 +389,7 @@
             </h3>
         </div>
 
-        <form id="editBannerForm" method="POST">
+        <form id="editBannerForm" method="POST" onsubmit="prepareEditForm()">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             
             <div class="form-group" style="margin-bottom: 1.5rem;">
@@ -467,7 +469,7 @@
                 <label for="editActive" style="font-size: 0.95rem; font-weight: 500; color: var(--text-main); cursor: pointer; user-select: none;">Aktiv</label>
             </div>
 
-            <button type="submit" class="btn btn-primary" style="width: 100%; padding: 1rem; font-size: 1rem; font-weight: 700; border-radius: 8px; border: none; cursor: pointer;" onclick="prepareEditForm()">Ruaj Ndryshimet</button>
+            <button type="submit" class="btn btn-primary" style="width: 100%; padding: 1rem; font-size: 1rem; font-weight: 700; border-radius: 8px; border: none; cursor: pointer;">Ruaj Ndryshimet</button>
         </form>
     </div>
 </div>
@@ -504,6 +506,28 @@ function filterProductsEdit() {
     });
 }
 
+function _warnIfEmpty(selectEl, value, warnId) {
+    var existing = document.getElementById(warnId);
+    if (existing) existing.remove();
+    selectEl.style.borderColor = '';
+    if (!value) {
+        selectEl.style.borderColor = '#dc2626';
+        var warn = document.createElement('p');
+        warn.id = warnId;
+        warn.style.cssText = 'color:#dc2626;font-size:0.82rem;margin-top:0.35rem;font-weight:700;';
+        warn.textContent = '⚠ Nuk është vendosur asnjë vlerë — zgjidh njërën nga lista ose klikimi i banerit nuk do funksionojë!';
+        selectEl.parentNode.appendChild(warn);
+        // Insert a blank placeholder option so admin is forced to pick
+        if (!selectEl.querySelector('option[value=""]')) {
+            var blank = document.createElement('option');
+            blank.value = '';
+            blank.textContent = '— Zgjidh —';
+            selectEl.insertBefore(blank, selectEl.firstChild);
+        }
+        selectEl.value = '';
+    }
+}
+
 function openEditBanner(button) {
     const dataset = button.dataset;
     const id = dataset.bannerId;
@@ -514,22 +538,44 @@ function openEditBanner(button) {
     const expiresAt = dataset.expiresAt || '';
     const sortOrder = dataset.sortOrder || '';
 
+    // Reset warning states
+    ['editBrandSelect','editCategorySelect','editOfferSelect'].forEach(function(sid) {
+        var el = document.getElementById(sid);
+        if (el) {
+            el.style.borderColor = '';
+            var blank = el.querySelector('option[value=""]');
+            if (blank) blank.remove();
+        }
+    });
+    ['warn-brand','warn-category','warn-offer'].forEach(function(wid) {
+        var w = document.getElementById(wid);
+        if (w) w.remove();
+    });
+
     document.getElementById('editBannerForm').action = "/admin/banners/edit/" + id;
     document.getElementById('editImageUrl').value = url;
     document.getElementById('editLinkType').value = type;
     toggleEditLinkValue(type);
-    
-    if (type === 'brand') document.getElementById('editBrandSelect').value = value;
-    else if (type === 'category') document.getElementById('editCategorySelect').value = value;
-    else if (type === 'custom_products') {
-        const values = value.split(',').map(v => v.trim());
+
+    if (type === 'brand') {
+        var sel = document.getElementById('editBrandSelect');
+        sel.value = value;
+        _warnIfEmpty(sel, value, 'warn-brand');
+    } else if (type === 'category') {
+        var sel = document.getElementById('editCategorySelect');
+        sel.value = value;
+        _warnIfEmpty(sel, value, 'warn-category');
+    } else if (type === 'custom_products') {
+        const values = value ? value.split(',').map(v => v.trim()) : [];
         document.querySelectorAll('.edit-custom-product-cb').forEach(cb => {
             cb.checked = values.includes(cb.value.trim());
         });
     } else if (type === 'offer') {
-        document.getElementById('editOfferSelect').value = value;
+        var sel = document.getElementById('editOfferSelect');
+        sel.value = value;
+        _warnIfEmpty(sel, value, 'warn-offer');
     }
-    
+
     document.getElementById('editActive').checked = ['True', 'true', '1', 'on'].includes(active);
     document.getElementById('editExpiresAt').value = expiresAt;
     document.getElementById('editSortOrder').value = sortOrder;

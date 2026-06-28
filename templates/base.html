@@ -14,10 +14,10 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://cdnjs.cloudflare.com">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css', v=6) }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/mobile.css', v=6) }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css', v=7) }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/mobile.css', v=7) }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/chatbot-new.css', v=2) }}">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&family=Cormorant+Garamond:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <!-- Font Awesome: load asynchronously to avoid render-blocking -->
     <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
     <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"></noscript>
@@ -393,34 +393,6 @@
     <div id="toast-container" class="toast-container"></div>
 
 
-    <!-- Newsletter Section (before footer, hidden only on auth pages) -->
-    {% set _auth_endpoints = ['auth.login','auth.register','auth.forgot_password','auth.reset_password','auth.admin_verify'] %}
-    {% if request.endpoint not in _auth_endpoints and not (request.endpoint and request.endpoint.startswith('admin.')) %}
-    <section class="newsletter-section">
-        <div class="newsletter-inner">
-            <div class="newsletter-text">
-                <div class="newsletter-icon"><i class="fas fa-envelope-open-text"></i></div>
-                <div>
-                    <h3>Merr ofertat para të tjerëve</h3>
-                    <p>Zbritje ekskluzive, produkte të reja dhe këshilla shëndetësore — direkt në emailin tuaj.</p>
-                </div>
-            </div>
-            {% if current_user.is_authenticated and current_user.newsletter_subscribed %}
-            <div style="display:flex;align-items:center;gap:0.6rem;background:rgba(255,255,255,0.15);border-radius:12px;padding:0.75rem 1.25rem;">
-                <i class="fas fa-check-circle" style="color:#fff;font-size:1.1rem;"></i>
-                <span style="color:#fff;font-weight:600;font-size:0.92rem;">Jeni abonuar — faleminderit!</span>
-            </div>
-            {% else %}
-            <form class="newsletter-form" id="sectionNewsletterForm">
-                <input type="email" id="sectionNewsletterEmail" placeholder="emaili@juaj.com" required
-                    value="{{ current_user.email if current_user.is_authenticated else '' }}">
-                <button type="submit"><i class="fas fa-paper-plane"></i> Abonohu</button>
-            </form>
-            {% endif %}
-        </div>
-        <p id="sectionNewsletterMsg" style="display:none;text-align:center;color:#5eead4;font-size:0.88rem;margin-top:1rem;"></p>
-    </section>
-    {% endif %}
 
     {% block footer %}
 
@@ -503,26 +475,38 @@
 
     <!-- Newsletter popup (shows after 30s, once per session) -->
     {% if not (current_user.is_authenticated and current_user.newsletter_subscribed) and not (request.endpoint and request.endpoint.startswith('admin.')) %}
-    <div id="newsletter-popup" style="display:none;position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,0.5);align-items:center;justify-content:center;padding:1rem;">
-        <div style="background:#fff;border-radius:20px;max-width:480px;width:100%;overflow:hidden;box-shadow:0 24px 64px rgba(0,0,0,0.2);position:relative;">
-            <div style="background:linear-gradient(135deg,#0f766e,#14b8a6);padding:2rem 2rem 1.5rem;color:#fff;text-align:center;">
-                <div style="font-size:2.2rem;margin-bottom:0.75rem;">🎁</div>
-                <h3 style="font-size:1.3rem;font-weight:700;margin-bottom:0.4rem;color:#fff;">Ofertat ekskluzive për ju!</h3>
-                <p style="font-size:0.88rem;color:#fff;opacity:0.92;">Abonohuni dhe merrni zbritje e lajme të reja para të gjithëve.</p>
+    <div id="newsletter-popup" style="display:none;position:fixed;inset:0;z-index:10000;background:rgba(43,43,43,0.52);align-items:center;justify-content:center;padding:1.25rem;">
+        <div style="background:#F7F3EE;border-radius:24px;max-width:460px;width:100%;overflow:hidden;box-shadow:0 32px 80px rgba(43,43,43,0.22);position:relative;">
+
+            <!-- Close button -->
+            <button onclick="closeNewsletterPopup()"
+                    style="position:absolute;top:1rem;right:1rem;background:rgba(43,43,43,0.07);border:none;color:#6B6057;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:1.1rem;display:flex;align-items:center;justify-content:center;z-index:2;line-height:1;">×</button>
+
+            <!-- Header panel -->
+            <div style="background:#EFE7DE;padding:2.5rem 2rem 2rem;text-align:center;">
+                <div style="width:54px;height:54px;background:#F7F3EE;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1.25rem;box-shadow:0 4px 16px rgba(108,122,97,0.15);">
+                    <i class="fas fa-seedling" style="font-size:1.35rem;color:#6C7A61;"></i>
+                </div>
+                <h3 style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.85rem;font-weight:600;color:#2B2B2B;margin:0 0 0.5rem;letter-spacing:-0.01em;line-height:1.15;">Bëhu pjesë e komunitetit</h3>
+                <p style="font-family:'Inter',sans-serif;font-size:0.84rem;color:#7A7068;margin:0;line-height:1.55;">Oferta ekskluzive, produkte të reja dhe këshilla kujdesi —<br>drejtpërdrejt në inbox-in tuaj.</p>
             </div>
-            <div style="padding:1.75rem 2rem;">
-                <form id="popupNewsletterForm" style="display:flex;flex-direction:column;gap:0.75rem;">
-                    <input type="email" id="popupNewsletterEmail" placeholder="emaili@juaj.com" required
+
+            <!-- Form panel -->
+            <div style="padding:1.75rem 2rem 2rem;">
+                <form id="popupNewsletterForm" style="display:flex;flex-direction:column;gap:0.7rem;">
+                    <input type="email" id="popupNewsletterEmail" placeholder="Email juaj" required
                         value="{{ current_user.email if current_user.is_authenticated else '' }}"
-                        style="padding:0.75rem 1rem;border-radius:10px;border:1.5px solid #e2e8f0;font-size:0.9rem;width:100%;box-sizing:border-box;">
-                    <button type="submit" style="padding:0.85rem;background:linear-gradient(135deg,#0f766e,#14b8a6);color:#fff;border:none;border-radius:10px;font-weight:700;font-size:0.95rem;cursor:pointer;">
-                        <i class="fas fa-paper-plane"></i> Abonohu tani
+                        style="padding:0.8rem 1.15rem;border-radius:999px;border:1.5px solid #DDD5CB;font-family:'Inter',sans-serif;font-size:0.88rem;color:#2B2B2B;width:100%;box-sizing:border-box;background:#fff;outline:none;">
+                    <button type="submit"
+                            style="padding:0.85rem;background:#4F5D4E;color:#fff;border:none;border-radius:999px;font-family:'Inter',sans-serif;font-weight:600;font-size:0.88rem;cursor:pointer;letter-spacing:0.02em;">
+                        <i class="fas fa-leaf" style="margin-right:0.45rem;opacity:0.85;"></i>Abonohu tani
                     </button>
                 </form>
-                <p id="popupNewsletterMsg" style="display:none;text-align:center;color:#0f766e;font-size:0.88rem;margin-top:0.75rem;font-weight:600;"></p>
-                <button onclick="closeNewsletterPopup()" style="display:block;width:100%;margin-top:0.75rem;background:none;border:none;color:#94a3b8;font-size:0.82rem;cursor:pointer;">Jo faleminderit, do ta anashkaloj</button>
+                <p id="popupNewsletterMsg" style="display:none;text-align:center;color:#4F5D4E;font-family:'Inter',sans-serif;font-size:0.88rem;margin-top:0.75rem;font-weight:600;"></p>
+                <button onclick="closeNewsletterPopup()"
+                        style="display:block;width:100%;margin-top:0.9rem;background:none;border:none;color:#A09590;font-family:'Inter',sans-serif;font-size:0.8rem;cursor:pointer;letter-spacing:0.01em;">Jo faleminderit, do ta anashkaloj</button>
             </div>
-            <button onclick="closeNewsletterPopup()" style="position:absolute;top:0.75rem;right:0.75rem;background:rgba(255,255,255,0.2);border:none;color:#fff;width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:1rem;line-height:28px;">×</button>
+
         </div>
     </div>
     {% endif %}

@@ -32,7 +32,7 @@ limiter = Limiter(key_func=get_remote_address, default_limits=[], storage_uri="m
 from authlib.integrations.flask_client import OAuth
 oauth = OAuth()
 
-load_dotenv()
+load_dotenv(override=True)
 
 app = Flask(__name__)
 

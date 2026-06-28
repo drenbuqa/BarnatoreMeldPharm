@@ -39,46 +39,46 @@
         </a>
 
         <div class="auth-guest">
-            <p style="margin:0 0 0.5rem;font-size:0.85rem;color:#64748b;">Nuk keni llogari? <a href="{{ url_for('auth.register') }}" style="color:#0f766e;font-weight:600;text-decoration:none;">Regjistrohuni falas</a></p>
+            <p style="margin:0 0 0.5rem;font-size:0.85rem;color:#64748b;">Nuk keni llogari? <a href="{{ url_for('auth.register') }}" style="color:#4F5D4E;font-weight:600;text-decoration:none;">Regjistrohuni falas</a></p>
             <a href="{{ url_for('main.products') }}"><i class="fas fa-arrow-right"></i> Vazhdo si vizitor — nuk kërkohet llogari</a>
         </div>
     </div>
 </div>
 <style>
 .main-content { margin-top:0 !important; }
-.auth-page { min-height:100vh; display:flex; align-items:center; justify-content:center; padding:1.5rem 1rem; background:linear-gradient(135deg,#f0fdf4,#f8fafc); }
-.auth-card { background:#fff; border-radius:20px; box-shadow:0 16px 48px rgba(0,0,0,0.10); padding:2rem 1.75rem; width:100%; max-width:420px; }
+.auth-page { min-height:100vh; display:flex; align-items:center; justify-content:center; padding:1.5rem 1rem; background:linear-gradient(135deg,#F7F3EE,#EFE7DE); font-family:'Inter','Poppins',sans-serif; }
+.auth-card { background:#fff; border-radius:20px; box-shadow:0 16px 48px rgba(43,43,43,0.10); padding:2rem 1.75rem; width:100%; max-width:420px; }
 @media(max-width:480px){
   .auth-card { padding:1.5rem 1.25rem; border-radius:16px; }
   .auth-logo { margin-bottom:1.25rem; }
-  .auth-title { font-size:1.2rem; }
+  .auth-title { font-size:1.3rem; }
   .auth-sub { margin-bottom:1.1rem; }
   .aform-group { margin-bottom:0.75rem; }
   .auth-btn { padding:0.75rem; margin-top:0.75rem; }
   .auth-divider { margin:0.9rem 0; }
   .auth-guest { margin-top:1rem; padding-top:1rem; }
 }
-.auth-logo { display:flex; align-items:center; gap:0.75rem; margin-bottom:1.75rem; font-weight:700; font-size:0.95rem; color:#0f766e; }
-.auth-logo img { border-radius:10px; background:rgba(15,118,110,0.08); padding:5px; }
-.auth-title { font-size:1.4rem; font-weight:700; color:#0f172a; margin-bottom:1.5rem; }
-.auth-sub { color:#64748b; font-size:0.87rem; margin-bottom:1.6rem; }
-.auth-sub a { color:#0f766e; font-weight:600; text-decoration:none; }
+.auth-logo { display:flex; align-items:center; gap:0.75rem; margin-bottom:1.75rem; font-weight:700; font-size:0.95rem; color:#4F5D4E; }
+.auth-logo img { border-radius:10px; background:rgba(79,93,78,0.08); padding:5px; }
+.auth-title { font-family:'Cormorant Garamond',Georgia,serif; font-size:1.7rem; font-weight:600; color:#2B2B2B; margin-bottom:1.5rem; letter-spacing:-0.01em; }
+.auth-sub { color:#7A7068; font-size:0.87rem; margin-bottom:1.6rem; }
+.auth-sub a { color:#4F5D4E; font-weight:600; text-decoration:none; }
 .aform-group { margin-bottom:1rem; }
-.aform-group label { display:block; font-size:0.83rem; font-weight:600; color:#374151; margin-bottom:0.3rem; }
+.aform-group label { display:block; font-size:0.83rem; font-weight:600; color:#2B2B2B; margin-bottom:0.3rem; }
 .ainput-wrap { position:relative; }
 .ainput-wrap i { position:absolute; left:0.9rem; top:50%; transform:translateY(-50%); color:#94a3b8; font-size:0.8rem; pointer-events:none; }
-.ainput-wrap .form-control { padding-left:2.4rem !important; border-radius:10px !important; border:1.5px solid #e2e8f0 !important; height:44px; font-size:0.9rem; width:100%; }
-.ainput-wrap .form-control:focus { border-color:#14b8a6 !important; box-shadow:0 0 0 3px rgba(20,184,166,0.12) !important; outline:none; }
-.auth-btn { width:100%; padding:0.85rem; margin-top:1rem; background:linear-gradient(135deg,#0f766e,#14b8a6); color:#fff; border:none; border-radius:12px; font-size:0.95rem; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:0.5rem; transition:opacity 0.2s,transform 0.2s; }
-.auth-btn:hover { opacity:0.92; transform:translateY(-1px); }
+.ainput-wrap .form-control { padding-left:2.4rem !important; border-radius:10px !important; border:1.5px solid #E2D9CE !important; height:44px; font-size:0.9rem; width:100%; font-family:'Inter','Poppins',sans-serif; }
+.ainput-wrap .form-control:focus { border-color:#6C7A61 !important; box-shadow:0 0 0 3px rgba(108,122,97,0.12) !important; outline:none; }
+.auth-btn { width:100%; padding:0.85rem; margin-top:1rem; background:#4F5D4E; color:#fff; border:none; border-radius:12px; font-family:'Inter','Poppins',sans-serif; font-size:0.95rem; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:0.5rem; transition:background 0.2s,transform 0.2s; }
+.auth-btn:hover { background:#2B2B2B; transform:translateY(-1px); }
 .auth-divider { display:flex; align-items:center; gap:12px; margin:1.2rem 0; }
-.auth-divider::before,.auth-divider::after { content:''; flex:1; height:1px; background:#e5e7eb; }
-.auth-divider span { font-size:0.8rem; color:#94a3b8; }
-.google-btn { display:flex; align-items:center; justify-content:center; gap:10px; width:100%; padding:11px 16px; border:1.5px solid #e5e7eb; border-radius:10px; background:#fff; color:#374151; font-size:0.9rem; font-weight:600; text-decoration:none; transition:border-color 0.2s; box-sizing:border-box; }
-.google-btn:hover { border-color:#0f766e; }
-.auth-guest { text-align:center; margin-top:1.25rem; padding-top:1.25rem; border-top:1px solid #f1f5f9; }
-.auth-guest a { color:#94a3b8; font-size:0.85rem; text-decoration:none; display:inline-flex; align-items:center; gap:6px; }
-.auth-guest a:hover { color:#0f766e; text-decoration:underline; }
+.auth-divider::before,.auth-divider::after { content:''; flex:1; height:1px; background:#E2D9CE; }
+.auth-divider span { font-size:0.8rem; color:#7A7068; }
+.google-btn { display:flex; align-items:center; justify-content:center; gap:10px; width:100%; padding:11px 16px; border:1.5px solid #E2D9CE; border-radius:10px; background:#fff; color:#2B2B2B; font-size:0.9rem; font-weight:600; text-decoration:none; transition:border-color 0.2s; box-sizing:border-box; }
+.google-btn:hover { border-color:#6C7A61; }
+.auth-guest { text-align:center; margin-top:1.25rem; padding-top:1.25rem; border-top:1px solid #EFE7DE; }
+.auth-guest a { color:#7A7068; font-size:0.85rem; text-decoration:none; display:inline-flex; align-items:center; gap:6px; }
+.auth-guest a:hover { color:#4F5D4E; text-decoration:underline; }
 .auth-guest p a:hover { text-decoration:underline; }
 .auth-guest i { font-size:0.72rem; }
 </style>

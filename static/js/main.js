@@ -151,6 +151,15 @@ window.openShopSidebar = function () {
 
     // Disable scrolling but don't hide menus yet to avoid jitter
     document.body.classList.add('sidebar-open');
+
+    // Re-render price slider now that sidebar is visible (hidden = zero width during DOMContentLoaded)
+    requestAnimationFrame(function() {
+        if (!window._priceSliderInited) {
+            window.initPriceSlider();
+        } else if (window._priceSliderRender) {
+            window._priceSliderRender();
+        }
+    });
 };
 
 window.closeShopSidebar = function () {
@@ -213,6 +222,101 @@ window.toggleSubcats = function (event, btn) {
     }
 };
 
+// ── Dual-handle price range slider ──────────────────────────
+window._priceSliderInited = false;
+window._syncPriceSlider = function() {};
+
+window.initPriceSlider = function() {
+    const sliderMin = document.getElementById('range-slider-min');
+    const sliderMax = document.getElementById('range-slider-max');
+    const fill      = document.getElementById('prs-fill');
+    const minDisp   = document.getElementById('price-min-display');
+    const maxDisp   = document.getElementById('price-max-display');
+    const hidMin    = document.getElementById('min-price');
+    const hidMax    = document.getElementById('max-price');
+    if (!sliderMin || !sliderMax || !fill) return;
+
+    const SLIDER_MIN = parseInt(sliderMin.min, 10);
+    const SLIDER_MAX = parseInt(sliderMin.max, 10);
+
+    // Set handles from existing URL params, guaranteeing at least 1 step between them
+    const initMin = parseInt(hidMin.value) || SLIDER_MIN;
+    const initMax = parseInt(hidMax.value) || SLIDER_MAX;
+    let startLo = Math.max(SLIDER_MIN, Math.min(initMin, SLIDER_MAX));
+    let startHi = Math.max(SLIDER_MIN, Math.min(initMax, SLIDER_MAX));
+    if (startLo >= startHi) startLo = Math.max(SLIDER_MIN, startHi - 1);
+    sliderMin.value = startLo;
+    sliderMax.value = startHi;
+
+    function render() {
+        let lo = parseInt(sliderMin.value, 10);
+        let hi = parseInt(sliderMax.value, 10);
+        const span = SLIDER_MAX - SLIDER_MIN;
+        const lPct = ((lo - SLIDER_MIN) / span) * 100;
+        const rPct = 100 - ((hi - SLIDER_MIN) / span) * 100;
+
+        fill.style.left  = 'calc(' + lPct + '% + 8px)';
+        fill.style.right = 'calc(' + rPct + '% + 8px)';
+
+        minDisp.textContent = lo + '€';
+        maxDisp.textContent = hi + '€';
+
+        minDisp.classList.toggle('active', lo > SLIDER_MIN);
+        maxDisp.classList.toggle('active', hi < SLIDER_MAX);
+
+        // When min is pushed to the right edge, bring it on top so user can drag it back left
+        sliderMin.style.zIndex = (lo >= hi) ? 3 : 2;
+        sliderMax.style.zIndex = (lo >= hi) ? 2 : 3;
+    }
+
+    // Re-reads hidden inputs and repositions thumbs — safe to call when sidebar becomes visible
+    window._priceSliderRender = function() {
+        const curMin = parseInt(hidMin.value) || SLIDER_MIN;
+        const curMax = parseInt(hidMax.value) || SLIDER_MAX;
+        sliderMin.value = Math.max(SLIDER_MIN, Math.min(curMin, SLIDER_MAX));
+        sliderMax.value = Math.max(SLIDER_MIN, Math.min(curMax, SLIDER_MAX));
+        render();
+    };
+
+    // Expose so resetFilters can call it
+    window._syncPriceSlider = function() {
+        sliderMin.value = SLIDER_MIN;
+        sliderMax.value = SLIDER_MAX;
+        render();
+    };
+
+    function clampAndRender() {
+        let lo = parseInt(sliderMin.value, 10);
+        let hi = parseInt(sliderMax.value, 10);
+        // Enforce minimum 1-step gap so the two thumbs never sit on the same spot
+        if (this === sliderMin && lo >= hi) {
+            lo = Math.max(SLIDER_MIN, hi - 1);
+            sliderMin.value = lo;
+        } else if (this === sliderMax && hi <= lo) {
+            hi = Math.min(SLIDER_MAX, lo + 1);
+            sliderMax.value = hi;
+        }
+        render();
+    }
+
+    function applyFilter() {
+        clampAndRender.call(this);
+        const lo = parseInt(sliderMin.value, 10);
+        const hi = parseInt(sliderMax.value, 10);
+        hidMin.value = lo > SLIDER_MIN ? lo : '';
+        hidMax.value = hi < SLIDER_MAX ? hi : '';
+        if (window.updateShop) window.updateShop();
+    }
+
+    sliderMin.addEventListener('input',  function() { sliderMin.style.zIndex = 3; sliderMax.style.zIndex = 2; clampAndRender.call(this); });
+    sliderMax.addEventListener('input',  function() { sliderMax.style.zIndex = 3; sliderMin.style.zIndex = 2; clampAndRender.call(this); });
+    sliderMin.addEventListener('change', function() { applyFilter.call(this); });
+    sliderMax.addEventListener('change', function() { applyFilter.call(this); });
+
+    render(); // draw initial state
+    window._priceSliderInited = true;
+};
+
 window.resetFilters = function (e) {
     if (e) e.preventDefault();
 
@@ -221,6 +325,9 @@ window.resetFilters = function (e) {
     const maxPrice = document.getElementById('max-price');
     if (minPrice) minPrice.value = '';
     if (maxPrice) maxPrice.value = '';
+
+    // Reset slider visuals
+    if (window._priceSliderInited) window._syncPriceSlider();
 
     const discountOnly = document.getElementById('discount-only-filter');
     if (discountOnly) discountOnly.checked = false;
@@ -1267,9 +1374,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (brandSelect) brandSelect.addEventListener('change', updateShop);
 
     const applyPriceBtn = document.getElementById('apply-price-filter');
-    if (applyPriceBtn) applyPriceBtn.addEventListener('click', () => {
-        updateShop();
-    });
+    if (applyPriceBtn) applyPriceBtn.addEventListener('click', () => { updateShop(); });
+
+    // Init dual-handle price slider
+    window.initPriceSlider();
 
     // Mobile Sidebar Toggle
     const openSidebarBtn = document.getElementById('openSidebar');
@@ -1965,7 +2073,7 @@ window.currentSlide = function (n) { showSlides(slideIndex = n); }
 function showSlides(n) {
     let i;
     const slides = document.getElementsByClassName("hero-slide");
-    const dots = document.getElementsByClassName("dot");
+    const dots = document.getElementsByClassName("hero-dot");
     if (!slides || slides.length === 0) return;
     if (n > slides.length) slideIndex = 1;
     if (n < 1) slideIndex = slides.length;

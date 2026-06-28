@@ -131,21 +131,19 @@
                     <div class="sidebar-block clickable-last-block">
                         <h3 class="sidebar-title">Çmimi</h3>
                         <div class="filter-group-price">
-                            <div class="price-inputs-wrapper" style="margin-bottom: 1rem;">
-                                <div class="input-with-label">
-                                    <span>Min</span>
-                                    <input type="number" placeholder="0" id="min-price" class="price-input"
-                                        value="{{ request.args.get('min_price', '') }}">
-                                </div>
-                                <div class="input-with-label">
-                                    <span>Max</span>
-                                    <input type="number" placeholder="1000" id="max-price" class="price-input"
-                                        value="{{ request.args.get('max_price', '') }}">
-                                </div>
+                            <div class="prs-vals">
+                                <span class="prs-badge" id="price-min-display">0€</span>
+                                <span class="prs-badge" id="price-max-display">{{ price_slider_max }}€</span>
                             </div>
-                            <button id="apply-price-filter" class="btn btn-sm btn-primary w-100 d-none-mobile"
-                                style="color: white !important; font-weight: 700; background-color: var(--primary); border-color: var(--primary);">Apliko
-                                Çmimin</button>
+                            <div class="prs-wrap">
+                                <div class="prs-track"></div>
+                                <div class="prs-fill" id="prs-fill"></div>
+                                <input type="range" id="range-slider-min" class="prs-input" min="0" max="{{ price_slider_max }}" step="1" value="0">
+                                <input type="range" id="range-slider-max" class="prs-input" min="0" max="{{ price_slider_max }}" step="1" value="{{ price_slider_max }}">
+                            </div>
+                            <!-- Hidden inputs kept for compatibility with existing updateShop() JS -->
+                            <input type="hidden" id="min-price" value="{{ request.args.get('min_price', '') }}">
+                            <input type="hidden" id="max-price" value="{{ request.args.get('max_price', '') }}">
                         </div>
                     </div>
                 </div> <!-- End sidebar-content-wrapper -->
@@ -241,18 +239,18 @@
                             {% elif product.size %}<span class="product-size">{{ product.size }}</span>{% endif %}
                             <div class="price-container">
                                 {% if product.offer_type == 'multi_buy' %}
-                                <span class="price">€{{ "%.2f"|format(product.price) }}</span>
+                                <span class="price">€{{ "%.2f"|format(product.display_price) }}</span>
                                 {% elif product.discount_price %}
                                 <span class="price discounted">€{{ "%.2f"|format(product.discount_price) }}</span>
-                                <span class="price original">€{{ "%.2f"|format(product.price) }}</span>
+                                <span class="price original">€{{ "%.2f"|format(product.display_original_price) }}</span>
                                 {% if product.offer_badge_text and not product.offer_badge_text.startswith('-') %}
                                 <span class="discount-badge">{{ product.offer_badge_text }}</span>
                                 {% else %}
-                                <span class="discount-badge">-{{ ((product.price - product.discount_price) /
-                                    product.price * 100)|round|int }}%</span>
+                                <span class="discount-badge">-{{ ((product.display_original_price - product.discount_price) /
+                                    product.display_original_price * 100)|round|int }}%</span>
                                 {% endif %}
                                 {% else %}
-                                <span class="price">€{{ "%.2f"|format(product.price) }}</span>
+                                <span class="price">€{{ "%.2f"|format(product.display_price) }}</span>
                                 {% endif %}
                             </div>
                         </div>

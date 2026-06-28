@@ -44,14 +44,14 @@
                     {% if product.size %}<span class="product-size">{{ product.size }}</span>{% endif %}
                     <div class="price-container">
                         {% if product.offer_type == 'multi_buy' %}
-                        <span class="price">€{{ "%.2f"|format(product.price) }}</span>
+                        <span class="price">€{{ "%.2f"|format(product.display_price) }}</span>
                         {% elif product.discount_price %}
                         <span class="price discounted">€{{ "%.2f"|format(product.discount_price) }}</span>
-                        <span class="price original">€{{ "%.2f"|format(product.price) }}</span>
-                        <span class="discount-badge">{{ ((product.price - product.discount_price) / product.price *
+                        <span class="price original">€{{ "%.2f"|format(product.display_original_price) }}</span>
+                        <span class="discount-badge">{{ ((product.display_original_price - product.discount_price) / product.display_original_price *
                             100)|round|int }}%</span>
                         {% else %}
-                        <span class="price">€{{ "%.2f"|format(product.price) }}</span>
+                        <span class="price">€{{ "%.2f"|format(product.display_price) }}</span>
                         {% endif %}
                     </div>
                 </div>

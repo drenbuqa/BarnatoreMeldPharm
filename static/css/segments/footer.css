@@ -74,36 +74,38 @@
 .newsletter-form button:hover { background: #0d6460 !important; transform: translateY(-1px); }
 
 /* ── Footer ─────────────────────────────────────────── */
-.footer { background: #0f172a; color: #f8fafc; }
+.footer { background: #0f172a; color: #f8fafc; padding-top: 2rem; }
 
-/* Map strip */
+/* Map strip — integrated into footer, no separate band */
 .footer-map-strip {
     display: grid;
-    grid-template-columns: 1fr 520px;
-    min-height: 220px;
+    grid-template-columns: 1fr 460px;
     border-bottom: 1px solid #1e293b;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 1.5rem 0;
 }
 .footer-map-strip-info {
     display: flex;
     align-items: center;
     gap: 1.25rem;
-    padding: 1.5rem 2rem;
-    background: #111827;
+    padding: 2rem 2rem 2rem 0;
+    background: transparent;
     flex-wrap: wrap;
 }
-.footer-map-strip-info i.fa-map-marker-alt { color: #14b8a6; font-size: 1.4rem; flex-shrink: 0; }
+.footer-map-strip-info i.fa-map-marker-alt { color: #14b8a6; font-size: 1.2rem; flex-shrink: 0; }
 .footer-map-strip-info div { flex: 1; min-width: 140px; }
-.footer-map-strip-info strong { display: block; color: #f1f5f9; font-size: 0.95rem; }
-.footer-map-strip-info span { color: #94a3b8; font-size: 0.85rem; }
+.footer-map-strip-info strong { display: block; color: #f1f5f9; font-size: 0.9rem; }
+.footer-map-strip-info span { color: #94a3b8; font-size: 0.82rem; }
 .footer-map-btn {
     display: inline-flex; align-items: center; gap: 6px;
     background: #0f766e; color: #fff; text-decoration: none;
-    padding: 0.6rem 1.1rem; border-radius: 8px; font-size: 0.85rem; font-weight: 600;
+    padding: 0.5rem 1rem; border-radius: 8px; font-size: 0.82rem; font-weight: 600;
     white-space: nowrap; transition: background 0.2s;
     flex-shrink: 0;
 }
 .footer-map-btn:hover { background: #0d6460; }
-.footer-map-embed { height: 220px; overflow: hidden; }
+.footer-map-embed { height: 180px; overflow: hidden; border-radius: 10px; margin: 1rem 0; }
 
 .footer-main { padding: 3.5rem 0 0; }
 .footer-content {
@@ -208,8 +210,8 @@
 
 @media (max-width: 1024px) {
     .footer-content { grid-template-columns: 1fr 1fr; gap: 2rem; }
-    .footer-map-strip { grid-template-columns: 1fr; }
-    .footer-map-embed { height: 180px; }
+    .footer-map-strip { grid-template-columns: 1fr; padding: 0 1rem; }
+    .footer-map-embed { height: 160px; }
 }
 @media (max-width: 600px) {
     .footer-content { grid-template-columns: 1fr; gap: 2rem; padding: 0 1rem; }

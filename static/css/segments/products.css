@@ -318,15 +318,16 @@
 .product-card {
     background: white;
     border-radius: var(--radius-lg);
-    padding: 1.25rem;
+    padding: 1rem 1rem 1.25rem;
     transition: var(--transition);
-    border: 1px solid #f1f5f9;
+    border: 1px solid #E2D9CE;
     position: relative;
     display: flex !important;
     flex-direction: column !important;
     height: 100% !important;
     width: 100%;
     align-self: stretch !important;
+    box-shadow: 0 1px 6px rgba(43,43,43,0.05);
 }
 
 .product-card-link-overlay {
@@ -341,20 +342,19 @@
 
 @media (hover: hover) {
     .product-card:hover {
-        transform: translateY(-8px);
-        box-shadow: var(--shadow-hover);
-        border-color: transparent;
+        transform: translateY(-5px);
+        box-shadow: 0 12px 32px rgba(79,93,78,0.12);
+        border-color: #C4B8AC;
     }
 }
 
 .product-image {
     position: relative;
     border-radius: var(--radius-md);
-    overflow: visible;
+    overflow: hidden;
     aspect-ratio: 1/1;
-    min-height: 200px;
-    /* Added fallback min-height for consistency if aspect-ratio fails */
-    background: white;
+    min-height: 180px;
+    background: #ffffff;
     width: 100%;
     display: flex;
     align-items: center;
@@ -365,15 +365,14 @@
     width: 100%;
     height: 100%;
     object-fit: contain;
-    /* Better for varying product shots */
     object-position: center;
     padding: 1rem;
-    transition: var(--transition);
+    transition: transform 0.35s ease;
 }
 
 @media (hover: hover) {
     .product-card:hover .product-image img {
-        transform: scale(1.05);
+        transform: scale(1.08);
     }
 }
 
@@ -466,8 +465,8 @@
 /* Favorite Button */
 .btn-favorite {
     position: absolute;
-    top: -10px;
-    right: -10px;
+    top: 8px;
+    right: 8px;
     width: 40px;
     height: 40px;
     background: rgba(255, 255, 255, 0.95);
@@ -528,46 +527,46 @@
 }
 
 .product-info {
-    padding: 1.5rem 0 0;
+    font-family: 'Inter', 'Poppins', sans-serif;
+    padding: 0.75rem 0 0;
     display: flex;
     flex-direction: column;
     flex-grow: 1;
-    /* Pushes content down */
 }
 
 .product-category {
-    font-size: 0.75rem;
-    color: var(--primary);
-    font-weight: 800;
+    font-family: 'Inter', 'Poppins', sans-serif;
+    font-size: 0.64rem;
+    color: #6C7A61;
+    font-weight: 700;
     text-transform: uppercase;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.25rem;
     display: block;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.08em;
 }
 
 .product-title {
-    font-size: 0.9rem;
-    /* Smaller font as requested */
-    margin-bottom: 0.5rem;
-    color: var(--text-main);
+    font-family: 'Inter', 'Poppins', sans-serif;
+    font-size: 0.8rem;
+    margin-bottom: 0.2rem;
+    color: #2B2B2B;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     line-clamp: 2;
-    /* Compatibility */
     -webkit-box-orient: vertical;
     overflow: hidden;
-    height: 2.5rem;
-    /* Exactly 2 lines at 1.4 line-height (0.9 * 1.4 * 2 = 2.52) */
+    height: 2.24rem;
     line-height: 1.4;
-    font-weight: 600;
+    font-weight: 500;
 }
 
 .product-size {
+    font-family: 'Inter', 'Poppins', sans-serif;
     display: block;
-    font-size: 0.85rem;
-    color: var(--text-muted);
-    margin-bottom: 1rem;
-    font-weight: 500;
+    font-size: 0.68rem;
+    color: #7A7068;
+    margin-bottom: 0.5rem;
+    font-weight: 400;
 }
 
 .variant-values-row {
@@ -657,28 +656,31 @@
 .price-container {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
-    margin-bottom: 1.5rem;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
     margin-top: auto;
-    /* Push to bottom of info block */
 }
 
 .price {
-    font-size: 1.25rem;
+    font-family: 'Inter', 'Poppins', sans-serif;
+    font-size: 1rem;
     font-weight: 700;
-    color: var(--text-main);
+    color: #2B2B2B;
 }
 
 .price.discounted {
-    font-size: 1.35rem;
-    font-weight: 800;
-    color: var(--primary);
+    font-family: 'Inter', 'Poppins', sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #2B2B2B;
 }
 
 .price.original {
+    font-family: 'Inter', 'Poppins', sans-serif;
     text-decoration: line-through;
-    color: #94a3b8;
-    font-size: 0.95rem;
+    color: #7A7068;
+    font-size: 0.73rem;
     font-weight: 400;
 }
 

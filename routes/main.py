@@ -11,6 +11,7 @@ from bson import ObjectId
 import uuid
 import re
 import json
+import math
 import urllib.request
 import urllib.error
 import os
@@ -194,12 +195,34 @@ def _get_home_payload():
 
     offer_banners = Banner.get_active()
 
+    from models.categories import CATEGORIES
+    category_images = {}
+    for cat_name in CATEGORIES.keys():
+        # Prefer a discounted/featured product for a more visual image
+        product = mongo.db.products.find_one(
+            {"category": cat_name, "is_deleted": {"$ne": True},
+             "image_url": {"$exists": True, "$nin": [None, ""]},
+             "discount_price": {"$ne": None, "$gt": 0}},
+            {"image_url": 1},
+            sort=[("_id", -1)]
+        )
+        if not product:
+            product = mongo.db.products.find_one(
+                {"category": cat_name, "is_deleted": {"$ne": True},
+                 "image_url": {"$exists": True, "$nin": [None, ""]}},
+                {"image_url": 1},
+                sort=[("_id", -1)]
+            )
+        if product and product.get("image_url"):
+            category_images[cat_name] = product["image_url"]
+
     payload = {
         'featured_products': featured_products,
         'best_sellers': best_sellers,
         'regular_products': regular_products,
         'total_pages_regular': total_pages_regular,
         'offer_banners': offer_banners,
+        'category_images': category_images,
     }
     _HOME_CACHE['payload'] = payload
     _HOME_CACHE['expires_at'] = now + max(_HOME_CACHE_TTL_SECONDS, 1)
@@ -753,13 +776,14 @@ def _build_chatbot_reply(user_query, conversation_id=None):
 def index():
     payload = _get_home_payload()
     
-    return render_template('index.html', 
-                            featured_products=payload['featured_products'], 
+    return render_template('index.html',
+                            featured_products=payload['featured_products'],
                             best_sellers=payload['best_sellers'],
                             regular_products=payload['regular_products'],
                             total_pages_regular=payload['total_pages_regular'],
                             categories=CATEGORIES,
-                            offer_banners=payload['offer_banners'])
+                            offer_banners=payload['offer_banners'],
+                            category_images=payload.get('category_images', {}))
 
 @main.route('/guest_login')
 def guest_login():
@@ -858,9 +882,18 @@ def products():
             'available_brands': available_brands
         })
 
-    return render_template('products.html', 
-                         products=products, 
-                         page=page, 
+    # Compute slider ceiling from highest product price in the DB
+    price_agg = mongo.db.products.aggregate([
+        {"$match": {"is_deleted": {"$ne": True}}},
+        {"$group": {"_id": None, "max_p": {"$max": "$price"}}}
+    ])
+    price_agg_result = list(price_agg)
+    raw_max = price_agg_result[0]["max_p"] if price_agg_result else 5000
+    price_slider_max = int(math.ceil(float(raw_max or 5000)))
+
+    return render_template('products.html',
+                         products=products,
+                         page=page,
                          total_pages=total_pages,
                          total_count=total_count,
                          current_category=category,
@@ -871,7 +904,8 @@ def products():
                          brands=available_brands,
                          discount_only=discount_only,
                          best_sellers=best_sellers,
-                         offer_name=offer_name)
+                         offer_name=offer_name,
+                         price_slider_max=price_slider_max)
 
     # Debug print
     print(f"Products found: {len(products)} on page {page} in category {category} subcategory {subcategory} search: {search_query}")
@@ -1270,19 +1304,20 @@ def click_banner(banner_id):
     except Exception:
         pass
 
-    link_type = banner.get('link_type')
-    link_value = banner.get('link_value')
-    
-    if link_type == 'category':
+    link_type = banner.get('link_type') or ''
+    link_value = (banner.get('link_value') or '').strip()
+
+    if link_type == 'category' and link_value:
         return redirect(url_for('main.products', category=link_value))
-    elif link_type == 'brand':
+    elif link_type == 'brand' and link_value:
         return redirect(url_for('main.products', brand=link_value))
-    elif link_type == 'custom_products':
-        # we can use the search query parameter for multiple products by passing link_value as a search query
-        return redirect(url_for('main.products', q=link_value))
+    elif link_type == 'custom_products' and link_value:
+        return redirect(url_for('main.products', search=link_value))
+    elif link_type == 'offer' and link_value:
+        return redirect(url_for('main.products', discount_only='true', offer_name=link_value))
     else:
-        # all_offers
-        return redirect(url_for('main.products', on_offer='1'))
+        # all_offers — or any type whose link_value wasn't saved correctly
+        return redirect(url_for('main.products', discount_only='true'))
 
 
 @main.route('/newsletter/subscribe', methods=['POST'])

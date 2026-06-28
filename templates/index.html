@@ -1,688 +1,584 @@
 {% extends "base.html" %}
 
 {% block content %}
+<script>document.body.classList.add('home-page');</script>
+
+{% set cat_icons = {
+  'Dermokozmetikë': 'fa-spa',
+  'Suplemente & Vitamina': 'fa-pills',
+  'Kujdes Personal & Higjienë': 'fa-shower',
+  'Pajisje Mjekësore': 'fa-stethoscope',
+  'Nënë & Fëmijë': 'fa-baby',
+  'Pajisje Ortopedike': 'fa-wheelchair',
+  'Produkte Natyrale & Bimore': 'fa-leaf'
+} %}
+
+{# ── Category image overrides — Cloudinary URLs ── #}
+{% set cat_img_overrides = {
+  'Dermokozmetikë':            'https://res.cloudinary.com/drljgepgy/image/upload/v1782338006/ChatGPT_Image_Jun_24_2026_at_11_23_35_PM_uqsw1l.png',
+  'Suplemente & Vitamina':     'https://res.cloudinary.com/drljgepgy/image/upload/v1782338009/ChatGPT_Image_Jun_24_2026_at_11_25_37_PM_wpohzj.png',
+  'Kujdes Personal & Higjienë':'https://res.cloudinary.com/drljgepgy/image/upload/v1782338009/ChatGPT_Image_Jun_24_2026_at_11_27_26_PM_om9wnq.png',
+  'Pajisje Mjekësore':         'https://res.cloudinary.com/drljgepgy/image/upload/v1782338007/ChatGPT_Image_Jun_24_2026_at_11_28_26_PM_f0hrmo.png',
+  'Nënë & Fëmijë':             'https://res.cloudinary.com/drljgepgy/image/upload/v1782338006/ChatGPT_Image_Jun_24_2026_at_11_29_30_PM_qdp9gv.png',
+  'Pajisje Ortopedike':        'https://res.cloudinary.com/drljgepgy/image/upload/v1782338010/ChatGPT_Image_Jun_24_2026_at_11_30_24_PM_aoqjts.png',
+  'Produkte Natyrale & Bimore':'https://res.cloudinary.com/drljgepgy/image/upload/v1782338006/ChatGPT_Image_Jun_24_2026_at_11_32_07_PM_jjuugv.png'
+} %}
+{% set _cat_all_img = 'https://res.cloudinary.com/drljgepgy/image/upload/v1782338009/ChatGPT_Image_Jun_24_2026_at_11_43_12_PM_rrrvxq.png' %}
+
+<!-- ══════════════════════════════════════════
+     HERO + SIDEBAR
+══════════════════════════════════════════ -->
 <div class="home-layout-container">
-    <!-- Desktop Categories Sidebar -->
-    <aside class="desktop-categories-sidebar">
-        <div class="sidebar-header">
-            <i class="fas fa-bars"></i>
-            <span>Kategoritë</span>
-        </div>
-        <ul class="d-cat-list">
-            {% if global_categories %}
-            {% for category, subcats in global_categories.items() %}
-            <li class="d-cat-item">
-                <a href="{{ url_for('main.products', category=category) }}" class="d-cat-link">
-                    <span>{{ category }}</span>
-                    <i class="fas fa-chevron-right"></i>
-                </a>
-                <div class="d-subcat-popup">
-                    <ul>
-                        {% for sub in subcats %}
-                        <li><a href="{{ url_for('main.products', category=category, subcategory=sub) }}">{{ sub }}</a>
-                        </li>
-                        {% endfor %}
-                    </ul>
-                </div>
-            </li>
+
+  <aside class="desktop-categories-sidebar">
+    <div class="sidebar-header">
+      <i class="fas fa-bars"></i>
+      <span>Kategoritë</span>
+    </div>
+    <ul class="d-cat-list">
+      {% if global_categories %}
+      {% for category, subcats in global_categories.items() %}
+      <li class="d-cat-item">
+        <a href="{{ url_for('main.products', category=category) }}" class="d-cat-link">
+          <i class="fas {{ cat_icons.get(category, 'fa-tag') }} d-cat-icon"></i>
+          <span>{{ category }}</span>
+          <i class="fas fa-chevron-right d-cat-chevron"></i>
+        </a>
+        <div class="d-subcat-popup">
+          <ul>
+            {% for sub in subcats %}
+            <li><a href="{{ url_for('main.products', category=category, subcategory=sub) }}">{{ sub }}</a></li>
             {% endfor %}
+          </ul>
+        </div>
+      </li>
+      {% endfor %}
+      {% endif %}
+    </ul>
+  </aside>
+
+  <div class="hero-carousel-col">
+  <div class="hero-above-text">
+    <i class="fas fa-tag"></i>
+    Mos i humbisni ofertat tona!
+  </div>
+  <header class="hero-carousel-container">
+    <div class="hero-inner-wrapper">
+      <div class="hero-carousel">
+        {% for offer in offer_banners %}
+        {%- if offer.link_type == 'category' and offer.link_value %}
+          {%- set _bdest = url_for('main.products', category=offer.link_value) %}
+        {%- elif offer.link_type == 'brand' and offer.link_value %}
+          {%- set _bdest = url_for('main.products', brand=offer.link_value) %}
+        {%- elif offer.link_type == 'custom_products' and offer.link_value %}
+          {%- set _bdest = url_for('main.products', search=offer.link_value) %}
+        {%- elif offer.link_type == 'offer' and offer.link_value %}
+          {%- set _bdest = url_for('main.products', discount_only='true', offer_name=offer.link_value) %}
+        {%- else %}
+          {%- set _bdest = url_for('main.products', discount_only='true') %}
+        {%- endif %}
+        <a href="{{ _bdest }}"
+           class="hero-slide {{ 'active' if loop.first else '' }}"
+           onclick="fetch('/banner/{{ offer._id }}')">
+          <div class="hero-content-wrapper banner-only">
+            <img src="{{ offer.image_url }}" alt="Banner" class="hero-img-full">
+          </div>
+        </a>
+        {% endfor %}
+        {% if not offer_banners %}
+        <a href="{{ url_for('main.products') }}" class="hero-slide active">
+          <div class="hero-content-wrapper banner-only">
+            <img src="https://res.cloudinary.com/drljgepgy/image/upload/v1770659727/IMG_4312_ul0exk.jpg" alt="Banner" class="hero-img-full">
+          </div>
+        </a>
+        {% endif %}
+      </div>
+      <button class="hero-prev" onclick="plusSlides(-1)"><i class="fas fa-chevron-left"></i></button>
+      <button class="hero-next" onclick="plusSlides(1)"><i class="fas fa-chevron-right"></i></button>
+    </div>
+    <div class="hero-dots">
+      {% for offer in offer_banners %}
+      <span class="hero-dot {{ 'active' if loop.first else '' }}" data-idx="{{ loop.index }}" onclick="currentSlide(this.dataset.idx)"></span>
+      {% endfor %}
+      {% if not offer_banners %}
+      <span class="hero-dot active" onclick="currentSlide(1)"></span>
+      {% endif %}
+    </div>
+  </header>
+  <div class="hero-scroll-hint" id="heroScrollHint" aria-hidden="true">
+    <div class="hero-scroll-hint-arrow"><i class="fas fa-chevron-down"></i></div>
+  </div>
+  </div>
+
+</div>
+<script>
+(function(){
+  var hint = document.getElementById('heroScrollHint');
+  if (!hint) return;
+  function hideHint() {
+    if (window.scrollY > 40) { hint.classList.add('hidden'); }
+  }
+  window.addEventListener('scroll', hideHint, { passive: true });
+})();
+</script>
+
+<!-- ══════════════════════════════════════════
+     OFERTA E ZGJEDHURA
+══════════════════════════════════════════ -->
+<section id="ofertat" class="hp-section hp-section-ivory">
+  <div class="container">
+    <div class="hp-head">
+      <h2 class="hp-title">Oferta e zgjedhura</h2>
+      <a href="{{ url_for('main.products', discount_only='true') }}" class="hp-see-all">
+        Shiko të gjitha ofertat <i class="fas fa-arrow-right"></i>
+      </a>
+    </div>
+
+    <div class="hp-carousel-outer">
+      <button class="hp-carousel-arrow hp-prev" onclick="this.closest('.hp-carousel-outer').querySelector('.hp-carousel').scrollBy({left:-660,behavior:'smooth'})">
+        <i class="fas fa-chevron-left"></i>
+      </button>
+
+      <div class="hp-carousel">
+        {% for product in featured_products %}
+        <div class="hp-card" data-href="{{ url_for('main.product_detail', product_id=product._id) }}" onclick="window.location.href=this.dataset.href">
+          <div class="hp-card-img">
+            {% if product.offer_type == 'multi_buy' %}
+              <span class="hp-card-badge">{{ product.offer_badge_text or '1+1' }}</span>
+            {% elif product.discount_price %}
+              <span class="hp-card-badge">Ofertë Speciale</span>
             {% endif %}
-        </ul>
-    </aside>
-
-    <!-- Modern Hero Carousel Section -->
-    <header class="hero-carousel-container">
-        <div class="hero-inner-wrapper">
-            <div class="hero-carousel">
-                <!-- Dynamic Banners from Database -->
-                {% for offer in offer_banners %}
-                <a href="{% if offer.link_type == 'all_offers' %}{{ url_for('main.products', on_offer='1') }}{% elif offer.link_type == 'brand' %}{{ url_for('main.products', brand=offer.link_value) }}{% elif offer.link_type == 'category' %}{{ url_for('main.products', category=offer.link_value) }}{% elif offer.link_type == 'custom_products' %}{{ url_for('main.products', search=offer.link_value) }}{% elif offer.link_type == 'offer' %}{{ url_for('main.products', discount_only='true', offer_name=offer.link_value) }}{% else %}{{ url_for('main.products') }}{% endif %}"
-                    class="hero-slide {{ 'active' if loop.first else '' }}">
-                    <div class="hero-content-wrapper banner-only">
-                        <img src="{{ offer.image_url }}" alt="Banner" class="hero-img-full">
-                    </div>
-                </a>
-                {% endfor %}
-                
-                {% if not offer_banners %}
-                <!-- Fallback Banner if none exist in DB -->
-                <a href="{{ url_for('main.products', brand='Eucerin') }}"
-                    class="hero-slide active">
-                    <div class="hero-content-wrapper banner-only">
-                        <img src="https://res.cloudinary.com/drljgepgy/image/upload/v1770659727/IMG_4312_ul0exk.jpg"
-                            alt="Eucerin Banner" class="hero-img-full">
-                    </div>
-                </a>
-                {% endif %}
-            </div>
-
-            <button class="hero-prev" onclick="plusSlides(-1)"><i class="fas fa-chevron-left"></i></button>
-            <button class="hero-next" onclick="plusSlides(1)"><i class="fas fa-chevron-right"></i></button>
-        </div>
-
-        <div class="hero-dots">
-            {% for offer in offer_banners %}
-            <span class="hero-dot {{ 'active' if loop.first else '' }}" onclick="currentSlide(Number('{{ loop.index }}'))"></span>
-            {% endfor %}
-            {% if not offer_banners %}
-            <span class="hero-dot active" onclick="currentSlide(1)"></span>
+            {% if product.is_best_seller %}
+              <div class="best-seller-badge">Më i Shituri</div>
             {% endif %}
-        </div>
-    </header>
-
-</div> <!-- End home-layout-container -->
-
-<!-- New Premium Skin Advisor Section -->
-<section class="skin-advisor-feature">
-    <div class="container">
-        <div class="advisor-card-v3">
-            <div class="advisor-content">
-                <h2 class="advisor-title">Gjeni produktet ideale për lëkurën tuaj</h2>
-                <p class="advisor-description">
-                    Analizoni nevojat e lëkurës tuaj dhe merrni rekomandime të personalizuara në mënyrë digjitale.
-                </p>
-
-                <a href="{{ url_for('main.quiz', skip_intro='true') }}" class="btn-advisor-v3">
-                    Nis Konsultën <i class="fas fa-arrow-right"></i>
-                </a>
-            </div>
-            <div class="advisor-illustration">
-                <img src="https://static.vecteezy.com/system/resources/thumbnails/012/747/545/small_2x/cosmetic-laboratory-research-and-development-science-bio-skincare-cream-serum-product-with-leaves-natural-organic-beauty-cosmetics-concept-cosmetology-photo.jpg"
-                    alt="Cosmetic Research">
-            </div>
-        </div>
-    </div>
-</section>
-
-<style>
-    .skin-advisor-feature {
-        padding: 3rem 0;
-        background: #fff;
-    }
-
-    .advisor-card-v3 {
-        background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
-        border-radius: 2rem;
-        display: flex;
-        align-items: center;
-        padding: 2.5rem 4rem;
-        color: #0c4a6e;
-        position: relative;
-        overflow: hidden;
-        box-shadow: 0 10px 30px -5px rgba(2, 132, 199, 0.1);
-        border: 1px solid rgba(14, 165, 233, 0.1);
-    }
-
-    .advisor-content {
-        flex: 1.5;
-        z-index: 2;
-    }
-
-    .advisor-badge {
-        background: white;
-        padding: 0.4rem 1rem;
-        border-radius: 50px;
-        font-size: 0.85rem;
-        font-weight: 700;
-        display: inline-block;
-        margin-bottom: 1.5rem;
-        color: #0284c7;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-    }
-
-    .advisor-title {
-        font-size: 2.2rem;
-        font-weight: 800;
-        line-height: 1.2;
-        margin-bottom: 1rem;
-        color: #082f49 !important;
-    }
-
-    .advisor-description {
-        font-size: 1.1rem;
-        color: #334155;
-        max-width: 500px;
-        margin-bottom: 2rem;
-        line-height: 1.5;
-    }
-
-    .advisor-features {
-        display: flex;
-        gap: 2rem;
-        margin-bottom: 2.5rem;
-    }
-
-    .feat-item {
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-        font-size: 1rem;
-        font-weight: 600;
-        color: #0c4a6e;
-    }
-
-    .feat-item i {
-        color: white;
-        background: #0284c7;
-        width: 28px;
-        height: 28px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 50%;
-        font-size: 0.8rem;
-    }
-
-    .btn-advisor-v3 {
-        background: #0284c7 !important;
-        color: white !important;
-        padding: 1rem 2.5rem;
-        border-radius: 50px;
-        font-weight: 700;
-        font-size: 1.1rem;
-        text-decoration: none;
-        display: inline-flex;
-        align-items: center;
-        gap: 0.8rem;
-        transition: all 0.3s ease;
-        box-shadow: 0 8px 15px rgba(2, 132, 199, 0.2);
-    }
-
-    .btn-advisor-v3:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 12px 25px rgba(2, 132, 199, 0.3);
-        background: #0369a1 !important;
-    }
-
-    .advisor-illustration {
-        flex: 1;
-        display: flex;
-        justify-content: flex-end;
-        align-items: center;
-        position: relative;
-        z-index: 1;
-        pointer-events: none;
-    }
-
-    .advisor-illustration img {
-        width: 100%;
-        max-width: 380px;
-        border-radius: 1.5rem;
-        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
-        transform: rotate(2deg);
-    }
-
-    @media (max-width: 1200px) {
-        .advisor-card-v3 {
-            padding: 2.5rem 3rem;
-        }
-
-        .advisor-title {
-            font-size: 2rem;
-        }
-    }
-
-    @media (max-width: 992px) {
-        .advisor-card-v3 {
-            flex-direction: column;
-            padding: 3rem 2rem;
-            text-align: center;
-        }
-
-        .advisor-title {
-            font-size: 1.8rem;
-        }
-
-        .advisor-description {
-            margin-left: auto;
-            margin-right: auto;
-        }
-
-        .advisor-features {
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-
-        .advisor-illustration {
-            margin-top: 2.5rem;
-            justify-content: center;
-        }
-
-        .advisor-illustration img {
-            max-width: 280px;
-            transform: none;
-        }
-
-        .btn-advisor-v3 {
-            width: 100%;
-            justify-content: center;
-        }
-    }
-
-    @media (max-width: 768px) {
-        .skin-advisor-feature {
-            padding: 1.5rem 0;
-        }
-
-        .advisor-card-v3 {
-            padding: 1.5rem 1rem;
-            border-radius: 1.25rem;
-        }
-
-        .advisor-badge {
-            font-size: 0.75rem;
-            padding: 0.3rem 0.8rem;
-            margin-bottom: 1rem;
-        }
-
-        .advisor-title {
-            font-size: 1.05rem;
-            margin-bottom: 0.5rem;
-            line-height: 1.3;
-        }
-
-        .advisor-description {
-            font-size: 0.8rem;
-            margin-bottom: 1rem;
-        }
-
-        .advisor-features {
-            flex-direction: column;
-            gap: 0.5rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .feat-item {
-            font-size: 0.85rem;
-        }
-
-        .feat-item i {
-            width: 20px;
-            height: 20px;
-            font-size: 0.6rem;
-        }
-
-        .btn-advisor-v3 {
-            padding: 0.75rem 1rem;
-            font-size: 0.95rem;
-        }
-
-        .advisor-illustration {
-            margin-top: 1.5rem;
-        }
-
-        .advisor-illustration img {
-            max-width: 180px;
-            /* Much smaller on mobile */
-            border-radius: 1rem;
-        }
-    }
-</style>
-
-<!-- Categories Section -->
-<section class="section categories-preview" style="margin-top: 4rem;">
-    <div class="container">
-        <div class="section-center-header fade-in-section">
-            <h2 class="section-title">Eksploro Sipas Nevojës</h2>
-        </div>
-
-        <div class="category-grid-v2">
-            <!-- 1. Dermokozmetikë & Bukuri -->
-            <a href="{{ url_for('main.products', category='Dermokozmetikë') }}"
-                class="category-card-v2 fade-in-section">
-                <img src="https://elipharmacy.com/wp-content/uploads/2023/10/Dermocosmetics.png" alt="Dermokozmetikë"
-                    class="category-bg">
-                <div class="category-overlay">
-                    <span class="category-title">Dermokozmetikë</span>
-                    <span class="category-count">Kujdesi për bukurinë</span>
-                </div>
-            </a>
-
-            <!-- 2. Suplemente & Vitamina -->
-            <a href="{{ url_for('main.products', category='Suplemente & Vitamina') }}"
-                class="category-card-v2 fade-in-section">
-                <img src="https://res.cloudinary.com/drljgepgy/image/upload/v1770480662/vitamina_gmssbh.jpg"
-                    alt="Suplemente & Vitamina" class="category-bg">
-                <div class="category-overlay">
-                    <span class="category-title">Vitamina</span>
-                    <span class="category-count">Suplemente & Shëndet</span>
-                </div>
-            </a>
-
-            <!-- 3. Kujdes Personal & Higjienë -->
-            <a href="{{ url_for('main.products', category='Kujdes Personal & Higjienë') }}"
-                class="category-card-v2 fade-in-section">
-                <img src="https://c8.alamy.com/comp/2HTMPXA/personal-care-products-made-from-natural-materialsflat-lay-of-personal-care-zero-waste-suppliesplastic-free-conceptitems-for-hygiene-and-face-and-2HTMPXA.jpg"
-                    alt="Kujdes Personal & Higjienë" class="category-bg">
-                <div class="category-overlay">
-                    <span class="category-title">Higjienë</span>
-                    <span class="category-count">Kujdesi Personal</span>
-                </div>
-            </a>
-
-            <!-- 4. Pajisje Mjekësore -->
-            <a href="{{ url_for('main.products', category='Pajisje Mjekësore') }}"
-                class="category-card-v2 fade-in-section">
-                <img src="https://solutionscience.co.ke/cdn/shop/collections/medical_equipment.webp?v=1743573391&width=750"
-                    alt="Pajisje Mjekësore" class="category-bg">
-                <div class="category-overlay">
-                    <span class="category-title">Pajisje Mjekësore</span>
-                    <span class="category-count">Matës & Instrumente</span>
-                </div>
-            </a>
-
-            <!-- 5. Nënë & Fëmijë -->
-            <a href="{{ url_for('main.products', category='Nënë & Fëmijë') }}" class="category-card-v2 fade-in-section">
-                <img src="https://www.circlecareclinic.com/wp-content/uploads/2024/09/mother-baby-care.jpg"
-                    alt="Nënë & Fëmijë" class="category-bg">
-                <div class="category-overlay">
-                    <span class="category-title">Nënë & Fëmijë</span>
-                    <span class="category-count">Për më të vegjëlit</span>
-                </div>
-            </a>
-
-            <!-- 6. Pajisje Ortopedike -->
-            <a href="{{ url_for('main.products', category='Pajisje Ortopedike') }}"
-                class="category-card-v2 fade-in-section">
-                <img src="https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?q=80&w=800&auto=format&fit=crop"
-                    alt="Pajisje Ortopedike" class="category-bg">
-                <div class="category-overlay">
-                    <span class="category-title">Ortopedi</span>
-                    <span class="category-count">Mbështetje & Lëvizje</span>
-                </div>
-            </a>
-
-            <!-- 7. Produkte Natyrale & Bimore -->
-            <a href="{{ url_for('main.products', category='Produkte Natyrale & Bimore') }}"
-                class="category-card-v2 fade-in-section">
-                <img src="https://assets.clevelandclinic.org/transform/LargeFeatureImage/496eae84-691f-4e90-80fe-aa0827825d97/essentialOils-899747886-770x533-1_jpg"
-                    alt="Produkte Natyrale & Bimore" class="category-bg">
-                <div class="category-overlay">
-                    <span class="category-title">Bio & Natyrale</span>
-                    <span class="category-count">Çajra & Vajra</span>
-                </div>
-            </a>
-        </div>
-    </div>
-</section>
-
-<!-- Popular Brands Section -->
-<section class="section brands-section">
-    <div class="container">
-        <div class="section-header fade-in-section">
-            <div>
-                <span class="sub-title">Zgjidhni më të mirët</span>
-                <h2 class="section-title">Eksploro Markat</h2>
-            </div>
-        </div>
-
-        <div class="brand-grid">
-            <!-- Brand 1: Eucerin -->
-            <a href="{{ url_for('main.products', brand='Eucerin') }}" class="brand-card fade-in-section"
-                style="text-decoration: none;">
-                <img src="https://images-static.nykaa.com/contentmedia/scms-assets/uploads/2024/11/eucerin-banner.jpg"
-                    alt="Eucerin" class="brand-img">
-                <div class="brand-overlay">
-                    <h3 class="brand-name" style="color: white;">Eucerin</h3>
-                    <div class="brand-link" style="color: white; opacity: 0.9;">
-                        Shiko Produktet <i class="fas fa-chevron-right"></i>
-                    </div>
-                </div>
-            </a>
-
-            <!-- Brand 2: Vichy -->
-            <a href="{{ url_for('main.products', brand='Vichy') }}" class="brand-card fade-in-section"
-                style="text-decoration: none;">
-                <img src="https://www.vichy.sg/site/pages/showImageResized.aspx?EncMediaId=VEtnUmJta1U3NHU2MFBWUW93ZnA4UT09&ImageFormatAppCode=IMAGEFORMAT_ORIGINAL&v=20220129080715&mode=0&ShowCopyRight=False"
-                    alt="Vichy" class="brand-img">
-                <div class="brand-overlay">
-                    <h3 class="brand-name" style="color: white;">Vichy</h3>
-                    <div class="brand-link" style="color: white; opacity: 0.9;">
-                        Shiko Produktet <i class="fas fa-chevron-right"></i>
-                    </div>
-                </div>
-            </a>
-
-            <!-- Brand 3: La Roche-Posay -->
-            <a href="{{ url_for('main.products', brand='La Roche-Posay') }}" class="brand-card fade-in-section"
-                style="text-decoration: none;">
-                <img src="https://mir-s3-cdn-cf.behance.net/projects/808/77ccfb218995929.Y3JvcCwyNTU2LDIwMDAsMCww.png"
-                    alt="La Roche-Posay" class="brand-img">
-                <div class="brand-overlay">
-                    <h3 class="brand-name" style="color: white;">La Roche-Posay</h3>
-                    <div class="brand-link" style="color: white; opacity: 0.9;">
-                        Shiko Produktet <i class="fas fa-chevron-right"></i>
-                    </div>
-                </div>
-            </a>
-
-            <!-- Brand 4: CeraVe -->
-            <a href="{{ url_for('main.products', brand='CeraVe') }}" class="brand-card fade-in-section"
-                style="text-decoration: none;">
-                <img src="https://cerave.lk/wp-content/uploads/2024/10/banner-1.jpg" alt="CeraVe" class="brand-img">
-                <div class="brand-overlay">
-                    <h3 class="brand-name" style="color: white;">CeraVe</h3>
-                    <div class="brand-link" style="color: white; opacity: 0.9;">
-                        Shiko Produktet <i class="fas fa-chevron-right"></i>
-                    </div>
-                </div>
-            </a>
-        </div>
-    </div>
-</section>
-
-<!-- Featured / Ofertat Section -->
-<section id="ofertat" class="section featured-products">
-    <div class="container">
-        <div class="section-header fade-in-section"
-            style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 2rem;">
-            <div>
-                <span class="sub-title">Zbritjet e fundit</span>
-                <h2 class="section-title">Ofertat Ekskluzive</h2>
-            </div>
-            <a href="{{ url_for('main.products', discount_only='true') }}" class="btn btn-load-more">
-                <span>Shiko të gjitha ofertat</span> <i class="fas fa-arrow-right ml-2"></i>
-            </a>
-        </div>
-
-        <div class="product-carousel-wrapper ofertas-style">
-            <button class="scroll-btn prev" onclick="scrollCarousel(this, -1)"><i
-                    class="fas fa-chevron-left"></i></button>
-            <div class="product-carousel no-scrollbar creative-offers-grid">
-                {% for product in featured_products %}
-                <div class="product-card fade-in-section" data-id="{{ product._id }}">
-                    <div class="product-image">
-                        {% if product.offer_type == 'multi_buy' %}
-                        <div class="special-offer-badge red-badge">{{ product.offer_badge_text or '1+1' }}</div>
-                        {% elif product.discount_price %}
-                        <div class="special-offer-badge red-badge">Oferta Speciale</div>
-                        {% endif %}
-                        {% if product.is_best_seller %}
-                        <div class="best-seller-badge">Më i Shituri</div>
-                        {% endif %}
-                        {% if product.is_pharmacist_choice %}
-                        <div class="pharmacist-badge"><i class="fas fa-user-md"></i> Farmacisti</div>
-                        {% endif %}
-
-                        <img src="{{ product.image_url }}" alt="{{ product.name }}">
-
-                        {% if product.in_stock == False %}
-                        <div class="out-of-stock-overlay">
-                            <span>Jashtë Stokut</span>
-                        </div>
-                        {% endif %}
-
-                        <button
-                            class="btn-favorite {{ 'active' if (current_user.is_authenticated and product.favorites and current_user.id in product.favorites) or (not current_user.is_authenticated and product._id|string in session.get('liked_products', [])) else '' }}"
-                            onclick="toggleFavorite(this, '{{ product._id }}')">
-                            <i
-                                class="{{ 'fas' if (current_user.is_authenticated and product.favorites and current_user.id in product.favorites) or (not current_user.is_authenticated and product._id|string in session.get('liked_products', [])) else 'far' }} fa-heart"></i>
-                        </button>
-                        <a href="{{ url_for('main.product_detail', product_id=product._id) }}"
-                            class="product-card-link-overlay"></a>
-                    </div>
-
-                    <div class="product-info">
-                        <span class="product-category" style="color: var(--primary); font-weight: 700;">{{ product.brand
-                            if product.brand else product.category }}</span>
-                        <h3 class="product-title">{{ product.name }}</h3>
-                        {% if product.variants and product.variants|length > 0 %}
-                        {% set og = (product.option_groups[0]) if product.option_groups and product.option_groups|length > 0 else none %}
-                        {% if og %}{% set vals = og.values|map(attribute='value')|list %}{% set label = og.name %}
-                        {% else %}{% set attr_types = [] %}{% for v in product.variants %}{% for k in v.get('attributes',{}).keys() %}{% if k not in attr_types %}{% set _ = attr_types.append(k) %}{% endif %}{% endfor %}{% endfor %}{% set vals = [] %}{% if attr_types %}{% set first_key = attr_types[0] %}{% for v in product.variants %}{% set vv = v.get('attributes',{}).get(first_key) %}{% if vv and vv not in vals %}{% set _ = vals.append(vv) %}{% endif %}{% endfor %}{% endif %}{% set label = attr_types[0] if attr_types else '' %}{% endif %}
-                        {% if vals %}<div class="variant-values-row">{% for val in vals[:3] %}<span class="vv-chip">{{ val }}</span>{% endfor %}{% if vals|length > 3 %}<span class="vv-more">+{{ vals|length - 3 }}</span>{% endif %}</div>{% endif %}
-                        {% elif product.size %}<span class="product-size">{{ product.size }}</span>{% endif %}
-
-                        <div class="price-container">
-                            {% if product.offer_type == 'multi_buy' %}
-                            <span class="price">€{{ "%.2f"|format(product.price) }}</span>
-                            {% elif product.discount_price %}
-                            <span class="price discounted">€{{ "%.2f"|format(product.discount_price) }}</span>
-                            <span class="price original">€{{ "%.2f"|format(product.price) }}</span>
-                            {% if product.offer_badge_text and not product.offer_badge_text.startswith('-') %}
-                            <span class="discount-badge">{{ product.offer_badge_text }}</span>
-                            {% else %}
-                            <span class="discount-badge">-{{ ((product.price - product.discount_price) / product.price *
-                                100) | round | int }}%</span>
-                            {% endif %}
-                            {% else %}
-                            <span class="price">€{{ "%.2f"|format(product.price) }}</span>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
-                {% else %}
-                <div class="no-offers-container"
-                    style="width: 100%; text-align: center; padding: 4rem 2rem; background: #f8fafc; border-radius: 2rem; border: 2px dashed #e2e8f0; grid-column: 1 / -1;">
-                    <div style="font-size: 3rem; color: #cbd5e1; margin-bottom: 1rem;">
-                        <i class="fas fa-tag"></i>
-                    </div>
-                    <h3 style="color: #64748b; font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">Nuk ka
-                        oferta për momentin</h3>
-                    <p style="color: #94a3b8;">Kontrolloni sërish së shpejti për zbritje të reja ekskluzive.</p>
-                </div>
-                {% endfor %}
-            </div>
-            <button class="scroll-btn next" onclick="scrollCarousel(this, 1)"><i
-                    class="fas fa-chevron-right"></i></button>
-        </div>
-    </div>
-</section>
-
-<!-- Recommended Section -->
-<section id="rekomanduara" class="section">
-    <div class="container">
-        <div class="section-header fade-in-section">
-            <div>
-                <h2 class="section-title">Të rekomanduara</h2>
-            </div>
-        </div>
-
-        <div class="category-scroll-wrapper fade-in-section">
-            <div class="category-scroll-container">
-                <button class="category-chip active" onclick="window.filterHomeCategory('all', this)">Për ty</button>
-                {% if global_categories %}
-                {% for category in global_categories.keys() %}
-                <button class="category-chip" onclick="window.filterHomeCategory('{{ category }}', this)">{{ category
-                    }}</button>
-                {% endfor %}
-                {% endif %}
-            </div>
-        </div>
-
-        <div id="recommended-grid" class="product-grid-dynamic">
-            <!-- Products will be loaded here via JS -->
-            {% for product in regular_products[:20] %} <!-- Assuming regular_products has all or we load more -->
-            <div class="product-card fade-in-section">
-                <div class="product-image">
-                    {% if product.offer_type == 'multi_buy' %}
-                    <div class="special-offer-badge red-badge">{{ product.offer_badge_text or '1+1' }}</div>
-                    {% elif product.discount_price %}
-                    <div class="special-offer-badge red-badge">Oferta Speciale</div>
-                    {% endif %}
-                    {% if product.is_best_seller %}
-                    <div class="best-seller-badge">Më i Shituri</div>
-                    {% endif %}
-                    <img src="{{ product.image_url }}" alt="{{ product.name }}">
-                    <button
-                        class="btn-favorite {{ 'active' if (current_user.is_authenticated and product.favorites and current_user.id in product.favorites) or (not current_user.is_authenticated and product._id|string in session.get('liked_products', [])) else '' }}"
-                        onclick="toggleFavorite(this, '{{ product._id }}')">
-                        <i
-                            class="{{ 'fas' if (current_user.is_authenticated and product.favorites and current_user.id in product.favorites) or (not current_user.is_authenticated and product._id|string in session.get('liked_products', [])) else 'far' }} fa-heart"></i>
-                    </button>
-                    <a href="{{ url_for('main.product_detail', product_id=product._id) }}"
-                        class="product-card-link-overlay"></a>
-                </div>
-                <div class="product-info">
-                    <span class="product-category" style="color: var(--primary); font-weight: 700;">{{ product.brand if
-                        product.brand else product.category }}</span>
-                    <h3 class="product-title">{{ product.name }}</h3>
-                    {% if product.size %}<span class="product-size">{{ product.size }}</span>{% endif %}
-                    <div class="price-container">
-                        {% if product.offer_type == 'multi_buy' %}
-                        <span class="price">€{{ "%.2f"|format(product.price) }}</span>
-                        {% elif product.discount_price %}
-                        <span class="price discounted">€{{ "%.2f"|format(product.discount_price) }}</span>
-                        <span class="price original">€{{ "%.2f"|format(product.price) }}</span>
-                        {% if product.offer_badge_text and not product.offer_badge_text.startswith('-') %}
-                        <span class="discount-badge">{{ product.offer_badge_text }}</span>
-                        {% else %}
-                        <span class="discount-badge">-{{ ((product.price - product.discount_price) / product.price *
-                            100)|round|int }}%</span>
-                        {% endif %}
-                        {% else %}
-                        <span class="price">€{{ "%.2f"|format(product.price) }}</span>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-
-        <div class="load-more-container text-center {{ 'd-none' if not total_pages_regular or total_pages_regular <= 1 else '' }}"
-            style="margin-top: 4rem; margin-bottom: 4rem;">
-            <button id="load-more-btn" class="btn btn-load-more" onclick="loadMoreHome()" data-page="1"
-                data-category="all">
-                <span>Shiko të gjitha produktet</span> <i class="fas fa-arrow-right ml-2"></i>
+            <img src="{{ product.image_url }}" alt="{{ product.name }}" loading="lazy">
+            {% if product.in_stock == False %}
+              <div class="hp-out-stock"><span>Jashtë Stokut</span></div>
+            {% endif %}
+            <button class="hp-card-fav {{ 'active' if (current_user.is_authenticated and product.favorites and current_user.id in product.favorites) or (not current_user.is_authenticated and product._id|string in session.get('liked_products', [])) else '' }}"
+              onclick="event.stopPropagation(); toggleFavorite(this, '{{ product._id }}')">
+              <i class="{{ 'fas' if (current_user.is_authenticated and product.favorites and current_user.id in product.favorites) or (not current_user.is_authenticated and product._id|string in session.get('liked_products', [])) else 'far' }} fa-heart"></i>
             </button>
+          </div>
+          <div class="hp-card-body">
+            <span class="hp-card-brand">{{ product.brand if product.brand else product.category }}</span>
+            <span class="hp-card-name">{{ product.name }}</span>
+            {% if product.size %}<span class="hp-card-size">{{ product.size }}</span>{% endif %}
+            <div class="hp-price-row">
+              {% if product.offer_type == 'multi_buy' %}
+                <span class="hp-price-main">€{{ "%.2f"|format(product.display_price) }}</span>
+              {% elif product.discount_price %}
+                <span class="hp-price-main">€{{ "%.2f"|format(product.discount_price) }}</span>
+                <span class="hp-price-orig">€{{ "%.2f"|format(product.display_original_price) }}</span>
+                <span class="hp-price-pct">
+                  {% if product.offer_badge_text and not product.offer_badge_text.startswith('-') %}
+                    {{ product.offer_badge_text }}
+                  {% else %}
+                    -{{ ((product.display_original_price - product.discount_price) / product.display_original_price * 100)|round|int }}%
+                  {% endif %}
+                </span>
+              {% else %}
+                <span class="hp-price-main">€{{ "%.2f"|format(product.display_price) }}</span>
+              {% endif %}
+            </div>
+          </div>
         </div>
+        {% else %}
+        <div class="hp-no-offers">
+          <i class="fas fa-tag fa-2x" style="margin-bottom:1rem;"></i>
+          <p>Nuk ka oferta për momentin.</p>
+        </div>
+        {% endfor %}
+      </div>
+
+      <button class="hp-carousel-arrow hp-next" onclick="this.closest('.hp-carousel-outer').querySelector('.hp-carousel').scrollBy({left:660,behavior:'smooth'})">
+        <i class="fas fa-chevron-right"></i>
+      </button>
     </div>
+  </div>
 </section>
 
-<!-- Trust Banner (At the end) -->
-<section class="section trust-banner-bottom">
-    <div class="container text-center mb-5">
-        <div class="trust-grid fade-in-section">
-            <div class="trust-item">
-                <div class="icon-box"><i class="fas fa-truck-fast"></i></div>
-                <div class="trust-text">
-                    <h4>Dërgesë e Shpejtë</h4>
-                    <p>24-48 orë</p>
-                </div>
-            </div>
-            <div class="trust-item">
-                <div class="icon-box"><i class="fas fa-user-doctor"></i></div>
-                <div class="trust-text">
-                    <h4>Këshilla Ekspertësh</h4>
-                    <p>Farmacistë të Çertifikuar</p>
-                </div>
-            </div>
-            <div class="trust-item">
-                <div class="icon-box"><i class="fas fa-coins"></i></div>
-                <div class="trust-text">
-                    <h4>Transport Falas</h4>
-                    <p>Në porosi mbi 50€</p>
-                </div>
-            </div>
-            <div class="trust-item">
-                <div class="icon-box"><i class="fas fa-comments"></i></div>
-                <div class="trust-text">
-                    <h4>Suport 24/7</h4>
-                    <p>Jemi këtu për ju</p>
-                </div>
-            </div>
-        </div>
+<!-- ══════════════════════════════════════════
+     MARKAT KRYESORE — BRANDS
+══════════════════════════════════════════ -->
+<section class="hp-brands">
+  <div class="container">
+
+    <div class="hp-brands-head">
+      <h2 class="hp-brands-title">Markat kryesore</h2>
+      <p class="hp-brands-sub">Përkujdesje që bën diferencën.</p>
     </div>
+
+    <div class="hp-brands-grid">
+
+      <!-- Eucerin -->
+      <a href="{{ url_for('main.products', brand='Eucerin') }}" class="hp-brand-card hp-brand-eucerin">
+        <div class="hp-brand-placeholder-visual" aria-hidden="true">
+          <i class="fas fa-spa"></i>
+          <span>Eucerin</span>
+        </div>
+        <picture>
+          <source media="(max-width: 639px)" srcset="https://res.cloudinary.com/drljgepgy/image/upload/v1782389810/ChatGPT_Image_Jun_25_2026_at_12_49_37_PM_lwqrqv.png">
+          <img src="https://res.cloudinary.com/drljgepgy/image/upload/v1782389827/ChatGPT_Image_Jun_25_2026_at_12_49_31_PM_axfvpl.png" alt="Eucerin" class="hp-brand-img" loading="lazy">
+        </picture>
+        <div class="hp-brand-arrow"><i class="fas fa-arrow-right"></i></div>
+      </a>
+
+      <!-- La Roche-Posay -->
+      <a href="{{ url_for('main.products', brand='La Roche-Posay') }}" class="hp-brand-card hp-brand-laroche">
+        <div class="hp-brand-placeholder-visual" aria-hidden="true">
+          <i class="fas fa-flask"></i>
+          <span>La Roche-Posay</span>
+        </div>
+        <picture>
+          <source media="(max-width: 639px)" srcset="https://res.cloudinary.com/drljgepgy/image/upload/v1782389810/ChatGPT_Image_Jun_25_2026_at_12_52_28_PM_txctpu.png">
+          <img src="https://res.cloudinary.com/drljgepgy/image/upload/v1782389810/ChatGPT_Image_Jun_25_2026_at_12_52_23_PM_ogbuch.png" alt="La Roche-Posay" class="hp-brand-img" loading="lazy">
+        </picture>
+        <div class="hp-brand-arrow"><i class="fas fa-arrow-right"></i></div>
+      </a>
+
+      <!-- CeraVe -->
+      <a href="{{ url_for('main.products', brand='CeraVe') }}" class="hp-brand-card hp-brand-cerave">
+        <div class="hp-brand-placeholder-visual" aria-hidden="true">
+          <i class="fas fa-shield-alt"></i>
+          <span>CeraVe</span>
+        </div>
+        <picture>
+          <source media="(max-width: 639px)" srcset="https://res.cloudinary.com/drljgepgy/image/upload/v1782389810/ChatGPT_Image_Jun_25_2026_at_12_58_51_PM_i8dlyi.png">
+          <img src="https://res.cloudinary.com/drljgepgy/image/upload/v1782389810/ChatGPT_Image_Jun_25_2026_at_12_58_49_PM_fi3e6l.png" alt="CeraVe" class="hp-brand-img" loading="lazy">
+        </picture>
+        <div class="hp-brand-arrow"><i class="fas fa-arrow-right"></i></div>
+      </a>
+
+      <!-- Vichy -->
+      <a href="{{ url_for('main.products', brand='Vichy') }}" class="hp-brand-card hp-brand-vichy">
+        <div class="hp-brand-placeholder-visual" aria-hidden="true">
+          <i class="fas fa-leaf"></i>
+          <span>Vichy</span>
+        </div>
+        <picture>
+          <source media="(max-width: 639px)" srcset="https://res.cloudinary.com/drljgepgy/image/upload/v1782389813/ChatGPT_Image_Jun_25_2026_at_01_17_18_PM_onymh0.png">
+          <img src="https://res.cloudinary.com/drljgepgy/image/upload/v1782389809/ChatGPT_Image_Jun_25_2026_at_01_17_16_PM_ysi7sm.png" alt="Vichy" class="hp-brand-img" loading="lazy">
+        </picture>
+        <div class="hp-brand-arrow"><i class="fas fa-arrow-right"></i></div>
+      </a>
+
+    </div>
+
+  </div>
 </section>
+
+<!-- ══════════════════════════════════════════
+     PROMO BANNER
+══════════════════════════════════════════ -->
+<div class="hp-promo">
+  <div class="container">
+    <div class="hp-promo-card">
+      <div class="hp-promo-text">
+        <h2>Zbulo rutinën tuaj<br>të kujdesit për lëkurën</h2>
+        <p>Plotësoni konsultën tonë të shpejtë dhe merrni rekomandime të personalizuara nga farmacistët tanë të çertifikuar.</p>
+        <a href="{{ url_for('main.quiz') }}" class="hp-promo-btn">
+          Fillo konsultën <i class="fas fa-arrow-right"></i>
+        </a>
+      </div>
+      <div class="hp-promo-img">
+        <img src="https://res.cloudinary.com/drljgepgy/image/upload/v1782412867/ChatGPT_Image_Jun_25_2026_at_08_40_31_PM_jvpy9i.png"
+             alt="Skincare">
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     KATEGORITE
+══════════════════════════════════════════ -->
+<section class="hp-section hp-cat-section">
+  <div class="container">
+    <div class="hp-head">
+      <h2 class="hp-title">Kategorite</h2>
+      <a href="{{ url_for('main.products') }}" class="hp-see-all">
+        Shiko të gjitha <i class="fas fa-arrow-right"></i>
+      </a>
+    </div>
+    <div class="hp-cat-grid">
+      {% for cat_name in global_categories.keys() %}
+      <a href="{{ url_for('main.products', category=cat_name) }}" class="hp-cat-card">
+        <div class="hp-cat-img">
+          <img src="{{ cat_img_overrides[cat_name] }}" alt="{{ cat_name }}" loading="lazy">
+        </div>
+        <div class="hp-cat-footer">
+          <i class="fas {{ cat_icons.get(cat_name, 'fa-tag') }} hp-cat-fi"></i>
+          <span class="hp-cat-name">{{ cat_name }}</span>
+          <i class="fas fa-arrow-right hp-cat-arrow"></i>
+        </div>
+      </a>
+      {% endfor %}
+      <a href="{{ url_for('main.products') }}" class="hp-cat-card">
+        <div class="hp-cat-img">
+          <img src="{{ _cat_all_img }}" alt="Të gjitha produktet" loading="lazy">
+        </div>
+        <div class="hp-cat-footer">
+          <i class="fas fa-spa hp-cat-fi"></i>
+          <span class="hp-cat-name">Kujdes për Lëkurën</span>
+          <i class="fas fa-arrow-right hp-cat-arrow"></i>
+        </div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     TË REKOMANDUARA
+══════════════════════════════════════════ -->
+<section id="rekomanduara" class="hp-section hp-section-ivory">
+  <div class="container">
+    <div class="hp-head">
+      <h2 class="hp-title">Të rekomanduara</h2>
+    </div>
+
+    <div class="category-scroll-wrapper fade-in-section">
+      <div class="category-scroll-container">
+        <button class="category-chip active" onclick="window.filterHomeCategory('all', this)">Për ty</button>
+        {% if global_categories %}
+        {% for category in global_categories.keys() %}
+        <button class="category-chip" onclick="window.filterHomeCategory('{{ category }}', this)">{{ category }}</button>
+        {% endfor %}
+        {% endif %}
+      </div>
+    </div>
+
+    <div id="recommended-grid" class="product-grid-dynamic">
+      {% for product in regular_products[:20] %}
+      <div class="product-card fade-in-section" data-id="{{ product._id }}" data-category="{{ product.category }}">
+        <div class="product-image">
+          {% if product.offer_type == 'multi_buy' %}
+            <div class="special-offer-badge red-badge">{{ product.offer_badge_text or '1+1' }}</div>
+          {% elif product.discount_price %}
+            <div class="special-offer-badge red-badge">Ofertë Speciale</div>
+          {% endif %}
+          {% if product.is_best_seller %}
+            <div class="best-seller-badge">Më i Shituri</div>
+          {% endif %}
+          <img src="{{ product.image_url }}" alt="{{ product.name }}" loading="lazy">
+          <button class="btn-favorite {{ 'active' if (current_user.is_authenticated and product.favorites and current_user.id in product.favorites) or (not current_user.is_authenticated and product._id|string in session.get('liked_products', [])) else '' }}"
+              onclick="toggleFavorite(this, '{{ product._id }}')">
+            <i class="{{ 'fas' if (current_user.is_authenticated and product.favorites and current_user.id in product.favorites) or (not current_user.is_authenticated and product._id|string in session.get('liked_products', [])) else 'far' }} fa-heart"></i>
+          </button>
+          <a href="{{ url_for('main.product_detail', product_id=product._id) }}" class="product-card-link-overlay"></a>
+        </div>
+        <div class="product-info">
+          <span class="product-category" style="color:var(--primary);font-weight:700;">{{ product.brand if product.brand else product.category }}</span>
+          <h3 class="product-title">{{ product.name }}</h3>
+          {% if product.size %}<span class="product-size">{{ product.size }}</span>{% endif %}
+          <div class="price-container">
+            {% if product.offer_type == 'multi_buy' %}
+              <span class="price">€{{ "%.2f"|format(product.display_price) }}</span>
+            {% elif product.discount_price %}
+              <span class="price discounted">€{{ "%.2f"|format(product.discount_price) }}</span>
+              <span class="price original">€{{ "%.2f"|format(product.display_original_price) }}</span>
+              <span class="discount-badge">
+                {% if product.offer_badge_text and not product.offer_badge_text.startswith('-') %}
+                  {{ product.offer_badge_text }}
+                {% else %}
+                  -{{ ((product.display_original_price - product.discount_price) / product.display_original_price * 100)|round|int }}%
+                {% endif %}
+              </span>
+            {% else %}
+              <span class="price">€{{ "%.2f"|format(product.display_price) }}</span>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <div class="load-more-container text-center {{ 'd-none' if not total_pages_regular or total_pages_regular <= 1 else '' }}"
+         style="margin-top:2.5rem; margin-bottom:1rem;">
+      <button id="load-more-btn" class="btn btn-load-more" onclick="loadMoreHome()" data-page="1" data-category="all">
+        <span>Shiko të gjitha produktet</span> <i class="fas fa-arrow-right ml-2"></i>
+      </button>
+    </div>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════
+     TRUST INDICATORS
+══════════════════════════════════════════ -->
+<div class="hp-trust">
+  <div class="container">
+    <div class="hp-trust-row">
+      <div class="hp-trust-pill">
+        <span class="hp-trust-icon"><i class="fas fa-truck"></i></span>
+        <div class="hp-trust-text">
+          <strong>Dërgesë e Shpejtë</strong>
+          <span>24-48 orë</span>
+        </div>
+      </div>
+      <div class="hp-trust-pill">
+        <span class="hp-trust-icon"><i class="fas fa-user-md"></i></span>
+        <div class="hp-trust-text">
+          <strong>Këshilla Ekspertësh</strong>
+          <span>Farmacistë të Çertifikuar</span>
+        </div>
+      </div>
+      <div class="hp-trust-pill">
+        <span class="hp-trust-icon"><i class="fas fa-box-open"></i></span>
+        <div class="hp-trust-text">
+          <strong>Transport Falas</strong>
+          <span>Në porosi mbi 50€</span>
+        </div>
+      </div>
+      <div class="hp-trust-pill">
+        <span class="hp-trust-icon"><i class="fas fa-headset"></i></span>
+        <div class="hp-trust-text">
+          <strong>Suport 24/7</strong>
+          <span>Jemi këtu për ju</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     MELD PHARM CIRCLE
+══════════════════════════════════════════ -->
+<div class="hp-circle">
+  <!-- plant decoration clipped inside its own overflow:hidden wrapper -->
+  <div class="hp-circle-deco" aria-hidden="true">
+    <div class="hp-circle-plant"><i class="fas fa-leaf"></i></div>
+  </div>
+
+  <div class="container">
+    <div class="hp-circle-inner">
+
+      <!-- LEFT: text + form -->
+      <div class="hp-circle-left">
+        <h2 class="hp-circle-title">Bëhu pjesë e<br>Meld Pharm</h2>
+        <p class="hp-circle-sub">Përfitime ekskluzive, këshilla të personalizuara<br>dhe oferta të veçanta — vetëm për ju.</p>
+        {% if current_user.is_authenticated and current_user.newsletter_subscribed %}
+        <div class="hp-circle-subscribed"><i class="fas fa-check-circle"></i> Jeni abonuar — faleminderit!</div>
+        {% else %}
+        <form class="hp-circle-form" id="hpCircleForm">
+          <input type="email" id="hpCircleEmail" placeholder="Email juaj"
+                 value="{{ current_user.email if current_user.is_authenticated else '' }}" required>
+          <button type="submit">Bëhu pjesë</button>
+        </form>
+        <p id="hpCircleMsg" style="display:none;color:#B7E0C8;margin-top:0.75rem;font-size:0.85rem;"></p>
+        {% endif %}
+      </div>
+
+      <!-- CENTER: phone mockup -->
+      <div class="hp-circle-phone-wrap">
+        <div class="hp-circle-phone">
+          <!-- Dynamic Island -->
+          <div class="hp-cp-island"><div class="hp-cp-island-cam"></div></div>
+          <!-- Status bar -->
+          <div class="hp-cp-statusbar">
+            <span class="hp-cp-sb-time">9:41</span>
+            <span class="hp-cp-sb-icons">
+              <i class="fas fa-signal"></i>
+              <i class="fas fa-wifi"></i>
+              <i class="fas fa-battery-full"></i>
+            </span>
+          </div>
+          <!-- Screen -->
+          <div class="hp-cp-screen">
+            <div class="hp-cp-mobile-title">Bëhu pjesë e<br>Meld Pharm</div>
+            <div class="hp-cp-app-header">
+              <div class="hp-cp-app-icon"><img src="{{ url_for('static', filename='favicon.png') }}" alt="M"></div>
+              <div class="hp-cp-app-info">
+                <strong>Meld Pharm</strong>
+                <span>Mirë se vini!</span>
+              </div>
+            </div>
+            <h3 class="hp-cp-heading">Regjistrohu me email</h3>
+            <p class="hp-cp-desc">Qasuni këshillave, ofertave dhe<br>përfitimeve të personalizuara.</p>
+            <div class="hp-cp-input-wrap">
+              <i class="fas fa-envelope"></i>
+              <input type="email" id="hpPhoneEmail" class="hp-cp-email-input" placeholder="Email juaj" autocomplete="email">
+            </div>
+            <button class="hp-cp-submit-btn" id="hpPhoneBtn" type="button">Regjistrohu</button>
+            <p class="hp-cp-fine">Duke u regjistruar, pranoni <u>Kushtet e Përdorimit</u> dhe <u>Privatësinë</u>.</p>
+            <div class="hp-cp-feat-row">
+              <div class="hp-cp-feat-item"><i class="fas fa-stethoscope"></i><span>Këshilla të personalizuara</span></div>
+              <div class="hp-cp-feat-item"><i class="fas fa-tag"></i><span>Oferta ekskluzive për ju</span></div>
+              <div class="hp-cp-feat-item"><i class="fas fa-gift"></i><span>Përfitime të veçanta</span></div>
+            </div>
+            <!-- Botanical bottom fill -->
+            <div class="hp-cp-botanical"></div>
+          </div>
+          <!-- Home bar -->
+          <div class="hp-cp-home-bar"></div>
+        </div>
+      </div>
+
+      <!-- RIGHT: quote -->
+      <div class="hp-circle-quote-wrap">
+        <div class="hp-circle-qq">"</div>
+        <p class="hp-circle-quote">Kujdesi për veten është investimi më i mirë që mund të bëni çdo ditë.</p>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  var form = document.getElementById('hpCircleForm');
+  if (!form) return;
+  form.addEventListener('submit', function(e) {
+    e.preventDefault();
+    var email = document.getElementById('hpCircleEmail').value.trim();
+    var msg = document.getElementById('hpCircleMsg');
+    var csrf = document.querySelector('meta[name="csrf-token"]');
+    var fd = new FormData();
+    fd.append('email', email);
+    if (csrf) fd.append('csrf_token', csrf.content);
+    fetch('/newsletter/subscribe', { method: 'POST', body: fd })
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        msg.style.display = 'block';
+        msg.textContent = d.message;
+        if (d.ok) form.style.display = 'none';
+      })
+      .catch(function() { msg.style.display = 'block'; msg.textContent = 'Ndodhi një gabim.'; });
+  });
+})();
+(function() {
+  var btn = document.getElementById('hpPhoneBtn');
+  var inp = document.getElementById('hpPhoneEmail');
+  if (!btn || !inp) return;
+  function doSubscribe() {
+    var email = inp.value.trim();
+    if (!email || !/\S+@\S+/.test(email)) {
+      inp.parentElement.style.borderColor = '#ef4444';
+      setTimeout(function() { inp.parentElement.style.borderColor = ''; }, 1500);
+      return;
+    }
+    var csrf = document.querySelector('meta[name="csrf-token"]');
+    var fd = new FormData();
+    fd.append('email', email);
+    if (csrf) fd.append('csrf_token', csrf.content);
+    btn.textContent = '...';
+    btn.disabled = true;
+    fetch('/newsletter/subscribe', { method: 'POST', body: fd })
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        if (d.ok) {
+          btn.textContent = '✓ Faleminderit!';
+          btn.style.background = '#4a8c5c';
+          inp.value = '';
+        } else {
+          btn.textContent = d.message || 'Gabim';
+          setTimeout(function() { btn.textContent = 'Regjistrohu'; btn.disabled = false; btn.style.background = ''; }, 2500);
+        }
+      })
+      .catch(function() { btn.textContent = 'Regjistrohu'; btn.disabled = false; });
+  }
+  btn.addEventListener('click', doSubscribe);
+  inp.addEventListener('keydown', function(e) { if (e.key === 'Enter') doSubscribe(); });
+})();
+</script>
 
 {% endblock %}

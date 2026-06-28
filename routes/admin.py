@@ -711,6 +711,22 @@ def bulk_offers():
                          active_offers_info=active_offers_info)
 
 
+def _resolve_banner_link_value(link_type, form):
+    """Read link_value from the correct named form field for the given link_type.
+    Named selects (link_value_brand, link_value_category, link_value_offer) are
+    always submitted by the browser regardless of JS. The hidden link_value field
+    is a JS fallback — we prefer the named fields so saves work without JS too."""
+    if link_type == 'brand':
+        return (form.get('link_value_brand') or form.get('link_value') or '').strip()
+    elif link_type == 'category':
+        return (form.get('link_value_category') or form.get('link_value') or '').strip()
+    elif link_type == 'offer':
+        return (form.get('link_value_offer') or form.get('link_value') or '').strip()
+    else:
+        # custom_products and all_offers both rely on the JS-populated hidden field
+        return (form.get('link_value') or '').strip()
+
+
 def _get_banner_offer_options():
     # Only fetch the fields needed to build the offer picker — no large text fields.
     products = Product.get_all_lean(projection={
@@ -767,10 +783,12 @@ def manage_banners():
         sort_order = _form_optional_int('sort_order')
         if sort_order is None:
             sort_order = (max([int(b.get('sort_order') or 0) for b in current_banners], default=0) + 1)
+        link_type = request.form.get("link_type")
+        link_value = _resolve_banner_link_value(link_type, request.form)
         data = {
             "image_url": request.form.get("image_url"),
-            "link_type": request.form.get("link_type"), # 'brand', 'category', 'custom_products', 'all_offers'
-            "link_value": request.form.get("link_value"), # 'Vichy', 'Dermokozmetikë', 'product_id_1,product_id_2'
+            "link_type": link_type,
+            "link_value": link_value,
             "is_active": request.form.get("is_active") == 'on',
             "expires_at": _form_optional_date('expires_at'),
             "sort_order": sort_order,
@@ -798,10 +816,12 @@ def manage_banners():
 @login_required
 @admin_required
 def edit_banner(banner_id):
+    link_type = request.form.get("link_type")
+    link_value = _resolve_banner_link_value(link_type, request.form)
     data = {
         "image_url": request.form.get("image_url"),
-        "link_type": request.form.get("link_type"),
-        "link_value": request.form.get("link_value"),
+        "link_type": link_type,
+        "link_value": link_value,
         "is_active": request.form.get("is_active") == 'on',
         "expires_at": _form_optional_date('expires_at'),
         "sort_order": _form_optional_int('sort_order'),
@@ -1078,6 +1098,8 @@ def newsletter():
                 flash(f'{failed} emaile nuk u dërguan.', 'warning')
 
     subscribers = User.get_newsletter_subscribers()
+    registered_sub_count = mongo.db.users.count_documents({'newsletter_subscribed': True})
+    guest_sub_count = len(subscribers) - registered_sub_count
     pending_orders_count = mongo.db.orders.count_documents({'status': 'Pending'})
 
     # All products for picker (show offers first)
@@ -1120,7 +1142,8 @@ def newsletter():
 
     site_base = _os.getenv('SITE_BASE_URL', 'https://barnatora.meldpharm.com')
     return render_template('admin/newsletter.html',
-                           subscriber_count=len(subscribers),
+                           subscriber_count=registered_sub_count,
+                           guest_sub_count=guest_sub_count,
                            sent_count=sent_count,
                            pending_orders_count=pending_orders_count,
                            all_products=all_products,
@@ -1153,12 +1176,10 @@ def _build_newsletter_html(template, headline, intro_text, products, base_url):
     # Products section
     products_html = ""
     if products:
-        if template == 'grid':
-            products_html = _products_grid(products, base_url)
-        elif template == 'list':
+        if template == 'list':
             products_html = _products_list(products, base_url)
-        else:  # hero_grid
-            products_html = _products_hero_grid(products, base_url)
+        else:
+            products_html = _products_grid(products, base_url)
 
     # CTA button
     cta = f"""
@@ -1206,8 +1227,8 @@ def _product_card_grid(p, base_url, width='45%'):
     pid = str(p['_id'])
     return f"""
     <td style="width:{width};padding:8px;vertical-align:top;">
-      <a href="{base_url}/product/{pid}" style="text-decoration:none;display:block;background:#f8fafc;border-radius:12px;overflow:hidden;border:1px solid #e2e8f0;">
-        <img src="{img}" alt="{name}" width="100%" style="display:block;height:180px;object-fit:cover;background:#e2e8f0;">
+      <a href="{base_url}/product/{pid}" style="text-decoration:none;display:block;background:#fff;border-radius:12px;overflow:hidden;border:1px solid #e2e8f0;">
+        <img src="{img}" alt="{name}" width="100%" style="display:block;height:200px;object-fit:contain;background:#fff;padding:10px;box-sizing:border-box;">
         <div style="padding:12px 14px 16px;">
           {f'<div style="font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">{brand}</div>' if brand else ''}
           <div style="font-size:13px;font-weight:700;color:#1e293b;margin-bottom:8px;line-height:1.4;">{name}</div>
@@ -1265,31 +1286,6 @@ def _products_list(products, base_url):
     </div>"""
 
 
-def _products_hero_grid(products, base_url):
-    if not products:
-        return ""
-    hero_p = products[0]
-    img = hero_p.get('image_url', '')
-    name = hero_p.get('name', '')
-    brand = hero_p.get('brand', '')
-    pid = str(hero_p['_id'])
-    hero_html = f"""
-    <div style="padding:24px 32px 16px;">
-      <a href="{base_url}/product/{pid}" style="text-decoration:none;display:block;background:#f0fdf4;border-radius:14px;overflow:hidden;border:2px solid #a7f3d0;">
-        <img src="{img}" alt="{name}" width="100%" style="display:block;height:240px;object-fit:cover;">
-        <div style="padding:18px 20px 20px;">
-          {f'<div style="font-size:11px;color:#0f766e;font-weight:700;text-transform:uppercase;">{brand}</div>' if brand else ''}
-          <div style="font-size:18px;font-weight:800;color:#1e293b;margin:4px 0 10px;">{name}</div>
-          <div style="margin-bottom:14px;">{_product_price_html(hero_p)}</div>
-          <div style="background:#0f766e;color:#fff;display:inline-block;padding:10px 24px;border-radius:10px;font-size:13px;font-weight:700;">Bli Tani →</div>
-        </div>
-      </a>
-    </div>"""
-    rest_html = ""
-    if len(products) > 1:
-        rest_html = _products_grid(products[1:], base_url)
-    return hero_html + rest_html
-
 
 @admin.route('/product/toggle_stock/<product_id>', methods=['POST'])
 @login_required
@@ -1322,8 +1318,21 @@ def users():
     for u in raw_users:
         u['order_count'] = order_counts.get(u.get('email'), 0)
 
+    # Use the same subscriber source as the newsletter page for consistency
+    from models.user import User as _User
+    all_subs = _User.get_newsletter_subscribers()
+    total_subscriber_count = len(all_subs)
+
+    # Guests = subscribers who are NOT in the registered users collection
+    registered_emails = {u.get('email', '') for u in raw_users}
+    guest_subscribers = [s for s in all_subs if s.get('email') not in registered_emails]
+
     pending_orders_count = mongo.db.orders.count_documents({'status': 'Pending'})
-    return render_template('admin/users.html', users=raw_users, pending_orders_count=pending_orders_count)
+    return render_template('admin/users.html',
+                           users=raw_users,
+                           guest_subscribers=guest_subscribers,
+                           total_subscriber_count=total_subscriber_count,
+                           pending_orders_count=pending_orders_count)
 
 
 @admin.route('/users/toggle_admin/<user_id>', methods=['POST'])

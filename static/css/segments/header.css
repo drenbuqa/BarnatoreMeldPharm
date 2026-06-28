@@ -332,14 +332,15 @@
 
 .login-text-btn {
     font-weight: 600;
-    color: var(--primary);
+    color: #4F5D4E;
     padding: 0.5rem 1rem;
     border-radius: var(--radius-full);
-    transition: background 0.2s;
+    transition: background 0.2s, color 0.2s;
 }
 
 .login-text-btn:hover {
-    background: var(--primary-light);
+    background: #EFE7DE;
+    color: #2B2B2B;
 }
 
 /* Old Navbar Clutter Clean-up - Styles Deprecated */
@@ -652,22 +653,22 @@
     display: block;
     width: 100%;
     padding: 0.85rem;
-    background: #10b981;
-    color: white;
+    background: #4F5D4E;
+    color: #fff;
     text-align: center;
     border-radius: 12px;
     font-weight: 700;
     text-decoration: none;
-    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    transition: all 0.22s ease;
     text-transform: uppercase;
     font-size: 0.9rem;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.05em;
 }
 
 @media (hover: hover) {
     .btn-go-to-cart:hover {
-        background: #059669;
-        box-shadow: 0 8px 20px rgba(16, 185, 129, 0.25);
+        background: #2B2B2B;
+        box-shadow: 0 8px 20px rgba(79, 93, 78, 0.25);
         transform: translateY(-2px);
     }
 }

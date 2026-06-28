@@ -979,12 +979,12 @@ img.loaded {
     height: 56px;
     border: none;
     border-radius: 50%;
-    background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);
+    background: linear-gradient(135deg, #6C7A61 0%, #4F5D4E 100%);
     color: white;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 4px 12px rgba(13, 148, 136, 0.3);
+    box-shadow: 0 4px 12px rgba(79, 93, 78, 0.30);
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     position: relative;
@@ -1002,7 +1002,7 @@ img.loaded {
 
 .chatbot-fab:hover {
     transform: translateY(-3px) scale(1.05);
-    box-shadow: 0 20px 35px -10px rgba(13, 148, 136, 0.5);
+    box-shadow: 0 20px 35px -10px rgba(79, 93, 78, 0.45);
 }
 
 .chatbot-fab:hover::before {

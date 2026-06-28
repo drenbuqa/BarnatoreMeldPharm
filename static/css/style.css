@@ -13,6 +13,7 @@
 @import 'segments/sections.css';
 @import 'segments/responsive.css';
 @import 'segments/badges.css';
+@import 'segments/home-idx.css';
 
 .brand-filter-container::-webkit-scrollbar {
     width: 6px;

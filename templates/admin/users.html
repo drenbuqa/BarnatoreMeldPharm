@@ -24,7 +24,7 @@
     <div class="kpi-card kpi-green">
         <div class="kpi-icon"><i class="fas fa-paper-plane"></i></div>
         <div class="kpi-body">
-            <div class="kpi-number">{{ users|selectattr('newsletter_subscribed', 'defined')|selectattr('newsletter_subscribed')|list|length }}</div>
+            <div class="kpi-number">{{ users | selectattr('newsletter_subscribed') | list | length }}</div>
             <div class="kpi-label">Abonentë Buletini</div>
         </div>
     </div>
@@ -51,6 +51,7 @@
                     <th>Regjistruar më</th>
                     <th>Porosi</th>
                     <th>Roli</th>
+                    <th>Buletini</th>
                     <th style="text-align:right;">Veprime</th>
                 </tr>
             </thead>
@@ -82,6 +83,13 @@
                         {% endif %}
                     </td>
                     <td>
+                        {% if user.newsletter_subscribed %}
+                        <span class="sub-badge sub-yes"><i class="fas fa-check"></i> Abonuar</span>
+                        {% else %}
+                        <span class="sub-badge sub-no">—</span>
+                        {% endif %}
+                    </td>
+                    <td>
                         <div class="table-actions" style="justify-content:flex-end;">
                             <a href="{{ url_for('admin.user_orders', user_id=user._id) }}"
                                class="action-btn" title="Shiko Porositë" style="text-decoration:none;">
@@ -101,7 +109,7 @@
                 </tr>
                 {% else %}
                 <tr>
-                    <td colspan="6" style="text-align:center; padding:3rem;">
+                    <td colspan="7" style="text-align:center; padding:3rem;">
                         <i class="fas fa-users fa-3x" style="color:#cbd5e1; display:block; margin-bottom:1rem;"></i>
                         <p style="color:#94a3b8;">Nuk u gjet asnjë përdorues.</p>
                     </td>
@@ -111,6 +119,34 @@
         </table>
     </div>
 </div>
+
+{% if guest_subscribers %}
+<div class="admin-table-card" style="margin-top:2rem;">
+    <div style="padding:1.25rem 1.5rem 0.75rem; border-bottom:1px solid #f1f5f9; display:flex; align-items:center; gap:0.6rem;">
+        <i class="fas fa-envelope" style="color:#6C7A61;"></i>
+        <h3 style="margin:0; font-size:1rem; font-weight:700; color:#1e293b;">Abonentë mysafirë (pa llogari)</h3>
+        <span style="margin-left:auto; background:#dcfce7; color:#15803d; padding:0.2rem 0.65rem; border-radius:20px; font-size:0.78rem; font-weight:700;">{{ guest_subscribers|length }}</span>
+    </div>
+    <div class="table-responsive">
+        <table class="premium-admin-table">
+            <thead>
+                <tr>
+                    <th>Email</th>
+                    <th>Abonuar më</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for g in guest_subscribers %}
+                <tr>
+                    <td><span style="color:#475569; font-size:0.9rem;">{{ g.email }}</span></td>
+                    <td><span style="color:#64748b; font-size:0.85rem;">{% if g.subscribed_at %}{{ g.subscribed_at.strftime('%d.%m.%Y') }}{% else %}—{% endif %}</span></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
 
 <style>
 .user-cell { display:flex; align-items:center; gap:0.75rem; }
@@ -123,6 +159,9 @@
 .btn-make-admin:hover { background:#1d4ed8; color:white; }
 .btn-remove-admin { background:#fef2f2; color:#dc2626; }
 .btn-remove-admin:hover { background:#dc2626; color:white; }
+.sub-badge { display:inline-flex; align-items:center; gap:0.3rem; padding:0.25rem 0.6rem; border-radius:20px; font-size:0.75rem; font-weight:700; }
+.sub-yes { background:#dcfce7; color:#15803d; }
+.sub-no  { color:#94a3b8; }
 </style>
 
 <script>

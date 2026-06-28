@@ -259,5 +259,4 @@ def reset_password(token):
 
 
 def _google_redirect_uri():
-    base = os.getenv('SITE_BASE_URL', 'http://127.0.0.1:5000').rstrip('/')
-    return f"{base}/login/google/callback"
+    return url_for('auth.google_callback', _external=True)
