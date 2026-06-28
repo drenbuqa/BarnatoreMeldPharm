@@ -458,13 +458,6 @@
         <p class="hp-circle-sub">Përfitime ekskluzive, këshilla të personalizuara<br>dhe oferta të veçanta — vetëm për ju.</p>
         {% if current_user.is_authenticated and current_user.newsletter_subscribed %}
         <div class="hp-circle-subscribed"><i class="fas fa-check-circle"></i> Jeni abonuar — faleminderit!</div>
-        {% else %}
-        <form class="hp-circle-form" id="hpCircleForm">
-          <input type="email" id="hpCircleEmail" placeholder="Email juaj"
-                 value="{{ current_user.email if current_user.is_authenticated else '' }}" required>
-          <button type="submit">Bëhu pjesë</button>
-        </form>
-        <p id="hpCircleMsg" style="display:none;color:#B7E0C8;margin-top:0.75rem;font-size:0.85rem;"></p>
         {% endif %}
       </div>
 
