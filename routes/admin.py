@@ -1140,7 +1140,7 @@ def newsletter():
         f"Vizitoni faqen tonë dhe zbuloni gjithçka që kemi në dispozicion për shëndetin dhe mirëqenien tuaj."
     )
 
-    site_base = _os.getenv('SITE_BASE_URL', 'https://barnatora.meldpharm.com')
+    site_base = _os.getenv('SITE_BASE_URL', 'https://barnatoremeldpharm.com')
     return render_template('admin/newsletter.html',
                            subscriber_count=registered_sub_count,
                            guest_sub_count=guest_sub_count,

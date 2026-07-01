@@ -538,6 +538,7 @@
         <i class="fas fa-chevron-up"></i>
     </button>
 
+    {% if request.endpoint in ('main.index', 'main.products') %}
     <!-- AI Chatbot Widget -->
     <div class="chatbot-launcher" id="chatbotLauncher">
         <button class="chatbot-fab" id="chatbotFab" type="button" onclick="toggleChatbot()" aria-label="Hap chatbot-in">
@@ -677,6 +678,7 @@
             </button>
         </div>
     </div>
+    {% endif %}
 
     <script>
         // Back to Top functionality
@@ -712,6 +714,7 @@
             });
         });
     </script>
+    {% if request.endpoint in ('main.index', 'main.products') %}
     <script>
         // NEW CHATBOT TAB NAVIGATION
         // Must use DOMContentLoaded to ensure this runs AFTER main.js (deferred)
@@ -1106,6 +1109,7 @@
             window.filterMessageThreads = filterMessageThreads;
         });
     </script>
+    {% endif %}
 
     <!-- Newsletter forms + popup JS -->
     <script>

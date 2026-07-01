@@ -24,6 +24,7 @@ from routes.main import main
 from routes.auth import auth
 from routes.cart import cart_bp
 from routes.admin import admin
+from models.image_utils import cld
 
 csrf = CSRFProtect()
 compress = Compress() if Compress else None
@@ -35,6 +36,7 @@ oauth = OAuth()
 load_dotenv(override=True)
 
 app = Flask(__name__)
+app.jinja_env.filters['cld'] = cld
 
 # Trust headers from Render's proxy (Crucial for HTTPS)
 if os.getenv('RENDER'):

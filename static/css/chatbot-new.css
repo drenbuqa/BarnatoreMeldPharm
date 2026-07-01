@@ -941,3 +941,11 @@
         transform: translateY(-10px);
     }
 }
+
+/* Hide chatbot while a mobile overlay (categories modal or filters sidebar) is open */
+body.modal-open .chatbot-launcher,
+body.modal-open .chatbot-panel,
+body.sidebar-open .chatbot-launcher,
+body.sidebar-open .chatbot-panel {
+    display: none !important;
+}

@@ -32,12 +32,12 @@
                     <div class="carousel-track" style="height: 100%;">
                         {% if product.images %}
                         {% for img in product.images %}
-                        <img src="{{ img }}" alt="{{ product.name }}" class="product-image"
+                        <img src="{{ img|cld(800) }}" alt="{{ product.name }}" class="product-image"
                             style="padding: 1.5rem; object-fit: contain; cursor: pointer;"
                             onclick="openImageModal(this.src)">
                         {% endfor %}
                         {% else %}
-                        <img src="{{ product.image_url }}" alt="{{ product.name }}" class="product-image"
+                        <img src="{{ product.image_url|cld(800) }}" alt="{{ product.name }}" class="product-image"
                             style="padding: 1.5rem; object-fit: contain; cursor: pointer;"
                             onclick="openImageModal(this.src)">
                         {% endif %}
@@ -75,7 +75,7 @@
                 {% for img in product.images %}
                 <div class="thumbnail {{ 'active' if loop.first else '' }}" data-index="{{ loop.index0 }}"
                     onclick="handleThumbClick(this)">
-                    <img src="{{ img }}" alt="View {{ loop.index }}">
+                    <img src="{{ img|cld(150) }}" alt="View {{ loop.index }}">
                 </div>
                 {% endfor %}
             </div>
@@ -686,7 +686,7 @@
             {% for related in related_products %}
             <div class="product-card">
                 <div class="product-image">
-                    <img src="{{ related.image_url }}" alt="{{ related.name }}">
+                    <img src="{{ related.image_url|cld(300) }}" alt="{{ related.name }}">
                     {% if related.discount_price %}
                     <div class="special-offer-badge red-badge">Oferta Speciale</div>
                     {% endif %}

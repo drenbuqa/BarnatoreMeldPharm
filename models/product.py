@@ -288,7 +288,7 @@ class Product:
         elif sort == 'discount':
             sort_dict = {"discount_percent": -1}
         elif sort == 'relevance':
-            sort_dict = {"is_best_seller": -1, "_id": -1}
+            sort_dict = {"relevance_score": -1}
 
         # Use aggregation to handle dynamic sorting by effective price (discount_price if exists, else price)
         pipeline = [
@@ -313,6 +313,28 @@ class Product:
                             {"$divide": [{"$subtract": ["$price", "$discount_price"]}, "$price"]},
                             0
                         ]
+                    }
+                }
+            },
+            {
+                # "Best products first, but shuffled" — weighted random ranking (Efraimidis-Spirakis):
+                # best-seller/pharmacist-choice/discounted products get a higher weight so they land
+                # near the top more *often*, but it's not a guarantee — plain products can still surface.
+                "$addFields": {
+                    "_relevance_weight": {
+                        "$add": [
+                            1,
+                            {"$cond": ["$is_best_seller", 3, 0]},
+                            {"$cond": ["$is_pharmacist_choice", 2, 0]},
+                            {"$cond": [{"$gt": ["$discount_percent", 0]}, 1, 0]}
+                        ]
+                    }
+                }
+            },
+            {
+                "$addFields": {
+                    "relevance_score": {
+                        "$pow": [{"$rand": {}}, {"$divide": [1, "$_relevance_weight"]}]
                     }
                 }
             }

@@ -368,11 +368,14 @@
     position: relative;
     aspect-ratio: 1 / 1;
     overflow: hidden;
-    background: var(--hp-ivory);
+    background: #ffffff;
 }
 .hp-card-img img {
     width: 100%; height: 100%;
-    object-fit: cover; display: block;
+    object-fit: contain; object-position: center;
+    padding: 1rem;
+    display: block;
+    box-sizing: border-box;
     transition: transform 0.35s;
 }
 .hp-card:hover .hp-card-img img { transform: scale(1.04); }
@@ -383,6 +386,14 @@
     font-size: 0.6rem; font-weight: 700;
     padding: 3px 8px; border-radius: 5px; z-index: 2;
     text-transform: uppercase; letter-spacing: 0.06em;
+}
+/* Badge stacking — keep the best-seller ribbon from overlapping the offer badge */
+.hp-card-img .best-seller-badge {
+    top: 9px;
+    left: 9px;
+}
+.hp-card-badge + .best-seller-badge {
+    top: 33px;
 }
 .hp-card-fav {
     position: absolute; top: 9px; right: 9px;

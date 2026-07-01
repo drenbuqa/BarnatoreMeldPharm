@@ -1,4 +1,14 @@
 // --- GLOBAL HELPERS ---
+// Inject Cloudinary auto-format/auto-quality + width transforms so images sent
+// from JS-rendered cards (filtering, pagination, load-more) aren't served at
+// full original resolution like raw pasted admin URLs are.
+window.cldUrl = function (url, width) {
+    if (!url || url.indexOf('res.cloudinary.com') === -1 || url.indexOf('/upload/') === -1) return url;
+    if (/\/upload\/[^/]*f_auto/.test(url)) return url;
+    const transform = width ? `f_auto,q_auto,w_${width}` : 'f_auto,q_auto';
+    return url.replace('/upload/', `/upload/${transform}/`);
+};
+
 window.updateResultsCount = function (count) {
     const countEl = document.getElementById('current-count');
     if (countEl) countEl.textContent = count;
@@ -17,7 +27,7 @@ window.createProductCardHtml = function (p) {
                 ${p.discount_price ? `<div class="special-offer-badge red-badge">Oferta Speciale</div>` : ''}
                 ${p.is_best_seller ? `<div class="best-seller-badge">Më i Shituri</div>` : ''}
                 ${p.is_pharmacist_choice ? `<div class="pharmacist-badge"><i class="fas fa-user-md"></i> Farmacisti</div>` : ''}
-                <img src="${p.image_url}" alt="${p.name}" class="loading" onload="this.classList.remove('loading'); this.classList.add('loaded');">
+                <img src="${window.cldUrl(p.image_url, 400)}" alt="${p.name}" class="loading" onload="this.classList.remove('loading'); this.classList.add('loaded');">
                 <button class="btn-favorite ${isFav}" onclick="toggleFavorite(this, '${p.id}')">
                     <i class="${heartIconClass} fa-heart"></i>
                 </button>
@@ -1580,7 +1590,7 @@ window.refreshMiniCart = function () {
                         html += `
                     <div class="mini-cart-item" data-id="${item._id}" onclick="window.location.href='${productUrl}';">
                         <a href="${productUrl}" class="mini-cart-img-wrapper" onclick="event.stopPropagation()">
-                            <img src="${item.image_url}" alt="${item.name}" class="mini-cart-img">
+                            <img src="${window.cldUrl(item.image_url, 120)}" alt="${item.name}" class="mini-cart-img">
                         </a>
                         <div class="mini-cart-info">
                             <a href="${productUrl}" class="mini-item-name" onclick="event.stopPropagation()">${item.name}</a>
@@ -1645,7 +1655,7 @@ window.refreshMiniCart = function () {
                         html += `
                     <div class="mobile-mini-cart-item" data-id="${item._id}" onclick="window.location.href='${productUrl}';">
                         <div class="mobile-mini-cart-img">
-                            <img src="${item.image_url}" alt="${item.name}">
+                            <img src="${window.cldUrl(item.image_url, 120)}" alt="${item.name}">
                         </div>
                         <div class="mobile-mini-cart-info">
                             <p class="name">${item.name}</p>
@@ -2324,7 +2334,7 @@ function buildChatbotAttachments(quickReplies = [], products = [], seeMoreUrl = 
             <div class="chatbot-product-strip" role="list" aria-label="Produktet e sugjeruara">
                 ${products.slice(0, 5).map((product) => `
                     <a class="chatbot-product-card" role="listitem" href="/product/${escapeHtml(product.id || '')}">
-                        <img class="chatbot-product-image" src="${escapeHtml(product.image_url || '')}" alt="${escapeHtml(product.name || 'Produkt')}">
+                        <img class="chatbot-product-image" src="${escapeHtml(window.cldUrl(product.image_url, 200) || '')}" alt="${escapeHtml(product.name || 'Produkt')}">
                         <div class="chatbot-product-meta">
                             <div class="chatbot-product-name">${escapeHtml(product.name || 'Produkt')}</div>
                             <div class="chatbot-product-subtitle">${escapeHtml([product.brand, product.subcategory || product.category, product.size].filter(Boolean).join(' • '))}</div>

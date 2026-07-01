@@ -41,16 +41,6 @@
                                 <span class="slider round"></span>
                             </label>
                         </div>
-                        <div class="filter-switch-row">
-                            <span class="switch-label text-primary" style="font-weight: 700;"><i
-                                    class="fas fa-user-md"></i> Zgjedhja e Farmacistit</span>
-                            <label class="switch">
-                                <input type="checkbox" id="pharmacist-choice-filter" {% if
-                                    request.args.get('pharmacist_choice')=='true' %}checked{% endif %}
-                                    onchange="window.updateShop()">
-                                <span class="slider round"></span>
-                            </label>
-                        </div>
                     </div>
 
                     <div class="sidebar-block" id="categoryBlock">
@@ -204,7 +194,7 @@
                             {% if product.is_pharmacist_choice %}
                             <div class="pharmacist-badge"><i class="fas fa-user-md"></i> Farmacisti</div>
                             {% endif %}
-                            <img src="{{ product.image_url }}" alt="{{ product.name }}">
+                            <img src="{{ product.image_url|cld(400) }}" alt="{{ product.name }}" loading="lazy">
                             <button
                                 class="btn-favorite {{ 'active' if (current_user.is_authenticated and product.favorites and current_user.id in product.favorites) or (not current_user.is_authenticated and product._id|string in session.get('liked_products', [])) else '' }}"
                                 onclick="toggleFavorite(this, '{{ product._id }}')">
