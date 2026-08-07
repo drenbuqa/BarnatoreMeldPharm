@@ -1520,6 +1520,13 @@
         white-space: nowrap !important;
     }
 
+    /* Badge stack — smaller text/padding on mobile; stacking handled by flex-column wrapper */
+    .badge-stack {
+        top: 4px !important;
+        left: 4px !important;
+        gap: 2px !important;
+    }
+
     .special-offer-badge,
     .best-seller-badge,
     .pharmacist-badge,
@@ -1527,33 +1534,17 @@
     .limited-badge {
         font-size: 0.5rem !important;
         padding: 2px 6px !important;
-        top: 4px !important;
-        left: 4px !important;
         letter-spacing: 0 !important;
     }
 
-    /* 2-badge stacking on mobile (step = 18px) */
-    .special-offer-badge + .set-badge,
-    .special-offer-badge + .best-seller-badge,
-    .special-offer-badge + .pharmacist-badge,
-    .set-badge + .limited-badge,
-    .set-badge + .best-seller-badge,
-    .limited-badge + .best-seller-badge,
-    .best-seller-badge + .pharmacist-badge {
-        top: 22px !important;
+    /* Fix discount % badge vertical alignment in price row on mobile */
+    .mobile-price-fix {
+        align-items: center !important;
     }
 
-    /* 3-badge stacking on mobile */
-    .special-offer-badge + .set-badge + .limited-badge,
-    .special-offer-badge + .set-badge + .best-seller-badge,
-    .special-offer-badge + .best-seller-badge + .pharmacist-badge,
-    .set-badge + .limited-badge + .best-seller-badge {
-        top: 40px !important;
-    }
-
-    /* 4-badge stacking on mobile */
-    .special-offer-badge + .set-badge + .limited-badge + .best-seller-badge {
-        top: 58px !important;
+    .mobile-price-fix .discount-badge {
+        transform: none !important;
+        margin-bottom: 0 !important;
     }
 
     /* FIX: Wishlist heart clickable on mobile (above card overlay) */

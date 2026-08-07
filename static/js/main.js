@@ -24,11 +24,13 @@ window.createProductCardHtml = function (p) {
     return `
         <div class="product-card fade-in-section" data-id="${p.id}" data-category="${p.category}" data-name="${p.name}">
             <div class="product-image">
+                <div class="badge-stack">
                 ${p.discount_price ? `<div class="special-offer-badge red-badge">Oferta Speciale</div>` : ''}
                 ${p.labels && p.labels.includes('set') ? `<div class="set-badge"><i class="fas fa-layer-group"></i> Set</div>` : ''}
                 ${p.labels && p.labels.includes('limited') ? `<div class="limited-badge"><i class="fas fa-clock"></i> I Kufizuar</div>` : ''}
                 ${p.is_best_seller ? `<div class="best-seller-badge">Më i Shituri</div>` : ''}
                 ${p.is_pharmacist_choice ? `<div class="pharmacist-badge"><i class="fas fa-user-md"></i> Farmacisti</div>` : ''}
+                </div>
                 <img src="${window.cldUrl(p.image_url, 400)}" alt="${p.name}" class="loading" onload="this.classList.remove('loading'); this.classList.add('loaded');">
                 <button class="btn-favorite ${isFav}" onclick="toggleFavorite(this, '${p.id}')">
                     <i class="${heartIconClass} fa-heart"></i>

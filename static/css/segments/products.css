@@ -390,124 +390,62 @@
     box-shadow: 0 2px 5px rgba(239, 68, 68, 0.2);
 }
 
-.special-offer-badge {
+/* Badge stack wrapper — flex column so badges never overlap */
+.badge-stack {
     position: absolute;
     top: 5px;
     left: 0;
-    background: #ef4444;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 3px;
+    z-index: 8;
+}
+
+/* All badges are now flow-positioned inside the wrapper */
+.special-offer-badge,
+.best-seller-badge,
+.pharmacist-badge,
+.set-badge,
+.limited-badge {
+    position: static;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
     color: #fff;
     padding: 3px 10px;
     font-size: 0.6rem;
     font-weight: 800;
     border-radius: 4px;
-    z-index: 50;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    white-space: nowrap;
+}
+
+.special-offer-badge {
+    background: #ef4444;
     box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4);
 }
 
 .best-seller-badge {
-    position: absolute;
-    top: 5px;
-    left: 0;
     background: #f59e0b;
-    color: #fff;
-    padding: 3px 10px;
-    font-size: 0.6rem;
-    font-weight: 800;
-    border-radius: 4px;
-    z-index: 6;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
     box-shadow: 0 2px 8px rgba(245, 158, 11, 0.4);
 }
 
 .pharmacist-badge {
-    position: absolute;
-    top: 5px;
-    left: 0;
     background: #059669;
-    /* Darker Emerald */
-    color: #fff;
-    padding: 3px 10px;
-    font-size: 0.6rem;
-    font-weight: 800;
-    border-radius: 4px;
-    z-index: 7;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
     box-shadow: 0 2px 8px rgba(5, 150, 105, 0.4);
-    display: flex;
-    align-items: center;
-    gap: 4px;
 }
 
-.pharmacist-badge i {
-    font-size: 0.7rem;
-}
-
-/* Badge Stacking Logic */
-/* 2 badges */
-.special-offer-badge+.best-seller-badge,
-.special-offer-badge+.pharmacist-badge {
-    top: 28px;
-}
-
-.best-seller-badge+.pharmacist-badge {
-    top: 28px;
-}
-
-/* 3 badges */
-.special-offer-badge+.best-seller-badge+.pharmacist-badge {
-    top: 51px;
-}
-
-/* Set / Paketë badge */
 .set-badge {
-    position: absolute;
-    top: 5px;
-    left: 0;
     background: linear-gradient(135deg, #0d9488, #0f766e);
-    color: #fff;
-    padding: 3px 10px;
-    font-size: 0.6rem;
-    font-weight: 800;
-    border-radius: 4px;
-    z-index: 8;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
     box-shadow: 0 2px 8px rgba(13, 148, 136, 0.45);
-    display: flex;
-    align-items: center;
-    gap: 4px;
 }
-.set-badge i { font-size: 0.65rem; }
 
-/* Limited / I Kufizuar badge */
 .limited-badge {
-    position: absolute;
-    top: 5px;
-    left: 0;
     background: linear-gradient(135deg, #ef4444, #dc2626);
-    color: #fff;
-    padding: 3px 10px;
-    font-size: 0.6rem;
-    font-weight: 800;
-    border-radius: 4px;
-    z-index: 7;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
     box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4);
-    display: flex;
-    align-items: center;
-    gap: 4px;
 }
-.limited-badge i { font-size: 0.65rem; }
-
-/* Stacking for set + limited */
-.set-badge + .limited-badge { top: 28px; }
-.special-offer-badge + .set-badge { top: 28px; }
-.special-offer-badge + .set-badge + .limited-badge { top: 51px; }
 
 /* Favorite Button */
 .btn-favorite {
