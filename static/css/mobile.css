@@ -1520,6 +1520,18 @@
         white-space: nowrap !important;
     }
 
+    /* Product detail meta row — stack vertically on mobile */
+    .product-meta-row {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 0.4rem !important;
+    }
+
+    /* Hide the decorative dot separator on mobile since we're stacking */
+    .product-meta-row > span[style*="border-radius: 50%"] {
+        display: none !important;
+    }
+
     /* Badge stack — smaller text/padding on mobile; stacking handled by flex-column wrapper */
     .badge-stack {
         top: 4px !important;
