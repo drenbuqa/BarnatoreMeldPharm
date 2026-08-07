@@ -475,12 +475,101 @@ def send_digest():
     return redirect(url_for('admin.dashboard'))
 
 
+def _parse_option_groups(raw_json, existing_variants=None):
+    """Parse option_groups_json from the form and return (option_groups, variants, base_price, base_discount).
+    existing_variants: list of already-saved variants so stable IDs are preserved across edits.
+    """
+    try:
+        option_groups = json.loads(raw_json) if raw_json else []
+    except (ValueError, TypeError):
+        option_groups = []
+
+    if not option_groups:
+        return [], [], None, None
+
+    from itertools import product as itertools_product
+
+    groups_with_values = [og for og in option_groups if og.get('values')]
+    if not groups_with_values:
+        return option_groups, [], None, None
+
+    value_lists = [og['values'] for og in groups_with_values]
+    group_names = [og['name'] for og in groups_with_values]
+
+    # Build a lookup from attribute combo → existing variant id so cart links survive edits
+    existing_id_map = {}
+    for ev in (existing_variants or []):
+        attrs = ev.get('attributes') or {}
+        key = tuple(sorted(attrs.items()))
+        existing_id_map[key] = ev.get('id') or str(uuid.uuid4())
+
+    variants = []
+    for combo in itertools_product(*value_lists):
+        first_val = combo[0]
+        price = first_val.get('price') or None
+        discount_price = first_val.get('discount_price') or None
+        image_url = next((v.get('image_url') for v in combo if v.get('image_url')), None)
+        in_stock = all(v.get('in_stock', True) for v in combo)
+        attributes = {group_names[i]: combo[i]['value'] for i in range(len(group_names))}
+
+        combo_key = tuple(sorted(attributes.items()))
+        variant_id = existing_id_map.get(combo_key) or str(uuid.uuid4())
+
+        variants.append({
+            'id': variant_id,
+            'attributes': attributes,
+            'price': float(price) if price is not None else None,
+            'discount_price': float(discount_price) if discount_price is not None else None,
+            'image_url': image_url,
+            'in_stock': in_stock,
+        })
+
+    base_price = next((v['price'] for v in variants if v['price'] is not None), None)
+    base_discount = next((v['discount_price'] for v in variants if v['discount_price'] is not None), None)
+
+    return option_groups, variants, base_price, base_discount
+
+
+def _build_product_data(main_img, images, option_groups, variants, base_price, base_discount):
+    labels_raw = request.form.get('labels_json', '[]')
+    try:
+        labels = json.loads(labels_raw)
+    except (ValueError, TypeError):
+        labels = []
+
+    price = base_price if base_price is not None else _form_float('price')
+    discount_price = base_discount if base_discount is not None else _form_optional_float('discount_price')
+
+    return {
+        "name": request.form.get('name'),
+        "brand": request.form.get('brand'),
+        "category": request.form.get('category'),
+        "subcategory": request.form.get('subcategory'),
+        "size": request.form.get('size'),
+        "price": price,
+        "discount_price": discount_price,
+        "discount_until": _form_optional_date('discount_until'),
+        "description": request.form.get('description'),
+        "image_url": main_img,
+        "images": images,
+        "featured": 'featured' in labels or request.form.get('featured') == 'on',
+        "is_best_seller": 'best_seller' in labels or request.form.get('is_best_seller') == 'on',
+        "is_pharmacist_choice": 'pharmacist_choice' in labels or request.form.get('is_pharmacist_choice') == 'on',
+        "in_stock": request.form.get('in_stock') == 'on',
+        "how_to_use": request.form.get('how_to_use'),
+        "key_ingredients": request.form.get('key_ingredients'),
+        "variant_group": request.form.get('variant_group', '').strip() or None,
+        "option_groups": option_groups,
+        "variants": variants,
+        "labels": labels,
+    }
+
+
 @admin.route('/product/new', methods=['GET', 'POST'])
 @login_required
 @admin_required
 def new_product():
     if request.method == 'POST':
-        # Process images
         main_img = request.form.get('image_url')
         additional_str = request.form.get('additional_images', '')
         images = [main_img]
@@ -490,26 +579,10 @@ def new_product():
                 if img != main_img:
                     images.append(img)
 
-        product_data = {
-            "name": request.form.get('name'),
-            "brand": request.form.get('brand'),
-            "category": request.form.get('category'),
-            "subcategory": request.form.get('subcategory'),
-            "size": request.form.get('size'),
-            "price": _form_float('price'),
-            "discount_price": _form_optional_float('discount_price'),
-            "discount_until": _form_optional_date('discount_until'),
-            "description": request.form.get('description'),
-            "image_url": main_img,
-            "images": images,
-            "featured": request.form.get('featured') == 'on',
-            "is_best_seller": request.form.get('is_best_seller') == 'on',
-            "is_pharmacist_choice": request.form.get('is_pharmacist_choice') == 'on',
-            "in_stock": request.form.get('in_stock') == 'on',
-            "how_to_use": request.form.get('how_to_use'),
-            "key_ingredients": request.form.get('key_ingredients'),
-            "variant_group": request.form.get('variant_group', '').strip() or None
-        }
+        option_groups, variants, base_price, base_discount = _parse_option_groups(
+            request.form.get('option_groups_json', '')
+        )
+        product_data = _build_product_data(main_img, images, option_groups, variants, base_price, base_discount)
         Product.create(product_data)
         flash('Produkti u krijua me sukses!', 'success')
         return redirect(url_for('admin.dashboard'))
@@ -523,9 +596,8 @@ def edit_product(product_id):
     if not product:
         flash('Produkti nuk ekziston.', 'danger')
         return redirect(url_for('admin.dashboard'))
-        
+
     if request.method == 'POST':
-        # Process images
         main_img = request.form.get('image_url')
         additional_str = request.form.get('additional_images', '')
         images = [main_img]
@@ -535,30 +607,15 @@ def edit_product(product_id):
                 if img != main_img:
                     images.append(img)
 
-        product_data = {
-            "name": request.form.get('name'),
-            "brand": request.form.get('brand'),
-            "category": request.form.get('category'),
-            "subcategory": request.form.get('subcategory'),
-            "size": request.form.get('size'),
-            "price": _form_float('price'),
-            "discount_price": _form_optional_float('discount_price'),
-            "discount_until": _form_optional_date('discount_until'),
-            "description": request.form.get('description'),
-            "image_url": main_img,
-            "images": images,
-            "featured": request.form.get('featured') == 'on',
-            "is_best_seller": request.form.get('is_best_seller') == 'on',
-            "is_pharmacist_choice": request.form.get('is_pharmacist_choice') == 'on',
-            "in_stock": request.form.get('in_stock') == 'on',
-            "how_to_use": request.form.get('how_to_use'),
-            "key_ingredients": request.form.get('key_ingredients'),
-            "variant_group": request.form.get('variant_group', '').strip() or None
-        }
+        option_groups, variants, base_price, base_discount = _parse_option_groups(
+            request.form.get('option_groups_json', ''),
+            existing_variants=product.get('variants') or []
+        )
+        product_data = _build_product_data(main_img, images, option_groups, variants, base_price, base_discount)
         Product.update(product_id, product_data)
         flash('Produkti u përditësua me sukses!', 'success')
         return redirect(url_for('admin.dashboard'))
-        
+
     return render_template('admin/product_form.html', product=product, categories=CATEGORIES)
 
 @admin.route('/product/delete/<product_id>', methods=['POST'])

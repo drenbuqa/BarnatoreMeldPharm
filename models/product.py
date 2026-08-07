@@ -653,6 +653,28 @@ class Product:
             return []
 
     @staticmethod
+    def get_variant_by_id(product, variant_id):
+        """Return the variant dict matching variant_id, or None."""
+        if not variant_id or not product:
+            return None
+        for v in (product.get('variants') or []):
+            if str(v.get('id')) == str(variant_id):
+                return v
+        return None
+
+    @staticmethod
+    def get_variant_price(product, variant_id):
+        """Return (price, discount_price) for a specific variant."""
+        v = Product.get_variant_by_id(product, variant_id)
+        base_price = float(product.get('price') or 0)
+        base_discount = (float(product['discount_price']) if product.get('discount_price') else None)
+        if not v:
+            return base_price, base_discount
+        price = float(v['price']) if v.get('price') is not None else base_price
+        discount = (float(v['discount_price']) if v.get('discount_price') is not None else None)
+        return price, discount
+
+    @staticmethod
     def get_variants(variant_group, name=None, brand=None, category=None, subcategory=None):
         try:
             def normalize_text(value):
