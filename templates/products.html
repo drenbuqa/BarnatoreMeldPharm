@@ -194,6 +194,12 @@
                             {% if product.is_pharmacist_choice %}
                             <div class="pharmacist-badge"><i class="fas fa-user-md"></i> Farmacisti</div>
                             {% endif %}
+                            {% if product.labels and 'set' in product.labels %}
+                            <div class="set-badge"><i class="fas fa-layer-group"></i> Set</div>
+                            {% endif %}
+                            {% if product.labels and 'limited' in product.labels %}
+                            <div class="limited-badge"><i class="fas fa-clock"></i> I Kufizuar</div>
+                            {% endif %}
                             <img src="{{ product.image_url|cld(400) }}" alt="{{ product.name }}" loading="lazy">
                             <button
                                 class="btn-favorite {{ 'active' if (current_user.is_authenticated and product.favorites and current_user.id in product.favorites) or (not current_user.is_authenticated and product._id|string in session.get('liked_products', [])) else '' }}"

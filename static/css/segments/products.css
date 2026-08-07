@@ -462,6 +462,53 @@
     top: 51px;
 }
 
+/* Set / Paketë badge */
+.set-badge {
+    position: absolute;
+    top: 5px;
+    left: 0;
+    background: linear-gradient(135deg, #0d9488, #0f766e);
+    color: #fff;
+    padding: 3px 10px;
+    font-size: 0.6rem;
+    font-weight: 800;
+    border-radius: 4px;
+    z-index: 8;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 8px rgba(13, 148, 136, 0.45);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+.set-badge i { font-size: 0.65rem; }
+
+/* Limited / I Kufizuar badge */
+.limited-badge {
+    position: absolute;
+    top: 5px;
+    left: 0;
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    color: #fff;
+    padding: 3px 10px;
+    font-size: 0.6rem;
+    font-weight: 800;
+    border-radius: 4px;
+    z-index: 7;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+.limited-badge i { font-size: 0.65rem; }
+
+/* Stacking for set + limited */
+.set-badge + .limited-badge { top: 28px; }
+.special-offer-badge + .set-badge { top: 28px; }
+.special-offer-badge + .set-badge + .limited-badge { top: 51px; }
+
 /* Favorite Button */
 .btn-favorite {
     position: absolute;
