@@ -66,7 +66,7 @@
 
             /*
              * Fire the current page's event (ViewContent / InitiateCheckout /
-             * Purchase) that was set by {% block pixel_events %} but silently
+             * Purchase) that was stored in _metaPixelPendingEvent but
              * no-op'd because the pixel wasn't loaded yet at that point.
              */
             if (window._metaPixelPendingEvent) {
