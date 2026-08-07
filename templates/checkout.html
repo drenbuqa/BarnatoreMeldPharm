@@ -378,3 +378,23 @@
 {% endblock %}
 
 {% block footer %}{% endblock %}
+
+{% block pixel_events %}
+<script>
+(function() {
+    var params = {
+        content_ids: [{% for item in cart_items %}{{ item._id | string | tojson }}{% if not loop.last %},{% endif %}{% endfor %}],
+        contents: [{% for item in cart_items %}{'id': {{ item._id | string | tojson }}, 'quantity': {{ item.quantity }}}{% if not loop.last %},{% endif %}{% endfor %}],
+        num_items: {{ cart_items | sum(attribute='quantity') }},
+        value: {{ grand_total | float }},
+        currency: 'EUR'
+    };
+    if (window._metaPixelLoaded) {
+        fbq('track', 'InitiateCheckout', params);
+        window._metaPixelPendingEvent = null;
+    } else {
+        window._metaPixelPendingEvent = { event: 'InitiateCheckout', params: params };
+    }
+})();
+</script>
+{% endblock %}

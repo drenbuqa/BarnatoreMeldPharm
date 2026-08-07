@@ -1468,6 +1468,15 @@ window.addToCartAJAX = function (productId, quantity = 1, variantId = null) {
         .then(res => res.json())
         .then(data => {
             if (data.success) {
+                if (data.pixel && data.pixel.product_id) {
+                    fbq('track', 'AddToCart', {
+                        content_ids: [data.pixel.product_id],
+                        content_name: data.pixel.product_name,
+                        content_type: 'product',
+                        value: data.pixel.product_price,
+                        currency: 'EUR'
+                    });
+                }
                 refreshMiniCart();
                 showMiniCart();
             }
@@ -1489,6 +1498,15 @@ window.buyNow = function (productId, quantity = 1, variantId = null) {
         .then(res => res.json())
         .then(data => {
             if (data.success) {
+                if (data.pixel && data.pixel.product_id) {
+                    fbq('track', 'AddToCart', {
+                        content_ids: [data.pixel.product_id],
+                        content_name: data.pixel.product_name,
+                        content_type: 'product',
+                        value: data.pixel.product_price,
+                        currency: 'EUR'
+                    });
+                }
                 window.location.href = '/cart/checkout';
             }
         })
@@ -2211,6 +2229,15 @@ function addToCart(productId) {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
+                if (data.pixel && data.pixel.product_id) {
+                    fbq('track', 'AddToCart', {
+                        content_ids: [data.pixel.product_id],
+                        content_name: data.pixel.product_name,
+                        content_type: 'product',
+                        value: data.pixel.product_price,
+                        currency: 'EUR'
+                    });
+                }
                 // Use the unified global update function
                 window.updateGlobalBadges({
                     cart_count: data.cart_count,

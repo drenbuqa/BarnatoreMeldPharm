@@ -183,11 +183,25 @@ def add_to_cart(product_id):
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         country = current_user.country if current_user.is_authenticated and current_user.country else 'Kosova'
         total_price, total_items, _, _, _ = calculate_cart_totals(cart, country=country)
+        # Fetch product data for Meta Pixel AddToCart (one extra DB read only on AJAX success)
+        pixel_data = {}
+        try:
+            p = Product.get_by_id(product_id)
+            if p:
+                price, disc = _effective_price(p, variant_id)
+                pixel_data = {
+                    'product_id': product_id,
+                    'product_name': p.get('name', ''),
+                    'product_price': float(disc if disc else price or 0),
+                }
+        except Exception:
+            pass
         return jsonify({
             'success': True,
             'message': 'Produkti u shtua në shportë.',
             'cart_count': total_items,
-            'wishlist_count': get_wishlist_count()
+            'wishlist_count': get_wishlist_count(),
+            'pixel': pixel_data,
         })
 
     flash('Produkti u shtua në shportë në mënyrë të sigurt.', 'success')
@@ -550,7 +564,7 @@ def place_order():
     grand_total = total_price + shipping_cost
 
     # Save to MongoDB
-    Order.create({
+    order_id = Order.create({
         "fullname": fullname,
         "email": email,
         "address": address,
@@ -586,5 +600,36 @@ def place_order():
         import logging
         logging.error(f"Admin order notification failed: {_e}")
 
-    flash(f'Faleminderit {fullname}, porosia u realizua me sukses!', 'success')
-    return redirect(url_for('main.index'))
+    return redirect(url_for('cart.order_success', order_id=order_id))
+
+
+@cart_bp.route('/order-success/<order_id>')
+def order_success(order_id):
+    order = Order.get_by_id(order_id)
+    if not order:
+        flash('Porosia nuk u gjet.', 'error')
+        return redirect(url_for('main.index'))
+
+    # Deduplication: session is the fast path; MongoDB is the durable fallback.
+    # This survives session-cookie clearing, incognito tabs, and shared links.
+    pixel_key = f'meta_pixel_{order_id}'
+    already_fired = session.get(pixel_key, False) or order.get('meta_pixel_fired', False)
+    fire_pixel = not already_fired
+
+    if fire_pixel:
+        # Persist immediately so any concurrent/refresh request also sees it
+        from models.db import mongo
+        from bson import ObjectId
+        try:
+            mongo.db.orders.update_one(
+                {'_id': ObjectId(order_id)},
+                {'$set': {'meta_pixel_fired': True}}
+            )
+        except Exception:
+            pass
+
+    # Always stamp session (fast path for subsequent requests in same session)
+    session[pixel_key] = True
+    session.modified = True
+
+    return render_template('order_success.html', order=order, fire_pixel=fire_pixel)

@@ -45,6 +45,8 @@ if os.getenv('RENDER'):
 # Security Configuration
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev_secret_key')
 app.config['MONGO_URI'] = os.getenv('MONGO_URI', 'mongodb://localhost:27017/meldpharm')
+app.config['META_PIXEL_ID'] = os.getenv('META_PIXEL_ID', '')
+app.config['META_PIXEL_DEBUG'] = os.getenv('META_PIXEL_DEBUG', '').lower() in ('1', 'true', 'yes')
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=31)
@@ -110,6 +112,13 @@ def ratelimit_handler(e):
     if request.is_json or request.path.startswith('/api/'):
         return jsonify(error="Shumë kërkesa. Provoni përsëri pas pak."), 429
     return render_template('errors/429.html'), 429
+
+@app.context_processor
+def inject_meta_pixel():
+    return {
+        'meta_pixel_id': app.config.get('META_PIXEL_ID', ''),
+        'meta_pixel_debug': app.config.get('META_PIXEL_DEBUG', False),
+    }
 
 @app.context_processor
 def inject_cart_count():

@@ -1246,3 +1246,23 @@
     }
 </style>
 {% endblock %}
+
+{% block pixel_events %}
+<script>
+(function() {
+    var params = {
+        content_ids: [{{ product._id | string | tojson }}],
+        content_name: {{ product.name | tojson }},
+        content_type: 'product',
+        value: {{ (product.discount_price or product.price or 0) | float | tojson }},
+        currency: 'EUR'
+    };
+    if (window._metaPixelLoaded) {
+        fbq('track', 'ViewContent', params);
+        window._metaPixelPendingEvent = null;
+    } else {
+        window._metaPixelPendingEvent = { event: 'ViewContent', params: params };
+    }
+})();
+</script>
+{% endblock %}

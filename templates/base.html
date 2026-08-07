@@ -24,6 +24,73 @@
     <!-- SweetAlert2: deferred so it never blocks first paint -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11" defer></script>
     <script src="{{ url_for('static', filename='js/main.js') }}" defer></script>
+
+    {% if meta_pixel_id %}
+    <!-- Meta Pixel bootstrap — gated on marketing consent (cookie_consent_v2) -->
+    <script>
+    (function() {
+        {% if meta_pixel_debug %}
+        /* ── DEBUG MODE: all events are console-logged, nothing sent to Meta ── */
+        window.fbq = function() {
+            console.log('[Meta Pixel DEBUG]', Array.prototype.slice.call(arguments));
+        };
+        /* In debug mode _initMetaPixel is a no-op so acceptCookies() is safe */
+        window._initMetaPixel = function() {};
+        {% else %}
+        /*
+         * No-op stub so any fbq() call before consent silently does nothing.
+         * IMPORTANT: _loadMetaPixel() deletes this stub before running the
+         * real pixel loader, because the loader bails early if fbq already exists.
+         */
+        window.fbq = function() {};
+
+        function _loadMetaPixel() {
+            if (window._metaPixelLoaded) return;
+            window._metaPixelLoaded = true;
+
+            /* Remove stub so the loader can install the real fbq queue */
+            try { delete window.fbq; delete window._fbq; } catch(e) {}
+
+            /* Standard Meta Pixel loader (minified) */
+            !function(f,b,e,v,n,t,s)
+            {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+            n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+            if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+            n.queue=[];t=b.createElement(e);t.async=!0;
+            t.src=v;s=b.getElementsByTagName(e)[0];
+            s.parentNode.insertBefore(t,s)}(window,document,'script',
+            'https://connect.facebook.net/en_US/fbevents.js');
+
+            fbq('init', '{{ meta_pixel_id }}');
+            fbq('track', 'PageView');
+
+            /*
+             * Fire the current page's event (ViewContent / InitiateCheckout /
+             * Purchase) that was set by {% block pixel_events %} but silently
+             * no-op'd because the pixel wasn't loaded yet at that point.
+             */
+            if (window._metaPixelPendingEvent) {
+                fbq('track',
+                    window._metaPixelPendingEvent.event,
+                    window._metaPixelPendingEvent.params);
+                window._metaPixelPendingEvent = null;
+            }
+        }
+
+        window._initMetaPixel = _loadMetaPixel;
+
+        /* Auto-init for returning visitors who already accepted v2 banner */
+        if (localStorage.getItem('cookie_consent_v2') === 'accepted') {
+            _loadMetaPixel();
+        }
+        {% endif %}
+    })();
+    </script>
+    {% if not meta_pixel_debug %}
+    <noscript><img height="1" width="1" style="display:none"
+        src="https://www.facebook.com/tr?id={{ meta_pixel_id }}&ev=PageView&noscript=1"/></noscript>
+    {% endif %}
+    {% endif %}
 </head>
 
 <body data-user-logged-in="{{ 'true' if current_user.is_authenticated else 'false' }}">
@@ -463,9 +530,10 @@
             </div>
             <div class="footer-bottom">
                 <p style="color:#475569;">&copy; 2025 Barnatore Meld Pharm. Të gjitha të drejtat e rezervuara.</p>
-                <div style="display:flex;gap:1.5rem;">
+                <div style="display:flex;gap:1.5rem;flex-wrap:wrap;">
                     <a href="{{ url_for('main.privacy') }}" style="color:#475569;">Privatësia</a>
                     <a href="{{ url_for('main.terms') }}" style="color:#475569;">Kushtet</a>
+                    <a href="#" onclick="openCookiePreferences();return false;" style="color:#475569;">🍪 Preferencat e Cookies</a>
                 </div>
             </div>
         </div>
@@ -1159,7 +1227,7 @@
     <div id="cookie-banner" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:9999;background:#1e293b;color:#e2e8f0;padding:14px 20px;box-shadow:0 -2px 12px rgba(0,0,0,0.2);">
       <div style="max-width:1100px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;">
         <p style="margin:0;font-size:0.88rem;line-height:1.5;flex:1;color:#e2e8f0 !important;">
-          Faqja jonë përdor cookies të nevojshme për shportën dhe kyçjen tuaj.
+          Faqja jonë përdor cookies të nevojshme për shportën dhe kyçjen tuaj, si dhe cookies të marketingut (Meta Pixel) për të matur efektivitetin e reklamave.
           <a href="{{ url_for('main.privacy') }}" style="color:#5eead4;text-decoration:underline;">Mëso më shumë</a>
         </p>
         <div style="display:flex;gap:10px;flex-shrink:0;">
@@ -1170,18 +1238,33 @@
     </div>
     <script>
     (function() {
-        var consent = localStorage.getItem('cookie_consent');
-        if (!consent) document.getElementById('cookie-banner').style.display = 'block';
+        /* Show banner if user has never seen the v2 marketing-consent banner */
+        if (!localStorage.getItem('cookie_consent_v2')) {
+            document.getElementById('cookie-banner').style.display = 'block';
+        }
     })();
     function acceptCookies() {
-        localStorage.setItem('cookie_consent', 'accepted');
+        localStorage.setItem('cookie_consent_v2', 'accepted');
         document.getElementById('cookie-banner').style.display = 'none';
+        if (typeof window._initMetaPixel === 'function') window._initMetaPixel();
     }
     function declineCookies() {
-        localStorage.setItem('cookie_consent', 'declined');
+        var wasAccepted = localStorage.getItem('cookie_consent_v2') === 'accepted';
+        localStorage.setItem('cookie_consent_v2', 'declined');
         document.getElementById('cookie-banner').style.display = 'none';
+        /* Reload to purge the already-loaded pixel from this session's memory */
+        if (wasAccepted && window._metaPixelLoaded) window.location.reload();
+    }
+    function openCookiePreferences() {
+        var banner = document.getElementById('cookie-banner');
+        if (banner) {
+            banner.style.display = 'block';
+            banner.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        }
     }
     </script>
+
+    {% block pixel_events %}{% endblock %}
 </body>
 
 </html>
