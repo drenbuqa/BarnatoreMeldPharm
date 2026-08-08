@@ -1452,13 +1452,40 @@ window.toggleProfileDropdown = function () {
     }
 };
 
+// --- CART BADGE ANIMATION ---
+
+window.animateCartBadges = function () {
+    document.querySelectorAll('.cart-badge, .mobile-cart-badge, .cart-count-badge').forEach(badge => {
+        badge.classList.remove('badge-pop');
+        void badge.offsetWidth; // force reflow
+        badge.classList.add('badge-pop');
+        badge.addEventListener('animationend', () => badge.classList.remove('badge-pop'), { once: true });
+    });
+
+    // Wiggle the cart icon
+    document.querySelectorAll('.cart-btn-desktop .fa-shopping-cart, .bottom-nav-item .fa-shopping-cart').forEach(icon => {
+        icon.classList.remove('cart-icon-wiggle');
+        void icon.offsetWidth;
+        icon.classList.add('cart-icon-wiggle');
+        icon.addEventListener('animationend', () => icon.classList.remove('cart-icon-wiggle'), { once: true });
+    });
+};
+
 // --- CART AJAX & MINI-CART FUNCTIONS ---
 
-window.addToCartAJAX = function (productId, quantity = 1, variantId = null) {
+window.addToCartAJAX = function (productId, quantity = 1, variantId = null, callerBtn = null) {
     const formData = new FormData();
     formData.append('quantity', quantity);
     formData.append('csrf_token', document.querySelector('meta[name="csrf-token"]').content);
     if (variantId) formData.append('variant_id', variantId);
+
+    // Button loading state
+    const btn = callerBtn;
+    const originalHtml = btn ? btn.innerHTML : null;
+    if (btn) {
+        btn.classList.add('btn-atc-loading');
+        btn.innerHTML = '<span class="atc-spinner" style="display:inline-block"></span> Duke shtuar...';
+    }
 
     fetch(`/cart/add/${productId}`, {
         method: 'POST',
@@ -1477,11 +1504,37 @@ window.addToCartAJAX = function (productId, quantity = 1, variantId = null) {
                         currency: 'EUR'
                     });
                 }
+
+                // Success button state
+                if (btn) {
+                    btn.classList.remove('btn-atc-loading');
+                    btn.classList.add('btn-atc-success');
+                    btn.innerHTML = '<i class="fas fa-check"></i> U shtua!';
+                    setTimeout(() => {
+                        btn.classList.remove('btn-atc-success');
+                        btn.innerHTML = originalHtml;
+                    }, 1800);
+                }
+
+                window.showToast('Produkti u shtua në shportë!', 'success');
+                window.animateCartBadges();
                 refreshMiniCart();
                 showMiniCart();
+            } else {
+                if (btn) {
+                    btn.classList.remove('btn-atc-loading');
+                    btn.innerHTML = originalHtml;
+                }
+                window.showToast(data.message || 'Ndodhi një gabim. Provo sërish.', 'error');
             }
         })
-        .catch(err => console.error('Error adding to cart:', err));
+        .catch(() => {
+            if (btn) {
+                btn.classList.remove('btn-atc-loading');
+                btn.innerHTML = originalHtml;
+            }
+            window.showToast('Problem me lidhjen. Kontrollo internetin dhe provo sërish.', 'error');
+        });
 };
 
 window.buyNow = function (productId, quantity = 1, variantId = null) {
@@ -1510,7 +1563,7 @@ window.buyNow = function (productId, quantity = 1, variantId = null) {
                 window.location.href = '/cart/checkout';
             }
         })
-        .catch(err => console.error('Error in Buy Now:', err));
+        .catch(() => window.showToast('Problem me lidhjen. Kontrollo internetin dhe provo sërish.', 'error'));
 };
 
 window.toggleMiniCart = function (e) {
@@ -1538,7 +1591,7 @@ window.showMiniCart = function () {
     }
 };
 
-window.updateGlobalBadges = function (data) {
+window.updateGlobalBadges = function (data, animate = false) {
     if (!data) return;
 
     // 1. Update Cart Badges
@@ -1640,6 +1693,30 @@ window.refreshMiniCart = function () {
                     </div>`;
                     });
                     desktopContainer.innerHTML = html;
+                }
+            }
+
+            // Update Free Shipping Bar
+            const shippingBar = document.getElementById('mini-cart-shipping-bar');
+            const FREE_THRESHOLD = 50;
+            if (data.total_price !== undefined) {
+                const total = parseFloat(data.total_price);
+                const footer = document.querySelector('.mini-cart-footer');
+                if (footer) {
+                    let bar = document.getElementById('mini-cart-shipping-bar');
+                    if (total < FREE_THRESHOLD) {
+                        const remaining = (FREE_THRESHOLD - total).toFixed(2);
+                        const pct = Math.min(Math.round((total / FREE_THRESHOLD) * 100), 100);
+                        if (!bar) {
+                            bar = document.createElement('div');
+                            bar.id = 'mini-cart-shipping-bar';
+                            bar.className = 'free-shipping-bar';
+                            footer.insertBefore(bar, footer.firstChild);
+                        }
+                        bar.innerHTML = `<span>Shto edhe <strong>€${remaining}</strong> për dërgim falas!</span><div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div>`;
+                    } else if (bar) {
+                        bar.innerHTML = `<span style="color:#166534"><i class="fas fa-check-circle"></i> <strong>Keni fituar dërgim falas!</strong></span><div class="bar-track"><div class="bar-fill" style="width:100%"></div></div>`;
+                    }
                 }
             }
 
@@ -1942,8 +2019,13 @@ window.confirmDelete = function (formElement) {
 };
 
 window.showToast = function (message, type = 'success') {
-    const container = document.getElementById('toast-container');
-    if (!container) return;
+    let container = document.getElementById('toast-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'toast-container';
+        container.className = 'toast-container';
+        document.body.appendChild(container);
+    }
 
     const toast = document.createElement('div');
     toast.className = `toast toast-v4 toast-${type}`;

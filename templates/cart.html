@@ -223,8 +223,26 @@
         </div>
 
         <div class="cart-summary-sidebar">
-            <div class="summary-card">
+            <div class="summary-card" style="position: sticky; top: 100px;">
                 <h3 class="summary-title">Përmbledhja e Porosisë</h3>
+
+                <!-- Free Shipping Progress Bar -->
+                {% if total_price < 50 %}
+                <div class="free-shipping-bar cart-page-shipping-bar" style="margin-bottom: 1.25rem;">
+                    <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+                        <span>Dërgim falas nga <strong>€50</strong></span>
+                        <span style="font-weight:700; color: var(--primary);">€{{ "%.2f"|format(50 - total_price) }} mungon</span>
+                    </div>
+                    <div class="bar-track">
+                        <div class="bar-fill" style="width: {{ [((total_price / 50) * 100)|int, 100]|min }}%"></div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="free-shipping-bar cart-page-shipping-bar" style="margin-bottom: 1.25rem;">
+                    <span style="color: #166534;"><i class="fas fa-check-circle" style="margin-right:0.4rem;"></i><strong>Keni fituar dërgim falas!</strong></span>
+                    <div class="bar-track" style="margin-top:0.4rem;"><div class="bar-fill" style="width:100%"></div></div>
+                </div>
+                {% endif %}
 
                 <div class="summary-row">
                     <span>Nëntotali:</span>
@@ -255,19 +273,53 @@
                     <a href="{{ url_for('cart.checkout') }}" class="btn btn-primary btn-block checkout-btn">
                         PROÇEDO ME POROSINË <i class="fas fa-arrow-right"></i>
                     </a>
+                    <!-- Trust micro-signals -->
+                    <div style="display:flex; justify-content:center; gap:1.2rem; margin-top:0.9rem; flex-wrap:wrap;">
+                        <span style="font-size:0.75rem; color:#64748b; display:flex; align-items:center; gap:0.3rem;"><i class="fas fa-lock" style="color:#10b981;"></i> Pagesë e Sigurt</span>
+                        <span style="font-size:0.75rem; color:#64748b; display:flex; align-items:center; gap:0.3rem;"><i class="fas fa-undo" style="color:#10b981;"></i> Kthim Falas</span>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
+
+    <!-- Sticky Mobile Checkout Bar -->
+    <div class="sticky-checkout-bar" id="stickyCheckoutBar">
+        <div class="sticky-checkout-inner">
+            <div>
+                <span class="sticky-total-label">Gjithsej</span>
+                <span class="sticky-total-amount">€{{ "%.2f"|format(grand_total) }}</span>
+            </div>
+            <a href="{{ url_for('cart.checkout') }}" class="btn btn-primary sticky-checkout-btn">
+                Proçedo <i class="fas fa-arrow-right"></i>
+            </a>
+        </div>
+    </div>
     {% else %}
-    <div class="empty-cart-state">
-        <div class="icon-circle">
+    <div class="empty-cart-state" style="padding: 3rem 1.5rem; text-align: center; max-width: 480px; margin: 0 auto;">
+        <div class="icon-circle" style="margin-bottom: 1.5rem;">
             <i class="fas fa-shopping-basket"></i>
         </div>
-        <h2>Shporta juaj është e zbrazët</h2>
-        <p>Duket se nuk keni shtuar asgjë në shportën tuaj ende.</p>
-        <a href="{{ url_for('main.products') }}" class="btn btn-primary">
-            Fillo Blerjen
+        <h2 style="font-size: 1.5rem; font-weight: 800; margin-bottom: 0.5rem;">Shporta juaj është e zbrazët</h2>
+        <p style="color: #64748b; margin-bottom: 2rem;">Zbuloni produktet tona dhe filloni blerjen tuaj.</p>
+
+        <div style="display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 2rem; text-align: left; background: #f8fafc; border-radius: 12px; padding: 1rem 1.25rem;">
+            <div style="display: flex; align-items: center; gap: 0.75rem; font-size: 0.88rem; color: #475569;">
+                <i class="fas fa-truck" style="color: #10b981; width: 18px;"></i>
+                <span>Dërgim falas për porosi mbi <strong>€50</strong></span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.75rem; font-size: 0.88rem; color: #475569;">
+                <i class="fas fa-shield-alt" style="color: #10b981; width: 18px;"></i>
+                <span>Pagesë 100% e sigurt</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.75rem; font-size: 0.88rem; color: #475569;">
+                <i class="fas fa-undo" style="color: #10b981; width: 18px;"></i>
+                <span>Kthim i lehtë dhe falas</span>
+            </div>
+        </div>
+
+        <a href="{{ url_for('main.products') }}" class="btn btn-primary" style="padding: 0.85rem 2.5rem; font-size: 1rem; font-weight: 700; border-radius: 12px;">
+            <i class="fas fa-shopping-bag" style="margin-right: 0.5rem;"></i> Fillo Blerjen
         </a>
     </div>
     {% endif %}

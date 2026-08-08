@@ -14,8 +14,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://cdnjs.cloudflare.com">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css', v=7) }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/mobile.css', v=7) }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css', v=8) }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/mobile.css', v=8) }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/chatbot-new.css', v=2) }}">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&family=Cormorant+Garamond:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <!-- Font Awesome: load asynchronously to avoid render-blocking -->
@@ -23,7 +23,7 @@
     <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"></noscript>
     <!-- SweetAlert2: deferred so it never blocks first paint -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11" defer></script>
-    <script src="{{ url_for('static', filename='js/main.js') }}" defer></script>
+    <script src="{{ url_for('static', filename='js/main.js', v=8) }}" defer></script>
 
     {% if meta_pixel_id %}
     <!-- Meta Pixel bootstrap — gated on marketing consent (cookie_consent_v2) -->
@@ -224,6 +224,12 @@
                         </div>
 
                         <div class="mini-cart-footer">
+                            {% if cart_total < 50 %}
+                            <div class="free-shipping-bar" id="mini-cart-shipping-bar">
+                                <span>Shto edhe <strong>€{{ "%.2f"|format(50 - cart_total) }}</strong> për dërgim falas!</span>
+                                <div class="bar-track"><div class="bar-fill" style="width: {{ [((cart_total / 50) * 100)|int, 100]|min }}%"></div></div>
+                            </div>
+                            {% endif %}
                             <a href="{{ url_for('cart.view_cart') }}" class="btn-go-to-cart">
                                 SHKO NË SHPORTË ({{ "%.2f"|format(cart_total) }} €)
                             </a>
@@ -517,7 +523,7 @@
                     <h3>Kontakt</h3>
                     <ul class="footer-contact-list">
                         <li><i class="fas fa-map-marker-alt"></i><span>72 Eqrem Çabej, Prishtinë 10000</span></li>
-                        <li><i class="fas fa-phone"></i><a href="tel:+38345559911">+383 045 559 911</a></li>
+                        <li><i class="fas fa-phone"></i><a href="tel:+38345590455">+383 45 590 455</a></li>
                         <li><i class="fas fa-envelope"></i><a href="mailto:meldpharm@hotmail.com">meldpharm@hotmail.com</a></li>
                     </ul>
                     <div class="footer-socials">

@@ -199,7 +199,7 @@
                                 </thead>
                                 <tbody id="productsTableBody">
                                     {% for p in all_products %}
-                                    <tr class="v4-row" data-brand="{{ p.brand|lower|e }}"
+                                    <tr class="v4-row" data-brand="{{ (p.brand or '')|trim|lower|e }}"
                                         data-category="{{ p.category|lower|e }}"
                                         data-subcategory="{{ p.subcategory|lower|e }}" data-name="{{ p.name|lower|e }}"
                                         data-offer="{{ p.offer_name|lower|e if p.offer_name else '' }}">
@@ -248,12 +248,14 @@
 
     <style>
         :root {
-            --v4-primary: #059669;
-            --v4-bg: #f8fafc;
+            --v4-primary: #4F5D4E;
+            --v4-primary-dark: #3d4a3c;
+            --v4-bg: #F7F3EE;
             --v4-card: #ffffff;
-            --v4-text: #1e293b;
-            --v4-text-muted: #64748b;
-            --v4-border: #e2e8f0;
+            --v4-text: #2B2B2B;
+            --v4-text-muted: #7A7068;
+            --v4-border: #E8E2DA;
+            --v4-amber: #f59e0b;
         }
 
         .admin-page-container {
@@ -316,7 +318,7 @@
         }
 
         .offer-pill-v4 {
-            background: #f8fafc;
+            background: var(--v4-bg);
             border: 1px solid var(--v4-border);
             padding: 0.75rem 1.25rem;
             border-radius: 100px;
@@ -329,7 +331,7 @@
 
         .offer-pill-v4:hover {
             border-color: var(--v4-primary);
-            background: #f0fdf4;
+            background: #EFE7DE;
             transform: translateY(-2px);
         }
 
@@ -389,9 +391,9 @@
         }
 
         .admin-nav-item.active {
-            background: #059669;
+            background: var(--v4-primary);
             color: white !important;
-            box-shadow: 0 8px 20px rgba(5, 150, 105, 0.25);
+            box-shadow: 0 8px 20px rgba(79, 93, 78, 0.25);
         }
 
         /* Offer Settings (Sticky Bar) */
@@ -431,7 +433,7 @@
         .btn-apply-v4 {
             background: var(--v4-primary);
             color: white;
-            box-shadow: 0 8px 20px rgba(5, 150, 105, 0.2);
+            box-shadow: 0 8px 20px rgba(79, 93, 78, 0.2);
         }
 
         .btn-remove-v4 {
@@ -470,7 +472,7 @@
         .input-wrapper-v4 input {
             width: 100%;
             padding: 1rem 1.25rem;
-            background: #f1f5f9;
+            background: #F7F3EE;
             border: 2px solid transparent;
             border-radius: 12px;
             font-size: 1.1rem;
@@ -481,7 +483,7 @@
         .input-wrapper-v4 input:focus {
             background: white;
             border-color: var(--v4-primary);
-            box-shadow: 0 0 0 4px rgba(5, 150, 105, 0.1);
+            box-shadow: 0 0 0 4px rgba(79, 93, 78, 0.1);
             outline: none;
         }
 
@@ -505,12 +507,12 @@
             align-items: center;
             gap: 1rem;
             transition: all 0.3s;
-            box-shadow: 0 8px 20px rgba(5, 150, 105, 0.2);
+            box-shadow: 0 8px 20px rgba(79, 93, 78, 0.2);
         }
 
         .btn-apply-v4:hover {
             transform: translateY(-2px);
-            box-shadow: 0 12px 25px rgba(5, 150, 105, 0.3);
+            box-shadow: 0 12px 25px rgba(79, 93, 78, 0.3);
             filter: brightness(1.1);
         }
 
@@ -527,14 +529,14 @@
             align-items: center;
             gap: 0.6rem;
             transition: all 0.3s;
-            box-shadow: 0 4px 12px rgba(5, 150, 105, 0.2);
+            box-shadow: 0 4px 12px rgba(79, 93, 78, 0.2);
             flex-shrink: 0;
         }
 
         .btn-apply-v4-small:hover {
             transform: translateY(-2px);
             filter: brightness(1.1);
-            box-shadow: 0 8px 20px rgba(5, 150, 105, 0.3);
+            box-shadow: 0 8px 20px rgba(79, 93, 78, 0.3);
         }
 
         .selection-controls {
@@ -580,8 +582,8 @@
             width: 100%;
             padding: 0.7rem 1rem;
             /* Smaller as requested */
-            background: #f8fafc;
-            border: 2px solid #eef2f6;
+            background: var(--v4-bg);
+            border: 2px solid var(--v4-border);
             border-radius: 10px;
             font-weight: 700;
             font-size: 0.9rem;
@@ -623,31 +625,31 @@
         .search-box-v4 input {
             width: 100%;
             padding: 0.85rem 1rem 0.85rem 2.5rem;
-            background: #f8fafc;
-            border: 2px solid #eef2f6;
+            background: var(--v4-bg);
+            border: 2px solid var(--v4-border);
             border-radius: 10px;
             font-weight: 500;
         }
 
         .v4-offer-label {
-            background: #ecfdf5;
-            color: #059669;
+            background: #EFE7DE;
+            color: var(--v4-primary);
             padding: 0.25rem 0.75rem;
             border-radius: 20px;
             font-size: 0.8rem;
             font-weight: 700;
-            border: 1px solid #d1fae5;
+            border: 1px solid #d5ccc4;
             display: inline-flex;
             align-items: center;
             gap: 0.4rem;
         }
 
         .selection-summary-card {
-            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+            background: linear-gradient(135deg, var(--v4-primary) 0%, var(--v4-primary-dark) 100%);
             padding: 2rem;
             border-radius: 1.5rem;
             color: white;
-            box-shadow: 0 10px 20px rgba(5, 150, 105, 0.1);
+            box-shadow: 0 10px 20px rgba(79, 93, 78, 0.1);
         }
 
         .summary-stat {
@@ -724,7 +726,7 @@
         }
 
         .v4-row:hover {
-            background: #f8fafc;
+            background: var(--v4-bg);
         }
 
         .v4-row td {
@@ -744,7 +746,7 @@
             height: 50px;
             border-radius: 8px;
             object-fit: contain;
-            background: #f8fafc;
+            background: var(--v4-bg);
             border: 1px solid #eef2f6;
         }
 
@@ -780,7 +782,7 @@
         .v4-cat-badge {
             display: inline-block;
             padding: 0.25rem 0.6rem;
-            background: #f1f5f9;
+            background: #F7F3EE;
             border-radius: 6px;
             font-size: 0.75rem;
             font-weight: 700;
@@ -807,7 +809,7 @@
 
         .btn-new-offer:hover {
             transform: scale(1.05);
-            box-shadow: 0 4px 15px rgba(5, 150, 105, 0.3);
+            box-shadow: 0 4px 15px rgba(79, 93, 78, 0.3);
         }
 
         .pill-actions {
@@ -1214,7 +1216,7 @@
                         const terms = searchVal.split(' ').filter(t => t);
                         matchesSearch = terms.every(t => name.includes(t) || brand.includes(t));
                     }
-                    const matchesBrand = brandVal === 'all' || brand === brandVal;
+                    const matchesBrand = brandVal === 'all' || brand.trim() === brandVal.trim();
                     const matchesCat = catVal === 'all' || category === catVal;
                     const matchesSub = subVal === 'all' || subcategory === subVal;
                     const matchesOffer = offerVal === 'all' || offer === offerVal;
@@ -1384,7 +1386,7 @@
                     if (cb) {
                         if (rowOffer === name.toLowerCase()) {
                             cb.checked = true;
-                            row.style.background = '#f0fdf4';
+                            row.style.background = '#EFE7DE';
                         } else {
                             cb.checked = false;
                             row.style.background = '';

@@ -380,20 +380,21 @@
 }
 .hp-card:hover .hp-card-img img { transform: scale(1.04); }
 .hp-card-badge {
-    position: absolute; top: 9px; left: 9px;
     background: #C0392B; color: #fff;
     font-family: 'Inter', sans-serif;
     font-size: 0.6rem; font-weight: 700;
-    padding: 3px 8px; border-radius: 5px; z-index: 2;
+    padding: 3px 8px; border-radius: 5px;
     text-transform: uppercase; letter-spacing: 0.06em;
+    position: static;
+    display: inline-block;
+    white-space: nowrap;
 }
-/* Badge stacking — keep the best-seller ribbon from overlapping the offer badge */
-.hp-card-img .best-seller-badge {
+.hp-card-img .badge-stack {
     top: 9px;
     left: 9px;
 }
-.hp-card-badge + .best-seller-badge {
-    top: 33px;
+.hp-card-img .badge-stack .best-seller-badge {
+    position: static;
 }
 .hp-card-fav {
     position: absolute; top: 9px; right: 9px;

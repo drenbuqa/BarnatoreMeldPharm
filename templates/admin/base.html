@@ -13,10 +13,13 @@
 
     <!-- LEFT SIDEBAR -->
     <aside class="admin-sidebar" id="adminSidebar">
-        <div class="sidebar-brand">
-            <i class="fas fa-plus-square sidebar-brand-icon"></i>
-            <span class="sidebar-brand-text">Meld Pharm Admin</span>
-        </div>
+        <a href="{{ url_for('admin.dashboard') }}" class="sidebar-brand">
+            <div class="sidebar-brand-icon"><i class="fas fa-plus"></i></div>
+            <div class="sidebar-brand-text">
+                <strong>Meld Pharm</strong>
+                <span>Admin Panel</span>
+            </div>
+        </a>
 
         <nav class="sidebar-nav">
             <a href="{{ url_for('admin.dashboard') }}"

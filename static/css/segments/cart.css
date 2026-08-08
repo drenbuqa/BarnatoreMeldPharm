@@ -1147,3 +1147,77 @@ button.hover-underline:hover {
     }
 }
 
+
+/* ── Sticky Mobile Checkout Bar ──────────────────────────────────── */
+.sticky-checkout-bar {
+    display: none;
+}
+
+@media (max-width: 992px) {
+    .sticky-checkout-bar {
+        display: block;
+        position: fixed;
+        bottom: 65px; /* above mobile bottom nav */
+        left: 0;
+        right: 0;
+        z-index: 900;
+        background: white;
+        border-top: 1px solid #e2e8f0;
+        box-shadow: 0 -4px 16px rgba(0,0,0,0.1);
+        padding: 0.75rem 1rem;
+    }
+
+    .sticky-checkout-inner {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        max-width: 600px;
+        margin: 0 auto;
+    }
+
+    .sticky-total-label {
+        display: block;
+        font-size: 0.72rem;
+        color: #64748b;
+        font-weight: 500;
+        line-height: 1;
+        margin-bottom: 0.15rem;
+    }
+
+    .sticky-total-amount {
+        display: block;
+        font-size: 1.15rem;
+        font-weight: 800;
+        color: #1e293b;
+        line-height: 1;
+    }
+
+    .sticky-checkout-btn {
+        flex-shrink: 0;
+        padding: 0.65rem 1.5rem !important;
+        font-size: 0.9rem !important;
+        font-weight: 700 !important;
+        border-radius: 10px !important;
+        white-space: nowrap;
+    }
+
+    /* Add bottom padding to cart page so sticky bar doesn't cover last item */
+    .mobile-cart-page-wrapper {
+        padding-bottom: 7rem !important;
+    }
+
+    /* Hide the desktop summary sidebar checkout btn on mobile — sticky bar replaces it */
+    .cart-summary-sidebar .summary-actions .checkout-btn {
+        display: none;
+    }
+
+    .cart-summary-sidebar .summary-card {
+        position: static !important;
+    }
+}
+
+/* ── Cart Page Free Shipping Bar override ─────────────────────────── */
+.cart-page-shipping-bar {
+    font-size: 0.82rem;
+}

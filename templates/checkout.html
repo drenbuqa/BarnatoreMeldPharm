@@ -366,7 +366,7 @@
 
         if (show) {
             container.style.display = 'block';
-            btn.disabled = true; // Disable until we actually implement Stripe
+            btn.disabled = true;
             btn.textContent = "Së Shpejti...";
         } else {
             container.style.display = 'none';
@@ -374,6 +374,108 @@
             btn.textContent = "Konfirmo Porosinë";
         }
     }
+
+    // ── Inline Form Validation ────────────────────────────────────────────
+    (function () {
+        const RULES = {
+            fullname: {
+                test: v => v.trim().split(/\s+/).length >= 2 && v.trim().length >= 4,
+                msg: 'Ju lutem shkruani emrin dhe mbiemrin tuaj.'
+            },
+            email: {
+                test: v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim()),
+                msg: 'Adresa e emailit nuk është e vlefshme.'
+            },
+            phone: {
+                test: v => /^[+\d\s\-()]{7,}$/.test(v.trim()),
+                msg: 'Numri i telefonit duhet të ketë të paktën 7 shifra.'
+            },
+            address: {
+                test: v => v.trim().length >= 5,
+                msg: 'Adresa duhet të ketë të paktën 5 karaktere.'
+            },
+            city: {
+                test: v => v.trim().length >= 2,
+                msg: 'Ju lutem shkruani qytetin.'
+            }
+        };
+
+        function getErrorEl(input) {
+            let err = input.parentElement.querySelector('.field-error');
+            if (!err) {
+                err = document.createElement('span');
+                err.className = 'field-error';
+                err.style.cssText = 'display:block; color:#ef4444; font-size:0.78rem; margin-top:0.3rem; font-weight:500;';
+                input.parentElement.appendChild(err);
+            }
+            return err;
+        }
+
+        function validateField(input) {
+            const rule = RULES[input.id];
+            if (!rule) return true;
+
+            // Skip if field's section is hidden (pickup mode)
+            if (input.closest('#address-fields-container') &&
+                input.closest('#address-fields-container').style.display === 'none') {
+                return true;
+            }
+
+            const err = getErrorEl(input);
+            const valid = rule.test(input.value);
+
+            if (!valid) {
+                input.style.borderColor = '#ef4444';
+                input.style.boxShadow = '0 0 0 3px rgba(239,68,68,0.12)';
+                err.textContent = rule.msg;
+            } else {
+                input.style.borderColor = '#10b981';
+                input.style.boxShadow = '0 0 0 3px rgba(16,185,129,0.12)';
+                err.textContent = '';
+            }
+            return valid;
+        }
+
+        function resetField(input) {
+            input.style.borderColor = '';
+            input.style.boxShadow = '';
+            const err = input.parentElement.querySelector('.field-error');
+            if (err) err.textContent = '';
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const form = document.getElementById('checkout-form');
+            if (!form) return;
+
+            Object.keys(RULES).forEach(id => {
+                const input = document.getElementById(id);
+                if (!input) return;
+                input.addEventListener('blur', () => validateField(input));
+                input.addEventListener('input', () => {
+                    if (input.style.borderColor === 'rgb(239, 68, 68)') {
+                        validateField(input);
+                    } else {
+                        resetField(input);
+                    }
+                });
+            });
+
+            form.addEventListener('submit', function (e) {
+                let allValid = true;
+                Object.keys(RULES).forEach(id => {
+                    const input = document.getElementById(id);
+                    if (!input) return;
+                    if (!validateField(input)) allValid = false;
+                });
+                if (!allValid) {
+                    e.preventDefault();
+                    // Scroll to first error
+                    const firstErr = form.querySelector('[style*="border-color: rgb(239"]');
+                    if (firstErr) firstErr.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            });
+        });
+    })();
 </script>
 {% endblock %}
 

@@ -143,14 +143,16 @@
         {% for product in featured_products %}
         <div class="hp-card" data-href="{{ url_for('main.product_detail', product_id=product._id) }}" onclick="window.location.href=this.dataset.href">
           <div class="hp-card-img">
-            {% if product.offer_type == 'multi_buy' %}
-              <span class="hp-card-badge">{{ product.offer_badge_text or '1+1' }}</span>
-            {% elif product.discount_price %}
-              <span class="hp-card-badge">Ofertë Speciale</span>
-            {% endif %}
-            {% if product.is_best_seller %}
-              <div class="best-seller-badge">Më i Shituri</div>
-            {% endif %}
+            <div class="badge-stack">
+              {% if product.offer_type == 'multi_buy' %}
+                <span class="hp-card-badge">{{ product.offer_badge_text or '1+1' }}</span>
+              {% elif product.discount_price %}
+                <span class="hp-card-badge">Ofertë Speciale</span>
+              {% endif %}
+              {% if product.is_best_seller %}
+                <div class="best-seller-badge">Më i Shituri</div>
+              {% endif %}
+            </div>
             <img src="{{ product.image_url|cld(400) }}" alt="{{ product.name }}" loading="lazy">
             {% if product.in_stock == False %}
               <div class="hp-out-stock"><span>Jashtë Stokut</span></div>
@@ -351,14 +353,16 @@
       {% for product in regular_products[:24] %}
       <div class="product-card fade-in-section" data-id="{{ product._id }}" data-category="{{ product.category }}">
         <div class="product-image">
-          {% if product.offer_type == 'multi_buy' %}
-            <div class="special-offer-badge red-badge">{{ product.offer_badge_text or '1+1' }}</div>
-          {% elif product.discount_price %}
-            <div class="special-offer-badge red-badge">Ofertë Speciale</div>
-          {% endif %}
-          {% if product.is_best_seller %}
-            <div class="best-seller-badge">Më i Shituri</div>
-          {% endif %}
+          <div class="badge-stack">
+            {% if product.offer_type == 'multi_buy' %}
+              <div class="special-offer-badge red-badge">{{ product.offer_badge_text or '1+1' }}</div>
+            {% elif product.discount_price %}
+              <div class="special-offer-badge red-badge">Ofertë Speciale</div>
+            {% endif %}
+            {% if product.is_best_seller %}
+              <div class="best-seller-badge">Më i Shituri</div>
+            {% endif %}
+          </div>
           <img src="{{ product.image_url|cld(400) }}" alt="{{ product.name }}" loading="lazy">
           <button class="btn-favorite {{ 'active' if (current_user.is_authenticated and product.favorites and current_user.id in product.favorites) or (not current_user.is_authenticated and product._id|string in session.get('liked_products', [])) else '' }}"
               onclick="toggleFavorite(this, '{{ product._id }}')">

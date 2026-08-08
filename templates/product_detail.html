@@ -285,6 +285,14 @@
                 </div>
             </div>
 
+            <!-- Trust Signals -->
+            <div class="trust-signals">
+                <span class="trust-chip"><i class="fas fa-shield-alt"></i> Pagesë e Sigurt</span>
+                <span class="trust-chip"><i class="fas fa-truck"></i> Dërgim i Shpejtë</span>
+                <span class="trust-chip"><i class="fas fa-undo"></i> Kthim Falas</span>
+                <span class="trust-chip"><i class="fas fa-phone"></i> Mbështetje 24/7</span>
+            </div>
+
             <form id="addToCartForm" action="{{ url_for('cart.add_to_cart', product_id=product._id) }}" method="POST"
                 style="display: none;">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
@@ -535,7 +543,7 @@
 
         const container = btn.closest('.desktop-action-container') || btn.closest('.mobile-action-bar');
         const qty = container.querySelector('.qty-input').value;
-        window.addToCartAJAX(productId, qty, variantId);
+        window.addToCartAJAX(productId, qty, variantId, btn);
     }
 
     function buyNowWithQty(productId, btn) {
@@ -693,15 +701,17 @@
             <div class="product-card">
                 <div class="product-image">
                     <img src="{{ related.image_url|cld(300) }}" alt="{{ related.name }}">
-                    {% if related.discount_price %}
-                    <div class="special-offer-badge red-badge">Oferta Speciale</div>
-                    {% endif %}
-                    {% if related.is_best_seller %}
-                    <div class="best-seller-badge">Më i Shituri</div>
-                    {% endif %}
-                    {% if related.is_pharmacist_choice %}
-                    <div class="pharmacist-badge"><i class="fas fa-user-md"></i> Farmacisti</div>
-                    {% endif %}
+                    <div class="badge-stack">
+                      {% if related.discount_price %}
+                      <div class="special-offer-badge red-badge">Oferta Speciale</div>
+                      {% endif %}
+                      {% if related.is_best_seller %}
+                      <div class="best-seller-badge">Më i Shituri</div>
+                      {% endif %}
+                      {% if related.is_pharmacist_choice %}
+                      <div class="pharmacist-badge"><i class="fas fa-user-md"></i> Farmacisti</div>
+                      {% endif %}
+                    </div>
 
                     {% if related.in_stock == False %}
                     <div class="out-of-stock-overlay">

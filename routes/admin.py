@@ -16,7 +16,8 @@ from models.email_utils import (
 )
 from models.categories import CATEGORIES
 from functools import wraps
-from datetime import datetime
+from datetime import datetime, timedelta
+import calendar as _calendar
 import json, uuid
 
 admin = Blueprint('admin', __name__, url_prefix='/admin')
@@ -116,9 +117,13 @@ def orders():
 @login_required
 @admin_required
 def update_order_status(order_id):
+    is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
     new_status = request.form.get('status')
     tracking_number = (request.form.get('tracking_number') or '').strip() or None
     if not new_status:
+        if is_ajax:
+            from flask import jsonify
+            return jsonify({'ok': False, 'error': 'No status provided'}), 400
         return redirect(url_for('admin.orders'))
 
     existing_order = Order.get_by_id(order_id)
@@ -133,21 +138,25 @@ def update_order_status(order_id):
     from bson import ObjectId as _ObjId
     mongo.db.orders.update_one({'_id': _ObjId(order_id)}, {'$set': update_fields})
 
+    msg = f'Statusi u ndryshua në {new_status}.'
     if new_status in ('Konfirmuar', 'Confirmed', 'Pranuar') and old_status not in ('Konfirmuar', 'Confirmed', 'Pranuar'):
         send_email_in_background(send_order_confirmation_email, order_id)
-        flash('Porosia u konfirmua dhe emaili po dërgohet te klienti.', 'success')
+        msg = 'Porosia u konfirmua dhe emaili po dërgohet te klienti.'
     elif new_status in ('Delivering', 'Në Dërgesë') and old_status not in ('Delivering', 'Në Dërgesë'):
         send_email_in_background(send_order_shipped_email, order_id, tracking_number=tracking_number)
-        flash('Statusi u ndryshua dhe emaili i dërgesës po dërgohet.', 'success')
+        msg = 'Statusi u ndryshua dhe emaili i dërgesës po dërgohet.'
     elif new_status in ('Delivered', 'Dorezuar') and old_status not in ('Delivered', 'Dorezuar'):
         send_email_in_background(send_order_delivered_email, order_id)
-        flash('Statusi u ndryshua dhe emaili i dorëzimit po dërgohet.', 'success')
+        msg = 'Statusi u ndryshua dhe emaili i dorëzimit po dërgohet.'
     elif new_status in ('Cancelled', 'Anuluar', 'Refuzuar') and old_status not in ('Cancelled', 'Anuluar', 'Refuzuar'):
         send_email_in_background(send_order_cancelled_email, order_id)
-        flash('Statusi u ndryshua dhe emaili i anulimit po dërgohet.', 'success')
-    else:
-        flash(f'Statusi i porosisë u ndryshua në {new_status}.', 'success')
+        msg = 'Statusi u ndryshua dhe emaili i anulimit po dërgohet.'
 
+    if is_ajax:
+        from flask import jsonify
+        return jsonify({'ok': True, 'message': msg, 'new_status': new_status})
+
+    flash(msg, 'success')
     return redirect(url_for('admin.orders', status=request.args.get('status', '')))
 
 @admin.route('/dashboard')
@@ -156,141 +165,172 @@ def update_order_status(order_id):
 def dashboard():
     # Revert expired offers (throttled — runs at most once every 15 minutes per worker)
     Product.revert_expired_offers()
-    
+
     show_analytics = request.args.get('view') == 'analytics'
-    filter_on_offer = request.args.get('on_offer') == '1'
-    filter_category = request.args.get('category', '').strip()
-    filter_brand    = request.args.get('brand', '').strip()
-    filter_stock    = request.args.get('stock', '')  # 'out' | 'in' | ''
-
-    # Use a lean projection — avoids loading large text fields
-    all_products = Product.get_all_lean()
-
-    # Build distinct category/brand lists for the filter dropdowns
-    all_categories = sorted({str(p.get('category') or '').strip() for p in all_products if p.get('category')})
-    all_brands     = sorted({str(p.get('brand') or '').strip() for p in all_products if p.get('brand')})
-
-    products = all_products
-    if filter_on_offer:
-        products = [p for p in products if p.get('discount_price')]
-    if filter_category:
-        products = [p for p in products if (p.get('category') or '') == filter_category]
-    if filter_brand:
-        products = [p for p in products if (p.get('brand') or '').lower() == filter_brand.lower()]
-    if filter_stock == 'out':
-        products = [p for p in products if not p.get('in_stock')]
-    elif filter_stock == 'in':
-        products = [p for p in products if p.get('in_stock')]
-
-    # --- Analytics: Sales at a Glance ---
-    orders = Order.get_recent(limit=500)
-    
-    def safe_float(val):
-        try:
-            return float(val or 0)
-        except (ValueError, TypeError):
-            return 0.0
-
-    now = datetime.utcnow()
+    now        = datetime.utcnow()
     month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    six_months_ago = now - timedelta(days=186)
 
-    total_revenue    = sum(safe_float(o.get('grand_total')) for o in orders)
-    revenue_month    = sum(safe_float(o.get('grand_total')) for o in orders
-                          if o.get('created_at') and o['created_at'] >= month_start)
-    orders_month     = sum(1 for o in orders if o.get('created_at') and o['created_at'] >= month_start)
+    # ── Products analytics via a single $facet aggregation ────────
+    # Avoids loading 800+ documents into Python just to count/aggregate them.
+    _to_double = {"$convert": {"input": "$grand_total", "to": "double",
+                               "onError": 0, "onNull": 0}}
+    prod_facet = list(mongo.db.products.aggregate([
+        {"$match": {"is_deleted": {"$ne": True}}},
+        {"$facet": {
+            "total_count": [{"$count": "n"}],
+            "out_of_stock": [
+                {"$match": {"in_stock": {"$ne": True}}},
+                {"$limit": 5},
+                {"$project": {"name": 1, "image_url": 1}}
+            ],
+            "active_offers": [
+                {"$match": {"offer_status": "active"}},
+                {"$count": "n"}
+            ],
+            "brand_dist": [
+                {"$match": {"brand": {"$nin": [None, ""]}}},
+                {"$group": {
+                    "_id": {"$toLower": {"$trim": {"input": {"$ifNull": ["$brand", ""]}}}},
+                    "brand": {"$first": "$brand"},
+                    "count": {"$sum": 1}
+                }},
+                {"$sort": {"count": -1}},
+                {"$limit": 6}
+            ],
+            "cat_dist": [
+                {"$match": {"category": {"$nin": [None, ""]}}},
+                {"$group": {"_id": "$category", "count": {"$sum": 1}}},
+                {"$sort": {"count": -1}},
+                {"$limit": 6}
+            ],
+            "most_liked": [
+                {"$project": {
+                    "name": 1, "image_url": 1,
+                    "fav_count": {"$size": {"$ifNull": ["$favorites", []]}}
+                }},
+                {"$sort": {"fav_count": -1}},
+                {"$limit": 5}
+            ]
+        }}
+    ]))
+    pf = prod_facet[0] if prod_facet else {}
 
-    # Monthly trend — last 6 months
-    from collections import defaultdict
-    monthly_revenue = defaultdict(float)
-    monthly_orders  = defaultdict(int)
-    for o in orders:
-        ts = o.get('created_at')
-        if not ts: continue
-        key = ts.strftime('%Y-%m')
-        monthly_revenue[key] += safe_float(o.get('grand_total'))
-        monthly_orders[key]  += 1
-    # Build ordered labels for last 6 months
-    import calendar
-    trend_labels = []
-    trend_revenue = []
-    trend_orders  = []
+    # ── Orders analytics via a single $facet aggregation ──────────
+    ord_facet = list(mongo.db.orders.aggregate([
+        {"$match": {"created_at": {"$gte": six_months_ago}}},
+        {"$facet": {
+            "revenue_total": [
+                {"$group": {"_id": None,
+                            "total": {"$sum": _to_double},
+                            "count": {"$sum": 1}}}
+            ],
+            "revenue_month": [
+                {"$match": {"created_at": {"$gte": month_start}}},
+                {"$group": {"_id": None,
+                            "total": {"$sum": _to_double},
+                            "count": {"$sum": 1}}}
+            ],
+            "monthly_trend": [
+                {"$group": {
+                    "_id": {"y": {"$year": "$created_at"},
+                            "m": {"$month": "$created_at"}},
+                    "revenue": {"$sum": _to_double},
+                    "orders":  {"$sum": 1}
+                }},
+                {"$sort": {"_id.y": 1, "_id.m": 1}}
+            ],
+            "most_ordered": [
+                {"$unwind": "$items"},
+                {"$group": {
+                    "_id": {"$toString": {"$ifNull": ["$items.product_id", "$items._id"]}},
+                    "name":  {"$first": "$items.name"},
+                    "count": {"$sum": {"$convert": {"input": "$items.quantity",
+                                                    "to": "int", "onError": 1, "onNull": 1}}}
+                }},
+                {"$sort": {"count": -1}},
+                {"$limit": 5}
+            ]
+        }}
+    ]))
+    of = ord_facet[0] if ord_facet else {}
+
+    # ── Unpack order aggregation results ──────────────────────────
+    rev_total_doc  = (of.get('revenue_total')  or [{}])[0]
+    rev_month_doc  = (of.get('revenue_month')  or [{}])[0]
+    total_revenue  = round(float(rev_total_doc.get('total') or 0), 2)
+    total_orders   = int(rev_total_doc.get('count') or 0)
+    revenue_month  = round(float(rev_month_doc.get('total') or 0), 2)
+    orders_month   = int(rev_month_doc.get('count') or 0)
+
+    # Monthly trend — exactly the last 6 months
+    monthly_map = {(r['_id']['y'], r['_id']['m']): r
+                   for r in (of.get('monthly_trend') or [])}
+    trend_labels, trend_revenue, trend_orders = [], [], []
     for i in range(5, -1, -1):
         m = (now.month - i - 1) % 12 + 1
         y = now.year - ((now.month - i - 1) // 12)
-        key = f'{y}-{m:02d}'
-        trend_labels.append(calendar.month_abbr[m])
-        trend_revenue.append(round(monthly_revenue.get(key, 0), 2))
-        trend_orders.append(monthly_orders.get(key, 0))
+        row = monthly_map.get((y, m), {})
+        trend_labels.append(_calendar.month_abbr[m])
+        trend_revenue.append(round(float(row.get('revenue') or 0), 2))
+        trend_orders.append(int(row.get('orders') or 0))
+
+    # Most ordered — look up image_url for the top-5 products
+    most_ordered = []
+    mo_items = of.get('most_ordered') or []
+    if mo_items:
+        from bson import ObjectId
+        mo_ids = []
+        for item in mo_items:
+            pid = item.get('_id', '')
+            if pid and ObjectId.is_valid(str(pid)):
+                mo_ids.append(ObjectId(str(pid)))
+        img_map = {}
+        if mo_ids:
+            for p in mongo.db.products.find(
+                    {"_id": {"$in": mo_ids}},
+                    {"image_url": 1}):
+                img_map[str(p['_id'])] = p.get('image_url', '')
+        for item in mo_items:
+            most_ordered.append({
+                'name':        item.get('name', '—'),
+                'image_url':   img_map.get(str(item.get('_id', '')), ''),
+                'order_count': item.get('count', 0),
+            })
 
     analytics = {
-        'total_products': len(all_products),
-        'total_offers': len([p for p in all_products if Product._offer_is_active(p)]),
-        'category_sales': {},
-        'brand_distribution': {},
-        'most_ordered': [],
-        'out_of_stock': [p for p in all_products if not p.get('in_stock')][:5],
-        'most_liked': [],
-        'total_revenue': round(total_revenue, 2),
-        'revenue_month': round(revenue_month, 2),
-        'orders_month': orders_month,
-        'total_orders': len(orders),
-        'trend_labels': trend_labels,
+        'total_products':    (pf.get('total_count')   or [{}])[0].get('n', 0),
+        'total_offers':      (pf.get('active_offers') or [{}])[0].get('n', 0),
+        'out_of_stock':      pf.get('out_of_stock', []),
+        'most_liked':        pf.get('most_liked', []),
+        'brand_distribution': {
+            r['brand'].title(): r['count']
+            for r in (pf.get('brand_dist') or []) if r.get('brand')
+        },
+        'category_sales':   {
+            r['_id'].title(): r['count']
+            for r in (pf.get('cat_dist') or []) if r.get('_id')
+        },
+        'most_ordered':  most_ordered,
+        'total_revenue': total_revenue,
+        'revenue_month': revenue_month,
+        'orders_month':  orders_month,
+        'total_orders':  total_orders,
+        'trend_labels':  trend_labels,
         'trend_revenue': trend_revenue,
-        'trend_orders': trend_orders,
+        'trend_orders':  trend_orders,
     }
 
-    # Helper for normalization
-    brand_counts = {}
-    category_counts = {}
-    for p in all_products:
-        # Category normalization
-        raw_cat = str(p.get('category') or 'Tjera').strip()
-        cat_key = raw_cat.title()
-        category_counts[cat_key] = category_counts.get(cat_key, 0) + 1
-        
-        # Brand normalization
-        raw_brand = str(p.get('brand') or 'Pa Brand').strip()
-        brand_key = raw_brand.title()
-        brand_counts[brand_key] = brand_counts.get(brand_key, 0) + 1
-
-    analytics['brand_distribution'] = dict(sorted(brand_counts.items(), key=lambda x: x[1], reverse=True)[:6])
-    analytics['category_sales'] = dict(sorted(category_counts.items(), key=lambda x: x[1], reverse=True)[:6])
-
-    # Dynamic metrics
-    # 1. Most liked (top 5) - based on length of favorites list
-    analytics['most_liked'] = sorted(all_products, key=lambda x: len(x.get('favorites', [])), reverse=True)[:5]
-    
-    # 2. Most ordered (top 5 from recent orders)
-    product_order_counts = {}
-    for o in orders:
-        items = o.get('items', [])
-        if not isinstance(items, list): continue
-        for item in items:
-            if not isinstance(item, dict): continue
-            try:
-                pid = str(item.get('product_id') or item.get('_id') or 'unknown')
-                product_order_counts[pid] = product_order_counts.get(pid, 0) + int(item.get('quantity', 1))
-            except (ValueError, TypeError):
-                continue
-    
-    # Map IDs back to product names
-    product_map = {str(p['_id']): p for p in all_products}
-    sorted_order_ids = sorted(product_order_counts.items(), key=lambda x: x[1], reverse=True)[:5]
-    for pid, count in sorted_order_ids:
-        if pid in product_map:
-            p_info = product_map[pid].copy()
-            p_info['order_count'] = count
-            analytics['most_ordered'].append(p_info)
-        
-    pending_orders_count = mongo.db.orders.count_documents({'status': {'$in': ['Pending', 'Në Pritje']}})
-    # Recent pending orders for dashboard overview
+    pending_orders_count = mongo.db.orders.count_documents(
+        {'status': {'$in': ['Pending', 'Në Pritje']}})
     recent_pending = list(mongo.db.orders.find(
         {'status': {'$in': ['Pending', 'Në Pritje']}},
         {'fullname': 1, 'city': 1, 'grand_total': 1, 'created_at': 1, 'status': 1}
     ).sort('created_at', -1).limit(6))
-    # Newsletter subscriber count
-    newsletter_count = mongo.db.users.count_documents({'newsletter_subscribed': True}) + \
-                       mongo.db.newsletter_subscribers.count_documents({})
+    newsletter_count = (
+        mongo.db.users.count_documents({'newsletter_subscribed': True})
+        + mongo.db.newsletter_subscribers.count_documents({})
+    )
     return render_template('admin/dashboard.html',
                            analytics=analytics,
                            show_analytics=show_analytics,
@@ -307,23 +347,49 @@ def products_page():
     filter_on_offer = request.args.get('on_offer') == '1'
     filter_stock    = request.args.get('stock', '')
 
-    all_products = Product.get_all_lean()
-    all_categories = sorted({str(p.get('category') or '').strip() for p in all_products if p.get('category')})
-    all_brands     = sorted({str(p.get('brand') or '').strip() for p in all_products if p.get('brand')})
+    lean_proj = {
+        "name": 1, "brand": 1, "category": 1, "subcategory": 1,
+        "price": 1, "discount_price": 1, "offer_name": 1, "offer_type": 1,
+        "in_stock": 1, "image_url": 1, "size": 1, "is_best_seller": 1,
+        "is_pharmacist_choice": 1, "is_deleted": 1,
+    }
 
-    products = all_products
+    # Build filter lists from lightweight distinct aggregations (no full scan)
+    meta = list(mongo.db.products.aggregate([
+        {"$match": {"is_deleted": {"$ne": True}}},
+        {"$facet": {
+            "total": [{"$count": "n"}],
+            "cats":  [{"$match": {"category": {"$nin": [None, ""]}}},
+                      {"$group": {"_id": "$category"}},
+                      {"$sort": {"_id": 1}}],
+            "brands":[{"$match": {"brand": {"$nin": [None, ""]}}},
+                      {"$group": {"_id": "$brand"}},
+                      {"$sort": {"_id": 1}}],
+        }}
+    ]))
+    m = meta[0] if meta else {}
+    all_categories = [r['_id'] for r in m.get('cats', []) if r.get('_id')]
+    all_brands     = [r['_id'] for r in m.get('brands', []) if r.get('_id')]
+    total_count    = (m.get('total') or [{}])[0].get('n', 0)
+
+    # Server-side filtering — only fetch matching products
+    query = {"is_deleted": {"$ne": True}}
     if filter_category:
-        products = [p for p in products if (p.get('category') or '') == filter_category]
+        query["category"] = filter_category
     if filter_brand:
-        products = [p for p in products if (p.get('brand') or '').lower() == filter_brand.lower()]
+        import re
+        query["brand"] = {"$regex": f"^{re.escape(filter_brand)}$", "$options": "i"}
     if filter_on_offer:
-        products = [p for p in products if p.get('discount_price')]
+        query["discount_price"] = {"$nin": [None, ""]}
     if filter_stock == 'out':
-        products = [p for p in products if not p.get('in_stock')]
+        query["in_stock"] = {"$ne": True}
     elif filter_stock == 'in':
-        products = [p for p in products if p.get('in_stock')]
+        query["in_stock"] = True
 
-    pending_orders_count = mongo.db.orders.count_documents({'status': {'$in': ['Pending', 'Në Pritje']}})
+    products = list(mongo.db.products.find(query, lean_proj).sort("_id", -1))
+
+    pending_orders_count = mongo.db.orders.count_documents(
+        {'status': {'$in': ['Pending', 'Në Pritje']}})
     return render_template('admin/products.html',
                            products=products,
                            all_categories=all_categories,
@@ -332,7 +398,7 @@ def products_page():
                            filter_brand=filter_brand,
                            filter_on_offer=filter_on_offer,
                            filter_stock=filter_stock,
-                           total_count=len(all_products),
+                           total_count=total_count,
                            pending_orders_count=pending_orders_count)
 
 
@@ -1251,7 +1317,7 @@ def _build_newsletter_html(template, headline, intro_text, products, base_url):
     footer = f"""
     <div style="background:#f8fafc;padding:20px 40px;text-align:center;border-top:1px solid #e2e8f0;">
       <p style="margin:0 0 6px;font-size:12px;color:#94a3b8;">Barnatore Meld Pharm · 72 Eqrem Çabej, Prishtinë 10000</p>
-      <p style="margin:0;font-size:12px;color:#94a3b8;">+383 045 590455 · <a href="{base_url}" style="color:#0f766e;text-decoration:none;">{base_url.replace('https://','')}</a></p>
+      <p style="margin:0;font-size:12px;color:#94a3b8;">+383 45 590 455 · <a href="{base_url}" style="color:#0f766e;text-decoration:none;">{base_url.replace('https://','')}</a></p>
     </div>
     """
 

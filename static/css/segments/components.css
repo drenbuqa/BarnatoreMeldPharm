@@ -1,3 +1,138 @@
+/* ── Cart Badge Bounce Animation ──────────────────────────────────── */
+@keyframes badge-pop {
+    0%   { transform: scale(1); }
+    40%  { transform: scale(1.5); }
+    70%  { transform: scale(0.9); }
+    100% { transform: scale(1); }
+}
+
+.cart-badge.badge-pop,
+.mobile-cart-badge.badge-pop,
+.cart-count-badge.badge-pop {
+    animation: badge-pop 0.4s cubic-bezier(0.36,0.07,0.19,0.97);
+}
+
+/* ── Cart Icon Wiggle ─────────────────────────────────────────────── */
+@keyframes cart-wiggle {
+    0%,100% { transform: rotate(0deg); }
+    20%     { transform: rotate(-15deg); }
+    40%     { transform: rotate(15deg); }
+    60%     { transform: rotate(-10deg); }
+    80%     { transform: rotate(8deg); }
+}
+
+.cart-icon-wiggle {
+    animation: cart-wiggle 0.5s ease;
+}
+
+/* ── Add to Cart Button States ────────────────────────────────────── */
+.btn-atc-loading {
+    opacity: 0.75 !important;
+    pointer-events: none !important;
+}
+
+.btn-atc-loading i { display: none !important; }
+.btn-atc-loading .atc-spinner { display: inline-block !important; }
+
+.atc-spinner {
+    display: none;
+    width: 16px;
+    height: 16px;
+    border: 2px solid currentColor;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    flex-shrink: 0;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.btn-atc-success {
+    background: #10b981 !important;
+    color: white !important;
+    pointer-events: none !important;
+}
+
+/* ── Free Shipping Progress Bar ───────────────────────────────────── */
+.free-shipping-bar {
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    border-radius: 10px;
+    padding: 0.6rem 0.9rem;
+    margin-bottom: 1rem;
+    font-size: 0.82rem;
+    color: #166534;
+    font-weight: 500;
+}
+
+.free-shipping-bar .bar-track {
+    background: #d1fae5;
+    border-radius: 999px;
+    height: 6px;
+    margin-top: 0.4rem;
+    overflow: hidden;
+}
+
+.free-shipping-bar .bar-fill {
+    background: #10b981;
+    height: 100%;
+    border-radius: 999px;
+    transition: width 0.5s ease;
+}
+
+/* ── Trust Signals Strip ─────────────────────────────────────────── */
+.trust-signals {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin: 0.75rem 0;
+}
+
+.trust-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 999px;
+    padding: 0.3rem 0.7rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #475569;
+}
+
+.trust-chip i {
+    color: #10b981;
+    font-size: 0.7rem;
+}
+
+/* ── Empty State Generic ─────────────────────────────────────────── */
+.empty-state {
+    text-align: center;
+    padding: 3rem 1.5rem;
+}
+
+.empty-state .empty-icon {
+    font-size: 3rem;
+    color: #cbd5e1;
+    margin-bottom: 1rem;
+}
+
+.empty-state h3 {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 0.4rem;
+}
+
+.empty-state p {
+    font-size: 0.9rem;
+    color: #64748b;
+    margin-bottom: 1.5rem;
+}
+
 /* Back Button Standard */
 .btn-back-standard {
     display: inline-flex;
