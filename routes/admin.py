@@ -727,38 +727,86 @@ def bulk_offers():
             start_date = datetime.strptime(discount_from, '%Y-%m-%d') if discount_from else datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
             expiry_date = datetime.strptime(discount_until, '%Y-%m-%d') if discount_until else None
 
+            discount_percent = float(request.form.get('discount_percent', 0)) if offer_type == 'discount' else 0
+            multi_buy_type = request.form.get('multi_buy_type', '1+1') if offer_type == 'multi_buy' else None
+
             for p in products:
+                pid_str = str(p['_id'])
+                excluded_variant_ids = set(request.form.getlist(f'excl_variants_{pid_str}'))
+
                 if action == 'apply':
                     price = float(p.get('price', 0))
-                    if price > 0:
+                    if price <= 0:
+                        continue
+
+                    def _calc_discount(base_price):
+                        if offer_type == 'discount':
+                            return round(base_price * (1 - discount_percent / 100), 2)
+                        elif offer_type == 'multi_buy':
+                            return round(calculate_multi_buy_price(base_price, multi_buy_type), 2)
+                        return None
+
+                    variants = p.get('variants') or []
+                    if variants:
+                        # Update each variant individually
+                        updated_variants = []
+                        all_included = True
+                        for v in variants:
+                            vid = v.get('id', '')
+                            new_v = dict(v)
+                            if vid not in excluded_variant_ids:
+                                vp = float(v.get('price') or price)
+                                new_v['discount_price'] = _calc_discount(vp)
+                            else:
+                                new_v['discount_price'] = None
+                                all_included = False
+                            updated_variants.append(new_v)
+
+                        # Top-level discount only if all variants are on offer
+                        top_discount = _calc_discount(price) if all_included else None
                         update_data = {
+                            "variants": updated_variants,
+                            "discount_price": top_discount,
                             "discount_from": start_date,
                             "discount_until": expiry_date,
-                            "offer_name": offer_name if offer_name else None,
+                            "offer_name": offer_name or None,
                             "offer_type": offer_type,
                             "offer_status": "active",
                             "offer_ended_at": None,
-                            "updated_at": datetime.now()
+                            "multi_buy_type": multi_buy_type,
+                            "updated_at": datetime.now(),
                         }
-                        
-                        if offer_type == 'discount':
-                            discount_percent = float(request.form.get('discount_percent', 0))
-                            discount_price = price * (1 - (discount_percent / 100))
-                            update_data['discount_price'] = round(discount_price, 2)
-                            update_data['multi_buy_type'] = None
-                        elif offer_type == 'multi_buy':
-                            multi_buy_type = request.form.get('multi_buy_type', '1+1')
-                            discount_price = calculate_multi_buy_price(price, multi_buy_type)
-                            update_data['discount_price'] = round(discount_price, 2)
-                            update_data['multi_buy_type'] = multi_buy_type
-                        
-                        mongo.db.products.update_one({"_id": p["_id"]}, {"$set": update_data})
-                        count += 1
-                else: # remove action
-                    mongo.db.products.update_one(
-                        {"_id": p["_id"]}, 
-                        {"$set": {"discount_price": None, "discount_until": None, "offer_status": "expired", "offer_ended_at": datetime.now(), "updated_at": datetime.now()}}
-                    )
+                    else:
+                        update_data = {
+                            "discount_price": _calc_discount(price),
+                            "discount_from": start_date,
+                            "discount_until": expiry_date,
+                            "offer_name": offer_name or None,
+                            "offer_type": offer_type,
+                            "offer_status": "active",
+                            "offer_ended_at": None,
+                            "multi_buy_type": multi_buy_type,
+                            "updated_at": datetime.now(),
+                        }
+
+                    mongo.db.products.update_one({"_id": p["_id"]}, {"$set": update_data})
+                    count += 1
+
+                else:  # remove action
+                    variants = p.get('variants') or []
+                    if variants:
+                        cleared = [{**v, 'discount_price': None} for v in variants]
+                        mongo.db.products.update_one(
+                            {"_id": p["_id"]},
+                            {"$set": {"variants": cleared, "discount_price": None, "discount_until": None,
+                                      "offer_status": "expired", "offer_ended_at": datetime.now(), "updated_at": datetime.now()}}
+                        )
+                    else:
+                        mongo.db.products.update_one(
+                            {"_id": p["_id"]},
+                            {"$set": {"discount_price": None, "discount_until": None,
+                                      "offer_status": "expired", "offer_ended_at": datetime.now(), "updated_at": datetime.now()}}
+                        )
                     count += 1
             
             msg = f'Sukses! Oferta u aplikua për {count} produkte.' if action == 'apply' else f'Sukses! Ofertat u hoqën nga {count} produkte.'
@@ -793,6 +841,7 @@ def bulk_offers():
             "price": 1, "discount_price": 1, "offer_name": 1, "offer_type": 1,
             "offer_status": 1, "multi_buy_type": 1, "discount_until": 1,
             "image_url": 1, "in_stock": 1, "created_at": 1,
+            "variants": 1, "option_groups": 1,
         }
     ).sort("created_at", -1))
     
