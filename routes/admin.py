@@ -1346,6 +1346,8 @@ def newsletter():
 def _build_newsletter_html(template, headline, intro_text, products, base_url,
                            accent_color='#4F5D4E', cta_text='Shiko Të Gjitha Produktet', footer_note=''):
     """Generate a beautiful inline-styled HTML email."""
+    _sans  = "font-family:'DM Sans',Arial,sans-serif"
+    _serif = "font-family:'Playfair Display',Georgia,'Times New Roman',serif"
 
     header = f"""
     <div style="background:{accent_color};height:5px;"></div>
@@ -1360,8 +1362,8 @@ def _build_newsletter_html(template, headline, intro_text, products, base_url,
     if headline or intro_text:
         hero = f"""
         <div style="padding:36px 44px 28px;text-align:center;border-bottom:1px solid #eef0ed;">
-          {'<h1 style="margin:0 0 14px;font-family:\'Playfair Display\',Georgia,\'Times New Roman\',serif;font-size:28px;font-weight:800;color:#1a1f18;line-height:1.2;letter-spacing:-0.3px;">'+headline+'</h1>' if headline else ''}
-          {'<p style="margin:0;font-family:\'DM Sans\',Arial,sans-serif;font-size:15px;font-weight:400;color:#6b7a6e;line-height:1.8;max-width:440px;margin-left:auto;margin-right:auto;">'+intro_text+'</p>' if intro_text else ''}
+          {('<h1 style="margin:0 0 14px;' + _serif + ';font-size:28px;font-weight:800;color:#1a1f18;line-height:1.2;letter-spacing:-0.3px;">' + headline + '</h1>') if headline else ''}
+          {('<p style="margin:0;' + _sans + ';font-size:15px;font-weight:400;color:#6b7a6e;line-height:1.8;max-width:440px;margin-left:auto;margin-right:auto;">' + intro_text + '</p>') if intro_text else ''}
         </div>
         """
 
@@ -1380,7 +1382,7 @@ def _build_newsletter_html(template, headline, intro_text, products, base_url,
     </div>
     """
 
-    footer_extra = f'<p style="margin:8px 0 0;font-family:\'DM Sans\',Arial,sans-serif;font-size:12px;color:#6b7280;font-style:italic;">{footer_note}</p>' if footer_note else ''
+    footer_extra = ('<p style="margin:8px 0 0;' + _sans + ';font-size:12px;color:#6b7280;font-style:italic;">' + footer_note + '</p>') if footer_note else ''
     footer = f"""
     <div style="background:#f8faf7;padding:22px 40px;text-align:center;border-top:1px solid #e8ebe6;">
       <p style="margin:0 0 4px;font-family:'DM Sans',Arial,sans-serif;font-size:11px;font-weight:500;color:#9aa095;letter-spacing:0.2px;">Barnatore Meld Pharm · 72 Eqrem Çabej, Prishtinë 10000</p>
@@ -1405,17 +1407,21 @@ def _build_newsletter_html(template, headline, intro_text, products, base_url,
 </body></html>"""
 
 
+_EMAIL_SANS  = "font-family:'DM Sans',Arial,sans-serif"
+_EMAIL_SERIF = "font-family:'Playfair Display',Georgia,'Times New Roman',serif"
+
+
 def _product_price_html(p, accent_color='#4F5D4E'):
     price = p.get('price', 0)
     disc  = p.get('discount_price')
     if disc:
         pct = round((price - disc) / price * 100) if price else 0
         return (
-            f'<span style="font-family:\'DM Sans\',Arial,sans-serif;font-size:11px;color:#9aa095;text-decoration:line-through;">€{price:.2f}</span> '
-            f'<span style="font-family:\'DM Sans\',Arial,sans-serif;font-size:14px;font-weight:700;color:{accent_color};">€{disc:.2f}</span> '
-            f'<span style="font-family:\'DM Sans\',Arial,sans-serif;background:#fef3c7;color:#92400e;font-size:9px;font-weight:700;padding:2px 6px;border-radius:5px;margin-left:3px;">-{pct}%</span>'
+            f'<span style="{_EMAIL_SANS};font-size:11px;color:#9aa095;text-decoration:line-through;">€{price:.2f}</span> '
+            f'<span style="{_EMAIL_SANS};font-size:14px;font-weight:700;color:{accent_color};">€{disc:.2f}</span> '
+            f'<span style="{_EMAIL_SANS};background:#fef3c7;color:#92400e;font-size:9px;font-weight:700;padding:2px 6px;border-radius:5px;margin-left:3px;">-{pct}%</span>'
         )
-    return f'<span style="font-family:\'DM Sans\',Arial,sans-serif;font-size:14px;font-weight:700;color:#1a1f18;">€{price:.2f}</span>'
+    return f'<span style="{_EMAIL_SANS};font-size:14px;font-weight:700;color:#1a1f18;">€{price:.2f}</span>'
 
 
 def _product_card_grid(p, base_url, accent_color='#4F5D4E', width='45%'):
@@ -1428,10 +1434,10 @@ def _product_card_grid(p, base_url, accent_color='#4F5D4E', width='45%'):
       <a href="{base_url}/product/{pid}" style="text-decoration:none;display:block;background:#fff;border-radius:12px;overflow:hidden;border:1px solid #eef0ed;">
         <img src="{img}" alt="{name}" width="100%" style="display:block;height:180px;object-fit:contain;background:#fff;padding:10px;box-sizing:border-box;">
         <div style="padding:12px 14px 14px;">
-          {f'<div style="font-family:\'DM Sans\',Arial,sans-serif;font-size:9px;font-weight:700;color:#9aa095;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:4px;height:14px;overflow:hidden;">{brand}</div>' if brand else '<div style="height:18px;"></div>'}
-          <div style="font-family:'DM Sans',Arial,sans-serif;font-size:12px;font-weight:500;color:#1a1f18;margin-bottom:7px;line-height:1.45;height:34px;overflow:hidden;">{name}</div>
+          {('<div style="' + _EMAIL_SANS + ';font-size:9px;font-weight:700;color:#9aa095;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:4px;height:14px;overflow:hidden;">' + brand + '</div>') if brand else '<div style="height:18px;"></div>'}
+          <div style="{_EMAIL_SANS};font-size:12px;font-weight:500;color:#1a1f18;margin-bottom:7px;line-height:1.45;height:34px;overflow:hidden;">{name}</div>
           <div style="margin-bottom:9px;height:22px;overflow:hidden;">{_product_price_html(p, accent_color)}</div>
-          <div style="background:{accent_color};color:#fff;text-align:center;padding:7px;border-radius:7px;font-family:'DM Sans',Arial,sans-serif;font-size:10px;font-weight:700;letter-spacing:0.3px;">Shiko Produktin →</div>
+          <div style="background:{accent_color};color:#fff;text-align:center;padding:7px;border-radius:7px;{_EMAIL_SANS};font-size:10px;font-weight:700;letter-spacing:0.3px;">Shiko Produktin →</div>
         </div>
       </a>
     </td>"""
@@ -1470,10 +1476,10 @@ def _products_list(products, base_url, accent_color='#4F5D4E'):
                 <img src="{img}" alt="{name}" width="72" height="72" style="border-radius:10px;object-fit:contain;background:#f8faf7;display:block;padding:4px;box-sizing:border-box;">
               </td>
               <td style="vertical-align:top;">
-                {f'<div style="font-family:\'DM Sans\',Arial,sans-serif;font-size:9px;color:#9aa095;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:3px;">{brand}</div>' if brand else ''}
-                <div style="font-family:'DM Sans',Arial,sans-serif;font-size:13px;font-weight:500;color:#1a1f18;margin:2px 0 6px;line-height:1.4;">{name}</div>
+                {('<div style="' + _EMAIL_SANS + ';font-size:9px;color:#9aa095;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:3px;">' + brand + '</div>') if brand else ''}
+                <div style="{_EMAIL_SANS};font-size:13px;font-weight:500;color:#1a1f18;margin:2px 0 6px;line-height:1.4;">{name}</div>
                 <div style="margin-bottom:8px;">{_product_price_html(p, accent_color)}</div>
-                <a href="{base_url}/product/{pid}" style="font-family:'DM Sans',Arial,sans-serif;font-size:11px;font-weight:700;color:{accent_color};text-decoration:none;letter-spacing:0.2px;">Shiko Produktin →</a>
+                <a href="{base_url}/product/{pid}" style="{_EMAIL_SANS};font-size:11px;font-weight:700;color:{accent_color};text-decoration:none;letter-spacing:0.2px;">Shiko Produktin →</a>
               </td>
             </tr></table>
           </td>
