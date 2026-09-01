@@ -165,12 +165,14 @@ a.an-li:hover .an-li-name{text-decoration:underline;color:var(--adm-primary);}
             <div class="fc-ico"><i class="fas {{ card.icon }}"></i></div>
             <div class="fc-num">{{ "{:,}".format(card.count) }}</div>
             <div class="fc-label">{{ card.label }}</div>
-            {% if card.get('rate') is not none and bk[0] is not none %}
+            {% if card.get('rate_is_avg') %}
+            <div class="fc-rate neu"><i class="fas fa-chart-bar" style="font-size:0.55rem;"></i> {{ card.rate }} {{ card.rate_label }}</div>
+            {% elif card.get('rate') is not none and bk[0] is not none %}
                 {% if card.rate >= bk[0] %}{% set cls = 'ok' %}
                 {% elif card.rate >= bk[1] %}{% set cls = 'warn' %}
                 {% else %}{% set cls = 'bad' %}{% endif %}
             <div class="fc-rate {{ cls }}">
-                <i class="fas fa-arrow-down" style="font-size:0.55rem;"></i> {{ card.rate }}% {{ card.desc }}
+                <i class="fas fa-arrow-down" style="font-size:0.55rem;"></i> {{ card.rate }}% {{ card.rate_label }}
             </div>
             <div class="fc-bench">
                 {% if cls == 'ok' %}✓ Mirë ({{ bk[2] }})
@@ -178,7 +180,7 @@ a.an-li:hover .an-li-name{text-decoration:underline;color:var(--adm-primary);}
                 {% else %}✗ E ulët ({{ bk[2] }}){% endif %}
             </div>
             {% elif card.get('rate') is not none %}
-            <div class="fc-rate neu"><i class="fas fa-arrow-down" style="font-size:0.55rem;"></i> {{ card.rate }}% {{ card.desc }}</div>
+            <div class="fc-rate neu"><i class="fas fa-arrow-down" style="font-size:0.55rem;"></i> {{ card.rate }}% {{ card.rate_label }}</div>
             {% else %}
             <div class="fc-desc">{{ card.desc }}</div>
             {% endif %}
@@ -289,7 +291,7 @@ a.an-li:hover .an-li-name{text-decoration:underline;color:var(--adm-primary);}
                 <div style="text-align:right;">
                     {% if step_rate is not none %}
                     <div style="display:inline-flex;flex-direction:column;align-items:flex-end;gap:0.1rem;">
-                        <span style="font-size:1.05rem;font-weight:900;color:{{ bar_color }};">{{ step_rate }}%</span>
+                        <span style="font-size:1.05rem;font-weight:900;color:{{ bar_color }};">{{ step_rate }}{% if not stage.get('rate_is_avg') %}%{% endif %}</span>
                         <span style="font-size:0.62rem;color:var(--adm-muted);">{{ stage.rate_label }}</span>
                     </div>
                     {% else %}

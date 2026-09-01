@@ -1192,6 +1192,51 @@ def bulk_order_status():
     return redirect(url_for('admin.orders', status=request.form.get('status_filter', '')))
 
 
+@admin.route('/newsletter/send-test', methods=['POST'])
+@login_required
+@admin_required
+def newsletter_send_test():
+    """Send the composed newsletter to a single test address only."""
+    from bson import ObjectId
+    from models.email_utils import SITE_BASE_URL, _get_smtp_config, _send_simple_email
+
+    subject      = request.form.get('subject', '').strip() or 'Test Newsletter — Meld Pharm'
+    template     = request.form.get('template', 'grid')
+    headline     = request.form.get('headline', '').strip()
+    intro_text   = request.form.get('intro_text', '').strip()
+    product_ids  = request.form.getlist('product_ids')
+    accent_color = request.form.get('accent_color', '#4F5D4E').strip() or '#4F5D4E'
+    cta_text     = request.form.get('cta_text', 'Shiko Të Gjitha Produktet').strip() or 'Shiko Të Gjitha Produktet'
+    footer_note  = request.form.get('footer_note', '').strip()
+    test_email   = request.form.get('test_email', '').strip()
+
+    if not test_email:
+        return {'ok': False, 'msg': 'Adresa email është e zbrazët.'}, 400
+
+    selected_products = []
+    for pid in product_ids[:8]:
+        try:
+            p = mongo.db.products.find_one({'_id': ObjectId(pid)})
+            if p:
+                selected_products.append(p)
+        except Exception:
+            pass
+
+    html_body  = _build_newsletter_html(template, headline, intro_text, selected_products, SITE_BASE_URL,
+                                        accent_color=accent_color, cta_text=cta_text, footer_note=footer_note)
+    text_body  = f"[TEST] {headline}\n\n{intro_text}\n\nVisitoni: {SITE_BASE_URL}"
+    test_subj  = f"[TEST] {subject}"
+
+    cfg = _get_smtp_config()
+    import logging as _log
+    _log.info(f"[newsletter_send_test] sending to={test_email} subj={test_subj!r} smtp_host={cfg.get('smtp_host')} sender={cfg.get('sender_email')}")
+    ok, msg = _send_simple_email(cfg, test_email, test_subj, text_body, html_body)
+    _log.info(f"[newsletter_send_test] result ok={ok} msg={msg!r}")
+    if ok:
+        return jsonify({'ok': True, 'msg': f'Email testues u dërgua te {test_email}'})
+    return jsonify({'ok': False, 'msg': msg}), 500
+
+
 @admin.route('/newsletter', methods=['GET', 'POST'])
 @login_required
 @admin_required
@@ -1303,18 +1348,20 @@ def _build_newsletter_html(template, headline, intro_text, products, base_url,
     """Generate a beautiful inline-styled HTML email."""
 
     header = f"""
-    <div style="background:{accent_color};padding:30px 40px;text-align:center;">
-      <div style="font-size:13px;font-weight:700;color:rgba(255,255,255,0.7);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:6px;">Barnatore</div>
-      <div style="font-size:24px;font-weight:800;color:#fff;letter-spacing:-0.3px;">Meld Pharm</div>
+    <div style="background:{accent_color};height:5px;"></div>
+    <div style="background:#ffffff;padding:22px 40px;text-align:center;border-bottom:1px solid #eef0ed;">
+      <img src="https://res.cloudinary.com/drljgepgy/image/upload/v1788282469/ChatGPT_Image_Sep_1_2026_at_07_06_44_PM_kluztv.png"
+           alt="Barnatore Meld Pharm" width="310"
+           style="display:inline-block;max-width:310px;height:auto;">
     </div>
     """
 
     hero = ""
     if headline or intro_text:
         hero = f"""
-        <div style="padding:32px 40px 24px;text-align:center;border-bottom:1px solid #f1f5f9;">
-          {'<h1 style="margin:0 0 12px;font-size:24px;font-weight:800;color:#1a1f18;line-height:1.25;">'+headline+'</h1>' if headline else ''}
-          {'<p style="margin:0;font-size:14px;color:#6b7280;line-height:1.75;">'+intro_text+'</p>' if intro_text else ''}
+        <div style="padding:36px 44px 28px;text-align:center;border-bottom:1px solid #eef0ed;">
+          {'<h1 style="margin:0 0 14px;font-family:\'Playfair Display\',Georgia,\'Times New Roman\',serif;font-size:28px;font-weight:800;color:#1a1f18;line-height:1.2;letter-spacing:-0.3px;">'+headline+'</h1>' if headline else ''}
+          {'<p style="margin:0;font-family:\'DM Sans\',Arial,sans-serif;font-size:15px;font-weight:400;color:#6b7a6e;line-height:1.8;max-width:440px;margin-left:auto;margin-right:auto;">'+intro_text+'</p>' if intro_text else ''}
         </div>
         """
 
@@ -1327,24 +1374,31 @@ def _build_newsletter_html(template, headline, intro_text, products, base_url,
 
     cta = f"""
     <div style="padding:28px 40px;text-align:center;border-top:1px solid #f1f5f9;">
-      <a href="{base_url}/products?discount_only=true" style="display:inline-block;background:{accent_color};color:#fff;text-decoration:none;font-size:14px;font-weight:700;padding:13px 34px;border-radius:10px;letter-spacing:0.2px;">
+      <a href="{base_url}/products?discount_only=true" style="display:inline-block;background:{accent_color};color:#fff;text-decoration:none;font-family:'DM Sans',Arial,sans-serif;font-size:14px;font-weight:700;padding:14px 38px;border-radius:10px;letter-spacing:0.4px;">
         {cta_text}
       </a>
     </div>
     """
 
-    footer_extra = f'<p style="margin:8px 0 0;font-size:12px;color:#6b7280;font-style:italic;">{footer_note}</p>' if footer_note else ''
+    footer_extra = f'<p style="margin:8px 0 0;font-family:\'DM Sans\',Arial,sans-serif;font-size:12px;color:#6b7280;font-style:italic;">{footer_note}</p>' if footer_note else ''
     footer = f"""
-    <div style="background:#f8faf7;padding:20px 40px;text-align:center;border-top:1px solid #e8ebe6;">
-      <p style="margin:0 0 4px;font-size:12px;color:#9aa095;">Barnatore Meld Pharm · 72 Eqrem Çabej, Prishtinë 10000</p>
-      <p style="margin:0;font-size:12px;color:#9aa095;">+383 45 590 455 · <a href="{base_url}" style="color:{accent_color};text-decoration:none;">{base_url.replace('https://','')}</a></p>
+    <div style="background:#f8faf7;padding:22px 40px;text-align:center;border-top:1px solid #e8ebe6;">
+      <p style="margin:0 0 4px;font-family:'DM Sans',Arial,sans-serif;font-size:11px;font-weight:500;color:#9aa095;letter-spacing:0.2px;">Barnatore Meld Pharm · 72 Eqrem Çabej, Prishtinë 10000</p>
+      <p style="margin:0;font-family:'DM Sans',Arial,sans-serif;font-size:11px;color:#9aa095;">+383 45 590 455 · <a href="{base_url}" style="color:{accent_color};text-decoration:none;">{base_url.replace('https://','')}</a></p>
       {footer_extra}
     </div>
     """
 
     return f"""<!DOCTYPE html>
-<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-<body style="margin:0;padding:0;background:#F7F3EE;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;">
+<html><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=DM+Sans:wght@400;500;700&display=swap');
+</style>
+</head>
+<body style="margin:0;padding:0;background:#F7F3EE;font-family:'DM Sans',Arial,sans-serif;">
   <div style="max-width:620px;margin:24px auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
     {header}{hero}{products_html}{cta}{footer}
   </div>
@@ -1357,11 +1411,11 @@ def _product_price_html(p, accent_color='#4F5D4E'):
     if disc:
         pct = round((price - disc) / price * 100) if price else 0
         return (
-            f'<span style="font-size:11px;color:#9aa095;text-decoration:line-through;">€{price:.2f}</span> '
-            f'<span style="font-size:15px;font-weight:800;color:{accent_color};">€{disc:.2f}</span> '
-            f'<span style="background:#fef3c7;color:#92400e;font-size:10px;font-weight:700;padding:2px 6px;border-radius:5px;margin-left:3px;">-{pct}%</span>'
+            f'<span style="font-family:\'DM Sans\',Arial,sans-serif;font-size:11px;color:#9aa095;text-decoration:line-through;">€{price:.2f}</span> '
+            f'<span style="font-family:\'DM Sans\',Arial,sans-serif;font-size:14px;font-weight:700;color:{accent_color};">€{disc:.2f}</span> '
+            f'<span style="font-family:\'DM Sans\',Arial,sans-serif;background:#fef3c7;color:#92400e;font-size:9px;font-weight:700;padding:2px 6px;border-radius:5px;margin-left:3px;">-{pct}%</span>'
         )
-    return f'<span style="font-size:15px;font-weight:800;color:#1a1f18;">€{price:.2f}</span>'
+    return f'<span style="font-family:\'DM Sans\',Arial,sans-serif;font-size:14px;font-weight:700;color:#1a1f18;">€{price:.2f}</span>'
 
 
 def _product_card_grid(p, base_url, accent_color='#4F5D4E', width='45%'):
@@ -1374,10 +1428,10 @@ def _product_card_grid(p, base_url, accent_color='#4F5D4E', width='45%'):
       <a href="{base_url}/product/{pid}" style="text-decoration:none;display:block;background:#fff;border-radius:12px;overflow:hidden;border:1px solid #eef0ed;">
         <img src="{img}" alt="{name}" width="100%" style="display:block;height:180px;object-fit:contain;background:#fff;padding:10px;box-sizing:border-box;">
         <div style="padding:12px 14px 14px;">
-          {f'<div style="font-size:10px;font-weight:700;color:#9aa095;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">{brand}</div>' if brand else ''}
-          <div style="font-size:12px;font-weight:700;color:#1a1f18;margin-bottom:7px;line-height:1.4;">{name}</div>
-          <div style="margin-bottom:9px;">{_product_price_html(p, accent_color)}</div>
-          <div style="background:{accent_color};color:#fff;text-align:center;padding:7px;border-radius:7px;font-size:11px;font-weight:700;">Shiko Produktin →</div>
+          {f'<div style="font-family:\'DM Sans\',Arial,sans-serif;font-size:9px;font-weight:700;color:#9aa095;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:4px;height:14px;overflow:hidden;">{brand}</div>' if brand else '<div style="height:18px;"></div>'}
+          <div style="font-family:'DM Sans',Arial,sans-serif;font-size:12px;font-weight:500;color:#1a1f18;margin-bottom:7px;line-height:1.45;height:34px;overflow:hidden;">{name}</div>
+          <div style="margin-bottom:9px;height:22px;overflow:hidden;">{_product_price_html(p, accent_color)}</div>
+          <div style="background:{accent_color};color:#fff;text-align:center;padding:7px;border-radius:7px;font-family:'DM Sans',Arial,sans-serif;font-size:10px;font-weight:700;letter-spacing:0.3px;">Shiko Produktin →</div>
         </div>
       </a>
     </td>"""
@@ -1395,7 +1449,8 @@ def _products_grid(products, base_url, accent_color='#4F5D4E'):
         rows += f'<tr>{cells}</tr>'
     return f"""
     <div style="padding:24px 28px;">
-      <h2 style="margin:0 0 16px;font-size:16px;font-weight:800;color:#1a1f18;">Ofertat e Limituara</h2>
+      <p style="margin:0 0 4px;font-family:'DM Sans',Arial,sans-serif;font-size:11px;font-weight:700;color:{accent_color};text-transform:uppercase;letter-spacing:1.2px;">Produktet e Zgjedhura</p>
+      <h2 style="margin:0 0 18px;font-family:'Playfair Display',Georgia,'Times New Roman',serif;font-size:20px;font-weight:800;color:#1a1f18;line-height:1.2;">Ofertat e Limituara</h2>
       <table width="100%" cellpadding="0" cellspacing="0"><tbody>{rows}</tbody></table>
     </div>"""
 
@@ -1415,17 +1470,18 @@ def _products_list(products, base_url, accent_color='#4F5D4E'):
                 <img src="{img}" alt="{name}" width="72" height="72" style="border-radius:10px;object-fit:contain;background:#f8faf7;display:block;padding:4px;box-sizing:border-box;">
               </td>
               <td style="vertical-align:top;">
-                {f'<div style="font-size:10px;color:#9aa095;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">{brand}</div>' if brand else ''}
-                <div style="font-size:13px;font-weight:700;color:#1a1f18;margin:2px 0 6px;">{name}</div>
+                {f'<div style="font-family:\'DM Sans\',Arial,sans-serif;font-size:9px;color:#9aa095;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:3px;">{brand}</div>' if brand else ''}
+                <div style="font-family:'DM Sans',Arial,sans-serif;font-size:13px;font-weight:500;color:#1a1f18;margin:2px 0 6px;line-height:1.4;">{name}</div>
                 <div style="margin-bottom:8px;">{_product_price_html(p, accent_color)}</div>
-                <a href="{base_url}/product/{pid}" style="font-size:11px;font-weight:700;color:{accent_color};text-decoration:none;">Shiko Produktin →</a>
+                <a href="{base_url}/product/{pid}" style="font-family:'DM Sans',Arial,sans-serif;font-size:11px;font-weight:700;color:{accent_color};text-decoration:none;letter-spacing:0.2px;">Shiko Produktin →</a>
               </td>
             </tr></table>
           </td>
         </tr>"""
     return f"""
     <div style="padding:24px 36px;">
-      <h2 style="margin:0 0 14px;font-size:16px;font-weight:800;color:#1a1f18;">Ofertat e Limituara</h2>
+      <p style="margin:0 0 4px;font-family:'DM Sans',Arial,sans-serif;font-size:11px;font-weight:700;color:{accent_color};text-transform:uppercase;letter-spacing:1.2px;">Produktet e Zgjedhura</p>
+      <h2 style="margin:0 0 16px;font-family:'Playfair Display',Georgia,'Times New Roman',serif;font-size:20px;font-weight:800;color:#1a1f18;line-height:1.2;">Ofertat e Limituara</h2>
       <table width="100%" cellpadding="0" cellspacing="0"><tbody>{items}</tbody></table>
     </div>"""
 
@@ -1594,10 +1650,15 @@ def analytics_page():
     raw = list(mongo.db.events.aggregate([
         {"$match": {"ts": {"$gte": cutoff}}},
         {"$facet": {
-            # Count unique sessions per event type — one person viewing 10 products = 1, not 10
+            # Unique sessions per event type (one session opening 10 products = 1 view session)
             "funnel": [
                 {"$group": {"_id": {"e": "$e", "sid": "$sid"}}},
                 {"$group": {"_id": "$_id.e", "n": {"$sum": 1}}}
+            ],
+            # Total product page view events (not de-duped by session — shows real browse volume)
+            "total_vp": [
+                {"$match": {"e": "vp"}},
+                {"$count": "n"}
             ],
             "top_viewed": [
                 {"$match": {"e": "vp", "pid": {"$exists": True}}},
@@ -1609,6 +1670,7 @@ def analytics_page():
                 {"$group": {"_id": "$pid", "n": {"$sum": 1}}},
                 {"$sort": {"n": -1}}, {"$limit": 10}
             ],
+            # Unique visitors = all distinct sessions with any tracked event
             "unique_visitors": [{"$group": {"_id": "$sid"}}, {"$count": "n"}],
             "daily_trend": [
                 {"$group": {"_id": {
@@ -1625,21 +1687,25 @@ def analytics_page():
         return round(num / denom * 100, 1) if denom else 0
 
     funnel_map = {r["_id"]: r["n"] for r in (f.get("funnel") or [])}
-    views     = funnel_map.get("vp", 0)
-    adds      = funnel_map.get("ac", 0)
-    checkouts = funnel_map.get("bc", 0)
-    purchases = funnel_map.get("pu", 0)
-    visitors  = (f.get("unique_visitors") or [{}])[0].get("n", 0)
+    # Sessions that viewed ≥1 product (used for cart/checkout/purchase rates)
+    view_sessions = funnel_map.get("vp", 0)
+    adds          = funnel_map.get("ac", 0)
+    checkouts     = funnel_map.get("bc", 0)
+    purchases     = funnel_map.get("pu", 0)
+    visitors      = (f.get("unique_visitors") or [{}])[0].get("n", 0)
+    # Total individual product page opens (can exceed unique visitors)
+    total_views   = (f.get("total_vp") or [{}])[0].get("n", 0)
 
     funnel = [
-        {"label": "Vizita Unike",        "count": visitors,  "icon": "fa-users",       "color": "#4F5D4E",
-         "desc": "Sesione të ndryshme",  "rate_label": None},
-        {"label": "Faqe Produkti Hapur", "count": views,     "icon": "fa-eye",         "color": "#6b7c6a",
-         "desc": "Produkte të shikuara", "rate": pct(views, visitors),
-         "rate_label": "nga vizitorët unikë"},
+        {"label": "Vizita Unike",        "count": visitors,    "icon": "fa-users",       "color": "#4F5D4E",
+         "desc": "Vizitorë unikë (home/produkte)",  "rate_label": None},
+        {"label": "Faqe Produkti Hapur", "count": total_views, "icon": "fa-eye",         "color": "#6b7c6a",
+         "desc": "Hapje totale faqesh produkti",
+         "rate": round(total_views / visitors, 2) if visitors else 0,
+         "rate_label": "faqe produkti mesatarisht për vizitor", "rate_is_avg": True},
         {"label": "Shtuar në Shportë",   "count": adds,      "icon": "fa-cart-plus",   "color": "#f59e0b",
-         "desc": "nga shikimet",         "rate": pct(adds, views),
-         "rate_label": "nga ata që hapën një produkt"},
+         "desc": "nga ata që hapën produkte", "rate": pct(adds, view_sessions),
+         "rate_label": "nga ata që hapën ≥1 produkt"},
         {"label": "Nisën Checkout",      "count": checkouts, "icon": "fa-credit-card", "color": "#3b82f6",
          "desc": "nga shporta",          "rate": pct(checkouts, adds),
          "rate_label": "nga ata që shtuan në shportë"},

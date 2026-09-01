@@ -391,7 +391,23 @@
       </div>
     </div>
 
-    <!-- Send -->
+    <!-- Test send -->
+    <div class="nl-card" style="margin-bottom:0;">
+      <div class="nl-card-hd"><i class="fas fa-flask" style="color:var(--adm-accent);"></i> Dërgo Email Testues</div>
+      <div class="nl-card-body" style="display:flex;gap:.6rem;align-items:center;">
+        <input type="email" id="testEmailInput" class="nl-input" placeholder="emaili-juaj@gmail.com"
+               value="{{ current_user.email if current_user.is_authenticated else '' }}"
+               style="flex:1;margin:0;" autocomplete="email">
+        <button type="button" id="testSendBtn" onclick="sendTestEmail()"
+                style="flex-shrink:0;padding:.65rem 1.1rem;background:var(--adm-accent);color:#fff;border:none;
+                       border-radius:9px;font-size:.85rem;font-weight:700;cursor:pointer;white-space:nowrap;">
+          <i class="fas fa-vial"></i> Dërgo Test
+        </button>
+      </div>
+      <div id="testSendMsg" style="padding:.5rem 1.2rem .9rem;font-size:.82rem;font-weight:600;display:none;gap:.4rem;align-items:center;"></div>
+    </div>
+
+    <!-- Send to all -->
     <button type="button" onclick="openSendModal()" class="nl-send-btn" id="nlSendBtn">
       <span class="nl-btn-text">
         <i class="fas fa-paper-plane"></i>
@@ -567,43 +583,45 @@ function buildPreview() {
 
 function previewHTML(template, headline, intro, products, cta, fnote) {
     const ac = _accent;
-    const header = `<div style="background:${ac};padding:26px 32px;text-align:center;">
-        <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.65);letter-spacing:.08em;text-transform:uppercase;margin-bottom:4px;">Barnatore</div>
-        <div style="font-size:20px;font-weight:800;color:#fff;">Meld Pharm</div>
+    const header = `<div style="background:${ac};height:5px;"></div>
+    <div style="background:#ffffff;padding:18px 32px;text-align:center;border-bottom:1px solid #eef0ed;">
+        <img src="https://res.cloudinary.com/drljgepgy/image/upload/v1788282469/ChatGPT_Image_Sep_1_2026_at_07_06_44_PM_kluztv.png" alt="Barnatore Meld Pharm" style="height:74px;width:auto;display:inline-block;">
     </div>`;
 
     let hero = '';
     if (headline || intro) {
-        hero = `<div style="padding:24px 28px 18px;text-align:center;border-bottom:1px solid #f0f2ef;">
-            ${headline ? `<div style="font-size:18px;font-weight:800;color:#1a1f18;margin-bottom:8px;line-height:1.3;">${headline}</div>` : ''}
-            ${intro    ? `<div style="font-size:12px;color:#6b7280;line-height:1.7;">${intro}</div>` : ''}
+        hero = `<div style="padding:28px 32px 20px;text-align:center;border-bottom:1px solid #eef0ed;">
+            ${headline ? `<div style="font-family:'Playfair Display',Georgia,'Times New Roman',serif;font-size:20px;font-weight:800;color:#1a1f18;margin-bottom:10px;line-height:1.2;letter-spacing:-0.2px;">${headline}</div>` : ''}
+            ${intro    ? `<div style="font-family:'DM Sans',Arial,sans-serif;font-size:12px;font-weight:400;color:#6b7a6e;line-height:1.8;">${intro}</div>` : ''}
         </div>`;
     }
 
     let prodsHtml = '';
     if (products.length) {
         prodsHtml = '<div style="padding:16px 20px;">';
-        prodsHtml += '<div style="font-size:13px;font-weight:800;color:#1a1f18;margin-bottom:12px;">Ofertat e Limituara</div>';
+        prodsHtml += `<div style="font-family:'DM Sans',Arial,sans-serif;font-size:9px;font-weight:700;color:${ac};text-transform:uppercase;letter-spacing:1.2px;margin-bottom:3px;">Produktet e Zgjedhura</div>`;
+        prodsHtml += `<div style="font-family:'Playfair Display',Georgia,'Times New Roman',serif;font-size:15px;font-weight:800;color:#1a1f18;margin-bottom:12px;line-height:1.2;">Ofertat e Limituara</div>`;
         if (template === 'list') {
             products.forEach(p => {
                 prodsHtml += `<div style="display:flex;gap:10px;padding:9px 0;border-bottom:1px solid #f0f2ef;align-items:center;">
                     <img src="${p.img}" width="52" height="52" style="border-radius:8px;object-fit:contain;background:#f8faf7;flex-shrink:0;">
                     <div style="flex:1;min-width:0;">
-                        <div style="font-size:11px;font-weight:700;color:#1a1f18;margin-bottom:4px;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.name}</div>
+                        <div style="font-family:'DM Sans',Arial,sans-serif;font-size:10px;font-weight:500;color:#1a1f18;margin-bottom:4px;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.name}</div>
                         <div style="font-size:10px;margin-bottom:4px;">${p.priceHTML}</div>
-                        <span style="font-size:10px;font-weight:700;color:${ac};">Shiko →</span>
+                        <span style="font-family:'DM Sans',Arial,sans-serif;font-size:10px;font-weight:700;color:${ac};letter-spacing:0.2px;">Shiko →</span>
                     </div>
                 </div>`;
             });
         } else {
             prodsHtml += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">';
             products.forEach(p => {
-                prodsHtml += `<div style="background:#fff;border-radius:10px;border:1px solid #eef0ed;overflow:hidden;">
-                    <img src="${p.img}" style="width:100%;height:110px;object-fit:contain;display:block;background:#fff;padding:6px;box-sizing:border-box;">
-                    <div style="padding:8px 10px 10px;">
-                        <div style="font-size:10px;font-weight:700;color:#1a1f18;margin-bottom:5px;line-height:1.35;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">${p.name}</div>
-                        <div style="font-size:10px;margin-bottom:7px;">${p.priceHTML}</div>
-                        <div style="background:${ac};color:#fff;text-align:center;padding:5px;border-radius:6px;font-size:10px;font-weight:700;">Shiko →</div>
+                prodsHtml += `<div style="background:#fff;border-radius:10px;border:1px solid #eef0ed;overflow:hidden;display:flex;flex-direction:column;">
+                    <img src="${p.img}" style="width:100%;height:110px;object-fit:contain;display:block;background:#fff;padding:6px;box-sizing:border-box;flex-shrink:0;">
+                    <div style="padding:8px 10px 10px;display:flex;flex-direction:column;flex:1;">
+                        <div style="font-family:'DM Sans',Arial,sans-serif;font-size:8px;font-weight:700;color:#9aa095;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:3px;height:13px;overflow:hidden;">${p.brand||''}</div>
+                        <div style="font-family:'DM Sans',Arial,sans-serif;font-size:10px;font-weight:500;color:#1a1f18;margin-bottom:5px;line-height:1.4;height:28px;overflow:hidden;">${p.name}</div>
+                        <div style="font-size:10px;margin-bottom:7px;height:18px;overflow:hidden;">${p.priceHTML}</div>
+                        <div style="background:${ac};color:#fff;text-align:center;padding:5px;border-radius:6px;font-family:'DM Sans',Arial,sans-serif;font-size:9px;font-weight:700;letter-spacing:0.3px;margin-top:auto;">Shiko →</div>
                     </div>
                 </div>`;
             });
@@ -613,17 +631,18 @@ function previewHTML(template, headline, intro, products, cta, fnote) {
     }
 
     const ctaBlock = `<div style="padding:18px 24px;text-align:center;border-top:1px solid #f0f2ef;">
-        <a href="${SITE_BASE}/products?discount_only=true" style="display:inline-block;background:${ac};color:#fff;font-size:12px;font-weight:700;padding:10px 24px;border-radius:9px;text-decoration:none;">${cta}</a>
+        <a href="${SITE_BASE}/products?discount_only=true" style="display:inline-block;background:${ac};color:#fff;font-family:'DM Sans',Arial,sans-serif;font-size:11px;font-weight:700;padding:10px 26px;border-radius:9px;text-decoration:none;letter-spacing:0.4px;">${cta}</a>
     </div>`;
 
-    const footerExtra = fnote ? `<div style="font-size:10px;color:#9aa095;font-style:italic;margin-top:6px;">${fnote}</div>` : '';
+    const footerExtra = fnote ? `<div style="font-family:'DM Sans',Arial,sans-serif;font-size:10px;color:#9aa095;font-style:italic;margin-top:6px;">${fnote}</div>` : '';
     const footer = `<div style="background:#f8faf7;padding:14px 24px;text-align:center;border-top:1px solid #e8ebe6;">
-        <div style="font-size:10px;color:#9aa095;">Barnatore Meld Pharm · 72 Eqrem Çabej, Prishtinë</div>
-        <div style="font-size:10px;color:#9aa095;margin-top:3px;">+383 45 590 455</div>
+        <div style="font-family:'DM Sans',Arial,sans-serif;font-size:10px;font-weight:500;color:#9aa095;letter-spacing:0.2px;">Barnatore Meld Pharm · 72 Eqrem Çabej, Prishtinë</div>
+        <div style="font-family:'DM Sans',Arial,sans-serif;font-size:10px;color:#9aa095;margin-top:3px;">+383 45 590 455</div>
         ${footerExtra}
     </div>`;
 
-    return `<div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;color:#1a1f18;">
+    return `<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+    <div style="font-family:'DM Sans',Arial,sans-serif;color:#1a1f18;">
         ${header}${hero}${prodsHtml}${ctaBlock}${footer}
     </div>`;
 }
@@ -648,6 +667,80 @@ function submitForm() {
     btn.classList.add('loading');
     btn.disabled = true;
     document.getElementById('nlForm').submit();
+}
+
+function sendTestEmail() {
+    var email = document.getElementById('testEmailInput').value.trim();
+    var msgEl = document.getElementById('testSendMsg');
+    var btn   = document.getElementById('testSendBtn');
+
+    // Clear previous message
+    msgEl.style.display = 'none';
+    msgEl.textContent = '';
+
+    if (!email) {
+        msgEl.style.display = 'block';
+        msgEl.style.color = '#c2410c';
+        msgEl.textContent = 'Shkruaj një adresë email.';
+        document.getElementById('testEmailInput').focus();
+        return;
+    }
+
+    // Build FormData manually so we control exactly what's sent
+    var fd = new FormData();
+    // CSRF token
+    var csrfInput = document.querySelector('#nlForm input[name=csrf_token]');
+    if (csrfInput) fd.append('csrf_token', csrfInput.value);
+    // Newsletter fields
+    fd.append('subject',      document.getElementById('nlSubject').value || '');
+    fd.append('template',     (document.querySelector('input[name=template]:checked') || {value:'grid'}).value);
+    fd.append('headline',     document.getElementById('nlHeadline').value || '');
+    fd.append('intro_text',   document.getElementById('nlIntro').value || '');
+    fd.append('accent_color', _accent || '#4F5D4E');
+    fd.append('cta_text',     document.getElementById('nlCta').value || '');
+    fd.append('footer_note',  document.getElementById('nlFooterNote').value || '');
+    fd.append('test_email',   email);
+    // Products — read from checked checkboxes
+    document.querySelectorAll('input[name=product_ids]:checked').forEach(function(cb) {
+        fd.append('product_ids', cb.value);
+    });
+
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Duke dërguar...';
+
+    fetch('/admin/newsletter/send-test', {method: 'POST', body: fd})
+        .then(function(r) {
+            return r.text().then(function(text) {
+                var data;
+                try { data = JSON.parse(text); } catch(e) { data = {msg: 'Gabim serveri: ' + text.slice(0, 120)}; }
+                return {status: r.status, ok: r.ok, data: data};
+            });
+        })
+        .then(function(res) {
+            if (res.ok) {
+                msgEl.style.display = 'block';
+                msgEl.style.color = '#15803d';
+                msgEl.innerHTML = '<i class="fas fa-check-circle"></i> ' + (res.data.msg || 'Email testues u dërgua!');
+                showToast(res.data.msg || 'Email testues u dërgua!', 'success');
+            } else {
+                var errMsg = (res.data && res.data.msg) ? res.data.msg : ('Gabim ' + res.status);
+                msgEl.style.display = 'block';
+                msgEl.style.color = '#c2410c';
+                msgEl.innerHTML = '<i class="fas fa-exclamation-circle"></i> ' + errMsg;
+                showToast(errMsg, 'danger');
+            }
+        })
+        .catch(function(err) {
+            var msg = 'Gabim rrjeti. Kontrollo lidhjen.';
+            msgEl.style.display = 'block';
+            msgEl.style.color = '#c2410c';
+            msgEl.innerHTML = '<i class="fas fa-exclamation-circle"></i> ' + msg;
+            showToast(msg, 'danger');
+        })
+        .finally(function() {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-vial"></i> Dërgo Test';
+        });
 }
 
 // Init

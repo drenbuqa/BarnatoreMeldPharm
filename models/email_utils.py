@@ -125,15 +125,18 @@ def _order_items_html(items):
     return f'<table cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:collapse;">{rows}</table>'
 
 
+LOGO_URL = "https://res.cloudinary.com/drljgepgy/image/upload/v1788282469/ChatGPT_Image_Sep_1_2026_at_07_06_44_PM_kluztv.png"
+
 def _email_html(title, body_html, cfg):
-    """Branded email shell: text-only header (no image), consistent footer."""
+    """Branded email shell with logo header, consistent footer."""
     name = cfg["sender_name"]
     return f"""
 <div style="font-family:Arial,sans-serif;color:#1f2937;line-height:1.6;max-width:600px;margin:0 auto;background:#fff;">
   <!-- Header -->
-  <div style="text-align:center;padding:28px 20px 20px;border-bottom:2px solid #eef0ed;background:#f5f7f4;">
-    <div style="font-size:22px;font-weight:800;color:#4F5D4E;letter-spacing:-0.5px;">{name}</div>
-    <div style="font-size:13px;color:#8a9186;margin-top:5px;">{title}</div>
+  <div style="background:#4F5D4E;height:4px;"></div>
+  <div style="text-align:center;padding:24px 20px 18px;border-bottom:1px solid #eef0ed;background:#ffffff;">
+    <img src="{LOGO_URL}" alt="{name}" width="290" style="display:inline-block;max-width:290px;height:auto;">
+    <div style="font-size:11px;font-weight:600;color:#9aa095;margin-top:10px;letter-spacing:1px;text-transform:uppercase;">{title}</div>
   </div>
   <!-- Body -->
   <div style="padding:28px 32px;">
