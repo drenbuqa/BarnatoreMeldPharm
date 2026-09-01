@@ -13,6 +13,7 @@
 
         <form method="POST">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <input type="hidden" name="next" value="{{ request.args.get('next', '') }}">
             <div class="aform-group">
                 <label>Emri i përdoruesit</label>
                 <div class="ainput-wrap"><i class="fas fa-user"></i>
@@ -22,7 +23,7 @@
             <div class="aform-group">
                 <label>Email</label>
                 <div class="ainput-wrap"><i class="fas fa-envelope"></i>
-                    <input type="email" name="email" class="form-control" required placeholder="emaili@juaj.com">
+                    <input type="email" name="email" class="form-control" required placeholder="emaili@juaj.com" value="{{ request.args.get('email', '') }}">
                 </div>
             </div>
             <div class="aform-group">

@@ -193,9 +193,16 @@ def _get_home_payload():
     # but an explicit single call avoids three monotonic clock reads).
     Product.revert_expired_offers()
 
+    from datetime import datetime as _dt_home
+    _now_home = _dt_home.now()
     _featured_rows = list(mongo.db.products.find({
         "discount_price": {"$ne": None, "$gt": 0},
-        "is_deleted": {"$ne": True}
+        "is_deleted": {"$ne": True},
+        "$or": [
+            {"discount_from": {"$exists": False}},
+            {"discount_from": None},
+            {"discount_from": {"$lte": _now_home}},
+        ],
     }).limit(200))
     featured_products = Product._decorate_products(_rank_best_random(_featured_rows, 20))
 
@@ -249,7 +256,8 @@ def _get_home_payload():
         'category_images': category_images,
     }
     _HOME_CACHE['payload'] = payload
-    _HOME_CACHE['expires_at'] = now + max(_HOME_CACHE_TTL_SECONDS, 1)
+    # Cache expires at the next full minute, so offer start times take effect within 60s
+    _HOME_CACHE['expires_at'] = now + min(max(_HOME_CACHE_TTL_SECONDS, 1), 60)
     return payload
 
 
@@ -836,7 +844,7 @@ def products():
     discount_only = request.args.get('discount_only') == 'true'
     no_discount = request.args.get('no_discount') == 'true'
     best_sellers = request.args.get('best_sellers') == 'true'
-    per_page = 20
+    per_page = 24 if request.args.get('ajax') == '1' else 20
     if request.args.get('all') == 'true':
         per_page = 1000 # Show all products
     
@@ -948,13 +956,16 @@ def product_detail(product_id):
     if not product:
         return render_template('index.html') # Should be 404
     
-    # Increment view count
+    # Increment view count and log behaviour event
     try:
         from bson import ObjectId
         from models.db import mongo
         mongo.db.products.update_one({"_id": ObjectId(product_id)}, {"$inc": {"views": 1}})
     except Exception as e:
         print(f"Error incrementing views: {e}")
+    from models.analytics import log_event
+    log_event('vp', product_id=product_id,
+              user_id=current_user.id if current_user.is_authenticated else None)
     
     
     favorite_usernames = []
@@ -1347,28 +1358,97 @@ def click_banner(banner_id):
 @main.route('/newsletter/subscribe', methods=['POST'])
 def newsletter_subscribe():
     from flask import jsonify
-    email = (request.form.get('email') or request.json and request.json.get('email') or '').strip().lower()
+    import datetime
+    email = (request.form.get('email') or (request.json or {}).get('email') or '').strip().lower()
     if not email or '@' not in email:
         return jsonify({'ok': False, 'message': 'Email i pavlefshëm.'}), 400
 
+    already = False
     if current_user.is_authenticated:
+        already = bool(current_user.newsletter_subscribed if hasattr(current_user, 'newsletter_subscribed') else False)
         User.set_newsletter(current_user.id, True)
     else:
-        # Store guest subscriber (upsert to avoid duplicates)
+        existing = mongo.db.newsletter_subscribers.find_one({'email': email})
+        already = existing is not None
         mongo.db.newsletter_subscribers.update_one(
             {'email': email},
-            {'$set': {'email': email, 'subscribed_at': __import__('datetime').datetime.utcnow()}},
+            {'$set': {'email': email, 'subscribed_at': datetime.datetime.utcnow()}},
             upsert=True
         )
-    return jsonify({'ok': True, 'message': 'U abonuat me sukses!'}), 200
+
+    if already:
+        return jsonify({'ok': True, 'already': True, 'message': 'Ky email është tashmë i abonuar.'}), 200
+
+    # Query promo data while still in request context (mongo not available in threads)
+    import threading as _threading
+    from datetime import datetime as _dt
+    try:
+        _nl_now = _dt.utcnow()
+        _nl_offer_prods = list(mongo.db.products.find(
+            {"is_deleted": {"$ne": True}, "discount_price": {"$gt": 0},
+             "image_url": {"$exists": True, "$nin": [None, ""]},
+             "$or": [{"discount_from": {"$exists": False}}, {"discount_from": None}, {"discount_from": {"$lte": _nl_now}}]},
+            {"_id": 1, "name": 1, "price": 1, "discount_price": 1, "image_url": 1},
+        ).sort("discount_price", 1).limit(3))
+    except Exception:
+        _nl_offer_prods = []
+
+    def _send_sub_welcome(_op=_nl_offer_prods):
+        try:
+            from models.email_utils import _get_smtp_config, _send_simple_email, _email_html, _promo_blocks_html, SITE_BASE_URL, PHARMACY_PHONE, PHARMACY_EMAIL_CONTACT
+            cfg = _get_smtp_config()
+            name = cfg['sender_name']
+            base = SITE_BASE_URL.rstrip('/')
+            promo = _promo_blocks_html(base, _op)
+            body_html = f"""
+<h2 style="margin:0 0 6px;color:#1a1f18;font-size:1.1rem;">Faleminderit për abonimin!</h2>
+<p style="margin:0 0 18px;color:#64748b;font-size:0.9rem;">Tani jeni pjesë e komunitetit tonë. Do t'ju njoftojmë kur kemi oferta dhe produkte të reja.</p>
+{promo}
+<div style="text-align:center;margin-bottom:12px;">
+  <a href="{base}/products?discount_only=true" style="display:inline-block;background:#4F5D4E;color:#fff;text-decoration:none;font-size:13px;font-weight:700;padding:11px 30px;border-radius:9px;">Shiko Ofertat Tona</a>
+</div>
+<p style="font-size:0.82rem;color:#9aa095;text-align:center;">Nëse nuk dëshironi të merrni email-e, mund të çabonoheni në çdo kohë nga profili juaj.</p>"""
+            html = _email_html("Mirë se vini!", body_html, cfg)
+            text = f"Faleminderit për abonimin në {name}!\n\nDo t'ju njoftojmë për ofertat dhe produktet e reja.\n\nShiko ofertat: {base}/products?discount_only=true\n\nTel: {PHARMACY_PHONE} · {PHARMACY_EMAIL_CONTACT}"
+            _send_simple_email(cfg, email, f"Mirë se vini — {name}!", text, html)
+        except Exception:
+            pass
+    _threading.Thread(target=_send_sub_welcome, daemon=True).start()
+
+    return jsonify({'ok': True, 'already': False, 'message': 'U abonuat me sukses!'}), 200
 
 
 @main.route('/profile/newsletter', methods=['POST'])
 @login_required
 def profile_newsletter():
     subscribed = request.form.get('subscribed') == '1'
+    was_subscribed = bool(getattr(current_user, 'newsletter_subscribed', False))
     User.set_newsletter(current_user.id, subscribed)
     flash('Preferencat e abonimit u ruajtën.', 'success')
+    # Send welcome email only when newly subscribing (not when unsubscribing)
+    if subscribed and not was_subscribed:
+        import threading as _threading
+        _email = current_user.email
+        _name = getattr(current_user, 'username', '') or _email.split('@')[0]
+        try:
+            from datetime import datetime as _dt2
+            _pn_now = _dt2.utcnow()
+            _pn_offer_prods = list(mongo.db.products.find(
+                {"is_deleted": {"$ne": True}, "discount_price": {"$gt": 0},
+                 "image_url": {"$exists": True, "$nin": [None, ""]},
+                 "$or": [{"discount_from": {"$exists": False}}, {"discount_from": None}, {"discount_from": {"$lte": _pn_now}}]},
+                {"_id": 1, "name": 1, "price": 1, "discount_price": 1, "image_url": 1},
+            ).sort("discount_price", 1).limit(3))
+        except Exception:
+            _pn_offer_prods = []
+
+        def _send(_op=_pn_offer_prods):
+            try:
+                from models.email_utils import send_welcome_email
+                send_welcome_email(_email, _name, offer_products=_op)
+            except Exception:
+                pass
+        _threading.Thread(target=_send, daemon=True).start()
     return redirect(url_for('main.profile'))
 
 

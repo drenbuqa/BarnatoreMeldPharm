@@ -10,10 +10,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Barnatore Meld Pharm</title>
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
-    <!-- Preconnect to external font/icon CDNs to cut DNS+TCP round-trip time -->
+    <!-- Preconnect to external CDNs and image host to cut DNS+TCP round-trip time -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+    <link rel="preconnect" href="https://res.cloudinary.com" crossorigin>
+    <link rel="dns-prefetch" href="https://res.cloudinary.com">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css', v=8) }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/mobile.css', v=8) }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/chatbot-new.css', v=2) }}">
@@ -561,8 +563,8 @@
                 <div style="width:54px;height:54px;background:#F7F3EE;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1.25rem;box-shadow:0 4px 16px rgba(108,122,97,0.15);">
                     <i class="fas fa-seedling" style="font-size:1.35rem;color:#6C7A61;"></i>
                 </div>
-                <h3 style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.85rem;font-weight:600;color:#2B2B2B;margin:0 0 0.5rem;letter-spacing:-0.01em;line-height:1.15;">Bëhu pjesë e komunitetit</h3>
-                <p style="font-family:'Inter',sans-serif;font-size:0.84rem;color:#7A7068;margin:0;line-height:1.55;">Oferta ekskluzive, produkte të reja dhe këshilla kujdesi —<br>drejtpërdrejt në inbox-in tuaj.</p>
+                <h3 style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.85rem;font-weight:600;color:#2B2B2B;margin:0 0 0.5rem;letter-spacing:-0.01em;line-height:1.15;">Mos humbisni asgjë</h3>
+                <p style="font-family:'Inter',sans-serif;font-size:0.84rem;color:#7A7068;margin:0;line-height:1.55;">Jini të parët që mësoni kur kemi zbritje të reja, kur produktet tuaja të preferuara kthehen në stok dhe kur lançojmë produkte të reja.</p>
             </div>
 
             <!-- Form panel -->
@@ -586,8 +588,10 @@
     {% endif %}
 
     <!-- Toast Logic for Flask Flash Messages -->
+    {% block flash_messages %}
     <div id="flash-messages" data-messages='{{ get_flashed_messages(with_categories=true) | tojson | safe }}'
         style="display: none;"></div>
+    {% endblock %}
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const flashEl = document.getElementById('flash-messages');

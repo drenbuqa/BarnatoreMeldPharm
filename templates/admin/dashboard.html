@@ -1,6 +1,6 @@
 {% extends "admin/base.html" %}
 
-{% block title %}Dashboard - Meld Pharm Admin{% endblock %}
+{% block title %}Dashboard — Meld Pharm{% endblock %}
 {% block page_title %}Dashboard{% endblock %}
 
 {% block page_action %}
@@ -10,403 +10,304 @@
 {% endblock %}
 
 {% block admin_content %}
-
-<!-- KPI Cards — 4+4 grid (8 cards always visible) -->
-<div class="kpi-grid" style="margin-bottom:1.5rem;">
-    <div class="kpi-card kpi-blue" style="cursor:pointer;" onclick="location.href='{{ url_for('admin.products_page') }}'">
-        <div class="kpi-icon"><i class="fas fa-boxes"></i></div>
-        <div class="kpi-body">
-            <div class="kpi-number">{{ analytics.total_products }}</div>
-            <div class="kpi-label">Gjithsej Produkte</div>
-        </div>
-    </div>
-    <div class="kpi-card kpi-orange" style="cursor:pointer;" onclick="location.href='{{ url_for('admin.orders', status='pending') }}'">
-        <div class="kpi-icon"><i class="fas fa-clock"></i></div>
-        <div class="kpi-body">
-            <div class="kpi-number">{{ pending_orders_count }}</div>
-            <div class="kpi-label">Porosi Në Pritje</div>
-        </div>
-    </div>
-    <div class="kpi-card kpi-red" style="cursor:pointer;" onclick="location.href='{{ url_for('admin.products_page', stock='out') }}'">
-        <div class="kpi-icon"><i class="fas fa-exclamation-triangle"></i></div>
-        <div class="kpi-body">
-            <div class="kpi-number">{{ analytics.out_of_stock|length }}</div>
-            <div class="kpi-label">Pa Stok</div>
-        </div>
-    </div>
-    <div class="kpi-card kpi-teal" style="cursor:pointer;" onclick="location.href='{{ url_for('admin.bulk_offers') }}'">
-        <div class="kpi-icon"><i class="fas fa-tags"></i></div>
-        <div class="kpi-body">
-            <div class="kpi-number">{{ analytics.total_offers }}</div>
-            <div class="kpi-label">Oferta Aktive</div>
-        </div>
-    </div>
-    <div class="kpi-card kpi-green" style="cursor:pointer;" onclick="location.href='{{ url_for('admin.dashboard', view='analytics') }}'">
-        <div class="kpi-icon"><i class="fas fa-euro-sign"></i></div>
-        <div class="kpi-body">
-            <div class="kpi-number">€{{ "%.0f"|format(analytics.revenue_month) }}</div>
-            <div class="kpi-label">Të Ardhura Këtë Muaj</div>
-        </div>
-    </div>
-    <div class="kpi-card kpi-green" style="cursor:pointer;" onclick="location.href='{{ url_for('admin.dashboard', view='analytics') }}'">
-        <div class="kpi-icon"><i class="fas fa-chart-line"></i></div>
-        <div class="kpi-body">
-            <div class="kpi-number">€{{ "%.0f"|format(analytics.total_revenue) }}</div>
-            <div class="kpi-label">Të Ardhura Totale ({{ analytics.total_orders }} porosi)</div>
-        </div>
-    </div>
-    <div class="kpi-card kpi-purple" style="cursor:pointer;" onclick="location.href='{{ url_for('admin.newsletter') }}'">
-        <div class="kpi-icon"><i class="fas fa-paper-plane"></i></div>
-        <div class="kpi-body">
-            <div class="kpi-number">{{ newsletter_count }}</div>
-            <div class="kpi-label">Abonentë Buletini</div>
-        </div>
-    </div>
-    <div class="kpi-card kpi-orange" style="cursor:pointer;" onclick="location.href='{{ url_for('admin.orders') }}'">
-        <div class="kpi-icon"><i class="fas fa-shopping-bag"></i></div>
-        <div class="kpi-body">
-            <div class="kpi-number">{{ analytics.total_orders }}</div>
-            <div class="kpi-label">Porosi Gjithsej (6 muaj)</div>
-        </div>
-    </div>
-</div>
-
-<!-- Analytics Section (charts) -->
-<div id="analytics-section" style="display: {{ 'block' if show_analytics else 'none' }}; margin-bottom:2rem;">
-
-    <!-- Dual trend charts -->
-    <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; margin-bottom:1.5rem;">
-        <div class="analytics-card">
-            <div class="card-header-simple">
-                <h3><i class="fas fa-euro-sign" style="color:#16a34a;"></i> Të Ardhura — 6 Muajt e Fundit</h3>
-            </div>
-            <div style="height:200px; padding:0.75rem 0.5rem 0.5rem;">
-                <canvas id="revenueChart"></canvas>
-            </div>
-        </div>
-        <div class="analytics-card">
-            <div class="card-header-simple">
-                <h3><i class="fas fa-shopping-bag" style="color:#7c3aed;"></i> Porosi — 6 Muajt e Fundit</h3>
-            </div>
-            <div style="height:200px; padding:0.75rem 0.5rem 0.5rem;">
-                <canvas id="ordersChart"></canvas>
-            </div>
-        </div>
-    </div>
-
-    <div class="admin-grid-analytics">
-        <div class="analytics-card">
-            <div class="card-header-simple">
-                <h3><i class="fas fa-th-large"></i> Kategoritë më të Populluara</h3>
-            </div>
-            <div class="chart-container-wrapper">
-                <canvas id="categoryChart"></canvas>
-            </div>
-        </div>
-        <div class="analytics-card">
-            <div class="card-header-simple">
-                <h3><i class="fas fa-crown"></i> Brendet më të Preferuara</h3>
-            </div>
-            <div class="chart-container-wrapper">
-                <canvas id="brandChart"></canvas>
-            </div>
-        </div>
-    </div>
-
-    <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:1.5rem; margin-top:1.5rem;">
-        <div class="analytics-card">
-            <div class="card-header-simple"><h3><i class="fas fa-shopping-basket"></i> Më të Porosituara</h3></div>
-            <div class="analytics-list">
-                {% for p in analytics.most_ordered %}
-                <div class="list-item-stats">
-                    <img src="{{ p.image_url }}" alt="" onerror="this.src='/static/img/placeholder.png'">
-                    <div class="item-info">
-                        <span class="item-name">{{ p.name }}</span>
-                        <span class="item-meta">{{ p.order_count }} porosi</span>
-                    </div>
-                </div>
-                {% else %}
-                <p style="color:#94a3b8;text-align:center;padding:1rem;">Nuk ka të dhëna.</p>
-                {% endfor %}
-            </div>
-        </div>
-        <div class="analytics-card">
-            <div class="card-header-simple"><h3><i class="fas fa-heart"></i> Më të Pëlqyera</h3></div>
-            <div class="analytics-list">
-                {% for p in analytics.most_liked %}
-                <div class="list-item-stats">
-                    <img src="{{ p.image_url }}" alt="" onerror="this.src='/static/img/placeholder.png'">
-                    <div class="item-info">
-                        <span class="item-name">{{ p.name }}</span>
-                        <span class="item-meta">{{ p.favorites|length }} pëlqime</span>
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-        </div>
-        <div class="analytics-card">
-            <div class="card-header-simple"><h3 style="color:#ef4444;"><i class="fas fa-exclamation-triangle"></i> Pa Stok</h3></div>
-            <div class="analytics-list">
-                {% for p in analytics.out_of_stock %}
-                <div class="list-item-stats">
-                    <img src="{{ p.image_url }}" alt="" onerror="this.src='/static/img/placeholder.png'">
-                    <div class="item-info">
-                        <span class="item-name">{{ p.name }}</span>
-                        <span class="item-meta" style="color:#ef4444;">Jo në stok</span>
-                    </div>
-                </div>
-                {% else %}
-                <div style="text-align:center;padding:1.5rem;">
-                    <i class="fas fa-check-circle fa-2x" style="color:#10b981;display:block;margin-bottom:0.5rem;"></i>
-                    <p style="color:#64748b;margin:0;">Të gjitha produktet janë në stok.</p>
-                </div>
-                {% endfor %}
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Overview Section (shown when not in analytics view) -->
-<div style="display: {{ 'none' if show_analytics else 'block' }};">
-
-    <div style="display:grid; grid-template-columns:1.2fr 1fr; gap:1.5rem; margin-bottom:1.5rem;">
-
-        <!-- Pending Orders -->
-        <div class="analytics-card">
-            <div class="card-header-simple" style="display:flex; align-items:center; justify-content:space-between;">
-                <h3><i class="fas fa-clock" style="color:#f59e0b;"></i> Porosi Në Pritje</h3>
-                <a href="{{ url_for('admin.orders', status='pending') }}" style="font-size:0.82rem; color:#0f766e; font-weight:700; text-decoration:none;">Shiko të gjitha →</a>
-            </div>
-            {% if recent_pending %}
-            <div style="display:flex; flex-direction:column; gap:0;">
-                {% for o in recent_pending %}
-                <div style="display:flex; align-items:center; justify-content:space-between; padding:0.85rem 1rem; border-bottom:1px solid #f1f5f9;">
-                    <div>
-                        <div style="font-weight:700; font-size:0.92rem; color:#1e293b;">{{ o.fullname }}</div>
-                        <div style="font-size:0.78rem; color:#94a3b8;">{{ o.city or '—' }} · {{ o.created_at.strftime('%d.%m %H:%M') if o.created_at else '' }}</div>
-                    </div>
-                    <div style="font-weight:800; color:#0f766e;">€{{ "%.2f"|format(o.grand_total) }}</div>
-                </div>
-                {% endfor %}
-            </div>
-            {% else %}
-            <div style="text-align:center; padding:2rem; color:#94a3b8;">
-                <i class="fas fa-check-circle fa-2x" style="color:#10b981; display:block; margin-bottom:0.75rem;"></i>
-                Nuk ka porosi në pritje.
-            </div>
-            {% endif %}
-        </div>
-
-        <!-- Quick Actions + Alerts -->
-        <div style="display:flex; flex-direction:column; gap:1rem;">
-
-            <!-- Quick Actions -->
-            <div class="analytics-card" style="padding:1.25rem;">
-                <div class="card-header-simple"><h3><i class="fas fa-bolt" style="color:#f59e0b;"></i> Veprime të Shpejta</h3></div>
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.6rem; padding:0.75rem 0 0;">
-                    <a href="{{ url_for('admin.new_product') }}" class="quick-action-btn">
-                        <i class="fas fa-plus-circle"></i> Produkt i Ri
-                    </a>
-                    <a href="{{ url_for('admin.orders') }}" class="quick-action-btn">
-                        <i class="fas fa-shopping-bag"></i> Porositë
-                    </a>
-                    <a href="{{ url_for('admin.manage_banners') }}" class="quick-action-btn">
-                        <i class="fas fa-images"></i> Banerët
-                    </a>
-                    <a href="{{ url_for('admin.newsletter') }}" class="quick-action-btn">
-                        <i class="fas fa-paper-plane"></i> Buletini
-                    </a>
-                    <a href="{{ url_for('admin.bulk_offers') }}" class="quick-action-btn">
-                        <i class="fas fa-tags"></i> Ofertat
-                    </a>
-                    <a href="{{ url_for('admin.dashboard', view='analytics') }}" class="quick-action-btn">
-                        <i class="fas fa-chart-bar"></i> Analitika
-                    </a>
-                </div>
-
-                <!-- Digest buttons -->
-                <div style="margin-top:1rem; padding-top:1rem; border-top:1px solid #f1f5f9;">
-                    <div style="font-size:0.75rem; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:0.6rem;">Digest Email</div>
-                    <div style="display:flex; gap:0.5rem;">
-                        <form action="{{ url_for('admin.send_digest') }}" method="POST" style="flex:1;">
-                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                            <input type="hidden" name="period" value="today">
-                            <button type="submit" class="digest-btn">
-                                <i class="fas fa-envelope"></i> Sot
-                            </button>
-                        </form>
-                        <form action="{{ url_for('admin.send_digest') }}" method="POST" style="flex:1;">
-                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                            <input type="hidden" name="period" value="week">
-                            <button type="submit" class="digest-btn">
-                                <i class="fas fa-calendar-week"></i> 7 Ditët
-                            </button>
-                        </form>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Out of stock alert -->
-            {% if analytics.out_of_stock %}
-            <div class="analytics-card" style="padding:1.25rem; border-left:4px solid #ef4444;">
-                <div class="card-header-simple" style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.75rem;">
-                    <h3 style="color:#ef4444;"><i class="fas fa-exclamation-triangle"></i> Stok i Mbaruar ({{ analytics.out_of_stock|length }})</h3>
-                    <a href="{{ url_for('admin.products_page', stock='out') }}" style="font-size:0.82rem; color:#ef4444; font-weight:700; text-decoration:none;">Shiko →</a>
-                </div>
-                {% for p in analytics.out_of_stock[:3] %}
-                <div style="display:flex; align-items:center; gap:0.6rem; padding:0.4rem 0; font-size:0.85rem; color:#475569;">
-                    <i class="fas fa-times-circle" style="color:#ef4444; flex-shrink:0;"></i>
-                    {{ p.name }}
-                </div>
-                {% endfor %}
-                {% if analytics.out_of_stock|length > 3 %}
-                <div style="font-size:0.8rem; color:#94a3b8; margin-top:0.4rem;">dhe {{ analytics.out_of_stock|length - 3 }} të tjera...</div>
-                {% endif %}
-            </div>
-            {% endif %}
-
-        </div>
-    </div>
-
-    <!-- Most ordered + most liked -->
-    <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem;">
-        <div class="analytics-card">
-            <div class="card-header-simple"><h3><i class="fas fa-shopping-basket"></i> Produktet më të Porosituara</h3></div>
-            <div class="analytics-list">
-                {% for p in analytics.most_ordered %}
-                <div class="list-item-stats">
-                    <img src="{{ p.image_url }}" alt="" onerror="this.src='/static/img/placeholder.png'">
-                    <div class="item-info">
-                        <span class="item-name">{{ p.name }}</span>
-                        <span class="item-meta">{{ p.order_count }} porosi</span>
-                    </div>
-                </div>
-                {% else %}
-                <p style="color:#94a3b8;text-align:center;padding:1rem;">Nuk ka të dhëna ende.</p>
-                {% endfor %}
-            </div>
-        </div>
-        <div class="analytics-card">
-            <div class="card-header-simple"><h3><i class="fas fa-heart"></i> Produktet më të Pëlqyera</h3></div>
-            <div class="analytics-list">
-                {% for p in analytics.most_liked %}
-                <div class="list-item-stats">
-                    <img src="{{ p.image_url }}" alt="" onerror="this.src='/static/img/placeholder.png'">
-                    <div class="item-info">
-                        <span class="item-name">{{ p.name }}</span>
-                        <span class="item-meta">{{ p.favorites|length }} pëlqime</span>
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-        </div>
-    </div>
-
-</div>
-
 <style>
-@media(max-width:900px) {
-    .admin-grid-analytics,
-    div[style*="grid-template-columns:1.2fr"],
-    div[style*="grid-template-columns:1fr 1fr"] { grid-template-columns:1fr !important; }
+.db-grid-4 { display:grid; grid-template-columns:repeat(4,1fr); gap:1rem; margin-bottom:1.5rem; }
+.db-grid-2 { display:grid; grid-template-columns:1.6fr 1fr; gap:1.25rem; margin-bottom:1.25rem; }
+.db-grid-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:1.25rem; }
+
+.db-card {
+    background:#fff;
+    border-radius:14px;
+    border:1px solid #eef0ed;
+    padding:1.25rem 1.4rem;
+    box-shadow:0 1px 3px rgba(0,0,0,0.04);
+    min-width:0;
+    overflow:hidden;
+}
+.db-card-header {
+    display:flex; align-items:center; justify-content:space-between;
+    margin-bottom:1rem;
+}
+.db-card-header h3 {
+    font-size:0.78rem; font-weight:700; text-transform:uppercase;
+    letter-spacing:0.06em; color:#8a9186; margin:0;
+}
+.db-card-header a {
+    font-size:0.75rem; font-weight:700; color:var(--adm-primary);
+    text-decoration:none; opacity:0.7; transition:opacity 0.15s;
+}
+.db-card-header a:hover { opacity:1; }
+
+/* Metric tiles */
+.db-metric { cursor:pointer; transition:box-shadow 0.18s, transform 0.18s; }
+.db-metric:hover { box-shadow:0 4px 16px rgba(0,0,0,0.08); transform:translateY(-1px); }
+.db-metric-label { font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.07em; color:#8a9186; margin-bottom:0.5rem; }
+.db-metric-value { font-size:1.95rem; font-weight:800; color:#1a1f18; line-height:1; }
+.db-metric-sub { font-size:0.75rem; color:#9aa095; margin-top:0.35rem; }
+.db-metric-icon {
+    width:38px; height:38px; border-radius:10px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:0.95rem; margin-bottom:0.85rem;
+}
+.icon-urgent { background:#fef2f2; color:#ef4444; }
+.icon-green  { background:#f0fdf4; color:#16a34a; }
+.icon-slate  { background:#f8fafc; color:#475569; }
+.icon-amber  { background:#fffbeb; color:#d97706; }
+
+/* Pending dot */
+.pending-badge {
+    display:inline-flex; align-items:center; justify-content:center;
+    background:#ef4444; color:#fff;
+    font-size:0.65rem; font-weight:800;
+    min-width:18px; height:18px; border-radius:9px; padding:0 5px;
+    margin-left:0.4rem;
+}
+
+/* Pending orders list */
+.db-order-row {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:0.7rem 0; border-bottom:1px solid #f3f4f2;
+    cursor:pointer; transition:background 0.12s; border-radius:6px;
+    margin:0 -0.5rem; padding-left:0.5rem; padding-right:0.5rem;
+}
+.db-order-row:last-child { border-bottom:none; }
+.db-order-row:hover { background:#f8faf7; }
+.db-order-name { font-weight:700; font-size:0.875rem; color:#1a1f18; }
+.db-order-meta { font-size:0.72rem; color:#9aa095; margin-top:1px; }
+.db-order-amount { font-weight:800; font-size:0.9rem; color:var(--adm-primary); white-space:nowrap; }
+
+/* Empty state */
+.db-empty { text-align:center; padding:2rem 1rem; color:#9aa095; font-size:0.85rem; }
+
+/* Chart container */
+.db-chart-wrap { position:relative; height:170px; }
+
+/* Top products */
+.db-prod-row {
+    display:flex; align-items:center; gap:0.75rem;
+    padding:0.6rem 0; border-bottom:1px solid #f3f4f2;
+}
+.db-prod-row:last-child { border-bottom:none; }
+.db-prod-img { width:36px; height:36px; border-radius:8px; object-fit:contain; background:#f8f8f6; flex-shrink:0; }
+.db-prod-name { font-size:0.82rem; font-weight:600; color:#1a1f18; line-height:1.3; }
+.db-prod-count { font-size:0.75rem; color:#9aa095; }
+.db-prod-rank { font-size:0.7rem; font-weight:800; color:#c8cdc6; min-width:16px; }
+
+/* Out of stock */
+.db-stock-row {
+    display:flex; align-items:center; gap:0.6rem;
+    padding:0.55rem 0; border-bottom:1px solid #f3f4f2; font-size:0.82rem;
+    min-width:0; overflow:hidden;
+}
+.db-stock-row:last-child { border-bottom:none; }
+.db-stock-dot { width:6px; height:6px; border-radius:50%; background:#ef4444; flex-shrink:0; }
+.db-stock-name { flex:1; min-width:0; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; color:#374151; }
+
+@media(max-width:1100px) {
+    .db-grid-4 { grid-template-columns:repeat(2,1fr); }
+    .db-grid-2 { grid-template-columns:1fr; }
+    .db-grid-3 { grid-template-columns:1fr 1fr; }
+}
+@media(max-width:640px) {
+    .db-grid-4 { grid-template-columns:repeat(2,1fr); }
+    .db-grid-3 { grid-template-columns:1fr; }
 }
 </style>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<!-- ── Row 1: Key metrics ───────────────────────────── -->
+<div class="db-grid-4">
+
+    <div class="db-card db-metric" onclick="location.href='{{ url_for('admin.orders', status='pending') }}'">
+        <div class="db-metric-icon icon-urgent"><i class="fas fa-clock"></i></div>
+        <div class="db-metric-label">Porosi Në Pritje</div>
+        <div class="db-metric-value">{{ pending_orders_count }}</div>
+        <div class="db-metric-sub">{% if pending_orders_count > 0 %}Kërkohet veprim{% else %}Asnjë në pritje{% endif %}</div>
+    </div>
+
+    <div class="db-card db-metric" onclick="location.href='{{ url_for('admin.analytics_page') }}'">
+        <div class="db-metric-icon icon-green"><i class="fas fa-euro-sign"></i></div>
+        <div class="db-metric-label">Të Ardhura — Ky Muaj</div>
+        <div class="db-metric-value">€{{ "%.0f"|format(analytics.revenue_month) }}</div>
+        <div class="db-metric-sub">{{ analytics.orders_month }} porosi</div>
+    </div>
+
+    <div class="db-card db-metric" onclick="location.href='{{ url_for('admin.analytics_page') }}'">
+        <div class="db-metric-icon icon-slate"><i class="fas fa-chart-bar"></i></div>
+        <div class="db-metric-label">Të Ardhura — 6 Muaj</div>
+        <div class="db-metric-value">€{{ "%.0f"|format(analytics.total_revenue) }}</div>
+        <div class="db-metric-sub">{{ analytics.total_orders }} porosi gjithsej</div>
+    </div>
+
+    <div class="db-card db-metric" onclick="location.href='{{ url_for('admin.products_page', stock='out') }}'">
+        <div class="db-metric-icon icon-amber"><i class="fas fa-exclamation-triangle"></i></div>
+        <div class="db-metric-label">Pa Stok</div>
+        <div class="db-metric-value">{{ analytics.out_of_stock|length }}</div>
+        <div class="db-metric-sub">{% if analytics.out_of_stock|length > 0 %}Duhen përditësuar{% else %}Gjithçka në stok{% endif %}</div>
+    </div>
+
+</div>
+
+<!-- ── Row 2: Pending orders + Revenue trend ────────── -->
+<div class="db-grid-2">
+
+    <div class="db-card">
+        <div class="db-card-header">
+            <h3>
+                Porosi Në Pritje
+                {% if pending_orders_count > 0 %}<span class="pending-badge">{{ pending_orders_count }}</span>{% endif %}
+            </h3>
+            <a href="{{ url_for('admin.orders', status='pending') }}">Shiko të gjitha →</a>
+        </div>
+        {% if recent_pending %}
+        {% for o in recent_pending %}
+        <div class="db-order-row" onclick="location.href='{{ url_for('admin.orders', status='pending') }}'">
+            <div>
+                <div class="db-order-name">{{ o.fullname }}</div>
+                <div class="db-order-meta">{{ o.city or '—' }}{% if o.created_at %} · {{ o.created_at.strftime('%d %b, %H:%M') }}{% endif %}</div>
+            </div>
+            <div class="db-order-amount">€{{ "%.2f"|format(o.grand_total) }}</div>
+        </div>
+        {% endfor %}
+        {% else %}
+        <div class="adm-empty" style="border:none;padding:2rem 1rem;">
+            <div class="adm-empty-icon" style="background:#eef5ee;color:var(--adm-accent);"><i class="fas fa-check-circle"></i></div>
+            <p class="adm-empty-title" style="font-size:.85rem;">Asgjë në pritje</p>
+            <p class="adm-empty-desc" style="font-size:.78rem;margin:0;">Të gjitha porositë janë trajtuar.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="db-card">
+        <div class="db-card-header">
+            <h3>Shitjet — 6 Muajt e Fundit</h3>
+            <a href="{{ url_for('admin.analytics_page') }}">Analitika →</a>
+        </div>
+        <div class="db-chart-wrap">
+            <canvas id="revenueChart"></canvas>
+        </div>
+    </div>
+
+</div>
+
+<!-- ── Row 3: Top products + Out of stock ───────────── -->
+<div class="db-grid-3">
+
+    <div class="db-card">
+        <div class="db-card-header">
+            <h3>Më të Porosituara (6 muaj)</h3>
+            <a href="{{ url_for('admin.analytics_page') }}">→</a>
+        </div>
+        {% if analytics.most_ordered %}
+        {% for p in analytics.most_ordered %}
+        <div class="db-prod-row">
+            <span class="db-prod-rank">{{ loop.index }}</span>
+            <img src="{{ p.image_url }}" alt="" class="db-prod-img" onerror="this.src='/static/img/placeholder.png'">
+            <div style="flex:1; min-width:0;">
+                <div class="db-prod-name" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ p.name }}</div>
+                <div class="db-prod-count">{{ p.order_count }} porosi</div>
+            </div>
+        </div>
+        {% endfor %}
+        {% else %}
+        <div class="adm-empty" style="border:none;padding:2rem 1rem;">
+            <div class="adm-empty-icon"><i class="fas fa-chart-bar"></i></div>
+            <p class="adm-empty-title" style="font-size:.85rem;">Nuk ka të dhëna</p>
+            <p class="adm-empty-desc" style="font-size:.78rem;margin:0;">Të dhënat do të shfaqen pas porosive të para.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="db-card">
+        <div class="db-card-header">
+            <h3>Më të Preferuara</h3>
+            <a href="{{ url_for('admin.analytics_page') }}">→</a>
+        </div>
+        {% if analytics.most_liked %}
+        {% for p in analytics.most_liked %}
+        <div class="db-prod-row">
+            <span class="db-prod-rank">{{ loop.index }}</span>
+            <img src="{{ p.image_url }}" alt="" class="db-prod-img" onerror="this.src='/static/img/placeholder.png'">
+            <div style="flex:1; min-width:0;">
+                <div class="db-prod-name" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ p.name }}</div>
+                <div class="db-prod-count">{{ p.fav_count }} të preferuar</div>
+            </div>
+        </div>
+        {% endfor %}
+        {% else %}
+        <div class="adm-empty" style="border:none;padding:2rem 1rem;">
+            <div class="adm-empty-icon"><i class="fas fa-heart"></i></div>
+            <p class="adm-empty-title" style="font-size:.85rem;">Nuk ka të dhëna</p>
+            <p class="adm-empty-desc" style="font-size:.78rem;margin:0;">Produktet e preferuara do të shfaqen këtu.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="db-card">
+        <div class="db-card-header">
+            <h3>Pa Stok{% if analytics.out_of_stock|length > 0 %} ({{ analytics.out_of_stock|length }}){% endif %}</h3>
+            {% if analytics.out_of_stock %}<a href="{{ url_for('admin.products_page', stock='out') }}">Shiko →</a>{% endif %}
+        </div>
+        {% if analytics.out_of_stock %}
+        {% for p in analytics.out_of_stock %}
+        <div class="db-stock-row">
+            <span class="db-stock-dot"></span>
+            <span class="db-stock-name">{{ p.name }}</span>
+        </div>
+        {% endfor %}
+        {% else %}
+        <div class="adm-empty" style="border:none;padding:2rem 1rem;">
+            <div class="adm-empty-icon" style="background:#eef5ee;color:var(--adm-accent);"><i class="fas fa-box-open"></i></div>
+            <p class="adm-empty-title" style="font-size:.85rem;">Gjithçka në stok</p>
+            <p class="adm-empty-desc" style="font-size:.78rem;margin:0;">Nuk ka produkte pa stok aktualisht.</p>
+        </div>
+        {% endif %}
+    </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
-document.addEventListener('DOMContentLoaded', function () {
-    const catCanvas     = document.getElementById('categoryChart');
-    const brandCanvas   = document.getElementById('brandChart');
-    const revCanvas     = document.getElementById('revenueChart');
-    const ordCanvas     = document.getElementById('ordersChart');
+(function() {
+    const labels = {{ analytics.trend_labels | tojson }};
+    const revenue = {{ analytics.trend_revenue | tojson }};
+    const orders = {{ analytics.trend_orders | tojson }};
+    const primary = '#4F5D4E';
 
-    const categoryLabels = JSON.parse('{{ analytics.category_sales.keys()|list|tojson|safe }}');
-    const categoryValues = JSON.parse('{{ analytics.category_sales.values()|list|tojson|safe }}');
-    const brandLabels    = JSON.parse('{{ analytics.brand_distribution.keys()|list|tojson|safe }}');
-    const brandValues    = JSON.parse('{{ analytics.brand_distribution.values()|list|tojson|safe }}');
-    const trendLabels    = JSON.parse('{{ analytics.trend_labels|tojson|safe }}');
-    const trendRevenue   = JSON.parse('{{ analytics.trend_revenue|tojson|safe }}');
-    const trendOrders    = JSON.parse('{{ analytics.trend_orders|tojson|safe }}');
-
-    const sharedLineOpts = {
-        responsive: true, maintainAspectRatio: false,
-        interaction: { mode: 'index', intersect: false },
-        scales: {
-            y: { beginAtZero: true, grid: { color: '#f1f5f9' } },
-            x: { grid: { display: false } }
+    const ctx = document.getElementById('revenueChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels,
+            datasets: [{
+                label: 'Të Ardhura (€)',
+                data: revenue,
+                backgroundColor: 'rgba(79,93,78,0.12)',
+                borderColor: primary,
+                borderWidth: 2,
+                borderRadius: 6,
+                borderSkipped: false,
+            }]
         },
-        plugins: { legend: { display: false } }
-    };
-
-    if (revCanvas) {
-        new Chart(revCanvas.getContext('2d'), {
-            type: 'line',
-            data: {
-                labels: trendLabels,
-                datasets: [{
-                    label: 'Të Ardhura (€)',
-                    data: trendRevenue,
-                    borderColor: '#16a34a',
-                    backgroundColor: 'rgba(22,163,74,0.10)',
-                    fill: true, tension: 0.4,
-                    pointBackgroundColor: '#16a34a', pointRadius: 4
-                }]
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: ctx => '€' + ctx.parsed.y.toFixed(0) + '  ·  ' + orders[ctx.dataIndex] + ' porosi'
+                    }
+                }
             },
-            options: {
-                ...sharedLineOpts,
-                scales: {
-                    y: { beginAtZero: true, grid: { color: '#f1f5f9' },
-                         ticks: { callback: v => '€' + v } },
-                    x: { grid: { display: false } }
+            scales: {
+                x: { grid: { display: false }, ticks: { font: { size: 11 }, color: '#9aa095' } },
+                y: {
+                    grid: { color: '#f3f4f2', drawBorder: false },
+                    ticks: { font: { size: 11 }, color: '#9aa095', callback: v => '€' + v }
                 }
             }
-        });
-    }
-    if (ordCanvas) {
-        new Chart(ordCanvas.getContext('2d'), {
-            type: 'bar',
-            data: {
-                labels: trendLabels,
-                datasets: [{
-                    label: 'Porosi',
-                    data: trendOrders,
-                    backgroundColor: 'rgba(124,58,237,0.75)',
-                    borderRadius: 6,
-                    borderSkipped: false
-                }]
-            },
-            options: {
-                ...sharedLineOpts,
-                scales: {
-                    y: { beginAtZero: true, grid: { color: '#f1f5f9' },
-                         ticks: { precision: 0 } },
-                    x: { grid: { display: false } }
-                }
-            }
-        });
-    }
-    if (catCanvas) {
-        new Chart(catCanvas.getContext('2d'), {
-            type: 'doughnut',
-            data: { labels: categoryLabels, datasets: [{ data: categoryValues,
-                backgroundColor: ['#16a34a','#3b82f6','#f59e0b','#ef4444','#8b5cf6','#6366f1'],
-                borderWidth: 0 }] },
-            options: { responsive: true, maintainAspectRatio: false,
-                plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, padding: 20 }}},
-                cutout: '70%' }
-        });
-    }
-    if (brandCanvas) {
-        new Chart(brandCanvas.getContext('2d'), {
-            type: 'bar',
-            data: { labels: brandLabels, datasets: [{ label: 'Produkte', data: brandValues,
-                backgroundColor: '#4F5D4E', borderRadius: 8 }] },
-            options: { responsive: true, maintainAspectRatio: false,
-                scales: { y: { beginAtZero: true, grid: { display: false }},
-                          x: { grid: { display: false }}},
-                plugins: { legend: { display: false }}}
-        });
-    }
-});
+        }
+    });
+})();
 </script>
 {% endblock %}

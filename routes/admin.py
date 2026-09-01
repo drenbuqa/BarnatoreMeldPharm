@@ -149,8 +149,13 @@ def update_order_status(order_id):
         send_email_in_background(send_order_delivered_email, order_id)
         msg = 'Statusi u ndryshua dhe emaili i dorëzimit po dërgohet.'
     elif new_status in ('Cancelled', 'Anuluar', 'Refuzuar') and old_status not in ('Cancelled', 'Anuluar', 'Refuzuar'):
-        send_email_in_background(send_order_cancelled_email, order_id)
-        msg = 'Statusi u ndryshua dhe emaili i anulimit po dërgohet.'
+        if new_status == 'Refuzuar':
+            from models.email_utils import send_order_rejected_email
+            send_email_in_background(send_order_rejected_email, order_id, cancel_reason)
+            msg = 'Porosia u refuzua dhe emaili i refuzimit po dërgohet te klienti.'
+        else:
+            send_email_in_background(send_order_cancelled_email, order_id, cancel_reason)
+            msg = 'Porosia u anulua dhe emaili po dërgohet te klienti.'
 
     if is_ajax:
         from flask import jsonify
@@ -166,7 +171,6 @@ def dashboard():
     # Revert expired offers (throttled — runs at most once every 15 minutes per worker)
     Product.revert_expired_offers()
 
-    show_analytics = request.args.get('view') == 'analytics'
     now        = datetime.utcnow()
     month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
     six_months_ago = now - timedelta(days=186)
@@ -333,7 +337,6 @@ def dashboard():
     )
     return render_template('admin/dashboard.html',
                            analytics=analytics,
-                           show_analytics=show_analytics,
                            pending_orders_count=pending_orders_count,
                            recent_pending=recent_pending,
                            newsletter_count=newsletter_count)
@@ -342,19 +345,22 @@ def dashboard():
 @login_required
 @admin_required
 def products_page():
+    import re as _re
     filter_category = request.args.get('category', '').strip()
     filter_brand    = request.args.get('brand', '').strip()
     filter_on_offer = request.args.get('on_offer') == '1'
     filter_stock    = request.args.get('stock', '')
+    search_q        = request.args.get('q', '').strip()
+    page            = max(1, int(request.args.get('page', 1) or 1))
+    per_page        = 100
 
     lean_proj = {
         "name": 1, "brand": 1, "category": 1, "subcategory": 1,
         "price": 1, "discount_price": 1, "offer_name": 1, "offer_type": 1,
-        "in_stock": 1, "image_url": 1, "size": 1, "is_best_seller": 1,
-        "is_pharmacist_choice": 1, "is_deleted": 1,
+        "in_stock": 1, "image_url": 1, "size": 1, "is_deleted": 1,
     }
 
-    # Build filter lists from lightweight distinct aggregations (no full scan)
+    # Build category/brand lists via lightweight facet (no full product load)
     meta = list(mongo.db.products.aggregate([
         {"$match": {"is_deleted": {"$ne": True}}},
         {"$facet": {
@@ -372,21 +378,35 @@ def products_page():
     all_brands     = [r['_id'] for r in m.get('brands', []) if r.get('_id')]
     total_count    = (m.get('total') or [{}])[0].get('n', 0)
 
-    # Server-side filtering — only fetch matching products
+    # Build query with all active filters + search
     query = {"is_deleted": {"$ne": True}}
     if filter_category:
         query["category"] = filter_category
     if filter_brand:
-        import re
-        query["brand"] = {"$regex": f"^{re.escape(filter_brand)}$", "$options": "i"}
+        query["brand"] = {"$regex": f"^{_re.escape(filter_brand)}$", "$options": "i"}
     if filter_on_offer:
         query["discount_price"] = {"$nin": [None, ""]}
     if filter_stock == 'out':
         query["in_stock"] = {"$ne": True}
     elif filter_stock == 'in':
         query["in_stock"] = True
+    if search_q:
+        escaped = _re.escape(search_q)
+        query["$or"] = [
+            {"name":  {"$regex": escaped, "$options": "i"}},
+            {"brand": {"$regex": escaped, "$options": "i"}},
+        ]
 
-    products = list(mongo.db.products.find(query, lean_proj).sort("_id", -1))
+    filtered_total = mongo.db.products.count_documents(query)
+    total_pages    = max(1, (filtered_total + per_page - 1) // per_page)
+    page           = min(page, total_pages)
+
+    products = list(
+        mongo.db.products.find(query, lean_proj)
+        .sort("_id", -1)
+        .skip((page - 1) * per_page)
+        .limit(per_page)
+    )
 
     pending_orders_count = mongo.db.orders.count_documents(
         {'status': {'$in': ['Pending', 'Në Pritje']}})
@@ -398,7 +418,12 @@ def products_page():
                            filter_brand=filter_brand,
                            filter_on_offer=filter_on_offer,
                            filter_stock=filter_stock,
+                           search_q=search_q,
                            total_count=total_count,
+                           filtered_total=filtered_total,
+                           page=page,
+                           total_pages=total_pages,
+                           per_page=per_page,
                            pending_orders_count=pending_orders_count)
 
 
@@ -418,52 +443,23 @@ def order_note(order_id):
     return redirect(url_for('admin.orders'))
 
 
-@admin.route('/orders/export')
+@admin.route('/order/<order_id>/delete', methods=['POST'])
 @login_required
 @admin_required
-def export_orders():
-    import csv, io
-    status_filter = request.args.get('status', '')
-    query = {}
-    if status_filter:
-        status_map = {
-            'pending':    ['Pending', 'Në Pritje'],
-            'konfirmuar': ['Konfirmuar', 'Confirmed', 'Pranuar'],
-            'dergese':    ['Delivering', 'Në Dërgesë'],
-            'dorezuar':   ['Delivered', 'Dorezuar'],
-            'anuluar':    ['Cancelled', 'Anuluar'],
-            'refuzuar':   ['Refuzuar'],
-        }
-        statuses = status_map.get(status_filter, [status_filter])
-        query['status'] = {'$in': statuses}
-    all_orders = list(mongo.db.orders.find(query).sort('created_at', -1))
-
-    output = io.StringIO()
-    writer = csv.writer(output)
-    writer.writerow(['ID', 'Data', 'Emri', 'Email', 'Telefoni', 'Qyteti', 'Adresa', 'Statusi', 'Pagesa', 'Totali (€)', 'Produktet', 'Shënim Admin'])
-    for o in all_orders:
-        items_str = '; '.join(f"{i.get('quantity',1)}x {i.get('name','')}" for i in (o.get('items') or []))
-        writer.writerow([
-            str(o.get('_id', '')),
-            o['created_at'].strftime('%d.%m.%Y %H:%M') if o.get('created_at') else '',
-            o.get('fullname', ''),
-            o.get('email', ''),
-            o.get('phone', ''),
-            o.get('city', ''),
-            o.get('address', ''),
-            o.get('status', ''),
-            o.get('payment_method', ''),
-            f"{float(o.get('grand_total', 0)):.2f}",
-            items_str,
-            o.get('admin_note', ''),
-        ])
-
-    response = Response(
-        '﻿' + output.getvalue(),
-        mimetype='text/csv; charset=utf-8',
-        headers={'Content-Disposition': f'attachment; filename=porosi_{datetime.utcnow().strftime("%Y%m%d")}.csv'}
-    )
-    return response
+def delete_order(order_id):
+    from bson import ObjectId as _ObjId
+    from flask import jsonify
+    is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+    try:
+        mongo.db.orders.delete_one({'_id': _ObjId(order_id)})
+        if is_ajax:
+            return jsonify({'ok': True})
+        flash('Porosia u fshi.', 'success')
+    except Exception as e:
+        if is_ajax:
+            return jsonify({'ok': False, 'error': str(e)}), 500
+        flash('Gabim gjatë fshirjes.', 'danger')
+    return redirect(url_for('admin.orders'))
 
 
 @admin.route('/users/<user_id>/orders')
@@ -614,6 +610,7 @@ def _build_product_data(main_img, images, option_groups, variants, base_price, b
         "size": request.form.get('size'),
         "price": price,
         "discount_price": discount_price,
+        "discount_from": _form_optional_date('discount_from'),
         "discount_until": _form_optional_date('discount_until'),
         "description": request.form.get('description'),
         "image_url": main_img,
@@ -721,18 +718,21 @@ def bulk_offers():
 
         try:
             offer_type = request.form.get('offer_type', 'discount')
+            discount_from = request.form.get('discount_from')
             discount_until = request.form.get('discount_until')
             query = {"_id": {"$in": [ObjectId(pid) for pid in selected_ids]}}
-                
+
             products = list(mongo.db.products.find(query))
             count = 0
+            start_date = datetime.strptime(discount_from, '%Y-%m-%d') if discount_from else datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
             expiry_date = datetime.strptime(discount_until, '%Y-%m-%d') if discount_until else None
-            
+
             for p in products:
                 if action == 'apply':
                     price = float(p.get('price', 0))
                     if price > 0:
                         update_data = {
+                            "discount_from": start_date,
                             "discount_until": expiry_date,
                             "offer_name": offer_name if offer_name else None,
                             "offer_type": offer_type,
@@ -803,6 +803,7 @@ def bulk_offers():
         {"$group": {
             "_id": "$offer_name",
             "count": {"$sum": 1},
+            "start": {"$first": "$discount_from"},
             "expiry": {"$first": "$discount_until"},
             "type": {"$first": "$offer_type"},
             "multi_buy_type": {"$first": "$multi_buy_type"},
@@ -822,7 +823,8 @@ def bulk_offers():
         active_offers_info.append({
             "name": r["_id"],
             "count": r["count"],
-            "expiry": r["expiry"].strftime('%Y-%m-%d') if r["expiry"] else None,
+            "start": r["start"].strftime('%Y-%m-%d') if r.get("start") else None,
+            "expiry": r["expiry"].strftime('%Y-%m-%d') if r.get("expiry") else None,
             "type": offer_type,
             "value": value
         })
@@ -933,7 +935,8 @@ def manage_banners():
     all_products = Product.get_all_lean(projection={"name": 1, "image_url": 1})
     available_offers = _get_banner_offer_options()
     next_banner_order = (max([int(b.get('sort_order') or 0) for b in banners], default=0) + 1)
-    return render_template('admin/banners.html', banners=banners, categories=categories, brands=brands, all_products=all_products, available_offers=available_offers, next_banner_order=next_banner_order)
+    today = datetime.now().date()
+    return render_template('admin/banners.html', banners=banners, categories=categories, brands=brands, all_products=all_products, available_offers=available_offers, next_banner_order=next_banner_order, today=today)
 
 @admin.route('/banners/edit/<banner_id>', methods=['POST'])
 @login_required
@@ -983,6 +986,22 @@ def reorder_banner(banner_id):
         return jsonify({'ok': True})
     flash('Renditja e banerit u përditësua.', 'success')
     return redirect(url_for('admin.manage_banners'))
+
+@admin.route('/banners/reorder-bulk', methods=['POST'])
+@login_required
+@admin_required
+def reorder_banners_bulk():
+    data = request.get_json(silent=True) or {}
+    ids = data.get('order', [])
+    if not ids:
+        return jsonify({'ok': False}), 400
+    for idx, banner_id in enumerate(ids, start=1):
+        try:
+            Banner.update(banner_id, {'sort_order': idx})
+        except Exception:
+            pass
+    return jsonify({'ok': True})
+
 
 @admin.route('/banners/delete/<banner_id>', methods=['POST'])
 @login_required
@@ -1189,6 +1208,9 @@ def newsletter():
         headline   = request.form.get('headline', '').strip()
         intro_text = request.form.get('intro_text', '').strip()
         product_ids = request.form.getlist('product_ids')
+        accent_color = request.form.get('accent_color', '#4F5D4E').strip() or '#4F5D4E'
+        cta_text     = request.form.get('cta_text', 'Shiko Të Gjitha Produktet').strip() or 'Shiko Të Gjitha Produktet'
+        footer_note  = request.form.get('footer_note', '').strip()
 
         if not subject:
             flash('Titulli (subject) është i detyrueshëm.', 'danger')
@@ -1203,7 +1225,7 @@ def newsletter():
                 except Exception:
                     pass
 
-            html_body = _build_newsletter_html(template, headline, intro_text, selected_products, SITE_BASE_URL)
+            html_body = _build_newsletter_html(template, headline, intro_text, selected_products, SITE_BASE_URL, accent_color=accent_color, cta_text=cta_text, footer_note=footer_note)
             text_body = f"{headline}\n\n{intro_text}\n\nVisitoni: {SITE_BASE_URL}"
 
             subscribers = User.get_newsletter_subscribers()
@@ -1250,7 +1272,7 @@ def newsletter():
     week_num = datetime.utcnow().isocalendar()[1]
     month_alb = ['Janar','Shkurt','Mars','Prill','Maj','Qershor','Korrik','Gusht','Shtator','Tetor','Nëntor','Dhjetor'][datetime.utcnow().month - 1]
 
-    default_subject = f"🌟 Ofertat e Javës {week_num} — Zbritje deri {max_pct}% | Meld Pharm" if max_pct else f"✨ Produkte të Reja — {month_alb} | Meld Pharm"
+    default_subject = f"Ofertat e Javës {week_num} — Zbritje deri {max_pct}% | Meld Pharm" if max_pct else f"Produkte të Reja — {month_alb} | Meld Pharm"
     brand_line = ', '.join(brands_on_offer[:3]) if brands_on_offer else 'brendeve tona'
     cat_line   = ', '.join(cats_on_offer[:3]).lower() if cats_on_offer else 'produkteve tona'
     default_headline = f"Ofertat e Javës {week_num} kanë ardhur! ✨" if offer_products else f"Produkte të Reja — {month_alb}"
@@ -1276,110 +1298,109 @@ def newsletter():
                            default_intro=default_intro)
 
 
-def _build_newsletter_html(template, headline, intro_text, products, base_url):
+def _build_newsletter_html(template, headline, intro_text, products, base_url,
+                           accent_color='#4F5D4E', cta_text='Shiko Të Gjitha Produktet', footer_note=''):
     """Generate a beautiful inline-styled HTML email."""
 
-    # Header
     header = f"""
-    <div style="background:linear-gradient(135deg,#0f766e 0%,#14b8a6 100%);padding:32px 40px;text-align:center;">
-      <div style="font-size:22px;font-weight:800;color:#fff;letter-spacing:-0.3px;">Barnatore Meld Pharm</div>
+    <div style="background:{accent_color};padding:30px 40px;text-align:center;">
+      <div style="font-size:13px;font-weight:700;color:rgba(255,255,255,0.7);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:6px;">Barnatore</div>
+      <div style="font-size:24px;font-weight:800;color:#fff;letter-spacing:-0.3px;">Meld Pharm</div>
     </div>
     """
 
-    # Headline + intro
     hero = ""
     if headline or intro_text:
         hero = f"""
         <div style="padding:32px 40px 24px;text-align:center;border-bottom:1px solid #f1f5f9;">
-          {'<h1 style="margin:0 0 12px;font-size:26px;font-weight:800;color:#1e293b;line-height:1.2;">'+headline+'</h1>' if headline else ''}
-          {'<p style="margin:0;font-size:15px;color:#475569;line-height:1.7;">'+intro_text+'</p>' if intro_text else ''}
+          {'<h1 style="margin:0 0 12px;font-size:24px;font-weight:800;color:#1a1f18;line-height:1.25;">'+headline+'</h1>' if headline else ''}
+          {'<p style="margin:0;font-size:14px;color:#6b7280;line-height:1.75;">'+intro_text+'</p>' if intro_text else ''}
         </div>
         """
 
-    # Products section
     products_html = ""
     if products:
         if template == 'list':
-            products_html = _products_list(products, base_url)
+            products_html = _products_list(products, base_url, accent_color)
         else:
-            products_html = _products_grid(products, base_url)
+            products_html = _products_grid(products, base_url, accent_color)
 
-    # CTA button
     cta = f"""
     <div style="padding:28px 40px;text-align:center;border-top:1px solid #f1f5f9;">
-      <a href="{base_url}/products" style="display:inline-block;background:linear-gradient(135deg,#0f766e,#14b8a6);color:#fff;text-decoration:none;font-size:15px;font-weight:700;padding:14px 36px;border-radius:12px;letter-spacing:0.2px;">
-        🛒 Shiko Të Gjitha Produktet
+      <a href="{base_url}/products?discount_only=true" style="display:inline-block;background:{accent_color};color:#fff;text-decoration:none;font-size:14px;font-weight:700;padding:13px 34px;border-radius:10px;letter-spacing:0.2px;">
+        {cta_text}
       </a>
     </div>
     """
 
-    # Footer
+    footer_extra = f'<p style="margin:8px 0 0;font-size:12px;color:#6b7280;font-style:italic;">{footer_note}</p>' if footer_note else ''
     footer = f"""
-    <div style="background:#f8fafc;padding:20px 40px;text-align:center;border-top:1px solid #e2e8f0;">
-      <p style="margin:0 0 6px;font-size:12px;color:#94a3b8;">Barnatore Meld Pharm · 72 Eqrem Çabej, Prishtinë 10000</p>
-      <p style="margin:0;font-size:12px;color:#94a3b8;">+383 45 590 455 · <a href="{base_url}" style="color:#0f766e;text-decoration:none;">{base_url.replace('https://','')}</a></p>
+    <div style="background:#f8faf7;padding:20px 40px;text-align:center;border-top:1px solid #e8ebe6;">
+      <p style="margin:0 0 4px;font-size:12px;color:#9aa095;">Barnatore Meld Pharm · 72 Eqrem Çabej, Prishtinë 10000</p>
+      <p style="margin:0;font-size:12px;color:#9aa095;">+383 45 590 455 · <a href="{base_url}" style="color:{accent_color};text-decoration:none;">{base_url.replace('https://','')}</a></p>
+      {footer_extra}
     </div>
     """
 
     return f"""<!DOCTYPE html>
 <html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-<body style="margin:0;padding:0;background:#f1f5f9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;">
+<body style="margin:0;padding:0;background:#F7F3EE;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;">
   <div style="max-width:620px;margin:24px auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
     {header}{hero}{products_html}{cta}{footer}
   </div>
 </body></html>"""
 
 
-def _product_price_html(p):
+def _product_price_html(p, accent_color='#4F5D4E'):
     price = p.get('price', 0)
     disc  = p.get('discount_price')
     if disc:
         pct = round((price - disc) / price * 100) if price else 0
         return (
-            f'<span style="font-size:11px;color:#94a3b8;text-decoration:line-through;">€{price:.2f}</span> '
-            f'<span style="font-size:16px;font-weight:800;color:#0f766e;">€{disc:.2f}</span> '
-            f'<span style="background:#fef3c7;color:#92400e;font-size:10px;font-weight:700;padding:2px 6px;border-radius:6px;margin-left:4px;">-{pct}%</span>'
+            f'<span style="font-size:11px;color:#9aa095;text-decoration:line-through;">€{price:.2f}</span> '
+            f'<span style="font-size:15px;font-weight:800;color:{accent_color};">€{disc:.2f}</span> '
+            f'<span style="background:#fef3c7;color:#92400e;font-size:10px;font-weight:700;padding:2px 6px;border-radius:5px;margin-left:3px;">-{pct}%</span>'
         )
-    return f'<span style="font-size:16px;font-weight:800;color:#1e293b;">€{price:.2f}</span>'
+    return f'<span style="font-size:15px;font-weight:800;color:#1a1f18;">€{price:.2f}</span>'
 
 
-def _product_card_grid(p, base_url, width='45%'):
+def _product_card_grid(p, base_url, accent_color='#4F5D4E', width='45%'):
     img = p.get('image_url', '')
     name = p.get('name', '')
     brand = p.get('brand', '')
     pid = str(p['_id'])
     return f"""
     <td style="width:{width};padding:8px;vertical-align:top;">
-      <a href="{base_url}/product/{pid}" style="text-decoration:none;display:block;background:#fff;border-radius:12px;overflow:hidden;border:1px solid #e2e8f0;">
-        <img src="{img}" alt="{name}" width="100%" style="display:block;height:200px;object-fit:contain;background:#fff;padding:10px;box-sizing:border-box;">
-        <div style="padding:12px 14px 16px;">
-          {f'<div style="font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">{brand}</div>' if brand else ''}
-          <div style="font-size:13px;font-weight:700;color:#1e293b;margin-bottom:8px;line-height:1.4;">{name}</div>
-          <div style="margin-bottom:10px;">{_product_price_html(p)}</div>
-          <div style="background:#0f766e;color:#fff;text-align:center;padding:8px;border-radius:8px;font-size:12px;font-weight:700;">Shiko Produktin →</div>
+      <a href="{base_url}/product/{pid}" style="text-decoration:none;display:block;background:#fff;border-radius:12px;overflow:hidden;border:1px solid #eef0ed;">
+        <img src="{img}" alt="{name}" width="100%" style="display:block;height:180px;object-fit:contain;background:#fff;padding:10px;box-sizing:border-box;">
+        <div style="padding:12px 14px 14px;">
+          {f'<div style="font-size:10px;font-weight:700;color:#9aa095;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">{brand}</div>' if brand else ''}
+          <div style="font-size:12px;font-weight:700;color:#1a1f18;margin-bottom:7px;line-height:1.4;">{name}</div>
+          <div style="margin-bottom:9px;">{_product_price_html(p, accent_color)}</div>
+          <div style="background:{accent_color};color:#fff;text-align:center;padding:7px;border-radius:7px;font-size:11px;font-weight:700;">Shiko Produktin →</div>
         </div>
       </a>
     </td>"""
 
 
-def _products_grid(products, base_url):
+def _products_grid(products, base_url, accent_color='#4F5D4E'):
     rows = ""
     pairs = [products[i:i+2] for i in range(0, len(products), 2)]
     for pair in pairs:
-        cells = _product_card_grid(pair[0], base_url)
+        cells = _product_card_grid(pair[0], base_url, accent_color)
         if len(pair) > 1:
-            cells += _product_card_grid(pair[1], base_url)
+            cells += _product_card_grid(pair[1], base_url, accent_color)
         else:
             cells += '<td style="width:45%;padding:8px;"></td>'
         rows += f'<tr>{cells}</tr>'
     return f"""
-    <div style="padding:24px 32px;">
-      <h2 style="margin:0 0 20px;font-size:18px;font-weight:800;color:#1e293b;">🏷️ Ofertat e Limituara</h2>
+    <div style="padding:24px 28px;">
+      <h2 style="margin:0 0 16px;font-size:16px;font-weight:800;color:#1a1f18;">Ofertat e Limituara</h2>
       <table width="100%" cellpadding="0" cellspacing="0"><tbody>{rows}</tbody></table>
     </div>"""
 
 
-def _products_list(products, base_url):
+def _products_list(products, base_url, accent_color='#4F5D4E'):
     items = ""
     for p in products:
         img = p.get('image_url', '')
@@ -1388,23 +1409,23 @@ def _products_list(products, base_url):
         pid = str(p['_id'])
         items += f"""
         <tr>
-          <td style="padding:12px 0;border-bottom:1px solid #f1f5f9;">
+          <td style="padding:12px 0;border-bottom:1px solid #f0f2ef;">
             <table width="100%" cellpadding="0" cellspacing="0"><tr>
-              <td style="width:90px;vertical-align:top;padding-right:16px;">
-                <img src="{img}" alt="{name}" width="80" height="80" style="border-radius:10px;object-fit:cover;background:#e2e8f0;display:block;">
+              <td style="width:84px;vertical-align:top;padding-right:14px;">
+                <img src="{img}" alt="{name}" width="72" height="72" style="border-radius:10px;object-fit:contain;background:#f8faf7;display:block;padding:4px;box-sizing:border-box;">
               </td>
               <td style="vertical-align:top;">
-                {f'<div style="font-size:10px;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">{brand}</div>' if brand else ''}
-                <div style="font-size:14px;font-weight:700;color:#1e293b;margin:2px 0 6px;">{name}</div>
-                <div style="margin-bottom:10px;">{_product_price_html(p)}</div>
-                <a href="{base_url}/product/{pid}" style="font-size:12px;font-weight:700;color:#0f766e;text-decoration:none;">Shiko Produktin →</a>
+                {f'<div style="font-size:10px;color:#9aa095;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">{brand}</div>' if brand else ''}
+                <div style="font-size:13px;font-weight:700;color:#1a1f18;margin:2px 0 6px;">{name}</div>
+                <div style="margin-bottom:8px;">{_product_price_html(p, accent_color)}</div>
+                <a href="{base_url}/product/{pid}" style="font-size:11px;font-weight:700;color:{accent_color};text-decoration:none;">Shiko Produktin →</a>
               </td>
             </tr></table>
           </td>
         </tr>"""
     return f"""
-    <div style="padding:24px 40px;">
-      <h2 style="margin:0 0 16px;font-size:18px;font-weight:800;color:#1e293b;">🏷️ Ofertat e Limituara</h2>
+    <div style="padding:24px 36px;">
+      <h2 style="margin:0 0 14px;font-size:16px;font-weight:800;color:#1a1f18;">Ofertat e Limituara</h2>
       <table width="100%" cellpadding="0" cellspacing="0"><tbody>{items}</tbody></table>
     </div>"""
 
@@ -1472,3 +1493,282 @@ def toggle_admin(user_id):
         mongo.db.users.update_one({'_id': ObjectId(user_id)}, {'$set': {'is_admin': new_val}})
         flash('Roli u ndryshua me sukses.', 'success')
     return redirect(url_for('admin.users'))
+
+
+@admin.route('/analytics')
+@login_required
+@admin_required
+def analytics_page():
+    from bson import ObjectId
+    from collections import defaultdict
+
+    days = int(request.args.get('days', 30))
+    days = days if days in (7, 30, 90) else 30
+    cutoff = datetime.utcnow() - timedelta(days=days)
+    now = datetime.utcnow()
+    six_months_ago = now - timedelta(days=186)
+    _to_double = {"$convert": {"input": "$grand_total", "to": "double", "onError": 0, "onNull": 0}}
+
+    # ── Sales data (always 6 months) ─────────────────────────────
+    sales_facet = list(mongo.db.orders.aggregate([
+        {"$match": {"created_at": {"$gte": six_months_ago}}},
+        {"$facet": {
+            "monthly_trend": [
+                {"$group": {
+                    "_id": {"y": {"$year": "$created_at"}, "m": {"$month": "$created_at"}},
+                    "revenue": {"$sum": _to_double},
+                    "orders": {"$sum": 1}
+                }},
+                {"$sort": {"_id.y": 1, "_id.m": 1}}
+            ],
+            "most_ordered": [
+                {"$unwind": "$items"},
+                {"$group": {
+                    "_id": {"$toString": {"$ifNull": ["$items.product_id", "$items._id"]}},
+                    "name": {"$first": "$items.name"},
+                    "count": {"$sum": {"$convert": {"input": "$items.quantity", "to": "int", "onError": 1, "onNull": 1}}}
+                }},
+                {"$sort": {"count": -1}},
+                {"$limit": 8}
+            ]
+        }}
+    ]))
+    sf = sales_facet[0] if sales_facet else {}
+
+    # Monthly trend (last 6 months)
+    monthly_map = {(r["_id"]["y"], r["_id"]["m"]): r for r in (sf.get("monthly_trend") or [])}
+    trend_labels, trend_revenue, trend_orders = [], [], []
+    for i in range(5, -1, -1):
+        m = (now.month - i - 1) % 12 + 1
+        y = now.year - ((now.month - i - 1) // 12)
+        row = monthly_map.get((y, m), {})
+        import calendar as _cal
+        trend_labels.append(_cal.month_abbr[m])
+        trend_revenue.append(round(float(row.get("revenue") or 0), 2))
+        trend_orders.append(int(row.get("orders") or 0))
+
+    # Resolve most-ordered product images
+    most_ordered = []
+    mo_items = sf.get("most_ordered") or []
+    if mo_items:
+        mo_ids = [ObjectId(str(i["_id"])) for i in mo_items if i.get("_id") and ObjectId.is_valid(str(i.get("_id", "")))]
+        img_map = {str(p["_id"]): p.get("image_url", "") for p in mongo.db.products.find(
+            {"_id": {"$in": mo_ids}, "is_deleted": {"$ne": True}}, {"image_url": 1})} if mo_ids else {}
+        for item in mo_items:
+            pid = str(item.get("_id", ""))
+            if pid not in img_map:
+                continue  # product deleted or not found
+            most_ordered.append({"pid": pid,
+                                  "name": item.get("name", "—"),
+                                  "image_url": img_map.get(pid, ""),
+                                  "order_count": item.get("count", 0)})
+
+    # ── Product data ──────────────────────────────────────────────
+    prod_facet = list(mongo.db.products.aggregate([
+        {"$match": {"is_deleted": {"$ne": True}}},
+        {"$facet": {
+            "brand_dist": [
+                {"$match": {"brand": {"$nin": [None, ""]}}},
+                {"$group": {"_id": {"$toLower": {"$trim": {"input": {"$ifNull": ["$brand", ""]}}}},
+                             "brand": {"$first": "$brand"}, "count": {"$sum": 1}}},
+                {"$sort": {"count": -1}}, {"$limit": 8}
+            ],
+            "cat_dist": [
+                {"$match": {"category": {"$nin": [None, ""]}}},
+                {"$group": {"_id": "$category", "count": {"$sum": 1}}},
+                {"$sort": {"count": -1}}, {"$limit": 8}
+            ],
+            "most_liked": [
+                {"$project": {"name": 1, "image_url": 1,
+                               "fav_count": {"$size": {"$ifNull": ["$favorites", []]}}}},
+                {"$sort": {"fav_count": -1}}, {"$limit": 8}
+            ]
+        }}
+    ]))
+    pf = prod_facet[0] if prod_facet else {}
+    brand_distribution = {r["brand"].title(): r["count"] for r in (pf.get("brand_dist") or []) if r.get("brand")}
+    category_sales = {r["_id"].title(): r["count"] for r in (pf.get("cat_dist") or []) if r.get("_id")}
+    most_liked = pf.get("most_liked") or []
+
+    # ── Behaviour events (period-filtered) ───────────────────────
+    raw = list(mongo.db.events.aggregate([
+        {"$match": {"ts": {"$gte": cutoff}}},
+        {"$facet": {
+            # Count unique sessions per event type — one person viewing 10 products = 1, not 10
+            "funnel": [
+                {"$group": {"_id": {"e": "$e", "sid": "$sid"}}},
+                {"$group": {"_id": "$_id.e", "n": {"$sum": 1}}}
+            ],
+            "top_viewed": [
+                {"$match": {"e": "vp", "pid": {"$exists": True}}},
+                {"$group": {"_id": "$pid", "n": {"$sum": 1}}},
+                {"$sort": {"n": -1}}, {"$limit": 10}
+            ],
+            "top_carted": [
+                {"$match": {"e": "ac", "pid": {"$exists": True}}},
+                {"$group": {"_id": "$pid", "n": {"$sum": 1}}},
+                {"$sort": {"n": -1}}, {"$limit": 10}
+            ],
+            "unique_visitors": [{"$group": {"_id": "$sid"}}, {"$count": "n"}],
+            "daily_trend": [
+                {"$group": {"_id": {
+                    "day": {"$dateToString": {"format": "%Y-%m-%d", "date": "$ts"}},
+                    "e": "$e"
+                }, "n": {"$sum": 1}}},
+                {"$sort": {"_id.day": 1}}
+            ]
+        }}
+    ]))
+    f = raw[0] if raw else {}
+
+    def pct(num, denom):
+        return round(num / denom * 100, 1) if denom else 0
+
+    funnel_map = {r["_id"]: r["n"] for r in (f.get("funnel") or [])}
+    views     = funnel_map.get("vp", 0)
+    adds      = funnel_map.get("ac", 0)
+    checkouts = funnel_map.get("bc", 0)
+    purchases = funnel_map.get("pu", 0)
+    visitors  = (f.get("unique_visitors") or [{}])[0].get("n", 0)
+
+    funnel = [
+        {"label": "Vizita Unike",        "count": visitors,  "icon": "fa-users",       "color": "#4F5D4E",
+         "desc": "Sesione të ndryshme",  "rate_label": None},
+        {"label": "Faqe Produkti Hapur", "count": views,     "icon": "fa-eye",         "color": "#6b7c6a",
+         "desc": "Produkte të shikuara", "rate": pct(views, visitors),
+         "rate_label": "nga vizitorët unikë"},
+        {"label": "Shtuar në Shportë",   "count": adds,      "icon": "fa-cart-plus",   "color": "#f59e0b",
+         "desc": "nga shikimet",         "rate": pct(adds, views),
+         "rate_label": "nga ata që hapën një produkt"},
+        {"label": "Nisën Checkout",      "count": checkouts, "icon": "fa-credit-card", "color": "#3b82f6",
+         "desc": "nga shporta",          "rate": pct(checkouts, adds),
+         "rate_label": "nga ata që shtuan në shportë"},
+        {"label": "Porosi e Plotësuar",  "count": purchases, "icon": "fa-check-circle","color": "#10b981",
+         "desc": "nga checkout",         "rate": pct(purchases, checkouts),
+         "rate_label": "nga ata që nisën checkout"},
+    ]
+    abandonment_rate = round(100 - pct(purchases, checkouts), 1) if checkouts else None
+
+    def _resolve_products(items):
+        ids = [r["_id"] for r in items if r.get("_id") and ObjectId.is_valid(str(r["_id"]))]
+        if not ids:
+            return []
+        # Only include products that still exist and are not deleted
+        name_map = {str(p["_id"]): p for p in mongo.db.products.find(
+            {"_id": {"$in": [ObjectId(str(i)) for i in ids]}, "is_deleted": {"$ne": True}},
+            {"name": 1, "image_url": 1, "brand": 1})}
+        return [{"pid": str(r["_id"]),
+                 "name": name_map.get(str(r["_id"]), {}).get("name", "—"),
+                 "brand": name_map.get(str(r["_id"]), {}).get("brand", ""),
+                 "image_url": name_map.get(str(r["_id"]), {}).get("image_url", ""),
+                 "count": r["n"]}
+                for r in items if str(r["_id"]) in name_map]  # skip deleted/missing
+
+    top_viewed = _resolve_products(f.get("top_viewed") or [])
+    top_carted = _resolve_products(f.get("top_carted") or [])
+
+    carted_map = {p["pid"]: p["count"] for p in top_carted}
+    low_conversion = sorted(
+        [{"pid": p["pid"], "name": p["name"], "brand": p["brand"], "image_url": p["image_url"],
+          "count": p["count"], "cart_count": carted_map.get(p["pid"], 0),
+          "rate": pct(carted_map.get(p["pid"], 0), p["count"])}
+         for p in top_viewed if p["count"] >= 5 and pct(carted_map.get(p["pid"], 0), p["count"]) < 15],
+        key=lambda x: x["count"], reverse=True
+    )[:8]
+
+    day_data: dict = defaultdict(lambda: {"vp": 0, "ac": 0, "pu": 0})
+    for r in (f.get("daily_trend") or []):
+        day_data[r["_id"]["day"]][r["_id"]["e"]] = r["n"]
+    sorted_days = sorted(day_data.keys())
+    activity_trend = {
+        "labels":    sorted_days,
+        "views":     [day_data[d]["vp"] for d in sorted_days],
+        "adds":      [day_data[d]["ac"] for d in sorted_days],
+        "purchases": [day_data[d]["pu"] for d in sorted_days],
+    }
+    has_activity = bool(sorted_days)
+
+    pending_orders_count = mongo.db.orders.count_documents({'status': {'$in': ['Pending', 'Në Pritje']}})
+
+    return render_template('admin/analytics.html',
+                           days=days,
+                           funnel=funnel,
+                           abandonment_rate=abandonment_rate,
+                           top_viewed=top_viewed,
+                           top_carted=top_carted,
+                           low_conversion=low_conversion,
+                           activity_trend=activity_trend,
+                           has_activity=has_activity,
+                           trend_labels=trend_labels,
+                           trend_revenue=trend_revenue,
+                           trend_orders=trend_orders,
+                           most_ordered=most_ordered,
+                           most_liked=most_liked,
+                           brand_distribution=brand_distribution,
+                           category_sales=category_sales,
+                           pending_orders_count=pending_orders_count)
+
+
+@admin.route('/recent-events')
+@login_required
+@admin_required
+def recent_events():
+    """Show the last 20 real events — use this to verify tracking is working."""
+    from bson import ObjectId
+    docs = list(mongo.db.events.find({}, {"_id": 0}).sort("ts", -1).limit(20))
+    for d in docs:
+        d["ts"] = d["ts"].strftime("%Y-%m-%d %H:%M:%S") if d.get("ts") else ""
+        if "pid" in d:
+            d["pid"] = str(d["pid"])
+        if "uid" in d:
+            d["uid"] = str(d["uid"])
+    from flask import jsonify
+    return jsonify(docs)
+
+
+@admin.route('/seed-test-events', methods=['POST'])
+@login_required
+@admin_required
+def seed_test_events():
+    """Insert realistic fake events for the last 30 days — only in DEBUG mode."""
+    import os
+    if not os.getenv('FLASK_DEBUG', '1') in ('1', 'true', 'True'):
+        from flask import abort
+        abort(403)
+    import random
+    from bson import ObjectId
+    from datetime import datetime, timedelta
+
+    # Get up to 20 real product IDs to reference
+    products = list(mongo.db.products.find({"is_deleted": {"$ne": True}}, {"_id": 1}).limit(20))
+    if not products:
+        return {"error": "Nuk ka produkte"}, 400
+
+    pids = [p["_id"] for p in products]
+    now = datetime.utcnow()
+    docs = []
+
+    for day_offset in range(30):
+        ts_base = now - timedelta(days=day_offset)
+        n_visits = random.randint(3, 25)
+        for _ in range(n_visits):
+            sid = f"seed_{random.randint(1000, 9999)}"
+            ts = ts_base.replace(hour=random.randint(8, 22), minute=random.randint(0, 59))
+            # View a product
+            pid = random.choice(pids)
+            docs.append({"e": "vp", "pid": pid, "sid": sid, "ts": ts})
+            # ~40% add to cart
+            if random.random() < 0.40:
+                docs.append({"e": "ac", "pid": pid, "sid": sid,
+                              "ts": ts + timedelta(minutes=random.randint(1, 5))})
+                # ~50% of those start checkout
+                if random.random() < 0.50:
+                    docs.append({"e": "bc", "sid": sid,
+                                 "ts": ts + timedelta(minutes=random.randint(6, 12))})
+                    # ~60% of those complete order
+                    if random.random() < 0.60:
+                        docs.append({"e": "pu", "sid": sid,
+                                     "ts": ts + timedelta(minutes=random.randint(13, 20))})
+
+    mongo.db.events.insert_many(docs)
+    return {"inserted": len(docs), "ok": True}

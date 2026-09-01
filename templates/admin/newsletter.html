@@ -1,394 +1,676 @@
 {% extends "admin/base.html" %}
-{% block title %}Buletini - Meld Pharm Admin{% endblock %}
+{% block title %}Buletini — Meld Pharm Admin{% endblock %}
 {% block page_title %}Buletini{% endblock %}
 
 {% block admin_content %}
+<style>
+/* ── Layout ── */
+.nl-grid { display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; align-items:start; }
+@media(max-width:920px){ .nl-grid{ grid-template-columns:1fr; } }
+.nl-col { display:flex; flex-direction:column; gap:1rem; }
 
-{% with messages = get_flashed_messages(with_categories=true) %}
-{% for cat, msg in messages %}
-<div class="nl-alert nl-alert-{{ cat }}">
-  {% if cat == 'success' %}<i class="fas fa-check-circle"></i>{% elif cat == 'danger' %}<i class="fas fa-exclamation-circle"></i>{% else %}<i class="fas fa-info-circle"></i>{% endif %}
-  {{ msg }}
-</div>
-{% endfor %}
-{% endwith %}
+/* ── Subscriber pill ── */
+.nl-stat {
+    display:flex; align-items:center; gap:.7rem;
+    background:#eef5ee; border:1.5px solid #c8dbc7; border-radius:12px;
+    padding:.85rem 1.1rem; font-size:.87rem; color:#1a1f18; font-weight:600;
+}
+.nl-stat i { color:var(--adm-accent); font-size:.9rem; }
+.nl-stat strong { color:var(--adm-accent); }
+.nl-stat .warn { color:#c2410c; font-size:.82rem; font-weight:700; margin-left:.3rem; }
+
+/* ── Cards ── */
+.nl-card {
+    background:#fff; border:1px solid #eef0ed; border-radius:14px;
+    overflow:hidden; box-shadow:0 1px 4px rgba(0,0,0,.04);
+}
+.nl-card-hd {
+    padding:.9rem 1.2rem; border-bottom:1px solid #f0f2ef;
+    display:flex; align-items:center; gap:.65rem;
+    font-size:.88rem; font-weight:800; color:#1a1f18;
+}
+.nl-step-badge {
+    width:22px; height:22px; border-radius:50%;
+    background:var(--adm-accent); color:#fff;
+    font-size:.68rem; font-weight:800; display:flex;
+    align-items:center; justify-content:center; flex-shrink:0;
+}
+.nl-card-hd .optional {
+    font-size:.73rem; font-weight:500; color:#9aa095; margin-left:auto;
+}
+.nl-card-body { padding:1.1rem 1.2rem; }
+
+/* ── Inputs ── */
+.nl-input {
+    width:100%; padding:.65rem .9rem;
+    border:1.5px solid #e2e8f0; border-radius:9px;
+    font-size:.87rem; font-family:inherit; color:#1a1f18;
+    background:#fafafa; outline:none;
+    transition:border-color .15s, background .15s; box-sizing:border-box;
+}
+.nl-input:focus { border-color:var(--adm-accent); background:#fff; }
+.nl-textarea { resize:vertical; min-height:72px; line-height:1.55; }
+.nl-hint { font-size:.73rem; color:#9aa095; margin-top:.35rem; display:block; }
+
+/* Subject counter */
+.nl-subject-wrap { position:relative; }
+.nl-char-count {
+    position:absolute; right:.75rem; top:50%; transform:translateY(-50%);
+    font-size:.71rem; font-weight:700; color:#9aa095; pointer-events:none;
+    transition:color .2s;
+}
+.nl-char-count.good   { color:#16a34a; }
+.nl-char-count.ok     { color:#d97706; }
+.nl-char-count.long   { color:#dc2626; }
+.nl-input.has-counter { padding-right:3.5rem; }
+
+/* ── Layout picker ── */
+.layout-picker { display:flex; gap:.65rem; }
+.layout-option {
+    flex:1; cursor:pointer; border:2px solid #e2e8f0; border-radius:11px;
+    padding:.7rem; text-align:center; transition:all .18s; background:#fafafa;
+}
+.layout-option:hover { border-color:var(--adm-accent); background:#f5f8f4; }
+.layout-option.selected { border-color:var(--adm-accent); background:#eef5ee; }
+.layout-option input[type=radio] { display:none; }
+.layout-option span { display:block; font-size:.73rem; font-weight:700; color:#374151; margin-top:.45rem; }
+.layout-option.selected span { color:var(--adm-accent); }
+.lt-thumb { background:#eef0ed; border-radius:6px; padding:6px; min-height:50px; display:flex; flex-direction:column; gap:3px; }
+.lt-row { display:flex; gap:3px; }
+.lt-block { flex:1; height:18px; background:#9aa095; border-radius:3px; }
+.lt-line { height:9px; background:#9aa095; border-radius:3px; margin-bottom:3px; }
+
+/* ── Color swatches ── */
+.nl-colors { display:flex; gap:.55rem; flex-wrap:wrap; }
+.nl-swatch {
+    width:30px; height:30px; border-radius:50%; cursor:pointer;
+    border:3px solid transparent; transition:all .15s; flex-shrink:0;
+    position:relative;
+}
+.nl-swatch.selected { border-color:#1a1f18; transform:scale(1.15); }
+.nl-swatch::after {
+    content:''; position:absolute; inset:2px; border-radius:50%;
+    border:2px solid rgba(255,255,255,.5);
+}
+
+/* ── Product picker ── */
+.nl-search-wrap { position:relative; }
+.nl-search-wrap i { position:absolute; left:.75rem; top:50%; transform:translateY(-50%); color:#9aa095; font-size:.82rem; pointer-events:none; }
+.nl-search-wrap input { width:100%; padding:.58rem .75rem .58rem 2.1rem; border:1.5px solid #e2e8f0; border-radius:9px; font-size:.84rem; background:#fafafa; outline:none; box-sizing:border-box; font-family:inherit; transition:border-color .15s; }
+.nl-search-wrap input:focus { border-color:var(--adm-accent); background:#fff; }
+
+.nl-filter-row { display:flex; gap:.4rem; margin-top:.5rem; flex-wrap:wrap; }
+.nl-filter-btn { padding:.28rem .75rem; border-radius:20px; font-size:.73rem; font-weight:700; border:1.5px solid #e2e8f0; background:#f5f7f4; color:#6b7280; cursor:pointer; transition:all .15s; font-family:inherit; }
+.nl-filter-btn.active { background:var(--adm-accent); color:#fff; border-color:var(--adm-accent); }
+
+.prod-list { max-height:320px; overflow-y:auto; padding:.4rem .5rem; scrollbar-width:thin; scrollbar-color:#d4dcd3 transparent; }
+.prod-item {
+    display:flex; align-items:center; gap:.65rem; padding:.55rem .6rem;
+    border-radius:9px; cursor:pointer; transition:background .12s; position:relative;
+}
+.prod-item:hover { background:#f5f8f4; }
+.prod-item input[type=checkbox] { display:none; }
+.prod-item img { width:42px; height:42px; border-radius:8px; object-fit:contain; background:#f5f7f4; flex-shrink:0; }
+.prod-info { flex:1; min-width:0; }
+.prod-name { display:block; font-size:.81rem; font-weight:700; color:#1a1f18; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.prod-price { display:flex; align-items:center; gap:.3rem; margin-top:2px; font-size:.76rem; }
+.prod-price s { color:#9aa095; }
+.prod-price strong { color:var(--adm-accent); font-weight:800; }
+.offer-tag { background:#fef3c7; color:#92400e; font-size:.65rem; font-weight:700; padding:1px 5px; border-radius:4px; }
+.prod-check { color:#eef0ed; font-size:.88rem; flex-shrink:0; transition:color .15s, transform .15s; }
+.prod-item:has(input:checked) { background:#eef5ee; }
+.prod-item:has(input:checked) .prod-check { color:var(--adm-accent); transform:scale(1.2); }
+
+.nl-picker-footer {
+    padding:.6rem 1rem; border-top:1px solid #f0f2ef;
+    display:flex; align-items:center; justify-content:space-between;
+    background:#f8faf7;
+}
+.nl-sel-count { font-size:.8rem; font-weight:700; color:var(--adm-accent); }
+.nl-clear-btn { font-size:.75rem; color:#9aa095; background:none; border:none; cursor:pointer; font-family:inherit; font-weight:600; }
+.nl-clear-btn:hover { color:#dc2626; }
+
+/* ── Send button ── */
+.nl-send-btn {
+    width:100%; padding:1rem; background:var(--adm-accent); color:#fff;
+    border:none; border-radius:12px; font-size:.95rem; font-weight:800;
+    cursor:pointer; display:flex; align-items:center; justify-content:center;
+    gap:.6rem; transition:all .2s; font-family:inherit;
+    box-shadow:0 4px 16px rgba(79,93,78,.3);
+}
+.nl-send-btn:hover { opacity:.9; transform:translateY(-1px); box-shadow:0 6px 20px rgba(79,93,78,.35); }
+.nl-send-btn:disabled { opacity:.65; transform:none; cursor:not-allowed; }
+.nl-send-btn.loading .nl-btn-text { display:none; }
+.nl-send-btn .nl-btn-loading { display:none; align-items:center; gap:.5rem; }
+.nl-send-btn.loading .nl-btn-loading { display:flex; }
+
+/* ── Preview ── */
+.nl-col-sticky {
+    position:relative; align-self:start; will-change:transform;
+}
+.nl-col-sticky-inner {
+    max-height:calc(100vh - 56px - 2rem); overflow-y:auto;
+    scrollbar-width:none;
+}
+.nl-col-sticky-inner::-webkit-scrollbar { display:none; }
+@media(max-width:920px){ .nl-col-sticky{ position:static; max-height:none; } }
+.nl-preview-card {
+    background:#fff; border:1px solid #eef0ed; border-radius:14px;
+    overflow:hidden; box-shadow:0 1px 4px rgba(0,0,0,.04); width:100%;
+}
+.nl-preview-hd {
+    padding:.85rem 1.2rem; border-bottom:1px solid #f0f2ef;
+    display:flex; align-items:center; gap:.65rem;
+}
+.nl-preview-hd-title { font-size:.88rem; font-weight:800; color:#1a1f18; flex:1; }
+.nl-device-btns { display:flex; gap:.3rem; }
+.nl-dev-btn {
+    width:30px; height:28px; border:1.5px solid #e2e8f0; border-radius:7px;
+    background:#f5f7f4; color:#9aa095; cursor:pointer; font-size:.72rem;
+    display:flex; align-items:center; justify-content:center; transition:all .15s;
+}
+.nl-dev-btn.active { border-color:var(--adm-accent); background:#eef5ee; color:var(--adm-accent); }
+
+.nl-email-chrome {
+    padding:.65rem 1rem; border-bottom:1px solid #eef0ed;
+    background:#f8faf7; font-size:.75rem; color:#6b7280; line-height:1.8;
+}
+.nl-email-chrome strong { color:#374151; }
+.nl-preview-wrap { padding:.75rem; background:#F7F3EE; transition:padding .2s; }
+.nl-preview-inner { transition:max-width .25s; margin:0 auto; }
+.nl-preview-frame { width:100%; height:clamp(320px, calc(100vh - 56px - 14rem), 580px); overflow-y:auto; background:#fff; border-radius:10px; border:1px solid #e8ebe6; scrollbar-width:thin; scrollbar-color:#d4dcd3 transparent; }
+.nl-preview-frame.mobile-width { max-width:375px; margin:0 auto; }
+
+/* ── Modal ── */
+.nl-modal-overlay {
+    display:none; position:fixed; inset:0; z-index:9000;
+    background:rgba(0,0,0,.45); align-items:center; justify-content:center; padding:1rem;
+}
+.nl-modal-overlay.open { display:flex; }
+.nl-modal {
+    background:#fff; border-radius:18px; padding:2rem; max-width:420px;
+    width:100%; box-shadow:0 24px 64px rgba(0,0,0,.18);
+}
+.nl-modal-icon {
+    width:46px; height:46px; border-radius:12px; background:#eef5ee;
+    display:flex; align-items:center; justify-content:center;
+    color:var(--adm-accent); font-size:1.1rem; margin-bottom:1rem;
+}
+.nl-modal h3 { font-size:1rem; font-weight:800; color:#1a1f18; margin:0 0 .45rem; }
+.nl-modal p { font-size:.86rem; color:#6b7280; margin:0 0 1.4rem; line-height:1.6; }
+.nl-modal-btns { display:flex; gap:.6rem; justify-content:flex-end; }
+.nl-modal-cancel {
+    padding:.58rem 1.1rem; border-radius:9px; background:#f5f7f4;
+    color:#374151; border:1.5px solid #e2e8f0; font-weight:700;
+    cursor:pointer; font-family:inherit; font-size:.84rem;
+}
+.nl-modal-confirm {
+    padding:.58rem 1.3rem; border-radius:9px; background:var(--adm-accent);
+    color:#fff; border:none; font-weight:700; cursor:pointer;
+    font-family:inherit; font-size:.84rem; display:flex; align-items:center; gap:.4rem;
+}
+.nl-modal-confirm:hover { opacity:.88; }
+</style>
 
 <form method="POST" id="nlForm">
 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+<input type="hidden" name="accent_color" id="accentColorVal" value="#4F5D4E">
 
-<div class="nl-builder-grid">
+<div class="nl-grid">
 
-  <!-- LEFT COLUMN: Settings -->
-  <div class="nl-left">
+  <!-- ── LEFT: Config ── -->
+  <div class="nl-col">
 
-    <!-- Subscriber stat -->
-    <div class="nl-stat-pill">
+    <!-- Subscriber count -->
+    <div class="nl-stat">
       <i class="fas fa-users"></i>
-      <strong>{{ subscriber_count | default(0) }}</strong> abonentë të regjistruar{% if (guest_sub_count | default(0)) > 0 %} + <strong>{{ guest_sub_count }}</strong> mysafirë{% endif %} do të marrin këtë email
-      {% if (subscriber_count | default(0)) == 0 and (guest_sub_count | default(0)) == 0 %}<span style="color:#f59e0b;margin-left:0.5rem;"><i class="fas fa-exclamation-triangle"></i> Nuk ka abonentë</span>{% endif %}
+      <span>
+        <strong>{{ (subscriber_count|default(0)) + (guest_sub_count|default(0)) }}</strong>
+        abonentë do të marrin këtë email
+        {% if (subscriber_count|default(0)) + (guest_sub_count|default(0)) == 0 %}
+        <span class="warn"><i class="fas fa-exclamation-triangle"></i> Nuk ka abonentë</span>
+        {% endif %}
+      </span>
     </div>
 
     <!-- Step 1: Subject -->
     <div class="nl-card">
-      <div class="nl-card-header"><span class="nl-step">1</span> Titulli i Email-it</div>
+      <div class="nl-card-hd"><span class="nl-step-badge">1</span> Titulli i Email-it</div>
       <div class="nl-card-body">
-        <input type="text" name="subject" id="nlSubject" required
-          placeholder="Psh: Ofertat e Javës — Zbritje deri 40%!"
-          class="nl-input" oninput="schedulePreview()"
-          value="{{ default_subject }}">
-        <small style="color:#94a3b8;font-size:0.78rem;">Kjo shfaqet si subject në inbox-in e klientit.</small>
+        <div class="nl-subject-wrap">
+          <input type="text" name="subject" id="nlSubject" required class="nl-input has-counter"
+            placeholder="Psh: Ofertat e Javës — Zbritje deri 40%!"
+            oninput="updateCharCount(this);schedulePreview()"
+            value="{{ default_subject }}">
+          <span class="nl-char-count" id="charCount"></span>
+        </div>
+        <span class="nl-hint">Rekomandohet 40–60 karaktere për inbox-in optimal.</span>
       </div>
     </div>
 
-    <!-- Step 2: Layout -->
+    <!-- Step 2: Headline & intro -->
     <div class="nl-card">
-      <div class="nl-card-header"><span class="nl-step">2</span> Zgjedh Paraqitjen (Layout)</div>
+      <div class="nl-card-hd">
+        <span class="nl-step-badge">2</span> Titulli & Mesazhi Hyrës
+        <span class="optional">opsionale</span>
+      </div>
+      <div class="nl-card-body" style="display:flex;flex-direction:column;gap:.75rem;">
+        <div>
+          <input type="text" name="headline" id="nlHeadline" class="nl-input"
+            placeholder="Psh: ☀️ Ofertat e Javës kanë ardhur!"
+            oninput="schedulePreview()" value="{{ default_headline }}">
+        </div>
+        <div>
+          <textarea name="intro_text" id="nlIntro" class="nl-input nl-textarea"
+            placeholder="Psh: Kjo javë kemi zbritje të jashtëzakonshme..."
+            oninput="schedulePreview()">{{ default_intro }}</textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 3: Layout -->
+    <div class="nl-card">
+      <div class="nl-card-hd"><span class="nl-step-badge">3</span> Paraqitja e Produkteve</div>
       <div class="nl-card-body">
         <div class="layout-picker">
-          <label class="layout-option selected" data-val="grid">
-            <input type="radio" name="template" value="grid" checked style="display:none">
-            <div class="layout-thumb">
-              <div class="lt-row"><div class="lt-card"></div><div class="lt-card"></div></div>
-              <div class="lt-row"><div class="lt-card"></div><div class="lt-card"></div></div>
+          <label class="layout-option selected" id="lopt-grid">
+            <input type="radio" name="template" value="grid" checked>
+            <div class="lt-thumb">
+              <div class="lt-row"><div class="lt-block"></div><div class="lt-block"></div></div>
+              <div class="lt-row"><div class="lt-block"></div><div class="lt-block"></div></div>
             </div>
-            <span>Rrjet 2×2</span>
+            <span>Rrjet 2 × 2</span>
           </label>
-          <label class="layout-option" data-val="list">
-            <input type="radio" name="template" value="list" style="display:none">
-            <div class="layout-thumb">
-              <div class="lt-list-item"></div>
-              <div class="lt-list-item"></div>
-              <div class="lt-list-item"></div>
+          <label class="layout-option" id="lopt-list">
+            <input type="radio" name="template" value="list">
+            <div class="lt-thumb" style="justify-content:center;gap:5px;">
+              <div class="lt-line"></div>
+              <div class="lt-line" style="width:80%"></div>
+              <div class="lt-line"></div>
             </div>
-            <span>Lista</span>
+            <span>Lista Vertikale</span>
           </label>
         </div>
       </div>
     </div>
 
-    <!-- Step 3: Headline & Intro -->
+    <!-- Step 4: Email color -->
     <div class="nl-card">
-      <div class="nl-card-header"><span class="nl-step">3</span> Titulli & Mesazhi Hyrës <span style="font-weight:400;font-size:0.78rem;color:#94a3b8;">(opsionale)</span></div>
-      <div class="nl-card-body" style="display:flex;flex-direction:column;gap:0.75rem;">
-        <input type="text" name="headline" id="nlHeadline"
-          placeholder="Psh: ☀️ Ofertat e Javës kanë ardhur!"
-          class="nl-input" oninput="schedulePreview()"
-          value="{{ default_headline }}">
-        <textarea name="intro_text" id="nlIntro" rows="3" class="nl-input"
-          placeholder="Psh: Kjo javë kemi zbritje të jashtëzakonshme mbi produktet tona më të mira..."
-          style="resize:vertical;" oninput="schedulePreview()">{{ default_intro }}</textarea>
+      <div class="nl-card-hd"><span class="nl-step-badge">4</span> Ngjyra e Email-it</div>
+      <div class="nl-card-body">
+        <p style="font-size:.73rem;font-weight:700;color:#6b7280;margin:0 0 .5rem;text-transform:uppercase;letter-spacing:.05em;">Standard</p>
+        <div class="nl-colors" id="nlColors" style="margin-bottom:.85rem;">
+          <div class="nl-swatch selected" style="background:#4F5D4E;" data-color="#4F5D4E" title="Olive — Meld Pharm"></div>
+          <div class="nl-swatch" style="background:#1e293b;" data-color="#1e293b" title="Antracit"></div>
+          <div class="nl-swatch" style="background:#7c2d12;" data-color="#7c2d12" title="Kafe e errët"></div>
+          <div class="nl-swatch" style="background:#581c87;" data-color="#581c87" title="Vjollcë"></div>
+        </div>
+        <p style="font-size:.73rem;font-weight:700;color:#6b7280;margin:0 0 .5rem;text-transform:uppercase;letter-spacing:.05em;">Marka</p>
+        <div class="nl-colors" style="margin-bottom:.4rem;">
+          <div class="nl-swatch" style="background:#E8611A;" data-color="#E8611A" title="Eucerin"></div>
+          <div class="nl-swatch" style="background:#1C3D5A;" data-color="#1C3D5A" title="CeraVe"></div>
+          <div class="nl-swatch" style="background:#009FD4;" data-color="#009FD4" title="La Roche-Posay"></div>
+          <div class="nl-swatch" style="background:#8B1A1A;" data-color="#8B1A1A" title="Vichy"></div>
+        </div>
+        <div style="display:flex;gap:.4rem;margin-top:.35rem;flex-wrap:wrap;">
+          <span style="font-size:.7rem;color:#9aa095;background:#f5f7f4;padding:2px 7px;border-radius:20px;">Eucerin</span>
+          <span style="font-size:.7rem;color:#9aa095;background:#f5f7f4;padding:2px 7px;border-radius:20px;">CeraVe</span>
+          <span style="font-size:.7rem;color:#9aa095;background:#f5f7f4;padding:2px 7px;border-radius:20px;">La Roche-Posay</span>
+          <span style="font-size:.7rem;color:#9aa095;background:#f5f7f4;padding:2px 7px;border-radius:20px;">Vichy</span>
+        </div>
+        <span class="nl-hint" style="margin-top:.65rem;">Kjo ngjyrë përdoret si header dhe buton i email-it.</span>
       </div>
     </div>
 
-    <!-- Step 4: Product picker -->
+    <!-- Step 5: CTA text -->
     <div class="nl-card">
-      <div class="nl-card-header"><span class="nl-step">4</span> Zgjidh Produktet <span style="font-weight:400;font-size:0.78rem;color:#94a3b8;">(max 8)</span></div>
-      <div class="nl-card-body" style="padding:0;">
-        <div style="padding:0.85rem 1rem;border-bottom:1px solid #f1f5f9;">
-          <div class="nl-prod-search-wrap">
-            <i class="fas fa-search"></i>
-            <input type="text" id="prodSearch" placeholder="Kërko produkt..." oninput="filterProducts(this.value)">
-          </div>
-          <div style="display:flex;gap:0.5rem;margin-top:0.6rem;flex-wrap:wrap;">
-            <button type="button" class="prod-filter-btn active" onclick="filterByOffer(this,'all')">Të gjitha</button>
-            <button type="button" class="prod-filter-btn" onclick="filterByOffer(this,'offer')"><i class="fas fa-tag"></i> Me Ofertë</button>
-          </div>
-        </div>
-        <div id="productPickerList" style="max-height:340px;overflow-y:auto;padding:0.5rem;">
-          {% for p in all_products %}
-          <label class="prod-picker-item {% if p.discount_price %}has-offer{% endif %}"
-                 data-name="{{ (p.name + ' ' + (p.brand or ''))|lower }}"
-                 data-offer="{{ '1' if p.discount_price else '0' }}">
-            <input type="checkbox" name="product_ids" value="{{ p._id }}" onchange="onProductSelect()">
-            <img src="{{ p.image_url }}" alt="{{ p.name }}" onerror="this.src='/static/img/placeholder.png'">
-            <div class="prod-picker-info">
-              <span class="prod-picker-name">{{ p.brand + ' — ' if p.brand else '' }}{{ p.name }}</span>
-              <span class="prod-picker-price">
-                {% if p.discount_price %}
-                <s style="color:#94a3b8;font-size:0.75rem;">€{{ "%.2f"|format(p.price) }}</s>
-                <strong style="color:#0f766e;">€{{ "%.2f"|format(p.discount_price) }}</strong>
-                <span class="offer-chip">-{{ ((p.price - p.discount_price) / p.price * 100)|round|int }}%</span>
-                {% else %}
-                <strong>€{{ "%.2f"|format(p.price) }}</strong>
-                {% endif %}
-              </span>
-            </div>
-            <i class="fas fa-check prod-check-icon"></i>
-          </label>
-          {% endfor %}
-        </div>
-        <div style="padding:0.75rem 1rem;border-top:1px solid #f1f5f9;background:#f8fafc;">
-          <span id="selectedCount" style="font-size:0.82rem;font-weight:700;color:#0f766e;">0 produkte zgjedhura</span>
-          <button type="button" onclick="clearProducts()" style="float:right;background:none;border:none;font-size:0.78rem;color:#94a3b8;cursor:pointer;">Fshi zgjedhjen</button>
-        </div>
+      <div class="nl-card-hd">
+        <span class="nl-step-badge">5</span> Teksti i Butonit
+        <span class="optional">opsionale</span>
+      </div>
+      <div class="nl-card-body">
+        <input type="text" name="cta_text" id="nlCta" class="nl-input"
+          placeholder="Shiko Të Gjitha Produktet"
+          value="Shiko Të Gjitha Produktet"
+          oninput="schedulePreview()">
+        <span class="nl-hint">Butoni i madh poshtë produkteve.</span>
       </div>
     </div>
 
-    <!-- Send button -->
-    <button type="button" onclick="sendNewsletter()" class="nl-send-btn">
-      <i class="fas fa-paper-plane"></i>
-      Dërgo Buletinin tek {{ (subscriber_count | default(0)) + (guest_sub_count | default(0)) }} abonentë
+    <!-- Step 6: Footer note -->
+    <div class="nl-card">
+      <div class="nl-card-hd">
+        <span class="nl-step-badge">6</span> Shënim në Footer
+        <span class="optional">opsionale</span>
+      </div>
+      <div class="nl-card-body">
+        <textarea name="footer_note" id="nlFooterNote" class="nl-input nl-textarea" rows="2"
+          placeholder="Psh: Faleminderit që jeni me ne! 🌿 Kujdesuni për shëndetin tuaj."
+          oninput="schedulePreview()" style="min-height:52px;"></textarea>
+        <span class="nl-hint">Shfaqet si tekst i vogël nën adresën në fund të email-it.</span>
+      </div>
+    </div>
+
+    <!-- Step 7: Products -->
+    <div class="nl-card">
+      <div class="nl-card-hd"><span class="nl-step-badge">7</span> Produktet <span class="optional">max 8</span></div>
+      <div style="padding:.75rem 1rem .5rem; border-bottom:1px solid #f0f2ef;">
+        <div class="nl-search-wrap">
+          <i class="fas fa-search"></i>
+          <input type="text" id="prodSearch" placeholder="Kërko produkt..." oninput="filterProds(this.value)">
+        </div>
+        <div class="nl-filter-row">
+          <button type="button" class="nl-filter-btn active" onclick="filterByOffer(this,'all')">Të gjitha</button>
+          <button type="button" class="nl-filter-btn" onclick="filterByOffer(this,'offer')"><i class="fas fa-tag"></i> Me Ofertë</button>
+        </div>
+      </div>
+      <div class="prod-list" id="prodList">
+        {% for p in all_products %}
+        <label class="prod-item" data-name="{{ (p.name + ' ' + (p.brand or ''))|lower }}" data-offer="{{ '1' if p.discount_price else '0' }}">
+          <input type="checkbox" name="product_ids" value="{{ p._id }}" onchange="onProdChange()">
+          <img src="{{ p.image_url }}" alt="" onerror="this.src='/static/img/placeholder.png'">
+          <div class="prod-info">
+            <span class="prod-name">{{ (p.brand + ' — ') if p.brand else '' }}{{ p.name }}</span>
+            <span class="prod-price">
+              {% if p.discount_price %}
+              <s>€{{ "%.2f"|format(p.price) }}</s>
+              <strong>€{{ "%.2f"|format(p.discount_price) }}</strong>
+              <span class="offer-tag">-{{ ((p.price - p.discount_price) / p.price * 100)|round|int }}%</span>
+              {% else %}
+              <strong style="color:#1a1f18;">€{{ "%.2f"|format(p.price) }}</strong>
+              {% endif %}
+            </span>
+          </div>
+          <i class="fas fa-check-circle prod-check"></i>
+        </label>
+        {% endfor %}
+      </div>
+      <div class="nl-picker-footer">
+        <span class="nl-sel-count" id="selCount">0 zgjedhura</span>
+        <button type="button" class="nl-clear-btn" onclick="clearProds()">Hiq zgjedhjen</button>
+      </div>
+    </div>
+
+    <!-- Send -->
+    <button type="button" onclick="openSendModal()" class="nl-send-btn" id="nlSendBtn">
+      <span class="nl-btn-text">
+        <i class="fas fa-paper-plane"></i>
+        Dërgo tek {{ (subscriber_count|default(0)) + (guest_sub_count|default(0)) }} abonentë
+      </span>
+      <span class="nl-btn-loading">
+        <i class="fas fa-circle-notch fa-spin"></i> Duke dërguar...
+      </span>
     </button>
 
-  </div>
+  </div><!-- .nl-col left -->
 
-  <!-- RIGHT COLUMN: Live preview -->
-  <div class="nl-right">
-    <div class="nl-card" style="position:sticky;top:1rem;">
-      <div class="nl-card-header" style="display:flex;align-items:center;justify-content:space-between;">
-        <span><i class="fas fa-eye" style="color:#0f766e;margin-right:0.4rem;"></i> Pamja Paraprake</span>
-        <span style="font-size:0.75rem;color:#94a3b8;font-weight:400;">Live preview</span>
-      </div>
-      <div style="padding:0;">
-        <!-- Fake email client chrome -->
-        <div style="background:#f1f5f9;padding:0.75rem 1rem;border-bottom:1px solid #e2e8f0;font-size:0.78rem;color:#64748b;">
-          <div><strong>Nga:</strong> Barnatore Meld Pharm</div>
-          <div><strong>Tek:</strong> abonenti@email.com</div>
-          <div><strong>Subject:</strong> <span id="previewSubjectLine" style="color:#1e293b;font-weight:600;">—</span></div>
+  <!-- ── RIGHT: Live preview ── -->
+  <div class="nl-col nl-col-sticky"><div class="nl-col-sticky-inner">
+    <div class="nl-preview-card">
+      <div class="nl-preview-hd">
+        <i class="fas fa-eye" style="color:var(--adm-accent);"></i>
+        <span class="nl-preview-hd-title">Pamja Paraprake</span>
+        <div class="nl-device-btns">
+          <button type="button" class="nl-dev-btn active" id="devDesktop" onclick="setDevice('desktop')" title="Desktop">
+            <i class="fas fa-desktop"></i>
+          </button>
+          <button type="button" class="nl-dev-btn" id="devMobile" onclick="setDevice('mobile')" title="Mobile (375px)">
+            <i class="fas fa-mobile-alt"></i>
+          </button>
         </div>
-        <div id="emailPreviewFrame" style="height:560px;overflow-y:auto;background:#f8fafc;"></div>
+      </div>
+      <div class="nl-email-chrome">
+        <div><strong>Nga:</strong> Barnatore Meld Pharm</div>
+        <div><strong>Tek:</strong> abonenti@email.com</div>
+        <div><strong>Subject:</strong> <span id="previewSubject" style="color:#1a1f18;font-weight:700;">—</span></div>
+      </div>
+      <div class="nl-preview-wrap">
+        <div id="previewFrame" class="nl-preview-frame"></div>
       </div>
     </div>
-  </div>
+  </div></div><!-- /.nl-col-sticky-inner -->
 
-</div>
+</div><!-- .nl-grid -->
 </form>
 
 <!-- Confirm send modal -->
-<div id="sendModal" class="nl-modal-overlay" style="display:none;">
-  <div class="nl-modal-box">
-    <h3><i class="fas fa-paper-plane" style="color:#0f766e;"></i> Konfirmo Dërgimin</h3>
-    <p id="sendModalText">Dërgon buletinin tek <strong>{{ subscriber_count }}</strong> abonentë?</p>
-    <div class="nl-modal-actions">
-      <button onclick="document.getElementById('sendModal').style.display='none'" class="nl-btn-cancel">Anulo</button>
-      <button onclick="document.getElementById('nlForm').submit()" class="nl-btn-send"><i class="fas fa-paper-plane"></i> Po, Dërgo</button>
+<div class="nl-modal-overlay" id="sendModal" onclick="if(event.target===this)this.style.display='none'">
+  <div class="nl-modal" onclick="event.stopPropagation()">
+    <div class="nl-modal-icon"><i class="fas fa-paper-plane"></i></div>
+    <h3>Konfirmo Dërgimin</h3>
+    <p id="sendModalText">Dërgon buletinin tek <strong>{{ (subscriber_count|default(0)) + (guest_sub_count|default(0)) }}</strong> abonentë? Ky veprim nuk mund të kthehet prapa.</p>
+    <div class="nl-modal-btns">
+      <button class="nl-modal-cancel" onclick="document.getElementById('sendModal').style.display='none'">Anulo</button>
+      <button class="nl-modal-confirm" onclick="submitForm()">
+        <i class="fas fa-paper-plane"></i> Po, Dërgo
+      </button>
     </div>
   </div>
 </div>
 
-<style>
-.nl-builder-grid { display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; align-items:start; }
-@media(max-width:900px){ .nl-builder-grid{ grid-template-columns:1fr; } }
-
-.nl-left, .nl-right { display:flex; flex-direction:column; gap:1rem; }
-
-.nl-alert { display:flex;align-items:center;gap:0.6rem;padding:0.9rem 1.1rem;border-radius:12px;margin-bottom:1rem;font-weight:600;font-size:0.9rem; }
-.nl-alert-success { background:#f0fdf4;color:#166534;border:1px solid #bbf7d0; }
-.nl-alert-danger  { background:#fef2f2;color:#991b1b;border:1px solid #fecaca; }
-.nl-alert-warning { background:#fffbeb;color:#92400e;border:1px solid #fde68a; }
-
-.nl-stat-pill { display:flex;align-items:center;gap:0.6rem;background:#f0fdf4;border:1px solid #a7f3d0;border-radius:12px;padding:0.8rem 1.1rem;font-size:0.87rem;color:#1e293b; }
-.nl-stat-pill i { color:#0f766e; }
-
-.nl-card { background:#fff;border-radius:16px;border:1px solid #e2e8f0;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.04); }
-.nl-card-header { padding:1rem 1.25rem;background:#f8fafc;border-bottom:1px solid #e2e8f0;font-weight:700;font-size:0.9rem;color:#1e293b;display:flex;align-items:center;gap:0.6rem; }
-.nl-card-body { padding:1.25rem; }
-.nl-step { display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:#0f766e;color:#fff;font-size:0.72rem;font-weight:800;flex-shrink:0; }
-
-.nl-input { width:100%;padding:0.72rem 1rem;border:1.5px solid #e2e8f0;border-radius:10px;font-size:0.88rem;color:#1e293b;background:#f8fafc;font-family:inherit;outline:none;transition:border-color 0.2s,background 0.2s;box-sizing:border-box; }
-.nl-input:focus { border-color:#0f766e;background:#fff; }
-
-/* Layout picker */
-.layout-picker { display:flex;gap:0.75rem;flex-wrap:wrap; }
-.layout-option { cursor:pointer;border:2px solid #e2e8f0;border-radius:12px;padding:0.75rem;text-align:center;flex:1;min-width:80px;transition:all 0.2s;background:#f8fafc; }
-.layout-option:hover { border-color:#0f766e; }
-.layout-option.selected { border-color:#0f766e;background:#f0fdf4; }
-.layout-option span { display:block;font-size:0.75rem;font-weight:700;color:#475569;margin-top:0.5rem; }
-.layout-thumb { background:#e2e8f0;border-radius:6px;padding:6px;min-height:56px;display:flex;flex-direction:column;gap:3px; }
-.lt-row { display:flex;gap:3px; }
-.lt-card { flex:1;height:20px;background:#94a3b8;border-radius:3px; }
-.lt-card.sm { height:14px; }
-.lt-list-item { height:10px;background:#94a3b8;border-radius:3px;margin-bottom:3px; }
-.lt-hero { height:28px;background:#0f766e;border-radius:4px;opacity:0.6; }
-
-/* Product picker */
-.nl-prod-search-wrap { position:relative; }
-.nl-prod-search-wrap i { position:absolute;left:0.75rem;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:0.85rem; }
-.nl-prod-search-wrap input { width:100%;padding:0.6rem 0.75rem 0.6rem 2.25rem;border:1.5px solid #e2e8f0;border-radius:9px;font-size:0.85rem;background:#f8fafc;outline:none;box-sizing:border-box; }
-.nl-prod-search-wrap input:focus { border-color:#0f766e; }
-
-.prod-filter-btn { padding:0.3rem 0.8rem;border-radius:20px;font-size:0.75rem;font-weight:700;border:1.5px solid #e2e8f0;background:#f1f5f9;color:#64748b;cursor:pointer;transition:all 0.18s; }
-.prod-filter-btn.active { background:#0f766e;color:#fff;border-color:#0f766e; }
-
-.prod-picker-item { display:flex;align-items:center;gap:0.7rem;padding:0.6rem 0.75rem;border-radius:10px;cursor:pointer;transition:background 0.15s;position:relative; }
-.prod-picker-item:hover { background:#f0fdf4; }
-.prod-picker-item input[type=checkbox] { display:none; }
-.prod-picker-item img { width:44px;height:44px;border-radius:8px;object-fit:cover;background:#e2e8f0;flex-shrink:0; }
-.prod-picker-info { flex:1;min-width:0; }
-.prod-picker-name { display:block;font-size:0.82rem;font-weight:600;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
-.prod-picker-price { display:flex;align-items:center;gap:0.35rem;margin-top:2px; }
-.offer-chip { background:#fef3c7;color:#92400e;font-size:0.68rem;font-weight:700;padding:1px 5px;border-radius:5px; }
-.prod-check-icon { color:#e2e8f0;font-size:0.9rem;flex-shrink:0;transition:color 0.15s; }
-.prod-picker-item:has(input:checked) { background:#f0fdf4;border:1px solid #a7f3d0; }
-.prod-picker-item:has(input:checked) .prod-check-icon { color:#0f766e; }
-
-/* Send button */
-.nl-send-btn { width:100%;padding:1rem;background:linear-gradient(135deg,#0f766e,#14b8a6);color:#fff;border:none;border-radius:14px;font-size:0.95rem;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:0.6rem;transition:all 0.2s;box-shadow:0 4px 14px rgba(15,118,110,0.35); }
-.nl-send-btn:hover { opacity:0.92;transform:translateY(-1px); }
-
-/* Modal */
-.nl-modal-overlay { position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:9000;display:flex;align-items:center;justify-content:center;padding:1rem; }
-.nl-modal-box { background:#fff;border-radius:18px;padding:2rem;max-width:420px;width:100%;box-shadow:0 24px 64px rgba(0,0,0,0.18); }
-.nl-modal-box h3 { font-size:1.1rem;font-weight:800;color:#1e293b;margin:0 0 0.75rem;display:flex;align-items:center;gap:0.5rem; }
-.nl-modal-box p { font-size:0.9rem;color:#64748b;margin:0 0 1.5rem; }
-.nl-modal-actions { display:flex;gap:0.75rem;justify-content:flex-end; }
-.nl-btn-cancel { padding:0.6rem 1.25rem;border-radius:9px;background:#f1f5f9;color:#475569;border:none;font-weight:700;cursor:pointer; }
-.nl-btn-send { padding:0.6rem 1.5rem;border-radius:9px;background:#0f766e;color:#fff;border:none;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:0.4rem; }
-</style>
-
 <script>
-// Layout picker
+const SITE_BASE = "{{ site_base_url }}";
+let _accent = '#4F5D4E';
+
+/* ── Subject char counter ── */
+function updateCharCount(el) {
+    const n = el.value.length;
+    const cc = document.getElementById('charCount');
+    cc.textContent = n;
+    cc.className = 'nl-char-count ' + (n < 40 ? '' : n <= 60 ? 'good' : n <= 75 ? 'ok' : 'long');
+}
+updateCharCount(document.getElementById('nlSubject'));
+
+/* ── Layout picker ── */
 document.querySelectorAll('.layout-option').forEach(opt => {
-  opt.addEventListener('click', function() {
-    document.querySelectorAll('.layout-option').forEach(o => o.classList.remove('selected'));
-    this.classList.add('selected');
-    this.querySelector('input[type=radio]').checked = true;
-    schedulePreview();
-  });
+    opt.addEventListener('click', function() {
+        document.querySelectorAll('.layout-option').forEach(o => o.classList.remove('selected'));
+        this.classList.add('selected');
+        this.querySelector('input[type=radio]').checked = true;
+        schedulePreview();
+    });
 });
 
-// Product filter
-function filterProducts(term) {
-  term = term.toLowerCase().trim();
-  document.querySelectorAll('.prod-picker-item').forEach(el => {
-    const name = el.dataset.name || '';
-    el.style.display = (!term || name.includes(term)) ? '' : 'none';
-  });
+/* ── Color swatches ── */
+document.querySelectorAll('.nl-swatch').forEach(sw => {
+    sw.addEventListener('click', function() {
+        document.querySelectorAll('.nl-swatch').forEach(s => s.classList.remove('selected'));
+        this.classList.add('selected');
+        _accent = this.dataset.color;
+        document.getElementById('accentColorVal').value = _accent;
+        schedulePreview();
+    });
+    sw.title = sw.getAttribute('title') || '';
+});
+
+/* ── Device toggle ── */
+let _device = 'desktop';
+function setDevice(d) {
+    _device = d;
+    document.getElementById('devDesktop').classList.toggle('active', d === 'desktop');
+    document.getElementById('devMobile').classList.toggle('active', d === 'mobile');
+    const frame = document.getElementById('previewFrame');
+    if (d === 'mobile') {
+        frame.style.maxWidth = '375px';
+        frame.style.margin = '0 auto';
+        frame.style.borderRadius = '20px';
+    } else {
+        frame.style.maxWidth = '';
+        frame.style.margin = '';
+        frame.style.borderRadius = '10px';
+    }
 }
 
+/* ── Product picker ── */
+function filterProds(q) {
+    const ql = q.toLowerCase();
+    document.querySelectorAll('.prod-item').forEach(el => {
+        el.style.display = (el.dataset.name||'').includes(ql) ? '' : 'none';
+    });
+}
 let _offerMode = 'all';
 function filterByOffer(btn, mode) {
-  _offerMode = mode;
-  document.querySelectorAll('.prod-filter-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  document.querySelectorAll('.prod-picker-item').forEach(el => {
-    if (mode === 'offer') {
-      el.style.display = el.dataset.offer === '1' ? '' : 'none';
-    } else {
-      el.style.display = '';
+    _offerMode = mode;
+    document.querySelectorAll('.nl-filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('.prod-item').forEach(el => {
+        el.style.display = (mode === 'offer' && el.dataset.offer !== '1') ? 'none' : '';
+    });
+}
+function onProdChange() {
+    const checked = document.querySelectorAll('input[name=product_ids]:checked');
+    if (checked.length > 8) {
+        this.checked = false;
+        showToast('Maksimumi 8 produkte mund të zgjedhësh.', 'warning');
+        return;
     }
-  });
+    document.getElementById('selCount').textContent = checked.length + ' zgjedhura';
+    schedulePreview();
+}
+function clearProds() {
+    document.querySelectorAll('input[name=product_ids]').forEach(c => c.checked = false);
+    document.getElementById('selCount').textContent = '0 zgjedhura';
+    schedulePreview();
 }
 
-function onProductSelect() {
-  const checked = document.querySelectorAll('input[name=product_ids]:checked');
-  document.getElementById('selectedCount').textContent = checked.length + ' produkte zgjedhura';
-  if (checked.length > 8) {
-    this.checked = false;
-    alert('Maksimumi 8 produkte mund të zgjedhësh.');
-    return;
-  }
-  schedulePreview();
-}
-
-function clearProducts() {
-  document.querySelectorAll('input[name=product_ids]').forEach(c => c.checked = false);
-  document.getElementById('selectedCount').textContent = '0 produkte zgjedhura';
-  schedulePreview();
-}
-
-// Live preview
+/* ── Live preview ── */
 let _previewTimer = null;
 function schedulePreview() {
-  clearTimeout(_previewTimer);
-  _previewTimer = setTimeout(buildPreview, 300);
+    clearTimeout(_previewTimer);
+    _previewTimer = setTimeout(buildPreview, 280);
 }
-
-const SITE_BASE = "{{ site_base_url }}";
 
 function buildPreview() {
-  const subject  = document.getElementById('nlSubject').value  || '';
-  const headline = document.getElementById('nlHeadline').value || '';
-  const intro    = document.getElementById('nlIntro').value    || '';
-  const template = document.querySelector('input[name=template]:checked')?.value || 'grid';
+    const subject  = document.getElementById('nlSubject').value || '';
+    const headline = document.getElementById('nlHeadline').value || '';
+    const intro    = document.getElementById('nlIntro').value || '';
+    const cta      = document.getElementById('nlCta').value || 'Shiko Të Gjitha Produktet';
+    const fnote    = document.getElementById('nlFooterNote').value || '';
+    const template = document.querySelector('input[name=template]:checked')?.value || 'grid';
 
-  document.getElementById('previewSubjectLine').textContent = subject || '—';
+    document.getElementById('previewSubject').textContent = subject || '—';
 
-  // Collect selected products data from DOM
-  const selectedItems = [];
-  document.querySelectorAll('input[name=product_ids]:checked').forEach(cb => {
-    const label = cb.closest('.prod-picker-item');
-    if (!label) return;
-    const img   = label.querySelector('img')?.src || '';
-    const name  = label.querySelector('.prod-picker-name')?.textContent?.trim() || '';
-    const priceEl = label.querySelector('.prod-picker-price');
-    const priceHTML = priceEl ? priceEl.innerHTML : '';
-    selectedItems.push({ img, name, priceHTML, id: cb.value });
-  });
+    const products = [];
+    document.querySelectorAll('input[name=product_ids]:checked').forEach(cb => {
+        const lbl = cb.closest('.prod-item');
+        if (!lbl) return;
+        products.push({
+            img:      lbl.querySelector('img')?.src || '',
+            name:     lbl.querySelector('.prod-name')?.textContent?.trim() || '',
+            priceHTML:lbl.querySelector('.prod-price')?.innerHTML || '',
+            id:       cb.value
+        });
+    });
 
-  const frame = document.getElementById('emailPreviewFrame');
-  frame.innerHTML = buildPreviewHTML(template, headline, intro, selectedItems);
+    document.getElementById('previewFrame').innerHTML = previewHTML(template, headline, intro, products, cta, fnote);
 }
 
-function buildPreviewHTML(template, headline, intro, products) {
-  const siteDomain = SITE_BASE.replace(/^https?:\/\//, '');
-  const header = `<div style="background:linear-gradient(135deg,#0f766e,#14b8a6);padding:24px 32px;text-align:center;">
-    <div style="font-size:18px;font-weight:800;color:#fff;">Barnatore Meld Pharm</div>
-  </div>`;
-
-  let hero = '';
-  if (headline || intro) {
-    hero = `<div style="padding:24px 28px 16px;text-align:center;border-bottom:1px solid #f1f5f9;">
-      ${headline ? `<h1 style="margin:0 0 8px;font-size:20px;font-weight:800;color:#1e293b;">${headline}</h1>` : ''}
-      ${intro    ? `<p style="margin:0;font-size:13px;color:#475569;line-height:1.6;">${intro}</p>` : ''}
+function previewHTML(template, headline, intro, products, cta, fnote) {
+    const ac = _accent;
+    const header = `<div style="background:${ac};padding:26px 32px;text-align:center;">
+        <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.65);letter-spacing:.08em;text-transform:uppercase;margin-bottom:4px;">Barnatore</div>
+        <div style="font-size:20px;font-weight:800;color:#fff;">Meld Pharm</div>
     </div>`;
-  }
 
-  let prodsHtml = '';
-  if (products.length) {
-    if (template === 'list') {
-      prodsHtml = '<div style="padding:16px 28px;">';
-      prodsHtml += '<div style="font-size:14px;font-weight:800;color:#1e293b;margin-bottom:12px;">🏷️ Ofertat e Limituara</div>';
-      products.forEach(p => {
-        prodsHtml += `<div style="display:flex;gap:12px;padding:10px 0;border-bottom:1px solid #f1f5f9;align-items:center;">
-          <img src="${p.img}" width="56" height="56" style="border-radius:8px;object-fit:cover;background:#e2e8f0;flex-shrink:0;">
-          <div>
-            <div style="font-size:12px;font-weight:700;color:#1e293b;">${p.name}</div>
-            <div style="font-size:11px;margin-top:4px;">${p.priceHTML}</div>
-            <a href="${SITE_BASE}/product/${p.id}" style="font-size:11px;color:#0f766e;font-weight:700;text-decoration:none;">Shiko →</a>
-          </div>
+    let hero = '';
+    if (headline || intro) {
+        hero = `<div style="padding:24px 28px 18px;text-align:center;border-bottom:1px solid #f0f2ef;">
+            ${headline ? `<div style="font-size:18px;font-weight:800;color:#1a1f18;margin-bottom:8px;line-height:1.3;">${headline}</div>` : ''}
+            ${intro    ? `<div style="font-size:12px;color:#6b7280;line-height:1.7;">${intro}</div>` : ''}
         </div>`;
-      });
-      prodsHtml += '</div>';
-    } else {
-      // grid
-      prodsHtml = '<div style="padding:16px 20px;"><div style="font-size:14px;font-weight:800;color:#1e293b;margin-bottom:12px;">🏷️ Ofertat e Limituara</div><div style="display:flex;gap:10px;flex-wrap:wrap;">';
-      products.forEach(p => {
-        prodsHtml += `<a href="${SITE_BASE}/product/${p.id}" style="text-decoration:none;flex:1;min-width:140px;max-width:48%;background:#fff;border-radius:10px;overflow:hidden;border:1px solid #e2e8f0;display:block;">
-          <img src="${p.img}" width="100%" style="display:block;height:160px;object-fit:contain;background:#fff;padding:8px;box-sizing:border-box;">
-          <div style="padding:10px 12px;">
-            <div style="font-size:11px;font-weight:700;color:#1e293b;margin-bottom:5px;line-height:1.3;">${p.name}</div>
-            <div style="font-size:11px;margin-bottom:7px;">${p.priceHTML}</div>
-            <div style="background:#0f766e;color:#fff;text-align:center;padding:5px;border-radius:6px;font-size:10px;font-weight:700;">Shiko →</div>
-          </div>
-        </a>`;
-      });
-      prodsHtml += '</div></div>';
     }
-  }
 
-  const cta = `<div style="padding:20px 28px;text-align:center;border-top:1px solid #f1f5f9;">
-    <a href="${SITE_BASE}/products" style="display:inline-block;background:linear-gradient(135deg,#0f766e,#14b8a6);color:#fff;text-decoration:none;font-size:13px;font-weight:700;padding:11px 28px;border-radius:10px;">🛒 Shiko Të Gjitha Produktet</a>
-  </div>`;
+    let prodsHtml = '';
+    if (products.length) {
+        prodsHtml = '<div style="padding:16px 20px;">';
+        prodsHtml += '<div style="font-size:13px;font-weight:800;color:#1a1f18;margin-bottom:12px;">Ofertat e Limituara</div>';
+        if (template === 'list') {
+            products.forEach(p => {
+                prodsHtml += `<div style="display:flex;gap:10px;padding:9px 0;border-bottom:1px solid #f0f2ef;align-items:center;">
+                    <img src="${p.img}" width="52" height="52" style="border-radius:8px;object-fit:contain;background:#f8faf7;flex-shrink:0;">
+                    <div style="flex:1;min-width:0;">
+                        <div style="font-size:11px;font-weight:700;color:#1a1f18;margin-bottom:4px;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.name}</div>
+                        <div style="font-size:10px;margin-bottom:4px;">${p.priceHTML}</div>
+                        <span style="font-size:10px;font-weight:700;color:${ac};">Shiko →</span>
+                    </div>
+                </div>`;
+            });
+        } else {
+            prodsHtml += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">';
+            products.forEach(p => {
+                prodsHtml += `<div style="background:#fff;border-radius:10px;border:1px solid #eef0ed;overflow:hidden;">
+                    <img src="${p.img}" style="width:100%;height:110px;object-fit:contain;display:block;background:#fff;padding:6px;box-sizing:border-box;">
+                    <div style="padding:8px 10px 10px;">
+                        <div style="font-size:10px;font-weight:700;color:#1a1f18;margin-bottom:5px;line-height:1.35;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">${p.name}</div>
+                        <div style="font-size:10px;margin-bottom:7px;">${p.priceHTML}</div>
+                        <div style="background:${ac};color:#fff;text-align:center;padding:5px;border-radius:6px;font-size:10px;font-weight:700;">Shiko →</div>
+                    </div>
+                </div>`;
+            });
+            prodsHtml += '</div>';
+        }
+        prodsHtml += '</div>';
+    }
 
-  const footer = `<div style="background:#f8fafc;padding:16px 28px;text-align:center;border-top:1px solid #e2e8f0;">
-    <div style="font-size:11px;color:#94a3b8;">Barnatore Meld Pharm · 72 Eqrem Çabej, Prishtinë · +383 45 590 455</div>
-  </div>`;
+    const ctaBlock = `<div style="padding:18px 24px;text-align:center;border-top:1px solid #f0f2ef;">
+        <a href="${SITE_BASE}/products?discount_only=true" style="display:inline-block;background:${ac};color:#fff;font-size:12px;font-weight:700;padding:10px 24px;border-radius:9px;text-decoration:none;">${cta}</a>
+    </div>`;
 
-  return `<div style="max-width:100%;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;color:#1f2937;">${header}${hero}${prodsHtml}${cta}${footer}</div>`;
+    const footerExtra = fnote ? `<div style="font-size:10px;color:#9aa095;font-style:italic;margin-top:6px;">${fnote}</div>` : '';
+    const footer = `<div style="background:#f8faf7;padding:14px 24px;text-align:center;border-top:1px solid #e8ebe6;">
+        <div style="font-size:10px;color:#9aa095;">Barnatore Meld Pharm · 72 Eqrem Çabej, Prishtinë</div>
+        <div style="font-size:10px;color:#9aa095;margin-top:3px;">+383 45 590 455</div>
+        ${footerExtra}
+    </div>`;
+
+    return `<div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;color:#1a1f18;">
+        ${header}${hero}${prodsHtml}${ctaBlock}${footer}
+    </div>`;
 }
 
-function sendNewsletter() {
-  const subject = document.getElementById('nlSubject').value.trim();
-  if (!subject) {
-    document.getElementById('nlSubject').focus();
-    document.getElementById('nlSubject').style.borderColor = '#ef4444';
-    return;
-  }
-  document.getElementById('sendModal').style.display = 'flex';
+/* ── Send flow ── */
+function openSendModal() {
+    const subject = document.getElementById('nlSubject').value.trim();
+    if (!subject) {
+        const inp = document.getElementById('nlSubject');
+        inp.focus();
+        inp.style.borderColor = '#dc2626';
+        inp.addEventListener('input', () => inp.style.borderColor = '', {once:true});
+        showToast('Titulli (subject) është i detyrueshëm.', 'danger');
+        return;
+    }
+    document.getElementById('sendModal').classList.add('open');
 }
 
-// Init preview on load
+function submitForm() {
+    document.getElementById('sendModal').classList.remove('open');
+    const btn = document.getElementById('nlSendBtn');
+    btn.classList.add('loading');
+    btn.disabled = true;
+    document.getElementById('nlForm').submit();
+}
+
+// Init
 buildPreview();
+
+// JS sticky for preview column (reliable across all layout contexts)
+(function(){
+    var col = document.querySelector('.nl-col-sticky');
+    var grid = document.querySelector('.nl-grid');
+    if (!col || !grid) return;
+    var TOPBAR = 56 + 16; // 56px topbar + 1rem gap
+    var isMobile = window.matchMedia('(max-width:920px)');
+    function update() {
+        if (isMobile.matches) { col.style.transform = ''; return; }
+        var gridRect = grid.getBoundingClientRect();
+        var offset = Math.max(0, TOPBAR - gridRect.top);
+        var maxOffset = grid.offsetHeight - col.offsetHeight;
+        if (maxOffset > 0) offset = Math.min(offset, maxOffset);
+        col.style.transform = offset > 0 ? 'translateY(' + offset + 'px)' : '';
+    }
+    window.addEventListener('scroll', update, { passive: true });
+    window.addEventListener('resize', update, { passive: true });
+    update();
+})();
 </script>
 {% endblock %}

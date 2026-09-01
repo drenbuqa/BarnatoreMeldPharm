@@ -100,16 +100,28 @@ def register():
         if session_cart:
             User.update_cart(user.id, session_cart)
 
-        def _send_welcome():
+        try:
+            _now = datetime.utcnow()
+            _offer_prods = list(mongo.db.products.find(
+                {"is_deleted": {"$ne": True}, "discount_price": {"$gt": 0},
+                 "image_url": {"$exists": True, "$nin": [None, ""]},
+                 "$or": [{"discount_from": {"$exists": False}}, {"discount_from": None}, {"discount_from": {"$lte": _now}}]},
+                {"_id": 1, "name": 1, "price": 1, "discount_price": 1, "image_url": 1},
+            ).sort("discount_price", 1).limit(3))
+        except Exception:
+            _offer_prods = []
+
+        def _send_welcome(_op=_offer_prods):
             try:
                 from models.email_utils import send_welcome_email
-                send_welcome_email(email, username)
+                send_welcome_email(email, username, offer_products=_op)
             except Exception:
                 pass
         threading.Thread(target=_send_welcome, daemon=True).start()
 
         flash('Llogaria u krijua! Mirë se erdhet.', 'success')
-        return redirect(url_for('main.index'))
+        next_url = request.form.get('next', '').strip()
+        return redirect(next_url if next_url and next_url.startswith('/') else url_for('main.index'))
 
     return render_template('register.html')
 

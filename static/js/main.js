@@ -127,8 +127,8 @@ window.loadMoreHome = function () {
     const grid = document.getElementById('recommended-grid');
     if (!btn || !grid) return;
 
-    // Show skeletons immediately
-    window.renderSkeletons(grid, 20);
+    // Show skeletons immediately — 24 matches per_page and is a multiple of 6 columns
+    window.renderSkeletons(grid, 24);
 
     // Hide button while loading
     btn.parentElement.classList.add('d-none');
@@ -677,8 +677,8 @@ window.filterHomeCategory = function (category, btnElement) {
     const loadMoreBtn = document.getElementById('load-more-btn');
     if (!grid) return;
 
-    // Show skeletons instead of just dimming
-    window.renderSkeletons(grid, 5);
+    // 6 skeletons = one full row of the recommended grid (6 columns)
+    window.renderSkeletons(grid, 6);
 
     let url = `/products?page=1&ajax=1`;
     if (category !== 'all') {
@@ -1132,6 +1132,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     const oldTotalEl = document.querySelector('.cart-summary h3');
                     if (oldTotalEl) oldTotalEl.textContent = 'Totali: €' + data.total_price.toFixed(2);
+                    if (data.total_price !== undefined) updateCartPageShippingBar(data.total_price);
                     window.updateGlobalBadges(data);
 
                 } else if (isUpdate || isSet) {
@@ -1213,6 +1214,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         el.textContent = '€' + data.total_price.toFixed(2);
                     });
 
+                    if (data.total_price !== undefined) updateCartPageShippingBar(data.total_price);
                     window.updateGlobalBadges(data);
                 }
             } else {
@@ -1284,35 +1286,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // --- CHECKOUT LOGIN CHECK ---
-    const checkoutBtn = document.querySelector('.checkout-btn');
-    if (checkoutBtn) {
-        checkoutBtn.addEventListener('click', (e) => {
-            const isLoggedIn = document.body.dataset.userLoggedIn === 'true';
-            if (!isLoggedIn) {
-                e.preventDefault();
-                Swal.fire({
-                    title: 'Kërkohet Hyrja',
-                    text: 'Ju lutemi kyçuni ose regjistrohuni për të vazhuduar me pagesën.',
-                    icon: 'info',
-                    showCancelButton: true,
-                    showDenyButton: true,
-                    confirmButtonText: 'Kyçu',
-                    denyButtonText: 'Regjistrohu',
-                    cancelButtonText: 'Anulo',
-                    confirmButtonColor: 'var(--primary)',
-                    denyButtonColor: 'var(--primary-dark)',
-                    reverseButtons: true
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        window.location.href = '/login?next=' + encodeURIComponent(window.location.pathname);
-                    } else if (result.isDenied) {
-                        window.location.href = '/register';
-                    }
-                });
-            }
-        });
-    }
 
     // --- PRODUCT CARD CLICKABLE ---
     document.querySelectorAll('.product-card').forEach(card => {
@@ -1591,6 +1564,20 @@ window.showMiniCart = function () {
     }
 };
 
+function updateCartPageShippingBar(totalPrice) {
+    const bar = document.querySelector('.cart-page-shipping-bar');
+    if (!bar) return;
+    const FREE_THRESHOLD = 50;
+    const total = parseFloat(totalPrice) || 0;
+    if (total < FREE_THRESHOLD) {
+        const remaining = (FREE_THRESHOLD - total).toFixed(2);
+        const pct = Math.min(Math.round((total / FREE_THRESHOLD) * 100), 100);
+        bar.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.35rem;"><span>Dërgim falas nga <strong>€50</strong></span><span style="font-weight:700;color:var(--primary);">€${remaining} mungon</span></div><div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div>`;
+    } else {
+        bar.innerHTML = `<span style="color:#166534;"><i class="fas fa-check-circle" style="margin-right:0.4rem;"></i><strong>Keni fituar dërgim falas!</strong></span><div class="bar-track" style="margin-top:0.4rem;"><div class="bar-fill" style="width:100%"></div></div>`;
+    }
+}
+
 window.updateGlobalBadges = function (data, animate = false) {
     if (!data) return;
 
@@ -1632,11 +1619,38 @@ window.updateGlobalBadges = function (data, animate = false) {
         });
     }
 
-    // 3. Update Mini Cart Footer Button Total
+    // 3. Update Mini Cart Footer Button Total + Shipping Bar
     if (data.total_price !== undefined) {
         const footerBtn = document.querySelector('.btn-go-to-cart');
         if (footerBtn) {
             footerBtn.innerHTML = `SHKO NË SHPORTË (${parseFloat(data.total_price).toFixed(2)} €)`;
+        }
+
+        // Update dropdown shipping bar
+        const FREE_THRESHOLD = 50;
+        const total = parseFloat(data.total_price) || 0;
+        const footer = document.querySelector('.mini-cart-footer');
+        if (footer) {
+            let bar = document.getElementById('mini-cart-shipping-bar');
+            if (total < FREE_THRESHOLD) {
+                const remaining = (FREE_THRESHOLD - total).toFixed(2);
+                const pct = Math.min(Math.round((total / FREE_THRESHOLD) * 100), 100);
+                if (!bar) {
+                    bar = document.createElement('div');
+                    bar.id = 'mini-cart-shipping-bar';
+                    bar.className = 'free-shipping-bar';
+                    footer.insertBefore(bar, footer.firstChild);
+                }
+                bar.innerHTML = `<span>Shto edhe <strong>€${remaining}</strong> për dërgim falas!</span><div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div>`;
+            } else {
+                if (!bar) {
+                    bar = document.createElement('div');
+                    bar.id = 'mini-cart-shipping-bar';
+                    bar.className = 'free-shipping-bar';
+                    footer.insertBefore(bar, footer.firstChild);
+                }
+                bar.innerHTML = `<span style="color:#166534"><i class="fas fa-check-circle"></i> <strong>Keni fituar dërgim falas!</strong></span><div class="bar-track"><div class="bar-fill" style="width:100%"></div></div>`;
+            }
         }
     }
 };

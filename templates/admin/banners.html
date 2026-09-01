@@ -1,670 +1,742 @@
 {% extends "admin/base.html" %}
-{% block title %}Banerët e Faqes - Meld Pharm Admin{% endblock %}
+{% block title %}Banerët — Meld Pharm Admin{% endblock %}
 {% block page_title %}Banerët e Faqes{% endblock %}
 
 {% block admin_content %}
-<div class="admin-dashboard-container">
+<style>
+/* ── Page header ── */
+.bn-header {
+    display:flex; align-items:center; justify-content:space-between; margin-bottom:1.5rem;
+}
+.bn-header-desc { font-size:.84rem; color:#8a9186; margin-top:.2rem; }
+.bn-add-btn {
+    display:flex; align-items:center; gap:.45rem;
+    padding:.6rem 1.2rem; background:var(--adm-accent); color:#fff;
+    border:none; border-radius:10px; font-size:.88rem; font-weight:700;
+    cursor:pointer; transition:all .15s; font-family:inherit; white-space:nowrap;
+}
+.bn-add-btn:hover { opacity:.88; transform:translateY(-1px); }
 
-    <style>
-        .banner-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-            gap: 1.5rem;
-        }
+/* ── Section labels ── */
+.bn-section-label {
+    font-size:.72rem; font-weight:800; letter-spacing:.08em;
+    text-transform:uppercase; color:#9aa095; margin-bottom:.75rem;
+    display:flex; align-items:center; gap:.5rem;
+}
+.bn-section-label::after {
+    content:''; flex:1; height:1px; background:#eef0ed;
+}
+.bn-expired-section { margin-top:2rem; }
+.bn-expired-section .bn-card { opacity:.6; filter:grayscale(.35); cursor:default; }
+.bn-expired-section .bn-card:hover { box-shadow:0 1px 3px rgba(0,0,0,.04); opacity:.75; filter:grayscale(.2); }
 
-        .banner-card {
-            background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
-            border: 1px solid #e2e8f0;
-            border-radius: 24px;
-            padding: 1rem;
-            box-shadow: 0 16px 40px rgba(15, 23, 42, 0.08);
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-            transition: transform 0.25s ease, box-shadow 0.25s ease;
-        }
+/* ── Banner grid ── */
+.bn-grid {
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(300px,1fr));
+    gap:1.25rem;
+}
+.bn-card {
+    background:#fff; border:1px solid #eef0ed; border-radius:14px;
+    overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,.04);
+    display:flex; flex-direction:column; transition:box-shadow .2s, opacity .2s;
+    cursor:grab;
+}
+.bn-card:active { cursor:grabbing; }
+.bn-card.dragging { opacity:.35; pointer-events:none; }
+.bn-card:not(.dragging):hover { box-shadow:0 4px 16px rgba(0,0,0,.08); }
+/* Drag placeholder slot */
+.bn-placeholder {
+    border-radius:14px; border:2px dashed var(--adm-accent);
+    background:rgba(79,93,78,.06); transition:all .15s;
+    pointer-events:none;
+}
 
-        .banner-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 22px 55px rgba(15, 23, 42, 0.12);
-        }
+/* Image */
+.bn-img-wrap {
+    position:relative; background:#f5f7f4;
+    aspect-ratio:16/7; overflow:hidden;
+}
+.bn-img-wrap img { width:100%; height:100%; object-fit:cover; }
+.bn-img-placeholder {
+    width:100%; height:100%; display:flex; flex-direction:column;
+    align-items:center; justify-content:center;
+    color:#b0b8ab; font-size:.82rem; gap:.4rem;
+}
+.bn-drag-hint {
+    position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+    background:rgba(0,0,0,.52); color:#fff; border-radius:8px;
+    font-size:.72rem; font-weight:700; padding:.3rem .65rem;
+    display:none; align-items:center; gap:.35rem; white-space:nowrap;
+    pointer-events:none; backdrop-filter:blur(2px);
+}
+.bn-card:not(.dragging):hover .bn-drag-hint { display:flex; }
+.bn-order-chip {
+    position:absolute; top:.6rem; left:.6rem;
+    background:rgba(0,0,0,.55); color:#fff; border-radius:6px;
+    font-size:.72rem; font-weight:800; padding:.2rem .55rem;
+    backdrop-filter:blur(4px);
+}
+.bn-status-chip {
+    position:absolute; top:.6rem; right:.6rem;
+    border-radius:6px; font-size:.7rem; font-weight:700;
+    padding:.2rem .55rem; backdrop-filter:blur(4px);
+}
+.bn-status-chip.active  { background:rgba(22,163,74,.85); color:#fff; }
+.bn-status-chip.inactive{ background:rgba(220,38,38,.8);  color:#fff; }
+.bn-status-chip.expired { background:rgba(120,53,15,.8);  color:#fde68a; }
 
-        .banner-preview {
-            position: relative;
-            background: linear-gradient(135deg, #eef2ff, #f8fafc);
-            border-radius: 18px;
-            overflow: hidden;
-            min-height: 180px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 0.75rem;
-        }
+/* Card body */
+.bn-body { padding:.85rem 1rem; flex:1; display:flex; flex-direction:column; gap:.6rem; }
+.bn-dest { display:flex; align-items:center; gap:.5rem; font-size:.82rem; font-weight:700; color:#1a1f18; }
+.bn-dest i { color:var(--adm-accent); font-size:.78rem; width:16px; text-align:center; }
+.bn-dest-val { font-weight:600; color:#4b5563; }
+.bn-meta { display:flex; flex-wrap:wrap; gap:.4rem; margin-top:.1rem; }
+.bn-pill {
+    display:inline-flex; align-items:center; gap:.3rem;
+    padding:.25rem .6rem; border-radius:20px; font-size:.72rem; font-weight:700;
+}
+.bn-pill.exp      { background:#fff7ed; color:#c2410c; }
+.bn-pill.exp-past { background:#fef2f2; color:#991b1b; }
+.bn-pill.clicks   { background:#f0fdf4; color:var(--adm-accent); }
 
-        .banner-preview img {
-            width: 100%;
-            height: 180px;
-            object-fit: contain;
-            font-size: 1rem;
-            font-weight: 800;
-            color: var(--text-main);
-            line-height: 1.35;
-        }
+/* Card footer */
+.bn-footer {
+    border-top:1px solid #f0f2ef; padding:.6rem 1rem;
+    display:flex; align-items:center; gap:.5rem; justify-content:flex-end;
+}
+.bn-btn {
+    padding:.38rem .8rem; border-radius:8px; border:1.5px solid;
+    font-size:.78rem; font-weight:700; cursor:pointer; display:flex;
+    align-items:center; gap:.35rem; font-family:inherit; transition:all .15s;
+}
+.bn-btn.edit { border-color:#dbeafe; background:#eff6ff; color:#2563eb; }
+.bn-btn.edit:hover { background:#2563eb; color:#fff; border-color:#2563eb; }
+.bn-btn.del  { border-color:#fecaca; background:#fef2f2; color:#dc2626; }
+.bn-btn.del:hover  { background:#dc2626; color:#fff; border-color:#dc2626; }
 
-        .banner-card-meta {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.5rem;
-            align-items: center;
-        }
+/* Empty state */
+.bn-empty {
+    grid-column:1/-1; padding:4rem; text-align:center; color:#9aa095;
+    background:#fff; border:1px solid #eef0ed; border-radius:14px;
+}
+.bn-empty i { font-size:2.5rem; opacity:.2; display:block; margin-bottom:.75rem; }
 
-        .banner-pill {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.4rem;
-            padding: 0.45rem 0.8rem;
-            border-radius: 999px;
-            font-size: 0.8rem;
-            font-weight: 700;
-        }
+/* Saving indicator */
+.bn-saving {
+    position:fixed; bottom:1.5rem; right:1.5rem; z-index:8000;
+    background:#1a1f18; color:#fff; border-radius:10px;
+    padding:.65rem 1.1rem; font-size:.8rem; font-weight:700;
+    display:none; align-items:center; gap:.5rem;
+    box-shadow:0 6px 24px rgba(0,0,0,.2);
+}
+.bn-saving.show { display:flex; }
 
-        .banner-pill.active {
-            background: #dcfce7;
-            color: #15803d;
-        }
+/* ── Modal ── */
+.bn-modal-overlay {
+    display:none; position:fixed; inset:0; z-index:9000;
+    background:rgba(0,0,0,.45); align-items:center; justify-content:center; padding:1rem;
+}
+.bn-modal-overlay.open { display:flex; }
+.bn-modal {
+    background:#fff; border-radius:18px; width:100%; max-width:600px;
+    max-height:92vh; overflow-y:auto; position:relative;
+    box-shadow:0 24px 64px rgba(0,0,0,.18);
+    scrollbar-width:thin; scrollbar-color:#d4dcd3 transparent;
+}
+.bn-modal-head {
+    padding:1.6rem 1.8rem 1.1rem;
+    border-bottom:1px solid #eef0ed;
+    display:flex; align-items:center; gap:.85rem;
+    position:sticky; top:0; background:#fff; z-index:2;
+}
+.bn-modal-icon {
+    width:42px; height:42px; border-radius:11px;
+    background:#f0fdf4; display:flex; align-items:center; justify-content:center;
+    color:var(--adm-accent); font-size:.95rem; flex-shrink:0;
+}
+.bn-modal-title { font-size:1.05rem; font-weight:800; color:#1a1f18; }
+.bn-modal-close {
+    margin-left:auto; width:34px; height:34px; border-radius:8px;
+    border:1.5px solid #eef0ed; background:#f5f7f4; color:#6b7280;
+    cursor:pointer; display:flex; align-items:center; justify-content:center;
+    font-size:.82rem; transition:all .15s;
+}
+.bn-modal-close:hover { background:#dc2626; color:#fff; border-color:#dc2626; }
+.bn-modal-body { padding:1.7rem 1.8rem 1.9rem; }
 
-        .banner-pill.inactive {
-            background: #fee2e2;
-            color: #b91c1c;
-        }
+/* Form inside modal */
+.bn-fields { display:flex; flex-direction:column; gap:1.5rem; }
+.bn-field-label {
+    display:block; font-size:.74rem; font-weight:700; color:#6b7280;
+    margin-bottom:.5rem; letter-spacing:.02em;
+}
+.bn-input {
+    width:100%; padding:.68rem .9rem;
+    border:1.5px solid #e2e8f0; border-radius:9px;
+    font-size:.87rem; font-family:inherit; color:#1a1f18;
+    background:#fafafa; outline:none; box-sizing:border-box; transition:border-color .15s;
+}
+.bn-input:focus { border-color:var(--adm-accent); background:#fff; }
+.bn-img-preview {
+    width:100%; aspect-ratio:16/7; border-radius:9px;
+    object-fit:cover; background:#f5f7f4;
+    border:1.5px solid #eef0ed; display:none; margin-top:.55rem;
+}
 
-        .banner-pill.neutral {
-            background: #e2e8f0;
-            color: #475569;
-        }
+/* Destination radio cards */
+.bn-dest-grid { display:grid; grid-template-columns:1fr 1fr; gap:.6rem; }
+.bn-dest-card {
+    padding:.75rem .9rem; border:1.5px solid #e2e8f0; border-radius:10px;
+    cursor:pointer; display:flex; align-items:center; gap:.6rem;
+    transition:all .15s; user-select:none; background:#fafafa;
+}
+.bn-dest-card:hover { border-color:var(--adm-accent); background:#f0fdf4; }
+.bn-dest-card.selected { border-color:var(--adm-accent); background:#f0fdf4; }
+.bn-dest-card input[type=radio] { accent-color:var(--adm-accent); flex-shrink:0; }
+.bn-dest-card-icon { font-size:.85rem; color:var(--adm-accent); width:16px; text-align:center; }
+.bn-dest-card-label { font-size:.82rem; font-weight:700; color:#374151; line-height:1.25; }
+.bn-dest-card.selected .bn-dest-card-label { color:var(--adm-accent); }
 
-        .banner-actions {
-            display: grid;
-            grid-template-columns: auto auto 1fr;
-            gap: 0.75rem;
-            align-items: center;
-        }
+/* Value panel */
+.bn-val-panel {
+    background:#f8faf7; border:1.5px solid #eef0ed; border-radius:10px;
+    padding:1rem; display:none;
+}
+.bn-val-panel.visible { display:block; }
+.bn-select {
+    width:100%; padding:.62rem 1.9rem .62rem .8rem;
+    border:1.5px solid #e2e8f0; border-radius:9px;
+    font-size:.85rem; font-family:inherit; color:#1a1f18;
+    background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5'%3E%3Cpath d='M0 0l4 5 4-5z' fill='%239aa095'/%3E%3C/svg%3E") no-repeat right .7rem center;
+    appearance:none; outline:none; cursor:pointer; box-sizing:border-box; transition:border-color .15s;
+}
+.bn-select:focus { border-color:var(--adm-accent); }
+.bn-prod-list {
+    max-height:200px; overflow-y:auto; display:flex; flex-direction:column; gap:2px; margin-top:.6rem;
+    scrollbar-width:thin; scrollbar-color:#d4dcd3 transparent;
+}
+.bn-prod-item {
+    display:flex; align-items:center; gap:.7rem; padding:.45rem .55rem;
+    border-radius:7px; cursor:pointer; transition:background .1s;
+}
+.bn-prod-item:hover { background:#fff; }
+.bn-prod-item input { accent-color:var(--adm-accent); width:15px; height:15px; cursor:pointer; flex-shrink:0; }
+.bn-prod-img { width:34px; height:34px; border-radius:6px; object-fit:contain; background:#fff; flex-shrink:0; }
+.bn-prod-name { font-size:.82rem; font-weight:600; color:#1a1f18; }
 
-        .banner-icon-btn {
-            min-height: 48px;
-            border: none;
-            border-radius: 16px;
-            padding: 0.8rem 1rem;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-            font-weight: 800;
-            cursor: pointer;
-            transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
-        }
+/* Date picker */
+.cdp2 { position:relative; }
+.cdp2-trigger {
+    display:flex; align-items:center; gap:.65rem; padding:.68rem .9rem;
+    background:#fafafa; border:1.5px solid #e2e8f0; border-radius:9px;
+    font-size:.85rem; color:#9aa095; cursor:pointer; transition:all .15s;
+}
+.cdp2-trigger.has-value { color:#1a1f18; }
+.cdp2-trigger:hover, .cdp2-trigger.open { border-color:var(--adm-accent); background:#fff; }
+.cdp2-trigger i.ci { color:#9aa095; font-size:.82rem; flex-shrink:0; }
+.cdp2-txt { flex:1; font-weight:600; }
+.cdp2-clear {
+    width:18px; height:18px; border-radius:4px; background:#fee2e2; color:#dc2626;
+    border:none; cursor:pointer; font-size:.6rem; align-items:center;
+    justify-content:center; display:none; transition:all .15s;
+}
+.cdp2-trigger.has-value .cdp2-clear { display:flex; }
+.cdp2-clear:hover { background:#dc2626; color:#fff; }
+.cdp2-panel {
+    position:absolute; bottom:calc(100% + 6px); left:0; z-index:500;
+    background:#fff; border:1.5px solid #eef0ed; border-radius:14px;
+    box-shadow:0 12px 32px rgba(0,0,0,.13);
+    padding:.95rem; display:none; flex-direction:column; gap:.7rem; min-width:270px;
+}
+.cdp2-panel.open { display:flex; }
+.cdp2-hd { display:flex; align-items:center; gap:.4rem; }
+.cdp2-nav {
+    width:30px; height:30px; border:1.5px solid #eef0ed; border-radius:7px;
+    background:#f5f7f4; cursor:pointer; display:flex; align-items:center;
+    justify-content:center; font-size:.68rem; color:#374151; transition:all .15s;
+}
+.cdp2-nav:hover { background:var(--adm-accent); color:#fff; border-color:var(--adm-accent); }
+.cdp2-my { flex:1; text-align:center; font-size:.86rem; font-weight:800; color:#1a1f18; }
+.cdp2-wds { display:grid; grid-template-columns:repeat(7,1fr); text-align:center; }
+.cdp2-wd { font-size:.64rem; font-weight:700; color:#9aa095; padding:.15rem 0; }
+.cdp2-days { display:grid; grid-template-columns:repeat(7,1fr); gap:2px; }
+.cdp2-day {
+    aspect-ratio:1; display:flex; align-items:center; justify-content:center;
+    font-size:.77rem; font-weight:600; color:#374151; border-radius:6px; cursor:pointer; transition:all .1s;
+}
+.cdp2-day:hover:not(.e):not(.d) { background:#f0fdf4; color:var(--adm-accent); }
+.cdp2-day.t { font-weight:900; color:var(--adm-accent); }
+.cdp2-day.s { background:var(--adm-accent) !important; color:#fff !important; }
+.cdp2-day.e { cursor:default; }
+.cdp2-day.d { color:#e5e7eb; cursor:not-allowed; }
+.cdp2-foot { display:flex; gap:.4rem; justify-content:flex-end; }
+.cdp2-foot-btn {
+    padding:.34rem .7rem; border-radius:6px; font-size:.76rem; font-weight:700;
+    cursor:pointer; border:1.5px solid #eef0ed; background:#f5f7f4; color:#6b7280;
+    font-family:inherit; transition:all .15s;
+}
+.cdp2-foot-btn.p { background:var(--adm-accent); color:#fff; border-color:var(--adm-accent); }
 
-        .banner-icon-btn:hover {
-            transform: translateY(-2px);
-        }
+/* Save button */
+.bn-save-btn {
+    width:100%; padding:.82rem; background:var(--adm-accent); color:#fff;
+    border:none; border-radius:10px; font-size:.92rem; font-weight:700;
+    cursor:pointer; display:flex; align-items:center; justify-content:center;
+    gap:.45rem; transition:all .15s; font-family:inherit;
+}
+.bn-save-btn:hover { opacity:.88; }
+</style>
 
-        .banner-icon-btn.edit {
-            background: linear-gradient(135deg, #eff6ff, #dbeafe);
-            color: #1d4ed8;
-            box-shadow: 0 8px 18px rgba(59, 130, 246, 0.14);
-        }
+<!-- Saving indicator -->
+<div class="bn-saving" id="bnSaving"><i class="fas fa-sync fa-spin"></i> Po ruhet renditja...</div>
 
-        .banner-icon-btn.edit:hover {
-            background: linear-gradient(135deg, #dbeafe, #bfdbfe);
-        }
-
-        .banner-icon-btn.delete {
-            width: 48px;
-            padding: 0;
-            background: linear-gradient(135deg, #fee2e2, #fecaca);
-            color: #b91c1c;
-            box-shadow: 0 8px 18px rgba(239, 68, 68, 0.12);
-        }
-
-        .banner-icon-btn.delete:hover {
-            background: linear-gradient(135deg, #fecaca, #fca5a5);
-        }
-
-        .banner-reorder-group {
-            display: flex;
-            gap: 0.5rem;
-        }
-
-        .banner-reorder-btn {
-            width: 48px;
-            height: 48px;
-            border: 1px solid #e2e8f0;
-            border-radius: 16px;
-            background: #ffffff;
-            color: #475569;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .banner-reorder-btn:hover {
-            border-color: #94a3b8;
-            color: #0f172a;
-            box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
-        }
-
-        .banner-empty-state {
-            padding: 2rem;
-            text-align: center;
-            color: #64748b;
-            background: #f8fafc;
-            border: 1px dashed #cbd5e1;
-            border-radius: 18px;
-        }
-
-        .banner-form-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1rem;
-        }
-
-        @media (max-width: 768px) {
-            .banner-grid,
-            .banner-form-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .banner-actions {
-                grid-template-columns: 1fr;
-            }
-
-            .banner-reorder-group {
-                justify-content: flex-start;
-            }
-        }
-    </style>
-
-    <div class="admin-content-area" style="padding: 2rem; max-width: 1400px; margin: 0 auto; margin-top: 1rem;">
-    <div class="admin-header d-flex justify-content-between align-items-center" style="margin-bottom: 2rem;">
-        <div>
-            <h1 class="admin-title" style="font-size: 2rem; font-weight: 800; color: var(--text-main);">Menaxho Banerët</h1>
-            <p style="color: var(--text-muted); font-size: 0.95rem;">Shto, modifiko ose fshi banerët kryesorë në vitrinën e dyqanit.</p>
-        </div>
-        <button class="btn btn-primary" onclick="document.getElementById('addBannerModal').style.display='flex'">
-            <i class="fas fa-plus"></i> Shto Baner
-        </button>
+<!-- ── Unified modal ── -->
+<div class="bn-modal-overlay" id="bnModal" onclick="closeBnModal(event)">
+<div class="bn-modal" onclick="event.stopPropagation()">
+    <div class="bn-modal-head">
+        <div class="bn-modal-icon" id="bnModalIcon"><i class="fas fa-plus"></i></div>
+        <div class="bn-modal-title" id="bnModalTitle">Shto Baner të Ri</div>
+        <button type="button" class="bn-modal-close" onclick="closeBnModal()"><i class="fas fa-times"></i></button>
     </div>
+    <div class="bn-modal-body">
+        <form id="bnForm" method="POST" onsubmit="prepBnForm()">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="sort_order" id="bnSortOrder" value="{{ next_banner_order }}">
+            <input type="hidden" name="link_type" id="bnLinkType" value="all_offers">
+            <input type="hidden" name="link_value" id="bnLinkValue" value="">
+            <input type="hidden" name="is_active" value="on">
 
-    <div class="banner-grid">
-        {% for banner in banners %}
-        <div class="banner-card">
-            <div class="banner-preview">
-                <img src="{{ banner.image_url }}" alt="Banner Image">
-                <div class="banner-order-chip">#{{ banner.sort_order or loop.index }}</div>
-            </div>
-            <div>
-                <div class="banner-card-title">
-                    {% set _needs_value = banner.link_type in ('category', 'brand', 'offer', 'custom_products') %}
-                    {% set _missing = _needs_value and not banner.link_value %}
-                    {% if banner.link_type == 'category' %}
-                    Kategoria: {% if banner.link_value %}<strong>{{ banner.link_value }}</strong>{% else %}<span style="color:#dc2626;font-weight:700;">⚠ E PAZGJEDHUR — Klikimi nuk do funksionojë!</span>{% endif %}
-                    {% elif banner.link_type == 'brand' %}
-                    Brendi: {% if banner.link_value %}<strong>{{ banner.link_value }}</strong>{% else %}<span style="color:#dc2626;font-weight:700;">⚠ E PAZGJEDHUR — Klikimi nuk do funksionojë!</span>{% endif %}
-                    {% elif banner.link_type == 'custom_products' %}
-                    Produkte Specifike{% if not banner.link_value %} — <span style="color:#dc2626;font-weight:700;">⚠ E PAZGJEDHUR</span>{% endif %}
-                    {% elif banner.link_type == 'offer' %}
-                    Ofertë e veçantë: {% if banner.link_value %}<strong>{{ banner.link_value }}</strong>{% else %}<span style="color:#dc2626;font-weight:700;">⚠ E PAZGJEDHUR — Klikimi nuk do funksionojë!</span>{% endif %}
-                    {% else %}
-                    Të Gjitha Ofertat
-                    {% endif %}
+            <div class="bn-fields">
+
+                <!-- Image URL -->
+                <div>
+                    <label class="bn-field-label"><i class="fas fa-image"></i> URL e Imazhit të Banerit</label>
+                    <input type="url" name="image_url" id="bnImageUrl" class="bn-input"
+                           placeholder="https://..." required oninput="previewBnImg(this.value)">
+                    <img id="bnImgPreview" class="bn-img-preview" alt="Preview">
                 </div>
-                <div class="banner-card-meta" style="margin-top: 0.75rem;">
-                    <span class="banner-pill {{ 'active' if banner.is_active else 'inactive' }}">
-                        {{ 'Aktiv' if banner.is_active else 'Jo Aktiv' }}
-                    </span>
-                    {% if banner.expires_at %}
-                    <span class="banner-pill neutral">
-                        <i class="fas fa-calendar-day"></i> Skadon {{ banner.expires_at.strftime('%d/%m/%Y') }}
-                    </span>
-                    {% endif %}
-                    <span class="banner-pill neutral" title="Klikime totale">
-                        <i class="fas fa-mouse-pointer"></i> {{ banner.click_count or 0 }} klikime
-                    </span>
+
+                <!-- Destination -->
+                <div>
+                    <label class="bn-field-label"><i class="fas fa-mouse-pointer"></i> Kur klikohet, dërgon tek...</label>
+                    <div class="bn-dest-grid" id="bnDestGrid">
+                        <label class="bn-dest-card selected">
+                            <input type="radio" name="_dest" value="all_offers" checked onchange="pickDest('all_offers')">
+                            <i class="fas fa-tags bn-dest-card-icon"></i>
+                            <span class="bn-dest-card-label">Të gjitha ofertat</span>
+                        </label>
+                        <label class="bn-dest-card">
+                            <input type="radio" name="_dest" value="offer" onchange="pickDest('offer')">
+                            <i class="fas fa-star bn-dest-card-icon"></i>
+                            <span class="bn-dest-card-label">Ofertë specifike</span>
+                        </label>
+                        <label class="bn-dest-card">
+                            <input type="radio" name="_dest" value="category" onchange="pickDest('category')">
+                            <i class="fas fa-folder bn-dest-card-icon"></i>
+                            <span class="bn-dest-card-label">Kategori</span>
+                        </label>
+                        <label class="bn-dest-card">
+                            <input type="radio" name="_dest" value="brand" onchange="pickDest('brand')">
+                            <i class="fas fa-building bn-dest-card-icon"></i>
+                            <span class="bn-dest-card-label">Brend</span>
+                        </label>
+                        <label class="bn-dest-card" style="grid-column:1/-1;">
+                            <input type="radio" name="_dest" value="custom_products" onchange="pickDest('custom_products')">
+                            <i class="fas fa-box bn-dest-card-icon"></i>
+                            <span class="bn-dest-card-label">Produkte specifike (zgjidhni manualisht)</span>
+                        </label>
+                    </div>
                 </div>
-            </div>
-            <div class="banner-actions">
-                <div class="banner-reorder-group" data-banner-id="{{ banner._id }}" data-csrf="{{ csrf_token() }}">
-                    {% if not loop.first %}
-                    <button type="button" class="banner-reorder-btn" title="Lëvize lart"
-                        onclick="reorderBanner('{{ banner._id }}', 'up', '{{ csrf_token() }}', this)">
-                        <i class="fas fa-arrow-up"></i>
-                    </button>
-                    {% endif %}
-                    {% if not loop.last %}
-                    <button type="button" class="banner-reorder-btn" title="Lëvize poshtë"
-                        onclick="reorderBanner('{{ banner._id }}', 'down', '{{ csrf_token() }}', this)">
-                        <i class="fas fa-arrow-down"></i>
-                    </button>
-                    {% endif %}
+
+                <!-- Offer picker -->
+                <div class="bn-val-panel" id="bnOfferPanel">
+                    <label class="bn-field-label"><i class="fas fa-star"></i> Zgjidh ofertën aktive</label>
+                    <select class="bn-select" id="bnOfferSel">
+                        {% for offer in available_offers %}
+                        <option value="{{ offer.value }}">{{ offer.label }}</option>
+                        {% endfor %}
+                        {% if not available_offers %}
+                        <option value="">— Nuk ka oferta aktive —</option>
+                        {% endif %}
+                    </select>
                 </div>
-                <button type="button" class="banner-icon-btn edit" 
-                    data-banner-id="{{ banner._id }}"
-                    data-image-url="{{ banner.image_url|e }}"
-                    data-link-type="{{ banner.link_type|e }}"
-                    data-link-value="{{ banner.link_value|default('', true)|e }}"
-                    data-active="{{ 'on' if banner.is_active else '' }}"
-                    data-expires-at="{{ banner.expires_at.strftime('%Y-%m-%d') if banner.expires_at else '' }}"
-                    data-sort-order="{{ banner.sort_order or loop.index }}"
-                    onclick="openEditBanner(this)">
-                    <i class="fas fa-pen-to-square"></i> Ndrysho
+
+                <!-- Category picker -->
+                <div class="bn-val-panel" id="bnCatPanel">
+                    <label class="bn-field-label"><i class="fas fa-folder"></i> Zgjidh kategorinë</label>
+                    <select class="bn-select" id="bnCatSel">
+                        {% for cat in categories %}
+                        <option value="{{ cat }}">{{ cat }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Brand picker -->
+                <div class="bn-val-panel" id="bnBrandPanel">
+                    <label class="bn-field-label"><i class="fas fa-building"></i> Zgjidh brendin</label>
+                    <select class="bn-select" id="bnBrandSel">
+                        {% for brand in brands %}
+                        <option value="{{ brand }}">{{ brand }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Custom products -->
+                <div class="bn-val-panel" id="bnProdPanel">
+                    <label class="bn-field-label"><i class="fas fa-box"></i> Zgjidh produktet</label>
+                    <input type="text" class="bn-input" placeholder="Kërko produkt..." id="bnProdSearch"
+                           oninput="filterBnProds(this.value)">
+                    <div class="bn-prod-list" id="bnProdList">
+                        {% for p in all_products %}
+                        <label class="bn-prod-item" data-name="{{ p.name|lower }}">
+                            <input type="checkbox" value="{{ p.name }}" class="bn-prod-cb">
+                            <img class="bn-prod-img" src="{{ p.image_url }}" alt=""
+                                 onerror="this.src='/static/img/placeholder.png'" loading="lazy">
+                            <span class="bn-prod-name">{{ p.name }}</span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Expiry date -->
+                <div>
+                    <label class="bn-field-label"><i class="fas fa-calendar-alt"></i> Hiq automatikisht pas datës (opsionale)</label>
+                    <div class="cdp2" id="cdp2Wrap">
+                        <div class="cdp2-trigger" id="cdp2Trigger" onclick="toggleCdp2()">
+                            <i class="fas fa-calendar ci"></i>
+                            <span class="cdp2-txt" id="cdp2Display">Zgjidh datën...</span>
+                            <button type="button" class="cdp2-clear" onclick="event.stopPropagation();clearCdp2()">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <div class="cdp2-panel" id="cdp2Panel">
+                            <div class="cdp2-hd">
+                                <button type="button" class="cdp2-nav" onclick="cdp2Nav(-1)"><i class="fas fa-chevron-left"></i></button>
+                                <div class="cdp2-my" id="cdp2MY"></div>
+                                <button type="button" class="cdp2-nav" onclick="cdp2Nav(1)"><i class="fas fa-chevron-right"></i></button>
+                            </div>
+                            <div class="cdp2-wds" id="cdp2WD"></div>
+                            <div class="cdp2-days" id="cdp2Days"></div>
+                            <div class="cdp2-foot">
+                                <button type="button" class="cdp2-foot-btn" onclick="clearCdp2()">Pastro</button>
+                                <button type="button" class="cdp2-foot-btn p" onclick="closeCdp2Panel()">Mbyll</button>
+                            </div>
+                        </div>
+                    </div>
+                    <input type="hidden" name="expires_at" id="bnExpiresAt">
+                </div>
+
+                <button type="submit" class="bn-save-btn">
+                    <i class="fas fa-check-circle"></i>
+                    <span id="bnSaveLabel">Ruaj Banerin</span>
                 </button>
-                <form action="{{ url_for('admin.delete_banner', banner_id=banner._id) }}" method="POST" style="margin: 0;" onsubmit="return confirm('Jeni i sigurt qe doni ta fshini kete baner?');">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <button type="submit" class="banner-icon-btn delete" title="Fshij banerin">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </form>
-            </div>
+
+            </div><!-- .bn-fields -->
+        </form>
+    </div>
+</div>
+</div>
+
+<!-- ── Delete confirm modal ── -->
+<div id="bnDelModal" style="display:none;position:fixed;inset:0;z-index:9100;background:rgba(0,0,0,.45);align-items:center;justify-content:center;"
+     onclick="if(event.target===this)this.style.display='none'">
+    <div style="background:#fff;border-radius:16px;padding:1.75rem;max-width:360px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,.2);" onclick="event.stopPropagation()">
+        <div style="width:44px;height:44px;border-radius:11px;background:#fef2f2;display:flex;align-items:center;justify-content:center;margin-bottom:.9rem;">
+            <i class="fas fa-trash" style="color:#dc2626;font-size:1rem;"></i>
         </div>
-        {% endfor %}
-        {% if not banners %}
-        <div class="banner-empty-state">
-            <i class="fas fa-images fa-2x mb-3"></i>
-            <p>Nuk ka ende banerë të shtuar.</p>
+        <div style="font-size:.95rem;font-weight:800;color:#1a1f18;margin-bottom:.35rem;">Fshi Banerin?</div>
+        <div style="font-size:.83rem;color:#6b7280;margin-bottom:1.2rem;">Ky veprim nuk mund të kthehet prapa.</div>
+        <div style="display:flex;gap:.6rem;justify-content:flex-end;">
+            <button onclick="document.getElementById('bnDelModal').style.display='none'"
+                style="padding:.5rem 1rem;border:1.5px solid #e2e8f0;border-radius:9px;background:#fff;color:#374151;font-size:.83rem;font-weight:700;cursor:pointer;font-family:inherit;">
+                Anulo
+            </button>
+            <form id="bnDelForm" method="POST" style="margin:0;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit"
+                    style="padding:.5rem 1rem;border:none;border-radius:9px;background:#dc2626;color:#fff;font-size:.83rem;font-weight:700;cursor:pointer;font-family:inherit;">
+                    <i class="fas fa-trash"></i> Po, Fshi
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ── Page ── -->
+<div class="bn-header">
+    <div>
+        <div class="bn-header-desc">Tërhiqni kartat për të ndryshuar renditjen. Klikoni Edito për të modifikuar.</div>
+    </div>
+    <button class="bn-add-btn" onclick="openBnModal()">
+        <i class="fas fa-plus"></i> Shto Baner
+    </button>
+</div>
+
+{% set active_banners = [] %}
+{% set expired_banners = [] %}
+{% for banner in banners %}
+    {% set is_expired = banner.expires_at and banner.expires_at.date() < today %}
+    {% if is_expired %}
+        {% set _ = expired_banners.append((banner, is_expired)) %}
+    {% else %}
+        {% set _ = active_banners.append((banner, is_expired)) %}
+    {% endif %}
+{% endfor %}
+
+{% macro render_card(banner, is_expired, draggable) %}
+<div class="bn-card" {% if draggable %}draggable="true"{% endif %} data-id="{{ banner._id }}">
+    <div class="bn-img-wrap">
+        {% if banner.image_url %}
+        <img src="{{ banner.image_url }}" alt="Banner" onerror="this.style.display='none'">
+        {% else %}
+        <div class="bn-img-placeholder">
+            <i class="fas fa-image" style="font-size:1.8rem;"></i>
+            Pa imazh
         </div>
         {% endif %}
+        {% if draggable %}<div class="bn-drag-hint"><i class="fas fa-grip-vertical"></i> Tërhiq për të rirenditur</div>{% endif %}
+        <span class="bn-order-chip">#{{ banner.sort_order or 1 }}</span>
+        {% if is_expired %}
+        <span class="bn-status-chip expired"><i class="fas fa-clock"></i> Skaduar</span>
+        {% elif banner.is_active %}
+        <span class="bn-status-chip active">Aktiv</span>
+        {% else %}
+        <span class="bn-status-chip inactive">Jo aktiv</span>
+        {% endif %}
     </div>
-</div>
-
-<!-- Add Banner Modal -->
-<div id="addBannerModal" class="dashboard-modal-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); z-index: 1050; justify-content: center; align-items: center;">
-    <div class="dashboard-modal-content" style="background: #fff; border-radius: 16px; width: 90%; max-width: 500px; max-height: 90vh; overflow-y: auto; padding: 2rem; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); position: relative; margin: 2rem auto;">
-        <button class="close-modal-btn" style="position: absolute; right: 1.5rem; top: 1.5rem; border: none; background: none; font-size: 1.25rem; color: #64748b; cursor: pointer; padding: 0.5rem;" onclick="document.getElementById('addBannerModal').style.display='none'">
-            <i class="fas fa-times"></i>
-        </button>
-
-        <div class="modal-header" style="margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border-light);">
-            <h3 style="font-size: 1.5rem; font-weight: 800; color: var(--text-main); margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
-                <i class="fas fa-image" style="color: var(--primary-main);"></i> Shto Baner të Ri
-            </h3>
+    <div class="bn-body">
+        <div class="bn-dest">
+            {% if banner.link_type == 'all_offers' %}
+                <i class="fas fa-tags"></i> Të gjitha ofertat
+            {% elif banner.link_type == 'offer' %}
+                <i class="fas fa-star"></i> Ofertë: <span class="bn-dest-val">{{ banner.link_value or '—' }}</span>
+            {% elif banner.link_type == 'category' %}
+                <i class="fas fa-folder"></i> Kategori: <span class="bn-dest-val">{{ banner.link_value or '—' }}</span>
+            {% elif banner.link_type == 'brand' %}
+                <i class="fas fa-building"></i> Brend: <span class="bn-dest-val">{{ banner.link_value or '—' }}</span>
+            {% elif banner.link_type == 'custom_products' %}
+                <i class="fas fa-box"></i> Produkte specifike
+            {% endif %}
         </div>
-
-        <form action="{{ url_for('admin.manage_banners') }}" method="POST" onsubmit="prepareAddForm()">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            
-            <div class="form-group" style="margin-bottom: 1.5rem;">
-                <label style="display: block; font-size: 0.95rem; font-weight: 600; color: var(--text-main); margin-bottom: 0.5rem;">URL e Imazhit</label>
-                <input type="url" name="image_url" required class="form-control" style="width: 100%; padding: 0.75rem 1rem; border: 1px solid var(--border-light); border-radius: 8px; font-size: 0.95rem; transition: all 0.3s ease;">
-            </div>
-
-            <div class="form-group" style="margin-bottom: 1.5rem;">
-                <label style="display: block; font-size: 0.95rem; font-weight: 600; color: var(--text-main); margin-bottom: 0.5rem;">Ku dërgon ky baner kur klikohet?</label>
-                <select name="link_type" id="addLinkType" onchange="toggleAddLinkValue(this.value)" class="form-control" style="width: 100%; padding: 0.75rem 1rem; border: 1px solid var(--border-light); border-radius: 8px; font-size: 0.95rem; appearance: none; background-color: #fff; cursor: pointer;">
-                    <option value="all_offers">Tek të gjitha produktet me zbritje</option>
-                    <option value="brand">Tek produktet e një Brendi</option>
-                    <option value="category">Tek produktet e një Kategorie</option>
-                    <option value="custom_products">Tek produkte Specifike (manualisht)</option>
-                    <option value="offer">Tek një ofertë specifike</option>
-                </select>
-            </div>
-
-            <div class="banner-form-grid">
-                <div class="form-group" style="margin-bottom: 1.5rem;">
-                    <label style="display: block; font-size: 0.95rem; font-weight: 600; color: var(--text-main); margin-bottom: 0.5rem;">Renditja në hero</label>
-                    <input type="number" name="sort_order" min="1" value="{{ next_banner_order }}" class="form-control" style="width: 100%; padding: 0.75rem 1rem; border: 1px solid var(--border-light); border-radius: 8px; font-size: 0.95rem;">
-                </div>
-                <div class="form-group" style="margin-bottom: 1.5rem;">
-                    <label style="display: block; font-size: 0.95rem; font-weight: 600; color: var(--text-main); margin-bottom: 0.5rem;">Hiqe pas datës</label>
-                    <input type="date" name="expires_at" class="form-control" style="width: 100%; padding: 0.75rem 1rem; border: 1px solid var(--border-light); border-radius: 8px; font-size: 0.95rem;">
-                </div>
-            </div>
-
-            <div class="form-group" id="addBrandGroup" style="display: none; margin-bottom: 1.5rem;">
-                <label style="display: block; font-size: 0.95rem; font-weight: 600; color: var(--text-main); margin-bottom: 0.5rem;">Zgjidh Brendin</label>
-                <select name="link_value_brand" class="form-control" style="width: 100%; padding: 0.75rem 1rem; border: 1px solid var(--border-light); border-radius: 8px; font-size: 0.95rem;">
-                    {% for brand in brands %}
-                    <option value="{{ brand }}">{{ brand }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-
-            <div class="form-group" id="addCategoryGroup" style="display: none; margin-bottom: 1.5rem;">
-                <label style="display: block; font-size: 0.95rem; font-weight: 600; color: var(--text-main); margin-bottom: 0.5rem;">Zgjidh Kategorinë</label>
-                <select name="link_value_category" class="form-control" style="width: 100%; padding: 0.75rem 1rem; border: 1px solid var(--border-light); border-radius: 8px; font-size: 0.95rem;">
-                    {% for cat in categories %}
-                    <option value="{{ cat }}">{{ cat }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-
-            <div class="form-group" id="addCustomGroup" style="display: none; margin-bottom: 1.5rem;">
-                <label style="display: block; font-size: 0.95rem; font-weight: 600; color: var(--text-main); margin-bottom: 0.5rem;">Zgjidhni produktet</label>
-                <input type="text" id="addCustomSearch" placeholder="Kërko produkte..." class="form-control" style="width: 100%; padding: 0.75rem 1rem; border: 1px solid var(--border-light); border-radius: 8px; font-size: 0.95rem; margin-bottom: 0.5rem;" oninput="filterProductsAdd()">
-                <div class="custom-products-list" style="max-height: 200px; overflow-y: auto; border: 1px solid var(--border-light); border-radius: 8px; padding: 0.5rem;">
-                    {% for p in all_products %}
-                    <label class="product-checkbox-label" style="display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem; cursor: pointer; border-radius: 6px; transition: background 0.2s;" data-name="{{ p.name | lower }}">
-                        <input type="checkbox" value="{{ p.name }}" class="add-custom-product-cb" style="width: 16px; height: 16px; cursor: pointer;">
-                        <div style="display: flex; align-items: center; gap: 0.75rem;">
-                            <img src="{{ p.image_url }}" alt="" style="width: 30px; height: 30px; object-fit: cover; border-radius: 4px;">
-                            <span style="font-size: 0.9rem;">{{ p.name }}</span>
-                        </div>
-                    </label>
-                    {% endfor %}
-                </div>
-            </div>
-
-            <div class="form-group" id="addOfferGroup" style="display: none; margin-bottom: 1.5rem;">
-                <label style="display: block; font-size: 0.95rem; font-weight: 600; color: var(--text-main); margin-bottom: 0.5rem;">Zgjidh ofertën aktive</label>
-                <select name="link_value_offer" class="form-control" style="width: 100%; padding: 0.75rem 1rem; border: 1px solid var(--border-light); border-radius: 8px; font-size: 0.95rem;">
-                    {% for offer in available_offers %}
-                    <option value="{{ offer.value }}">{{ offer.label }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            
-            <input type="hidden" name="link_value" id="addLinkValueFinal">
-
-            <div class="form-group" style="margin-bottom: 2rem; display: flex; align-items: center; gap: 0.75rem;">
-                <input type="checkbox" name="is_active" id="addActive" checked style="width: 18px; height: 18px; accent-color: var(--primary-main); cursor: pointer;">
-                <label for="addActive" style="font-size: 0.95rem; font-weight: 500; color: var(--text-main); cursor: pointer; user-select: none;">Baneri është Aktiv</label>
-            </div>
-
-            <button type="submit" class="btn btn-primary" style="width: 100%; padding: 1rem; font-size: 1rem; font-weight: 700; border-radius: 8px; border: none; cursor: pointer; transition: all 0.3s ease;">Ruaj Banerin</button>
-        </form>
-    </div>
-</div>
-
-<!-- Edit Banner Modal -->
-<div id="editBannerModal" class="dashboard-modal-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); z-index: 1050; justify-content: center; align-items: center;">
-    <div class="dashboard-modal-content" style="background: #fff; border-radius: 16px; width: 90%; max-width: 500px; max-height: 90vh; overflow-y: auto; padding: 2rem; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); position: relative; margin: 2rem auto;">
-        <button class="close-modal-btn" style="position: absolute; right: 1.5rem; top: 1.5rem; border: none; background: none; font-size: 1.25rem; color: #64748b; cursor: pointer; padding: 0.5rem;" onclick="document.getElementById('editBannerModal').style.display='none'">
-            <i class="fas fa-times"></i>
-        </button>
-
-        <div class="modal-header" style="margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border-light);">
-            <h3 style="font-size: 1.5rem; font-weight: 800; color: var(--text-main); margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
-                <i class="fas fa-edit" style="color: var(--primary-main);"></i> Ndrysho Banerin
-            </h3>
+        <div class="bn-meta">
+            {% if banner.expires_at %}
+            <span class="bn-pill {{ 'exp-past' if is_expired else 'exp' }}">
+                <i class="fas fa-calendar-day"></i>
+                {{ 'Skadoi' if is_expired else 'Skadon' }} {{ banner.expires_at.strftime('%d/%m/%Y') }}
+            </span>
+            {% endif %}
+            <span class="bn-pill clicks"><i class="fas fa-mouse-pointer"></i> {{ banner.click_count or 0 }} klikime</span>
         </div>
-
-        <form id="editBannerForm" method="POST" onsubmit="prepareEditForm()">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            
-            <div class="form-group" style="margin-bottom: 1.5rem;">
-                <label style="display: block; font-size: 0.95rem; font-weight: 600; color: var(--text-main); margin-bottom: 0.5rem;">URL e Imazhit</label>
-                <input type="url" name="image_url" id="editImageUrl" required class="form-control" style="width: 100%; padding: 0.75rem 1rem; border: 1px solid var(--border-light); border-radius: 8px; font-size: 0.95rem;">
-            </div>
-
-            <div class="form-group" style="margin-bottom: 1.5rem;">
-                <label style="display: block; font-size: 0.95rem; font-weight: 600; color: var(--text-main); margin-bottom: 0.5rem;">Ku dërgon ky baner kur klikohet?</label>
-                <select name="link_type" id="editLinkType" onchange="toggleEditLinkValue(this.value)" class="form-control" style="width: 100%; padding: 0.75rem 1rem; border: 1px solid var(--border-light); border-radius: 8px; font-size: 0.95rem;">
-                    <option value="all_offers">Tek të gjitha produktet me zbritje</option>
-                    <option value="brand">Tek produktet e një Brendi</option>
-                    <option value="category">Tek produktet e një Kategorie</option>
-                    <option value="custom_products">Tek produkte Specifike (manualisht)</option>
-                    <option value="offer">Tek një ofertë specifike</option>
-                </select>
-            </div>
-
-            <div class="banner-form-grid">
-                <div class="form-group" style="margin-bottom: 1.5rem;">
-                    <label style="display: block; font-size: 0.95rem; font-weight: 600; color: var(--text-main); margin-bottom: 0.5rem;">Renditja në hero</label>
-                    <input type="number" name="sort_order" id="editSortOrder" min="1" class="form-control" style="width: 100%; padding: 0.75rem 1rem; border: 1px solid var(--border-light); border-radius: 8px; font-size: 0.95rem;">
-                </div>
-                <div class="form-group" style="margin-bottom: 1.5rem;">
-                    <label style="display: block; font-size: 0.95rem; font-weight: 600; color: var(--text-main); margin-bottom: 0.5rem;">Hiqe pas datës</label>
-                    <input type="date" name="expires_at" id="editExpiresAt" class="form-control" style="width: 100%; padding: 0.75rem 1rem; border: 1px solid var(--border-light); border-radius: 8px; font-size: 0.95rem;">
-                </div>
-            </div>
-
-            <div class="form-group" id="editBrandGroup" style="display: none; margin-bottom: 1.5rem;">
-                <label style="display: block; font-size: 0.95rem; font-weight: 600; color: var(--text-main); margin-bottom: 0.5rem;">Zgjidh Brendin</label>
-                <select name="link_value_brand" id="editBrandSelect" class="form-control" style="width: 100%; padding: 0.75rem 1rem; border: 1px solid var(--border-light); border-radius: 8px; font-size: 0.95rem;">
-                    {% for brand in brands %}
-                    <option value="{{ brand }}">{{ brand }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-
-            <div class="form-group" id="editCategoryGroup" style="display: none; margin-bottom: 1.5rem;">
-                <label style="display: block; font-size: 0.95rem; font-weight: 600; color: var(--text-main); margin-bottom: 0.5rem;">Zgjidh Kategorinë</label>
-                <select name="link_value_category" id="editCategorySelect" class="form-control" style="width: 100%; padding: 0.75rem 1rem; border: 1px solid var(--border-light); border-radius: 8px; font-size: 0.95rem;">
-                    {% for cat in categories %}
-                    <option value="{{ cat }}">{{ cat }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-
-            <div class="form-group" id="editCustomGroup" style="display: none; margin-bottom: 1.5rem;">
-                <label style="display: block; font-size: 0.95rem; font-weight: 600; color: var(--text-main); margin-bottom: 0.5rem;">Zgjidhni produktet</label>
-                <input type="text" id="editCustomSearch" placeholder="Kërko produkte..." class="form-control" style="width: 100%; padding: 0.75rem 1rem; border: 1px solid var(--border-light); border-radius: 8px; font-size: 0.95rem; margin-bottom: 0.5rem;" oninput="filterProductsEdit()">
-                <div class="custom-products-list" style="max-height: 200px; overflow-y: auto; border: 1px solid var(--border-light); border-radius: 8px; padding: 0.5rem;">
-                    {% for p in all_products %}
-                    <label class="product-checkbox-label" style="display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem; cursor: pointer; border-radius: 6px; transition: background 0.2s;" data-name="{{ p.name | lower }}">
-                        <input type="checkbox" value="{{ p.name }}" class="edit-custom-product-cb" style="width: 16px; height: 16px; cursor: pointer;">
-                        <div style="display: flex; align-items: center; gap: 0.75rem;">
-                            <img src="{{ p.image_url }}" alt="" style="width: 30px; height: 30px; object-fit: cover; border-radius: 4px;">
-                            <span style="font-size: 0.9rem;">{{ p.name }}</span>
-                        </div>
-                    </label>
-                    {% endfor %}
-                </div>
-            </div>
-
-            <div class="form-group" id="editOfferGroup" style="display: none; margin-bottom: 1.5rem;">
-                <label style="display: block; font-size: 0.95rem; font-weight: 600; color: var(--text-main); margin-bottom: 0.5rem;">Zgjidh ofertën aktive</label>
-                <select name="link_value_offer" id="editOfferSelect" class="form-control" style="width: 100%; padding: 0.75rem 1rem; border: 1px solid var(--border-light); border-radius: 8px; font-size: 0.95rem;">
-                    {% for offer in available_offers %}
-                    <option value="{{ offer.value }}">{{ offer.label }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            
-            <input type="hidden" name="link_value" id="editLinkValueFinal">
-
-            <div class="form-group" style="margin-bottom: 2rem; display: flex; align-items: center; gap: 0.75rem;">
-                <input type="checkbox" name="is_active" id="editActive" style="width: 18px; height: 18px; accent-color: var(--primary-main); cursor: pointer;">
-                <label for="editActive" style="font-size: 0.95rem; font-weight: 500; color: var(--text-main); cursor: pointer; user-select: none;">Aktiv</label>
-            </div>
-
-            <button type="submit" class="btn btn-primary" style="width: 100%; padding: 1rem; font-size: 1rem; font-weight: 700; border-radius: 8px; border: none; cursor: pointer;">Ruaj Ndryshimet</button>
-        </form>
+    </div>
+    <div class="bn-footer">
+        <button class="bn-btn edit"
+            data-id="{{ banner._id }}"
+            data-img="{{ banner.image_url|e }}"
+            data-type="{{ banner.link_type|e }}"
+            data-val="{{ banner.link_value|default('',true)|e }}"
+            data-active="{{ '1' if banner.is_active else '' }}"
+            data-exp="{{ banner.expires_at.strftime('%Y-%m-%d') if banner.expires_at else '' }}"
+            data-order="{{ banner.sort_order or 1 }}"
+            onclick="openEditBn(this)">
+            <i class="fas fa-pen"></i> Edito
+        </button>
+        <button class="bn-btn del" onclick="openDelBn('{{ url_for('admin.delete_banner', banner_id=banner._id) }}')">
+            <i class="fas fa-trash"></i>
+        </button>
     </div>
 </div>
+{% endmacro %}
 
-<style>
-.form-control:focus {
-    outline: 2px solid var(--primary-main);
-    outline-offset: -1px;
-}
-.product-checkbox-label:hover {
-    background-color: #f8fafc;
-}
-</style>
+<!-- Active banners (draggable) -->
+<div class="bn-grid" id="bnGrid">
+    {% for banner, is_expired in active_banners %}
+        {{ render_card(banner, is_expired, true) }}
+    {% else %}
+    <div class="bn-empty">
+        <i class="fas fa-images"></i>
+        Nuk ka ende banerë aktivë. Shtoni të parin!
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Expired banners (read-only section) -->
+{% if expired_banners %}
+<div class="bn-expired-section">
+    <div class="bn-section-label"><i class="fas fa-clock"></i> Skaduar ({{ expired_banners|length }})</div>
+    <div class="bn-grid">
+        {% for banner, is_expired in expired_banners %}
+            {{ render_card(banner, is_expired, false) }}
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
 <script>
-function filterProductsAdd() {
-    const query = document.getElementById('addCustomSearch').value.toLowerCase();
-    const terms = query.split(' ').filter(t => t);
-    const labels = document.querySelectorAll('#addCustomGroup .product-checkbox-label');
-    labels.forEach(label => {
-        const name = label.getAttribute('data-name') || '';
-        const matches = terms.every(t => name.includes(t));
-        label.style.display = (terms.length === 0 || matches) ? 'flex' : 'none';
-    });
+/* ════ DATE PICKER ════ */
+const M2=['Janar','Shkurt','Mars','Prill','Maj','Qershor','Korrik','Gusht','Shtator','Tetor','Nëntor','Dhjetor'];
+const D2=['Hë','Ma','Më','En','Pr','Sh','Di'];
+let c2Y,c2M,c2Sel=null;
+function initCdp2(){const n=new Date();c2Y=n.getFullYear();c2M=n.getMonth();renderCdp2();}
+function toggleCdp2(){const p=document.getElementById('cdp2Panel'),t=document.getElementById('cdp2Trigger');if(p.classList.contains('open')){p.classList.remove('open');t.classList.remove('open');}else{p.classList.add('open');t.classList.add('open');renderCdp2();}}
+function closeCdp2Panel(){document.getElementById('cdp2Panel').classList.remove('open');document.getElementById('cdp2Trigger').classList.remove('open');}
+function cdp2Nav(d){c2M+=d;if(c2M>11){c2M=0;c2Y++;}if(c2M<0){c2M=11;c2Y--;}renderCdp2();}
+function renderCdp2(){
+    document.getElementById('cdp2MY').textContent=M2[c2M]+' '+c2Y;
+    document.getElementById('cdp2WD').innerHTML=D2.map(d=>`<div class="cdp2-wd">${d}</div>`).join('');
+    const fd=new Date(c2Y,c2M,1).getDay(),off=(fd+6)%7,dim=new Date(c2Y,c2M+1,0).getDate();
+    const today=new Date();today.setHours(0,0,0,0);
+    let h='';
+    for(let i=0;i<off;i++)h+='<div class="cdp2-day e"></div>';
+    for(let d=1;d<=dim;d++){const dt=new Date(c2Y,c2M,d),past=dt<today,sel=c2Sel&&dt.toDateString()===c2Sel.toDateString(),tod=dt.toDateString()===today.toDateString();h+=`<div class="cdp2-day${sel?' s':''}${tod&&!sel?' t':''}${past?' d':''}"${past?'':` onclick="selDay2(${d})"`}>${d}</div>`;}
+    document.getElementById('cdp2Days').innerHTML=h;
+}
+function selDay2(d){c2Sel=new Date(c2Y,c2M,d);const iso=`${c2Y}-${String(c2M+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;document.getElementById('bnExpiresAt').value=iso;document.getElementById('cdp2Display').textContent=`${d} ${M2[c2M]} ${c2Y}`;document.getElementById('cdp2Trigger').classList.add('has-value');renderCdp2();closeCdp2Panel();}
+function clearCdp2(){c2Sel=null;document.getElementById('bnExpiresAt').value='';document.getElementById('cdp2Display').textContent='Zgjidh datën...';document.getElementById('cdp2Trigger').classList.remove('has-value');const n=new Date();c2Y=n.getFullYear();c2M=n.getMonth();renderCdp2();}
+function setCdp2(iso){if(!iso){clearCdp2();return;}const[y,m,d]=iso.split('-').map(Number);c2Sel=new Date(y,m-1,d);c2Y=y;c2M=m-1;document.getElementById('bnExpiresAt').value=iso;document.getElementById('cdp2Display').textContent=`${d} ${M2[m-1]} ${y}`;document.getElementById('cdp2Trigger').classList.add('has-value');renderCdp2();}
+document.addEventListener('click',e=>{const w=document.getElementById('cdp2Wrap');if(w&&!w.contains(e.target))closeCdp2Panel();});
+
+/* ════ IMAGE PREVIEW ════ */
+function previewBnImg(url){const img=document.getElementById('bnImgPreview');if(url&&url.startsWith('http')){img.src=url;img.style.display='block';}else img.style.display='none';}
+
+/* ════ DESTINATION ════ */
+function pickDest(type){
+    document.getElementById('bnLinkType').value=type;
+    document.querySelectorAll('#bnDestGrid .bn-dest-card').forEach(c=>c.classList.toggle('selected',c.querySelector('input').value===type));
+    ['offer','category','brand','custom_products'].forEach(t=>{const map={offer:'bnOfferPanel',category:'bnCatPanel',brand:'bnBrandPanel',custom_products:'bnProdPanel'};const el=document.getElementById(map[t]);if(el)el.classList.toggle('visible',t===type);});
 }
 
-function filterProductsEdit() {
-    const query = document.getElementById('editCustomSearch').value.toLowerCase();
-    const terms = query.split(' ').filter(t => t);
-    const labels = document.querySelectorAll('#editCustomGroup .product-checkbox-label');
-    labels.forEach(label => {
-        const name = label.getAttribute('data-name') || '';
-        const matches = terms.every(t => name.includes(t));
-        label.style.display = (terms.length === 0 || matches) ? 'flex' : 'none';
-    });
+/* ════ PRODUCTS FILTER ════ */
+function filterBnProds(q){const ql=q.toLowerCase();document.querySelectorAll('#bnProdList .bn-prod-item').forEach(el=>{el.style.display=(el.dataset.name||'').includes(ql)?'':'none';});}
+
+/* ════ MODAL ════ */
+function openBnModal(){
+    document.getElementById('bnModalIcon').innerHTML='<i class="fas fa-plus"></i>';
+    document.getElementById('bnModalTitle').textContent='Shto Baner të Ri';
+    document.getElementById('bnSaveLabel').textContent='Ruaj Banerin';
+    document.getElementById('bnForm').action="{{ url_for('admin.manage_banners') }}";
+    document.getElementById('bnSortOrder').value={{ next_banner_order }};
+    document.getElementById('bnImageUrl').value='';
+    document.getElementById('bnImgPreview').style.display='none';
+    pickDest('all_offers');
+    document.querySelector('#bnDestGrid input[value="all_offers"]').checked=true;
+    clearCdp2();
+    document.querySelectorAll('.bn-prod-cb').forEach(cb=>cb.checked=false);
+    document.getElementById('bnProdSearch').value='';filterBnProds('');
+    document.getElementById('bnModal').classList.add('open');
+}
+function openEditBn(btn){
+    const d=btn.dataset;
+    document.getElementById('bnModalIcon').innerHTML='<i class="fas fa-pen"></i>';
+    document.getElementById('bnModalTitle').textContent='Ndrysho Banerin';
+    document.getElementById('bnSaveLabel').textContent='Ruaj Ndryshimet';
+    document.getElementById('bnForm').action=`/admin/banners/edit/${d.id}`;
+    document.getElementById('bnSortOrder').value=d.order||1;
+    document.getElementById('bnImageUrl').value=d.img||'';previewBnImg(d.img||'');
+    const type=d.type||'all_offers';
+    const radio=document.querySelector(`#bnDestGrid input[value="${type}"]`);
+    if(radio){radio.checked=true;pickDest(type);}
+    const val=d.val||'';
+    if(type==='offer')document.getElementById('bnOfferSel').value=val;
+    else if(type==='category')document.getElementById('bnCatSel').value=val;
+    else if(type==='brand')document.getElementById('bnBrandSel').value=val;
+    else if(type==='custom_products'){const vals=val?val.split(',').map(v=>v.trim()):[];document.querySelectorAll('.bn-prod-cb').forEach(cb=>cb.checked=vals.includes(cb.value.trim()));}
+    setCdp2(d.exp||'');
+    document.getElementById('bnModal').classList.add('open');
+}
+function closeBnModal(e){if(!e||e.target===document.getElementById('bnModal'))document.getElementById('bnModal').classList.remove('open');}
+
+/* ════ FORM PREP ════ */
+function prepBnForm(){
+    const type=document.getElementById('bnLinkType').value;
+    let val='';
+    if(type==='offer')val=document.getElementById('bnOfferSel').value;
+    else if(type==='category')val=document.getElementById('bnCatSel').value;
+    else if(type==='brand')val=document.getElementById('bnBrandSel').value;
+    else if(type==='custom_products')val=Array.from(document.querySelectorAll('.bn-prod-cb:checked')).map(cb=>cb.value).join(', ');
+    document.getElementById('bnLinkValue').value=val;
 }
 
-function _warnIfEmpty(selectEl, value, warnId) {
-    var existing = document.getElementById(warnId);
-    if (existing) existing.remove();
-    selectEl.style.borderColor = '';
-    if (!value) {
-        selectEl.style.borderColor = '#dc2626';
-        var warn = document.createElement('p');
-        warn.id = warnId;
-        warn.style.cssText = 'color:#dc2626;font-size:0.82rem;margin-top:0.35rem;font-weight:700;';
-        warn.textContent = '⚠ Nuk është vendosur asnjë vlerë — zgjidh njërën nga lista ose klikimi i banerit nuk do funksionojë!';
-        selectEl.parentNode.appendChild(warn);
-        // Insert a blank placeholder option so admin is forced to pick
-        if (!selectEl.querySelector('option[value=""]')) {
-            var blank = document.createElement('option');
-            blank.value = '';
-            blank.textContent = '— Zgjidh —';
-            selectEl.insertBefore(blank, selectEl.firstChild);
+/* ════ DELETE ════ */
+function openDelBn(actionUrl){document.getElementById('bnDelForm').action=actionUrl;document.getElementById('bnDelModal').style.display='flex';}
+
+/* ════ DRAG-AND-DROP REORDER ════ */
+let dragSrc = null;
+const placeholder = document.createElement('div');
+placeholder.className = 'bn-placeholder';
+
+function initDrag() {
+    const grid = document.getElementById('bnGrid');
+    if (!grid) return;
+
+    grid.querySelectorAll('.bn-card').forEach(attachDrag);
+
+    // Allow drop on the grid background (empty space after last card)
+    grid.addEventListener('dragover', e => {
+        e.preventDefault();
+        if (!dragSrc) return;
+        // If placeholder not yet in grid, append it
+        if (!grid.contains(placeholder)) grid.appendChild(placeholder);
+    });
+    grid.addEventListener('drop', e => e.preventDefault());
+}
+
+function attachDrag(card) {
+    card.addEventListener('dragstart', e => {
+        dragSrc = card;
+        // Size the placeholder to match the card before fading it
+        placeholder.style.height = card.offsetHeight + 'px';
+        // Insert placeholder where the card is, then fade the card
+        card.after(placeholder);
+        requestAnimationFrame(() => card.classList.add('dragging'));
+        e.dataTransfer.effectAllowed = 'move';
+    });
+
+    card.addEventListener('dragend', () => {
+        card.classList.remove('dragging');
+        if (placeholder.parentNode) {
+            // Place the card where the placeholder is, then remove placeholder
+            placeholder.parentNode.insertBefore(card, placeholder);
+            placeholder.remove();
         }
-        selectEl.value = '';
-    }
-}
-
-function openEditBanner(button) {
-    const dataset = button.dataset;
-    const id = dataset.bannerId;
-    const url = dataset.imageUrl || '';
-    const type = dataset.linkType || 'all_offers';
-    const value = dataset.linkValue || '';
-    const active = dataset.active || '';
-    const expiresAt = dataset.expiresAt || '';
-    const sortOrder = dataset.sortOrder || '';
-
-    // Reset warning states
-    ['editBrandSelect','editCategorySelect','editOfferSelect'].forEach(function(sid) {
-        var el = document.getElementById(sid);
-        if (el) {
-            el.style.borderColor = '';
-            var blank = el.querySelector('option[value=""]');
-            if (blank) blank.remove();
-        }
-    });
-    ['warn-brand','warn-category','warn-offer'].forEach(function(wid) {
-        var w = document.getElementById(wid);
-        if (w) w.remove();
+        dragSrc = null;
+        saveOrder();
     });
 
-    document.getElementById('editBannerForm').action = "/admin/banners/edit/" + id;
-    document.getElementById('editImageUrl').value = url;
-    document.getElementById('editLinkType').value = type;
-    toggleEditLinkValue(type);
+    card.addEventListener('dragover', e => {
+        e.preventDefault();
+        if (!dragSrc || card === dragSrc) return;
+        const rect = card.getBoundingClientRect();
+        const mid = rect.top + rect.height / 2;
+        if (e.clientY < mid) card.before(placeholder);
+        else card.after(placeholder);
+    });
 
-    if (type === 'brand') {
-        var sel = document.getElementById('editBrandSelect');
-        sel.value = value;
-        _warnIfEmpty(sel, value, 'warn-brand');
-    } else if (type === 'category') {
-        var sel = document.getElementById('editCategorySelect');
-        sel.value = value;
-        _warnIfEmpty(sel, value, 'warn-category');
-    } else if (type === 'custom_products') {
-        const values = value ? value.split(',').map(v => v.trim()) : [];
-        document.querySelectorAll('.edit-custom-product-cb').forEach(cb => {
-            cb.checked = values.includes(cb.value.trim());
-        });
-    } else if (type === 'offer') {
-        var sel = document.getElementById('editOfferSelect');
-        sel.value = value;
-        _warnIfEmpty(sel, value, 'warn-offer');
-    }
-
-    document.getElementById('editActive').checked = ['True', 'true', '1', 'on'].includes(active);
-    document.getElementById('editExpiresAt').value = expiresAt;
-    document.getElementById('editSortOrder').value = sortOrder;
-    document.getElementById('editBannerModal').style.display = 'flex';
+    card.addEventListener('drop', e => e.preventDefault());
 }
 
-function toggleEditLinkValue(type) {
-    document.getElementById('editBrandGroup').style.display = type === 'brand' ? 'block' : 'none';
-    document.getElementById('editCategoryGroup').style.display = type === 'category' ? 'block' : 'none';
-    document.getElementById('editCustomGroup').style.display = type === 'custom_products' ? 'block' : 'none';
-    document.getElementById('editOfferGroup').style.display = type === 'offer' ? 'block' : 'none';
-}
-
-function prepareEditForm() {
-    const type = document.getElementById('editLinkType').value;
-    let finalValue = '';
-    if (type === 'brand') finalValue = document.getElementById('editBrandSelect').value;
-    else if (type === 'category') finalValue = document.getElementById('editCategorySelect').value;
-    else if (type === 'custom_products') {
-        const checked = Array.from(document.querySelectorAll('.edit-custom-product-cb:checked')).map(cb => cb.value);
-        finalValue = checked.join(', ');
-    } else if (type === 'offer') {
-        finalValue = document.getElementById('editOfferSelect').value;
-    }
-    document.getElementById('editLinkValueFinal').value = finalValue;
-}
-
-function toggleAddLinkValue(type) {
-    document.getElementById('addBrandGroup').style.display = type === 'brand' ? 'block' : 'none';
-    document.getElementById('addCategoryGroup').style.display = type === 'category' ? 'block' : 'none';
-    document.getElementById('addCustomGroup').style.display = type === 'custom_products' ? 'block' : 'none';
-    document.getElementById('addOfferGroup').style.display = type === 'offer' ? 'block' : 'none';
-}
-
-function prepareAddForm() {
-    const type = document.getElementById('addLinkType').value;
-    let finalValue = '';
-    if (type === 'brand') finalValue = document.querySelector('select[name="link_value_brand"]').value;
-    else if (type === 'category') finalValue = document.querySelector('select[name="link_value_category"]').value;
-    else if (type === 'custom_products') {
-        const checked = Array.from(document.querySelectorAll('.add-custom-product-cb:checked')).map(cb => cb.value);
-        finalValue = checked.join(', ');
-    } else if (type === 'offer') {
-        finalValue = document.querySelector('select[name="link_value_offer"]').value;
-    }
-    document.getElementById('addLinkValueFinal').value = finalValue;
-}
-
-function reorderBanner(bannerId, direction, csrf, btn) {
-    btn.disabled = true;
-    btn.style.opacity = '0.5';
-
-    const formData = new FormData();
-    formData.append('csrf_token', csrf);
-    formData.append('direction', direction);
-
-    fetch(`/admin/banners/reorder/${bannerId}`, {
+function saveOrder() {
+    const ids = Array.from(document.querySelectorAll('#bnGrid .bn-card')).map(c => c.dataset.id);
+    // Update order chips
+    document.querySelectorAll('#bnGrid .bn-card').forEach((c, i) => {
+        const chip = c.querySelector('.bn-order-chip');
+        if (chip) chip.textContent = '#' + (i + 1);
+    });
+    const ind = document.getElementById('bnSaving');
+    ind.classList.add('show');
+    fetch('/admin/banners/reorder-bulk', {
         method: 'POST',
-        headers: { 'X-Requested-With': 'XMLHttpRequest' },
-        body: formData
-    })
-    .then(r => r.json())
-    .then(data => {
-        if (data.ok) {
-            // Swap card DOM nodes without a page reload
-            const grid = document.querySelector('.banner-grid');
-            const cards = Array.from(grid.children);
-            const idx = cards.findIndex(c => c.querySelector(`[onclick*="${bannerId}"]`));
-            if (idx === -1) { location.reload(); return; }
-            const card = cards[idx];
-            if (direction === 'up' && idx > 0) {
-                grid.insertBefore(card, cards[idx - 1]);
-            } else if (direction === 'down' && idx < cards.length - 1) {
-                grid.insertBefore(cards[idx + 1], card);
-            }
-            // Update order chips
-            Array.from(grid.children).forEach((c, i) => {
-                const chip = c.querySelector('.banner-order-chip');
-                if (chip) chip.textContent = '#' + (i + 1);
-            });
-        }
-        btn.disabled = false;
-        btn.style.opacity = '1';
-    })
-    .catch(() => {
-        btn.disabled = false;
-        btn.style.opacity = '1';
-    });
+        headers: {'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token() }}'},
+        body: JSON.stringify({order: ids})
+    }).then(r => r.json())
+      .then(d => {
+          ind.classList.remove('show');
+          if (d.ok) showToast('Renditja u ruajt.', 'success', 3000);
+      })
+      .catch(() => { ind.classList.remove('show'); showToast('Gabim gjatë ruajtjes.', 'danger'); });
 }
+
+initCdp2();
+initDrag();
 </script>
-    </div>
 {% endblock %}

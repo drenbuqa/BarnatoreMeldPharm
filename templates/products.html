@@ -219,7 +219,7 @@
                             {% if product.variants and product.variants|length > 0 %}
                             {% set og = (product.option_groups[0]) if product.option_groups and product.option_groups|length > 0 else none %}
                             {% if og %}
-                              {% set vals = og.values | map(attribute='value') | list %}
+                              {% set vals = og['values'] | map(attribute='value') | list %}
                               {% set label = og.name %}
                             {% else %}
                               {% set attr_types = [] %}
@@ -277,6 +277,109 @@
     </div>
 </section>
 <script>
+// ── Desktop: sidebar fixed-sticky ──────────────────────────────────
+(function(){
+    var sidebar = document.getElementById('shopSidebar');
+    var layout  = document.querySelector('.shop-layout');
+    if (!sidebar || !layout) return;
+
+    var NAVBAR = 88; // px below viewport top to stick at
+    var ph = null, fixed = false, natLeft = 0, natWidth = 0;
+
+    function fix() {
+        if (fixed) return;
+        var r = sidebar.getBoundingClientRect();
+        natLeft = r.left; natWidth = sidebar.offsetWidth;
+        ph = document.createElement('div');
+        ph.style.cssText = 'width:' + natWidth + 'px;height:' + sidebar.offsetHeight + 'px;flex-shrink:0;grid-column:1;';
+        sidebar.parentNode.insertBefore(ph, sidebar);
+        sidebar.style.position = 'fixed';
+        sidebar.style.top      = NAVBAR + 'px';
+        sidebar.style.left     = natLeft + 'px';
+        sidebar.style.width    = natWidth + 'px';
+        sidebar.style.zIndex   = '100';
+        fixed = true;
+    }
+
+    function unfix() {
+        if (!fixed) return;
+        sidebar.style.position = '';
+        sidebar.style.top = '';
+        sidebar.style.left = '';
+        sidebar.style.width = '';
+        sidebar.style.zIndex = '';
+        if (ph && ph.parentNode) ph.parentNode.removeChild(ph);
+        ph = null; fixed = false;
+    }
+
+    function update() {
+        if (window.innerWidth <= 992) { unfix(); return; }
+        var lrTop = layout.getBoundingClientRect().top;
+        if (lrTop <= NAVBAR) {
+            fix();
+        } else {
+            unfix();
+        }
+    }
+
+    window.addEventListener('scroll', update, { passive: true });
+    window.addEventListener('resize', function(){ unfix(); setTimeout(update, 50); }, { passive: true });
+    update();
+})();
+
+// ── Mobile: controls-bar fixed-sticky ──────────────────────────────
+(function(){
+    var bar  = document.querySelector('.shop-controls-container');
+    var mhdr = document.querySelector('.mobile-header');
+    if (!bar) return;
+
+    var ph = null, fixed = false, barH = 0;
+
+    function hdrH() { return mhdr ? mhdr.offsetHeight : 0; }
+
+    function fix() {
+        if (fixed) return;
+        barH = bar.offsetHeight;
+        ph = document.createElement('div');
+        ph.style.height = barH + 'px';
+        bar.parentNode.insertBefore(ph, bar);
+        bar.style.position    = 'fixed';
+        bar.style.top         = hdrH() + 'px';
+        bar.style.left        = '0';
+        bar.style.right       = '0';
+        bar.style.margin      = '0';
+        bar.style.borderRadius = '0';
+        bar.style.boxShadow   = '0 4px 12px rgba(0,0,0,0.1)';
+        bar.style.zIndex      = '9999';
+        bar.style.borderBottom = '1px solid #f1f5f9';
+        fixed = true;
+    }
+
+    function unfix() {
+        if (!fixed) return;
+        bar.style.position = bar.style.top = bar.style.left =
+        bar.style.right = bar.style.margin = bar.style.borderRadius =
+        bar.style.boxShadow = bar.style.zIndex = bar.style.borderBottom = '';
+        if (ph && ph.parentNode) ph.parentNode.removeChild(ph);
+        ph = null; fixed = false;
+    }
+
+    function update() {
+        if (window.innerWidth > 992) { unfix(); return; }
+        var anchor = ph ? ph.getBoundingClientRect().top : bar.getBoundingClientRect().top;
+        if (anchor <= hdrH() + 1) {
+            fix();
+            bar.style.top = hdrH() + 'px'; // track header collapse
+        } else {
+            unfix();
+        }
+    }
+
+    window.addEventListener('scroll', update, { passive: true });
+    window.addEventListener('resize', function(){ unfix(); setTimeout(update, 50); }, { passive: true });
+    update();
+})();
+
 (function(){
     function showSkeleton(){
         const grid = document.getElementById('productGrid');
@@ -295,3 +398,5 @@
 })();
 </script>
 {% endblock %}
+
+{% block footer %}{% endblock %}

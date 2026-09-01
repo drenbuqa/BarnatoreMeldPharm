@@ -480,16 +480,18 @@
 
 .shop-sidebar {
     width: 280px;
+    z-index: 100;
+    position: relative;
+    align-self: start;
+}
+
+.sidebar-content-wrapper {
     background: #fff;
     padding: 1.5rem;
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-sm);
     border: 1px solid #f1f5f9;
-    z-index: 100;
-    position: sticky;
-    top: 80px;
-    align-self: start;
-    height: calc(100vh - 120px) !important;
+    max-height: calc(100vh - 120px);
     overflow-y: auto;
     scrollbar-width: thin;
 }
@@ -1082,8 +1084,12 @@
         overflow-y: auto !important;
         padding: 1.25rem !important;
         overscroll-behavior: contain !important;
-        /* IMPORTANT: prevents background scrolling issues */
         -webkit-overflow-scrolling: touch;
+        background: transparent !important;
+        border: none !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        max-height: none !important;
     }
 
     .sidebar-mobile-footer {
@@ -1180,11 +1186,7 @@
     }
 
     .shop-controls-container {
-        position: sticky !important;
-        top: 30px !important;
-        /* Move higher to sit perfectly up below header Search Bar Row */
-        z-index: 999 !important;
-        /* High enough to stick on top of products */
+        z-index: 9999 !important;
         background: #fff !important;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
         flex-direction: row !important;

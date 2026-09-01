@@ -1,97 +1,273 @@
 {% extends "admin/base.html" %}
 
-{% block title %}Menaxhimi i Porosive - Meld Pharm Admin{% endblock %}
+{% block title %}Porositë — Meld Pharm Admin{% endblock %}
 {% block page_title %}Menaxhimi i Porosive{% endblock %}
 
 {% block admin_content %}
+<style>
+/* ── KPI Cards (monochromatic, matching dashboard) ── */
+.ord-kpi-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:1rem; margin-bottom:1.5rem; }
+.ord-kpi { background:#fff; border:1px solid #eef0ed; border-radius:14px; padding:1.1rem 1.3rem;
+           box-shadow:0 1px 3px rgba(0,0,0,0.04); cursor:pointer; transition:box-shadow 0.18s,transform 0.18s; }
+.ord-kpi:hover { box-shadow:0 4px 16px rgba(0,0,0,0.08); transform:translateY(-1px); }
+.ord-kpi-icon { width:36px; height:36px; border-radius:9px; display:flex; align-items:center; justify-content:center; font-size:0.9rem; margin-bottom:0.75rem; }
+.ki-slate  { background:#f8fafc; color:#475569; }
+.ki-amber  { background:#fffbeb; color:#d97706; }
+.ki-blue   { background:#eff6ff; color:#2563eb; }
+.ki-green  { background:#f0fdf4; color:#16a34a; }
+.ki-red    { background:#fef2f2; color:#ef4444; }
+.ord-kpi-num { font-size:1.8rem; font-weight:800; color:#1a1f18; line-height:1; }
+.ord-kpi-lbl { font-size:0.7rem; font-weight:700; text-transform:uppercase; letter-spacing:0.07em; color:#8a9186; margin-top:0.3rem; }
 
-<!-- KPI Cards -->
-<div class="kpi-grid" style="margin-bottom:1.5rem;">
-    <div class="kpi-card kpi-blue" style="cursor:pointer;" onclick="location.href='{{ url_for('admin.orders') }}'">
-        <div class="kpi-icon"><i class="fas fa-shopping-bag"></i></div>
-        <div class="kpi-body">
-            <div class="kpi-number">{{ counts.total }}</div>
-            <div class="kpi-label">Gjithsej Porosi</div>
-        </div>
+/* ── Toolbar ── */
+.ord-toolbar { background:#fff; border:1px solid #eef0ed; border-radius:14px; padding:1rem 1.25rem; margin-bottom:1rem; display:flex; align-items:center; gap:0.85rem; flex-wrap:wrap; }
+.ord-search-wrap { position:relative; flex:1; min-width:180px; max-width:300px; }
+.ord-search-wrap i { position:absolute; left:0.75rem; top:50%; transform:translateY(-50%); color:#9aa095; font-size:0.8rem; pointer-events:none; }
+.ord-search-wrap input { width:100%; padding:0.55rem 0.75rem 0.55rem 2.2rem; border:1.5px solid #e2e8f0; border-radius:9px; font-size:0.85rem; outline:none; background:#fafafa; color:#1a1f18; }
+.ord-search-wrap input:focus { border-color:var(--adm-primary); background:#fff; }
+
+/* ── Status tabs ── */
+.ord-tabs { display:flex; gap:0.3rem; flex-wrap:wrap; flex:1; }
+.ord-tab { padding:0.45rem 0.85rem; border-radius:8px; font-size:0.78rem; font-weight:700; text-decoration:none; color:#6b7280; background:#f3f4f2; transition:all 0.15s; white-space:nowrap; }
+.ord-tab:hover { background:#e9ebe7; color:#1a1f18; }
+.ord-tab.active { background:var(--adm-primary); color:#fff; }
+.ord-tab .tab-ct { display:inline-flex; align-items:center; justify-content:center; background:rgba(255,255,255,0.25); color:inherit; font-size:0.68rem; font-weight:800; min-width:16px; height:16px; border-radius:8px; padding:0 4px; margin-left:4px; }
+.ord-tab:not(.active) .tab-ct { background:rgba(0,0,0,0.08); }
+
+/* ── Bulk bar ── */
+.bulk-bar {
+    display:none; align-items:center; gap:0.75rem; flex-wrap:wrap;
+    background:#1a1f18; color:#fff; padding:0.7rem 1.1rem;
+    border-radius:12px; margin-bottom:0.75rem;
+}
+.bulk-count { font-size:0.82rem; font-weight:700; flex:0 0 auto; }
+.bulk-status-select {
+    padding:0.45rem 0.7rem; border-radius:8px; border:1.5px solid rgba(255,255,255,0.2);
+    background:rgba(255,255,255,0.1); color:#fff; font-size:0.82rem; font-weight:600; outline:none;
+}
+.bulk-status-select option { background:#1a1f18; color:#fff; }
+.bulk-apply-btn {
+    padding:0.45rem 1rem; border-radius:8px; border:none;
+    background:var(--adm-primary); color:#fff; font-size:0.82rem; font-weight:700; cursor:pointer;
+    display:flex; align-items:center; gap:0.4rem;
+}
+.bulk-apply-btn:hover { opacity:0.88; }
+.bulk-clear-btn {
+    padding:0.45rem 0.75rem; border-radius:8px; border:1.5px solid rgba(255,255,255,0.2);
+    background:transparent; color:rgba(255,255,255,0.7); font-size:0.8rem; cursor:pointer; margin-left:auto;
+}
+.bulk-clear-btn:hover { color:#fff; }
+
+/* ── Table ── */
+.ord-table-card { background:#fff; border:1px solid #eef0ed; border-radius:14px; overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,0.04); }
+.ord-table { width:100%; border-collapse:collapse; }
+.ord-table thead tr { border-bottom:2px solid #eef0ed; }
+.ord-table thead th { padding:0.75rem 1rem; font-size:0.7rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:#8a9186; text-align:left; background:#fafafa; }
+.ord-table tbody tr.parent-row { border-bottom:1px solid #f3f4f2; cursor:pointer; transition:background 0.12s; }
+.ord-table tbody tr.parent-row:hover { background:transparent; }
+.ord-table tbody td { padding:0.8rem 1rem; font-size:0.875rem; vertical-align:middle; }
+
+/* ── Order ID ── */
+.ord-id { font-family:monospace; font-size:0.78rem; font-weight:700; color:#475569; }
+.ord-date { font-size:0.72rem; color:#9aa095; display:block; margin-top:1px; }
+
+/* ── Customer ── */
+.cust-name { font-weight:700; color:#1a1f18; }
+.cust-tel { font-size:0.75rem; color:#9aa095; display:block; margin-top:1px; }
+
+/* ── Status dropdown ── */
+.status-dropdown { position:relative; display:inline-block; }
+.status-trigger {
+    display:inline-flex; align-items:center; gap:0.4rem;
+    padding:0.35rem 0.65rem; border-radius:8px; border:none; cursor:pointer;
+    font-size:0.78rem; font-weight:700; transition:opacity 0.15s;
+}
+.status-trigger i:last-child { font-size:0.6rem; opacity:0.6; }
+.status-trigger.updating { opacity:0.5; pointer-events:none; }
+.st-pending    { background:#fff7ed; color:#c2410c; }
+.st-konfirmuar { background:#eff6ff; color:#1d4ed8; }
+.st-delivering { background:#faf5ff; color:#7c3aed; }
+.st-delivered  { background:#f0fdf4; color:#15803d; }
+.st-anuluar    { background:#fef2f2; color:#dc2626; }
+.st-refuzuar   { background:#fef2f2; color:#9f1239; }
+
+.status-drop-menu {
+    position:absolute; z-index:200; right:0; top:calc(100% + 4px);
+    background:#fff; border:1px solid #eef0ed; border-radius:10px;
+    box-shadow:0 8px 24px rgba(0,0,0,0.12); min-width:150px; overflow:hidden;
+}
+.sdd-item {
+    display:flex; align-items:center; gap:0.55rem; padding:0.6rem 0.9rem;
+    font-size:0.8rem; font-weight:600; cursor:pointer; color:#374151; transition:background 0.1s;
+}
+.sdd-item:hover { background:#f8faf7; }
+.sdd-item i { font-size:0.75rem; width:14px; }
+.sdd-pending    i { color:#c2410c; }
+.sdd-konfirmuar i { color:#1d4ed8; }
+.sdd-delivering i { color:#7c3aed; }
+.sdd-delivered  i { color:#15803d; }
+.sdd-anuluar    i { color:#dc2626; }
+.sdd-refuzuar   i { color:#9f1239; }
+.sdd-divider { height:1px; background:#f3f4f2; margin:0.25rem 0; }
+
+/* ── Action buttons ── */
+.tbl-actions { display:flex; align-items:center; gap:0.35rem; justify-content:flex-end; }
+.act-btn {
+    width:30px; height:30px; border-radius:7px; border:1px solid #eef0ed;
+    background:#fafafa; color:#6b7280; font-size:0.78rem; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; transition:all 0.15s;
+}
+.act-btn:hover { background:#fef2f2; color:#dc2626; border-color:#fca5a5; }
+
+/* Clickable row hint */
+tr.parent-row td:not([onclick]) { cursor:pointer; }
+tr.parent-row:hover td { background:#f5f7f4; }
+tr.parent-row td:first-child { border-left:3px solid transparent; transition:border-color 0.15s; }
+tr.parent-row:hover td:first-child { border-left-color:var(--adm-primary); }
+
+/* ── Expanded details ── */
+.details-row td { padding:0; background:#fafaf8; border-bottom:1px solid #eef0ed; }
+.ord-details { padding:1.5rem; }
+.details-grid { display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; }
+.details-subtitle { font-size:0.75rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#8a9186; margin-bottom:0.75rem; display:flex; align-items:center; gap:0.4rem; }
+.details-item { display:flex; gap:0.6rem; font-size:0.85rem; padding:0.3rem 0; border-bottom:1px solid #f3f4f2; }
+.details-item:last-child { border-bottom:none; }
+.details-item span { color:#8a9186; min-width:80px; }
+.details-item strong { color:#1a1f18; word-break:break-word; }
+.ord-item-row { display:flex; align-items:center; justify-content:space-between; padding:0.45rem 0; border-bottom:1px solid #f3f4f2; font-size:0.85rem; }
+.ord-item-row:last-child { border-bottom:none; }
+.ord-item-qty { font-size:0.75rem; font-weight:700; color:#8a9186; min-width:28px; }
+.ord-item-name { flex:1; color:#1a1f18; }
+.ord-item-price { font-weight:700; color:#1a1f18; white-space:nowrap; }
+.ord-items-total { display:flex; justify-content:space-between; padding:0.65rem 0 0; border-top:2px solid #eef0ed; font-weight:800; font-size:1rem; margin-top:0.5rem; }
+.ord-items-total span:last-child { color:var(--adm-primary); }
+
+/* Admin note */
+.admin-note-textarea { width:100%; padding:0.6rem 0.75rem; border:1.5px solid #e2e8f0; border-radius:8px; font-size:0.83rem; font-family:inherit; resize:vertical; outline:none; box-sizing:border-box; color:#1a1f18; }
+.admin-note-textarea:focus { border-color:var(--adm-primary); }
+.admin-note-save-btn { margin-top:0.5rem; padding:0.45rem 1rem; background:var(--adm-primary); color:#fff; border:none; border-radius:7px; font-size:0.8rem; font-weight:700; cursor:pointer; }
+.note-saved-msg { margin-left:0.5rem; }
+
+/* Print invoice */
+.btn-print { padding:0.4rem 0.8rem; background:#fff; border:1.5px solid #e2e8f0; border-radius:8px; font-size:0.78rem; font-weight:700; cursor:pointer; color:#475569; display:inline-flex; align-items:center; gap:0.35rem; }
+.btn-print:hover { border-color:var(--adm-primary); color:var(--adm-primary); }
+
+
+/* ── Modals ── */
+.ord-modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:1000; display:flex; align-items:center; justify-content:center; }
+.ord-modal { background:#fff; border-radius:16px; padding:1.75rem; max-width:420px; width:90%; box-shadow:0 20px 60px rgba(0,0,0,0.18); }
+.ord-modal h3 { font-size:1.05rem; font-weight:800; color:#1a1f18; margin:0 0 0.5rem; display:flex; align-items:center; gap:0.5rem; }
+.ord-modal p { font-size:0.87rem; color:#6b7280; margin:0 0 1rem; }
+.ord-modal input[type=text], .ord-modal textarea {
+    width:100%; padding:0.6rem 0.75rem; border:1.5px solid #e2e8f0; border-radius:9px;
+    font-size:0.88rem; font-family:inherit; outline:none; box-sizing:border-box; color:#1a1f18;
+}
+.ord-modal input:focus, .ord-modal textarea:focus { border-color:var(--adm-primary); }
+.ord-modal textarea { resize:vertical; }
+.ord-modal-actions { display:flex; gap:0.6rem; margin-top:1rem; justify-content:flex-end; }
+.btn-modal-dismiss { padding:0.55rem 1.1rem; border:1.5px solid #e2e8f0; background:#fff; border-radius:9px; font-size:0.85rem; font-weight:600; cursor:pointer; color:#6b7280; }
+.btn-modal-dismiss:hover { background:#f8fafc; }
+.btn-modal-confirm { padding:0.55rem 1.25rem; border:none; border-radius:9px; font-size:0.85rem; font-weight:700; cursor:pointer; color:#fff; background:var(--adm-primary); }
+.btn-modal-confirm:hover { opacity:0.88; }
+.btn-modal-danger { background:#dc2626; }
+
+
+/* ── Pagination ── */
+.admin-pagination { display:flex; justify-content:center; gap:0.35rem; margin-top:1.25rem; }
+.page-btn { padding:0.5rem 0.75rem; border-radius:8px; border:1px solid #e2e8f0; background:#fff; color:#374151; font-size:0.85rem; font-weight:600; text-decoration:none; cursor:pointer; min-width:36px; text-align:center; }
+.page-btn.active { background:var(--adm-primary); color:#fff; border-color:var(--adm-primary); }
+.page-btn.dots { border-color:transparent; background:transparent; cursor:default; }
+.page-btn:not(.active):not(.dots):hover { background:#f5f7f4; }
+
+/* ── Empty state ── */
+.ord-empty { padding:4rem; text-align:center; color:#9aa095; }
+.ord-empty i { font-size:2.5rem; margin-bottom:1rem; opacity:0.25; display:block; }
+
+@media(max-width:1100px) {
+    .ord-kpi-grid { grid-template-columns:repeat(2,1fr); }
+    .details-grid { grid-template-columns:1fr; }
+}
+@media(max-width:640px) {
+    .ord-kpi-grid { grid-template-columns:repeat(2,1fr); }
+    .ord-toolbar { flex-direction:column; align-items:stretch; }
+    .ord-tabs { overflow-x:auto; flex-wrap:nowrap; }
+}
+</style>
+
+<!-- KPI tiles -->
+<div class="ord-kpi-grid">
+    <div class="ord-kpi" onclick="location.href='{{ url_for('admin.orders') }}'">
+        <div class="ord-kpi-icon ki-slate"><i class="fas fa-shopping-bag"></i></div>
+        <div class="ord-kpi-num">{{ counts.total }}</div>
+        <div class="ord-kpi-lbl">Gjithsej Porosi</div>
     </div>
-    <div class="kpi-card kpi-orange" style="cursor:pointer;" onclick="location.href='{{ url_for('admin.orders', status='pending') }}'">
-        <div class="kpi-icon"><i class="fas fa-clock"></i></div>
-        <div class="kpi-body">
-            <div class="kpi-number">{{ counts.pending }}</div>
-            <div class="kpi-label">Në Pritje</div>
-        </div>
+    <div class="ord-kpi" onclick="location.href='{{ url_for('admin.orders', status='pending') }}'">
+        <div class="ord-kpi-icon ki-amber"><i class="fas fa-clock"></i></div>
+        <div class="ord-kpi-num">{{ counts.pending }}</div>
+        <div class="ord-kpi-lbl">Në Pritje</div>
     </div>
-    <div class="kpi-card kpi-purple" style="cursor:pointer;" onclick="location.href='{{ url_for('admin.orders', status='dergese') }}'">
-        <div class="kpi-icon"><i class="fas fa-truck"></i></div>
-        <div class="kpi-body">
-            <div class="kpi-number">{{ counts.dergese }}</div>
-            <div class="kpi-label">Në Dërgesë</div>
-        </div>
+    <div class="ord-kpi" onclick="location.href='{{ url_for('admin.orders', status='dergese') }}'">
+        <div class="ord-kpi-icon ki-blue"><i class="fas fa-truck"></i></div>
+        <div class="ord-kpi-num">{{ counts.dergese }}</div>
+        <div class="ord-kpi-lbl">Në Dërgesë</div>
     </div>
-    <div class="kpi-card kpi-green" style="cursor:pointer;" onclick="location.href='{{ url_for('admin.orders', status='dorezuar') }}'">
-        <div class="kpi-icon"><i class="fas fa-check-circle"></i></div>
-        <div class="kpi-body">
-            <div class="kpi-number">{{ counts.dorezuar }}</div>
-            <div class="kpi-label">Dorëzuar</div>
-        </div>
+    <div class="ord-kpi" onclick="location.href='{{ url_for('admin.orders', status='dorezuar') }}'">
+        <div class="ord-kpi-icon ki-green"><i class="fas fa-check-circle"></i></div>
+        <div class="ord-kpi-num">{{ counts.dorezuar }}</div>
+        <div class="ord-kpi-lbl">Dorëzuar</div>
     </div>
 </div>
 
-<!-- Status Filter Tabs + Search + Export -->
-<div class="admin-table-card" style="padding:1.25rem 1.5rem; margin-bottom:1rem; border-radius:16px;">
-    <div style="display:flex; align-items:center; gap:1rem; flex-wrap:wrap;">
-        <div class="admin-search-wrapper" style="flex:1; min-width:200px; max-width:360px;">
-            <i class="fas fa-search"></i>
-            <input type="text" id="adminOrderSearch" placeholder="Kërko sipas emrit, qytetit, ID...">
-        </div>
-        <div class="order-status-tabs" style="flex:1;">
-            <a href="{{ url_for('admin.orders') }}" class="status-tab {{ 'active' if not status_filter }}">Të gjitha</a>
-            <a href="{{ url_for('admin.orders', status='pending') }}" class="status-tab tab-orange {{ 'active' if status_filter == 'pending' }}">Në Pritje <span class="tab-count">{{ counts.pending }}</span></a>
-            <a href="{{ url_for('admin.orders', status='konfirmuar') }}" class="status-tab tab-blue {{ 'active' if status_filter == 'konfirmuar' }}">Konfirmuar <span class="tab-count">{{ counts.konfirmuar }}</span></a>
-            <a href="{{ url_for('admin.orders', status='dergese') }}" class="status-tab tab-purple {{ 'active' if status_filter == 'dergese' }}">Në Dërgesë <span class="tab-count">{{ counts.dergese }}</span></a>
-            <a href="{{ url_for('admin.orders', status='dorezuar') }}" class="status-tab tab-green {{ 'active' if status_filter == 'dorezuar' }}">Dorëzuar <span class="tab-count">{{ counts.dorezuar }}</span></a>
-            <a href="{{ url_for('admin.orders', status='anuluar') }}" class="status-tab tab-red {{ 'active' if status_filter == 'anuluar' }}">Anuluar/Refuzuar <span class="tab-count">{{ counts.anuluar }}</span></a>
-        </div>
-        <a href="{{ url_for('admin.export_orders', status=status_filter) }}"
-           class="export-btn" title="Shkarko CSV">
-            <i class="fas fa-file-csv"></i> Eksporto CSV
-        </a>
+<!-- Toolbar -->
+<div class="ord-toolbar">
+    <div class="ord-search-wrap">
+        <i class="fas fa-search"></i>
+        <input type="text" id="ordSearch" placeholder="Kërko emër, qytet, ID...">
+    </div>
+    <div class="ord-tabs">
+        <a href="{{ url_for('admin.orders') }}" class="ord-tab {{ 'active' if not status_filter }}">Të gjitha</a>
+        <a href="{{ url_for('admin.orders', status='pending') }}" class="ord-tab {{ 'active' if status_filter == 'pending' }}">Në Pritje <span class="tab-ct">{{ counts.pending }}</span></a>
+        <a href="{{ url_for('admin.orders', status='konfirmuar') }}" class="ord-tab {{ 'active' if status_filter == 'konfirmuar' }}">Konfirmuar <span class="tab-ct">{{ counts.konfirmuar }}</span></a>
+        <a href="{{ url_for('admin.orders', status='dergese') }}" class="ord-tab {{ 'active' if status_filter == 'dergese' }}">Në Dërgesë <span class="tab-ct">{{ counts.dergese }}</span></a>
+        <a href="{{ url_for('admin.orders', status='dorezuar') }}" class="ord-tab {{ 'active' if status_filter == 'dorezuar' }}">Dorëzuar <span class="tab-ct">{{ counts.dorezuar }}</span></a>
+        <a href="{{ url_for('admin.orders', status='anuluar') }}" class="ord-tab {{ 'active' if status_filter == 'anuluar' }}">Anuluar/Refuzuar <span class="tab-ct">{{ counts.anuluar }}</span></a>
     </div>
 </div>
 
 {% if orders %}
-<!-- Hidden form used only for bulk submission — NOT wrapping the table -->
+<!-- Hidden bulk form -->
 <form method="POST" action="{{ url_for('admin.bulk_order_status') }}" id="bulkForm" style="display:none;">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <input type="hidden" name="status_filter" value="{{ status_filter }}">
     <input type="hidden" name="status" id="bulkStatusHidden">
 </form>
 
-<!-- Bulk action bar (hidden until selection) -->
-<div>
-    <div id="bulkBar" style="display:none;" class="bulk-bar">
-        <span id="bulkCount" class="bulk-count">0 të zgjedhura</span>
-        <div style="display:flex;align-items:center;gap:0.6rem;">
-            <select id="bulkStatusSelect" class="bulk-status-select">
-                <option value="">-- Zgjidh statusin e ri --</option>
-                <option value="Pending">Në Pritje</option>
-                <option value="Konfirmuar">Konfirmuar</option>
-                <option value="Delivering">Në Dërgesë</option>
-                <option value="Delivered">Dorëzuar</option>
-                <option value="Anuluar">Anuluar</option>
-                <option value="Refuzuar">Refuzuar</option>
-            </select>
-            <button type="button" onclick="submitBulk()" class="bulk-apply-btn"><i class="fas fa-check"></i> Apliko</button>
-        </div>
-        <button type="button" onclick="clearSelection()" class="bulk-clear-btn"><i class="fas fa-times"></i> Anulo</button>
-    </div>
+<!-- Bulk bar -->
+<div id="bulkBar" class="bulk-bar">
+    <span id="bulkCount" class="bulk-count">0 të zgjedhura</span>
+    <select id="bulkStatusSelect" class="bulk-status-select">
+        <option value="">— Statusi i ri —</option>
+        <option value="Pending">Në Pritje</option>
+        <option value="Konfirmuar">Konfirmuar</option>
+        <option value="Delivering">Në Dërgesë</option>
+        <option value="Delivered">Dorëzuar</option>
+        <option value="Anuluar">Anuluar</option>
+        <option value="Refuzuar">Refuzuar</option>
+    </select>
+    <button type="button" onclick="submitBulk()" class="bulk-apply-btn"><i class="fas fa-check"></i> Apliko</button>
+    <button type="button" onclick="bulkDelete()" class="bulk-apply-btn" style="background:#dc2626;"><i class="fas fa-trash-alt"></i> Fshi</button>
+    <button type="button" onclick="clearSelection()" class="bulk-clear-btn"><i class="fas fa-times"></i> Anulo</button>
+</div>
 
-<div class="admin-table-card">
-    <div class="table-responsive">
-        <table class="premium-admin-table" id="orderTable">
+<!-- Orders table -->
+<div class="ord-table-card">
+    <div class="table-responsive" style="overflow-x:auto;">
+        <table class="ord-table" id="ordTable">
             <thead>
                 <tr>
-                    <th style="width:40px;"><input type="checkbox" id="selectAll" onclick="toggleAll(this)" style="width:16px;height:16px;cursor:pointer;accent-color:#0f766e;"></th>
+                    <th style="width:36px;">
+                        <input type="checkbox" id="selectAll" onclick="toggleAll(this)" style="width:15px;height:15px;cursor:pointer;accent-color:var(--adm-primary);">
+                    </th>
                     <th>ID / Data</th>
                     <th>Klienti</th>
                     <th>Qyteti</th>
@@ -104,7 +280,7 @@
             <tbody>
                 {% for order in orders %}
                 {% set st = order.status | lower %}
-                <tr class="order-parent-row"
+                <tr class="parent-row"
                     data-id="{{ order._id|string }}"
                     data-fullname="{{ order.fullname|lower }}"
                     data-city="{{ (order.city or '')|lower }}"
@@ -112,32 +288,27 @@
                     <td onclick="event.stopPropagation();">
                         <input type="checkbox" name="order_ids" value="{{ order._id }}"
                             class="order-checkbox" onchange="updateBulkBar()"
-                            style="width:16px;height:16px;cursor:pointer;accent-color:#0f766e;">
+                            style="width:15px;height:15px;cursor:pointer;accent-color:var(--adm-primary);">
                     </td>
                     <td>
-                        <div class="order-id-group">
-                            <span class="order-id">#{{ order._id|string|truncate(8, True, '') }}</span>
-                            <span class="order-date text-muted">{{ order.created_at.strftime('%d.%m.%Y %H:%M') }}</span>
-                        </div>
+                        <span class="ord-id">#{{ order._id|string|truncate(8, True, '') }}</span>
+                        <span class="ord-date">{{ order.created_at.strftime('%d.%m.%Y %H:%M') }}</span>
                     </td>
                     <td>
-                        <div class="order-customer-info">
-                            <span class="customer-name">{{ order.fullname }}</span>
-                            <span class="customer-tel text-muted"><i class="fas fa-phone" style="font-size:0.7rem;"></i> {{ order.phone }}</span>
-                        </div>
+                        <span class="cust-name">{{ order.fullname }}</span>
+                        <span class="cust-tel"><i class="fas fa-phone" style="font-size:0.65rem;"></i> {{ order.phone }}</span>
+                    </td>
+                    <td style="font-weight:600;">{{ order.city or '—' }}</td>
+                    <td>
+                        <span style="font-size:0.8rem;font-weight:600;color:#475569;">{{ order.payment_method or '—' }}</span>
                     </td>
                     <td>
-                        <span style="font-weight:600;">{{ order.city or '—' }}</span>
+                        <span style="font-weight:800;color:#1a1f18;">€{{ "%.2f"|format(order.grand_total) }}</span>
                     </td>
-                    <td>
-                        <div class="payment-badge">{{ order.payment_method or '—' }}</div>
-                    </td>
-                    <td>
-                        <div class="order-total-val">€{{ "%.2f"|format(order.grand_total) }}</div>
-                    </td>
-                    <td>
+                    <td onclick="event.stopPropagation();">
                         <div class="status-dropdown" data-order-id="{{ order._id }}" data-current="{{ st }}">
-                            <button class="status-trigger st-{{ st }}" type="button" onclick="toggleStatusDrop(event,this,'{{ order._id }}')">
+                            <button class="status-trigger st-{{ st }}" type="button"
+                                    onclick="toggleStatusDrop(event,this,'{{ order._id }}')">
                                 {% if st in ['pending','në pritje'] %}<i class="fas fa-clock"></i><span>Në Pritje</span>
                                 {% elif st in ['konfirmuar','confirmed','pranuar'] %}<i class="fas fa-check-circle"></i><span>Konfirmuar</span>
                                 {% elif st in ['delivering','në dërgesë'] %}<i class="fas fa-truck"></i><span>Në Dërgesë</span>
@@ -148,73 +319,70 @@
                                 <i class="fas fa-chevron-down"></i>
                             </button>
                             <div class="status-drop-menu" id="sdd-{{ order._id }}" style="display:none;">
-                                <div class="sdd-item sdd-pending"    data-value="Pending"    onclick="pickStatus(this,'{{ order._id }}')"><i class="fas fa-clock"></i>Në Pritje</div>
-                                <div class="sdd-item sdd-konfirmuar" data-value="Konfirmuar" onclick="pickStatus(this,'{{ order._id }}')"><i class="fas fa-check-circle"></i>Konfirmuar</div>
-                                <div class="sdd-item sdd-delivering" data-value="Delivering" onclick="pickStatus(this,'{{ order._id }}')"><i class="fas fa-truck"></i>Në Dërgesë</div>
-                                <div class="sdd-item sdd-delivered"  data-value="Delivered"  onclick="pickStatus(this,'{{ order._id }}')"><i class="fas fa-box-open"></i>Dorëzuar</div>
-                                <div class="sdd-item sdd-anuluar"    data-value="Anuluar"    onclick="pickStatus(this,'{{ order._id }}')"><i class="fas fa-times-circle"></i>Anuluar</div>
-                                <div class="sdd-item sdd-refuzuar"   data-value="Refuzuar"   onclick="pickStatus(this,'{{ order._id }}')"><i class="fas fa-ban"></i>Refuzuar</div>
+                                <div class="sdd-item sdd-pending"    data-value="Pending"    onclick="event.stopPropagation();pickStatus(this,'{{ order._id }}')"><i class="fas fa-clock"></i>Në Pritje</div>
+                                <div class="sdd-item sdd-konfirmuar" data-value="Konfirmuar" onclick="event.stopPropagation();pickStatus(this,'{{ order._id }}')"><i class="fas fa-check-circle"></i>Konfirmuar</div>
+                                <div class="sdd-item sdd-delivering" data-value="Delivering" onclick="event.stopPropagation();pickStatus(this,'{{ order._id }}')"><i class="fas fa-truck"></i>Në Dërgesë</div>
+                                <div class="sdd-item sdd-delivered"  data-value="Delivered"  onclick="event.stopPropagation();pickStatus(this,'{{ order._id }}')"><i class="fas fa-box-open"></i>Dorëzuar</div>
+                                <div class="sdd-divider"></div>
+                                <div class="sdd-item sdd-anuluar"    data-value="Anuluar"    onclick="event.stopPropagation();pickStatus(this,'{{ order._id }}')"><i class="fas fa-times-circle"></i>Anuluar</div>
+                                <div class="sdd-item sdd-refuzuar"   data-value="Refuzuar"   onclick="event.stopPropagation();pickStatus(this,'{{ order._id }}')"><i class="fas fa-ban"></i>Refuzo (email klientit)</div>
                             </div>
                         </div>
                     </td>
-                    <td>
-                        <div class="table-actions" style="justify-content:flex-end;">
-                            <button class="action-btn toggle-details" onclick="toggleDetails('{{ order._id }}')" title="Shiko detajet">
-                                <i class="fas fa-eye"></i>
+                    <td onclick="event.stopPropagation();">
+                        <div class="tbl-actions">
+                            <button class="act-btn" onclick="deleteOrder('{{ order._id }}')" title="Fshi porosinë">
+                                <i class="fas fa-trash-alt"></i>
                             </button>
                         </div>
                     </td>
                 </tr>
                 <tr id="details-{{ order._id }}" class="details-row" style="display:none;">
                     <td colspan="8">
-                        <div class="order-expanded-details">
+                        <div class="ord-details">
                             <div class="details-grid">
-                                <div class="details-col">
+                                <!-- Left col: Customer info + admin note -->
+                                <div>
                                     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.85rem;">
-                                        <h4 class="details-subtitle" style="margin-bottom:0;"><i class="fas fa-user-circle"></i> Klienti & Dërgesa</h4>
-                                        <button class="btn-print-invoice" onclick="printInvoice('{{ order._id }}')">
+                                        <div class="details-subtitle" style="margin-bottom:0;"><i class="fas fa-user-circle"></i> Klienti & Dërgesa</div>
+                                        <button class="btn-print" onclick="printInvoice('{{ order._id }}')">
                                             <i class="fas fa-print"></i> Faturë
                                         </button>
                                     </div>
-                                    <div class="details-list">
-                                        <div class="details-item"><span>Emri:</span> <strong>{{ order.fullname }}</strong></div>
-                                        <div class="details-item"><span>Email:</span> <strong>{{ order.email or 'Nuk ka' }}</strong></div>
-                                        <div class="details-item"><span>Tel:</span> <strong>{{ order.phone }}</strong></div>
-                                        <div class="details-item"><span>Qyteti:</span> <strong>{{ order.city or '—' }}</strong></div>
-                                        <div class="details-item"><span>Adresa:</span> <strong>{{ order.address or '—' }}</strong></div>
-                                        {% if order.shipping_method %}<div class="details-item"><span>Dërgesa:</span> <strong>{{ order.shipping_method }}</strong></div>{% endif %}
-                                        {% if order.get('tracking_number') %}<div class="details-item"><span>Tracking:</span> <strong>{{ order.tracking_number }}</strong></div>{% endif %}
-                                        {% if order.get('notes') %}<div class="details-item"><span>Shënim Klienti:</span> <strong>{{ order.notes }}</strong></div>{% endif %}
-                                        {% if order.get('cancel_reason') %}<div class="details-item"><span>Arsyeja:</span> <strong style="color:#dc2626;">{{ order.cancel_reason }}</strong></div>{% endif %}
+                                    <div style="margin-bottom:1rem;">
+                                        <div class="details-item"><span>Emri</span><strong>{{ order.fullname }}</strong></div>
+                                        <div class="details-item"><span>Email</span><strong>{{ order.email or 'Nuk ka' }}</strong></div>
+                                        <div class="details-item"><span>Tel</span><strong>{{ order.phone }}</strong></div>
+                                        <div class="details-item"><span>Qyteti</span><strong>{{ order.city or '—' }}</strong></div>
+                                        <div class="details-item"><span>Adresa</span><strong>{{ order.address or '—' }}</strong></div>
+                                        {% if order.shipping_method %}<div class="details-item"><span>Dërgesa</span><strong>{{ order.shipping_method }}</strong></div>{% endif %}
+                                        {% if order.get('tracking_number') %}<div class="details-item"><span>Tracking</span><strong>{{ order.tracking_number }}</strong></div>{% endif %}
+                                        {% if order.get('notes') %}<div class="details-item"><span>Shënim</span><strong>{{ order.notes }}</strong></div>{% endif %}
+                                        {% if order.get('cancel_reason') %}<div class="details-item"><span>Arsyeja</span><strong style="color:#dc2626;">{{ order.cancel_reason }}</strong></div>{% endif %}
                                     </div>
-
-                                    <!-- Admin note -->
-                                    <div style="margin-top:1.25rem;">
-                                        <h4 class="details-subtitle"><i class="fas fa-sticky-note" style="color:#f59e0b;"></i> Shënim Interno (Admin)</h4>
-                                        <div class="admin-note-wrapper" data-order-id="{{ order._id }}">
-                                            <textarea class="admin-note-textarea" rows="3"
-                                                placeholder="Shto shënim intern (p.sh. 'klienti thirri, vonesë në dërgesë')...">{{ order.admin_note or '' }}</textarea>
-                                            <button type="button" class="admin-note-save-btn" onclick="saveNote(this)">
-                                                <i class="fas fa-save"></i> Ruaj
-                                            </button>
-                                            <span class="note-saved-msg" style="display:none; color:#10b981; font-size:0.8rem; font-weight:700;">✓ U ruajt</span>
-                                        </div>
+                                    <div class="details-subtitle"><i class="fas fa-sticky-note" style="color:#d97706;"></i> Shënim Intern</div>
+                                    <div class="admin-note-wrapper" data-order-id="{{ order._id }}">
+                                        <textarea class="admin-note-textarea" rows="2"
+                                            placeholder="Shënim për ekipin (i padukshëm për klientin)...">{{ order.admin_note or '' }}</textarea>
+                                        <button type="button" class="admin-note-save-btn" onclick="saveNote(this)">
+                                            <i class="fas fa-save"></i> Ruaj
+                                        </button>
+                                        <span class="note-saved-msg" style="display:none; color:#16a34a; font-size:0.8rem; font-weight:700;">✓ U ruajt</span>
                                     </div>
                                 </div>
-                                <div class="details-col">
-                                    <h4 class="details-subtitle"><i class="fas fa-box"></i> Produktet e Porositura</h4>
-                                    <div class="order-items-list">
-                                        {% for item in order['items'] %}
-                                        <div class="order-item-product">
-                                            <span class="item-qty">{{ item.quantity }}x</span>
-                                            <span class="item-name">{{ item.name }}</span>
-                                            <span class="item-price">€{{ "%.2f"|format(item.item_total) }}</span>
-                                        </div>
-                                        {% endfor %}
-                                        <div style="margin-top:0.75rem; padding-top:0.75rem; border-top:2px solid #e2e8f0; display:flex; justify-content:space-between; font-weight:800; font-size:1.05rem;">
-                                            <span>Totali:</span>
-                                            <span style="color:#0f766e;">€{{ "%.2f"|format(order.grand_total) }}</span>
-                                        </div>
+                                <!-- Right col: Products -->
+                                <div>
+                                    <div class="details-subtitle"><i class="fas fa-box"></i> Produktet e Porositura</div>
+                                    {% for item in order['items'] %}
+                                    <div class="ord-item-row">
+                                        <span class="ord-item-qty">{{ item.quantity }}×</span>
+                                        <span class="ord-item-name">{{ item.name }}{% if item.variant %} <span style="color:#9aa095;font-size:0.78rem;">— {{ item.variant }}</span>{% endif %}</span>
+                                        <span class="ord-item-price">€{{ "%.2f"|format(item.item_total) }}</span>
+                                    </div>
+                                    {% endfor %}
+                                    <div class="ord-items-total">
+                                        <span>Totali</span>
+                                        <span>€{{ "%.2f"|format(order.grand_total) }}</span>
                                     </div>
                                 </div>
                             </div>
@@ -225,7 +393,6 @@
             </tbody>
         </table>
     </div>
-</div>
 </div>
 
 <!-- Pagination -->
@@ -242,56 +409,72 @@
 {% endif %}
 
 {% else %}
-<div class="admin-table-card" style="padding:4rem; text-align:center;">
-    <i class="fas fa-shopping-cart fa-3x" style="color:#cbd5e1; margin-bottom:1rem;"></i>
-    <p style="color:#94a3b8; font-size:1.1rem;">Nuk u gjet asnjë porosi{% if status_filter %} me këtë status{% endif %}.</p>
-    {% if status_filter %}<a href="{{ url_for('admin.orders') }}" style="color:#0f766e; font-weight:600;">Shiko të gjitha porositë</a>{% endif %}
+<div class="adm-empty">
+    <div class="adm-empty-icon"><i class="fas fa-inbox"></i></div>
+    <p class="adm-empty-title">{% if status_filter %}Nuk ka porosi me këtë status{% else %}Nuk ka ende porosi{% endif %}</p>
+    <p class="adm-empty-desc">{% if status_filter %}Provo një status tjetër ose shiko të gjitha porositë.{% else %}Porositë e reja do të shfaqen këtu automatikisht.{% endif %}</p>
+    {% if status_filter %}
+    <a href="{{ url_for('admin.orders') }}" class="adm-empty-action secondary"><i class="fas fa-list"></i> Të gjitha porositë</a>
+    {% endif %}
 </div>
 {% endif %}
 
-<!-- Tracking number modal -->
-<div id="trackingModal" class="cancel-modal-overlay" style="display:none;">
-    <div class="cancel-modal-box">
+<!-- Tracking modal -->
+<div id="trackingModal" class="ord-modal-overlay" style="display:none;">
+    <div class="ord-modal">
         <h3><i class="fas fa-truck" style="color:#7c3aed;"></i> Numri i Gjurmimit</h3>
-        <p>Opsionale — shkruani numrin e gjurmimit të kurierit. Klienti merr email automatikisht.</p>
-        <input type="text" id="trackingNumberInput" placeholder="Psh: TN123456789AL" style="font-family:monospace;">
-        <div class="cancel-modal-actions">
-            <button class="btn-cancel-dismiss" onclick="dismissTrackingModal()">Anulo</button>
-            <button class="btn-cancel-proceed" style="background:#7c3aed;" onclick="confirmTrackingStatus()">Ndrysho Statusin</button>
+        <p>Opsionale — shkruani numrin e gjurmimit ose kaloni pa të. Klienti merr email automatikisht.</p>
+        <input type="text" id="trackingInput" placeholder="p.sh. TN123456789AL">
+        <div class="ord-modal-actions">
+            <button class="btn-modal-dismiss" onclick="dismissModal('trackingModal')">Anulo ndryshimin</button>
+            <button class="btn-modal-confirm" style="background:#8a9186;" onclick="confirmTracking(false)">Pa numër gjurmimi</button>
+            <button class="btn-modal-confirm" onclick="confirmTracking(true)">Ndrysho Statusin</button>
         </div>
     </div>
 </div>
 
 <!-- Cancel reason modal -->
-<div id="cancelReasonModal" class="cancel-modal-overlay" style="display:none;">
-    <div class="cancel-modal-box">
+<div id="cancelModal" class="ord-modal-overlay" style="display:none;">
+    <div class="ord-modal">
         <h3><i class="fas fa-times-circle" style="color:#dc2626;"></i> Arsyeja e Anulimit</h3>
-        <p>Shkruani arsyen. Ruhet vetëm për administratorët.</p>
-        <textarea id="cancelReasonText" rows="3" placeholder="Psh: klienti nuk u kontaktua..."></textarea>
-        <div class="cancel-modal-actions">
-            <button class="btn-cancel-dismiss" onclick="dismissCancelModal()">Anulo</button>
-            <button class="btn-cancel-proceed" onclick="confirmCancelStatus()">Ruaj & Ndrysho</button>
+        <p>Shkruani arsyen (ruhet vetëm për administratorët, nuk i dërgohet klientit).</p>
+        <textarea id="cancelReasonText" rows="3" placeholder="p.sh. klienti nuk u kontaktua..."></textarea>
+        <div class="ord-modal-actions">
+            <button class="btn-modal-dismiss" onclick="dismissModal('cancelModal')">Anulo</button>
+            <button class="btn-modal-confirm btn-modal-danger" onclick="confirmCancel()">Ruaj & Ndrysho</button>
         </div>
     </div>
 </div>
 
-<!-- AJAX toast -->
-<div id="adminToast"><i class="fas fa-check-circle admin-toast-icon"></i><span id="adminToastMsg"></span></div>
+<!-- Reject reason modal -->
+<div id="rejectModal" class="ord-modal-overlay" style="display:none;">
+    <div class="ord-modal">
+        <h3><i class="fas fa-ban" style="color:#9f1239;"></i> Refuzo Porosinë</h3>
+        <p>Shkruani arsyen pse porosia refuzohet. <strong>Klienti do të marrë email automatikisht</strong> me këtë arsye.</p>
+        <textarea id="rejectReasonText" rows="3" placeholder="p.sh. Produkti nuk ndodhet në stok për momentin..."></textarea>
+        <div class="ord-modal-actions">
+            <button class="btn-modal-dismiss" onclick="dismissModal('rejectModal')">Anulo</button>
+            <button class="btn-modal-confirm btn-modal-danger" onclick="confirmReject()">Refuzo & Dërgo Email</button>
+        </div>
+    </div>
+</div>
 
+<!-- Delete confirm modal -->
+<div id="deleteModal" class="ord-modal-overlay" style="display:none;" onclick="if(event.target===this){document.getElementById('deleteModal').style.display='none';}">
+    <div class="ord-modal" onclick="event.stopPropagation();">
+        <h3><i class="fas fa-trash-alt" style="color:#dc2626;"></i> Fshi Porosinë</h3>
+        <p>Jeni të sigurt? Ky veprim është i pakthyeshëm. Fshini vetëm porositë test.</p>
+        <div class="ord-modal-actions">
+            <button class="btn-modal-dismiss" onclick="event.stopPropagation();document.getElementById('deleteModal').style.display='none';">Anulo</button>
+            <button class="btn-modal-confirm btn-modal-danger" id="deleteConfirmBtn" onclick="event.stopPropagation();execDelete(this.dataset.orderId);">Po, Fshi</button>
+        </div>
+    </div>
+</div>
+
+<!-- Toast -->
 
 <script>
-/* ── Admin Toast ── */
-function showAdminToast(msg, type) {
-    const t = document.getElementById('adminToast');
-    const icon = t.querySelector('.admin-toast-icon');
-    t.className = 'show toast-' + (type || 'success');
-    icon.className = 'admin-toast-icon fas ' + (type === 'error' ? 'fa-exclamation-circle' : 'fa-check-circle');
-    document.getElementById('adminToastMsg').textContent = msg;
-    clearTimeout(t._timer);
-    t._timer = setTimeout(() => t.classList.remove('show'), 3500);
-}
 
-/* ── CSRF helper ── */
 function getCsrf() {
     const m = document.querySelector('meta[name="csrf-token"]');
     if (m) return m.content;
@@ -299,26 +482,23 @@ function getCsrf() {
     return i ? i.value : '';
 }
 
-/* ── Status icon/label map ── */
+/* ── Status map ── */
 const STATUS_MAP = {
-    'pending':    { cls: 'st-pending',    icon: 'fa-clock',        label: 'Në Pritje' },
-    'konfirmuar': { cls: 'st-konfirmuar', icon: 'fa-check-circle', label: 'Konfirmuar' },
-    'delivering': { cls: 'st-delivering', icon: 'fa-truck',        label: 'Në Dërgesë' },
-    'delivered':  { cls: 'st-delivered',  icon: 'fa-box-open',     label: 'Dorëzuar' },
-    'anuluar':    { cls: 'st-anuluar',    icon: 'fa-times-circle', label: 'Anuluar' },
-    'refuzuar':   { cls: 'st-refuzuar',   icon: 'fa-ban',          label: 'Refuzuar' },
+    'pending':    { cls:'st-pending',    icon:'fa-clock',        label:'Në Pritje' },
+    'konfirmuar': { cls:'st-konfirmuar', icon:'fa-check-circle', label:'Konfirmuar' },
+    'delivering': { cls:'st-delivering', icon:'fa-truck',        label:'Në Dërgesë' },
+    'delivered':  { cls:'st-delivered',  icon:'fa-box-open',     label:'Dorëzuar' },
+    'anuluar':    { cls:'st-anuluar',    icon:'fa-times-circle', label:'Anuluar' },
+    'refuzuar':   { cls:'st-refuzuar',   icon:'fa-ban',          label:'Refuzuar' },
 };
 
-/* ── Custom dropdown logic ── */
-let _pendingOrderId = null;
-let _pendingNewVal  = null;
-let _prevStatus     = null;
+/* ── Dropdown ── */
+let _pendingOrderId = null, _pendingNewVal = null;
 
 function toggleStatusDrop(e, btn, orderId) {
     e.stopPropagation();
     const menu = document.getElementById('sdd-' + orderId);
     const isOpen = menu.style.display !== 'none';
-    /* close all others first */
     document.querySelectorAll('.status-drop-menu').forEach(m => m.style.display = 'none');
     menu.style.display = isOpen ? 'none' : 'block';
 }
@@ -329,26 +509,28 @@ document.addEventListener('click', () => {
 
 function pickStatus(item, orderId) {
     const val = item.dataset.value;
-    const dd = document.querySelector(`.status-dropdown[data-order-id="${orderId}"]`);
-    _prevStatus = dd ? dd.dataset.current : null;
     document.getElementById('sdd-' + orderId).style.display = 'none';
-
     _pendingOrderId = orderId;
     _pendingNewVal  = val;
 
     if (val === 'Delivering') {
-        document.getElementById('trackingNumberInput').value = '';
+        document.getElementById('trackingInput').value = '';
         document.getElementById('trackingModal').style.display = 'flex';
-        setTimeout(() => document.getElementById('trackingNumberInput').focus(), 100);
-    } else if (val === 'Anuluar' || val === 'Refuzuar') {
+        setTimeout(() => document.getElementById('trackingInput').focus(), 80);
+    } else if (val === 'Refuzuar') {
+        document.getElementById('rejectReasonText').value = '';
+        document.getElementById('rejectModal').style.display = 'flex';
+        setTimeout(() => document.getElementById('rejectReasonText').focus(), 80);
+    } else if (val === 'Anuluar') {
         document.getElementById('cancelReasonText').value = '';
-        document.getElementById('cancelReasonModal').style.display = 'flex';
+        document.getElementById('cancelModal').style.display = 'flex';
+        setTimeout(() => document.getElementById('cancelReasonText').focus(), 80);
     } else {
         doStatusAjax(orderId, val);
     }
 }
 
-/* ── AJAX status change ── */
+/* ── AJAX status update ── */
 function doStatusAjax(orderId, status, extraFields) {
     const btn = document.querySelector(`.status-dropdown[data-order-id="${orderId}"] .status-trigger`);
     if (btn) btn.classList.add('updating');
@@ -359,68 +541,94 @@ function doStatusAjax(orderId, status, extraFields) {
     if (extraFields) Object.entries(extraFields).forEach(([k,v]) => fd.append(k, v));
 
     fetch(`/admin/order/update_status/${orderId}`, {
-        method: 'POST',
-        headers: { 'X-Requested-With': 'XMLHttpRequest' },
-        body: fd
+        method:'POST', headers:{'X-Requested-With':'XMLHttpRequest'}, body:fd
     })
     .then(r => r.json())
     .then(data => {
         if (btn) btn.classList.remove('updating');
         if (data.ok) {
-            const info = STATUS_MAP[status.toLowerCase()] || { cls: 'st-pending', icon: 'fa-circle', label: status };
+            const info = STATUS_MAP[status.toLowerCase()] || { cls:'st-pending', icon:'fa-circle', label:status };
             if (btn) {
                 btn.className = `status-trigger ${info.cls}`;
                 btn.innerHTML = `<i class="fas ${info.icon}"></i><span>${info.label}</span><i class="fas fa-chevron-down"></i>`;
             }
             const dd = document.querySelector(`.status-dropdown[data-order-id="${orderId}"]`);
             if (dd) dd.dataset.current = status.toLowerCase();
-            showAdminToast(data.message || 'Statusi u ndryshua.', 'success');
+            showToast(data.message || 'Statusi u ndryshua.', 'success');
         } else {
-            showAdminToast('Gabim gjatë ndryshimit.', 'error');
+            showToast('Gabim gjatë ndryshimit.', 'danger');
         }
     })
     .catch(() => {
         if (btn) btn.classList.remove('updating');
-        showAdminToast('Gabim rrjeti — provoni sërish.', 'error');
+        showToast('Gabim rrjeti — provoni sërish.', 'danger');
     });
 }
 
-function dismissTrackingModal() {
-    document.getElementById('trackingModal').style.display = 'none';
+/* ── Modal helpers ── */
+function dismissModal(id) {
+    document.getElementById(id).style.display = 'none';
     _pendingOrderId = _pendingNewVal = null;
 }
-
-function confirmTrackingStatus() {
+function confirmTracking(useInput) {
     if (!_pendingOrderId) return;
-    const tracking = document.getElementById('trackingNumberInput').value.trim();
-    document.getElementById('trackingModal').style.display = 'none';
-    doStatusAjax(_pendingOrderId, _pendingNewVal, tracking ? { tracking_number: tracking } : null);
-    _pendingOrderId = _pendingNewVal = null;
+    const orderId = _pendingOrderId, val = _pendingNewVal;
+    const tracking = useInput ? document.getElementById('trackingInput').value.trim() : '';
+    dismissModal('trackingModal');
+    doStatusAjax(orderId, val, tracking ? { tracking_number: tracking } : null);
 }
-
-function dismissCancelModal() {
-    document.getElementById('cancelReasonModal').style.display = 'none';
-    _pendingOrderId = _pendingNewVal = null;
-}
-
-function confirmCancelStatus() {
+function confirmCancel() {
     if (!_pendingOrderId) return;
+    const orderId = _pendingOrderId, val = _pendingNewVal;
     const reason = document.getElementById('cancelReasonText').value.trim();
-    document.getElementById('cancelReasonModal').style.display = 'none';
-    doStatusAjax(_pendingOrderId, _pendingNewVal, reason ? { cancel_reason: reason } : null);
-    _pendingOrderId = _pendingNewVal = null;
+    dismissModal('cancelModal');
+    doStatusAjax(orderId, val, reason ? { cancel_reason: reason } : null);
+}
+function confirmReject() {
+    if (!_pendingOrderId) return;
+    const orderId = _pendingOrderId, val = _pendingNewVal;
+    const reason = document.getElementById('rejectReasonText').value.trim();
+    dismissModal('rejectModal');
+    doStatusAjax(orderId, val, reason ? { cancel_reason: reason } : null);
 }
 
-/* ── Bulk actions (still form-submit — multi-order) ── */
+/* ── Delete order ── */
+function deleteOrder(orderId) {
+    document.getElementById('deleteConfirmBtn').dataset.orderId = orderId;
+    document.getElementById('deleteModal').style.display = 'flex';
+}
+function execDelete(orderId) {
+    if (!orderId) return;
+    document.getElementById('deleteModal').style.display = 'none';
+    const fd = new FormData();
+    fd.append('csrf_token', getCsrf());
+    fetch(`/admin/order/${orderId}/delete`, {
+        method:'POST', headers:{'X-Requested-With':'XMLHttpRequest'}, body:fd
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.ok) {
+            const parentRow = document.querySelector(`tr.parent-row[data-id="${orderId}"]`);
+            const detRow = document.getElementById('details-' + orderId);
+            if (parentRow) parentRow.remove();
+            if (detRow) detRow.remove();
+            showToast('Porosia u fshi.', 'success');
+        } else {
+            showToast('Gabim gjatë fshirjes.', 'danger');
+        }
+    })
+    .catch(() => showToast('Gabim rrjeti.', 'danger'));
+}
+
+/* ── Bulk select ── */
 function updateBulkBar() {
     const checked = document.querySelectorAll('.order-checkbox:checked');
+    const all = document.querySelectorAll('.order-checkbox');
     const bar = document.getElementById('bulkBar');
     bar.style.display = checked.length > 0 ? 'flex' : 'none';
     document.getElementById('bulkCount').textContent = checked.length + ' të zgjedhura';
-    document.getElementById('selectAll').indeterminate =
-        checked.length > 0 && checked.length < document.querySelectorAll('.order-checkbox').length;
-    document.getElementById('selectAll').checked =
-        checked.length === document.querySelectorAll('.order-checkbox').length;
+    document.getElementById('selectAll').indeterminate = checked.length > 0 && checked.length < all.length;
+    document.getElementById('selectAll').checked = checked.length === all.length && all.length > 0;
 }
 function toggleAll(cb) {
     document.querySelectorAll('.order-checkbox').forEach(c => c.checked = cb.checked);
@@ -433,7 +641,7 @@ function clearSelection() {
 }
 function submitBulk() {
     const sel = document.getElementById('bulkStatusSelect').value;
-    if (!sel) { alert('Zgjidh statusin e ri.'); return; }
+    if (!sel) { showToast('Zgjidh statusin e ri.', 'danger'); return; }
     const checked = document.querySelectorAll('.order-checkbox:checked');
     if (!checked.length) return;
     if (!confirm(`Ndrysho statusin e ${checked.length} porosive në "${sel}"?`)) return;
@@ -448,7 +656,46 @@ function submitBulk() {
     form.submit();
 }
 
-/* ── Admin Note (AJAX) ── */
+/* ── Bulk delete ── */
+function bulkDelete() {
+    const checked = document.querySelectorAll('.order-checkbox:checked');
+    if (!checked.length) return;
+    if (!confirm(`Fshi ${checked.length} porosi? Ky veprim është i pakthyeshëm.`)) return;
+    const ids = Array.from(checked).map(c => c.value);
+    const csrf = getCsrf();
+    let done = 0, failed = 0;
+    const total = ids.length;
+    ids.forEach(orderId => {
+        const fd2 = new FormData();
+        fd2.append('csrf_token', csrf);
+        fetch(`/admin/order/${orderId}/delete`, {
+            method:'POST', headers:{'X-Requested-With':'XMLHttpRequest'}, body:fd2
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.ok) {
+                const parentRow = document.querySelector(`tr.parent-row[data-id="${orderId}"]`);
+                const detRow = document.getElementById('details-' + orderId);
+                if (parentRow) parentRow.remove();
+                if (detRow) detRow.remove();
+                done++;
+            } else { failed++; }
+            if (done + failed === total) {
+                clearSelection();
+                showToast(`${done} porosi u fshinë${failed ? ', ' + failed + ' dështuan.' : '.'}`, failed ? 'danger' : 'success');
+            }
+        })
+        .catch(() => {
+            failed++;
+            if (done + failed === total) {
+                clearSelection();
+                showToast(`${done} u fshinë, ${failed} dështuan.`, 'danger');
+            }
+        });
+    });
+}
+
+/* ── Admin note ── */
 function saveNote(btn) {
     const wrapper = btn.closest('.admin-note-wrapper');
     const orderId = wrapper.dataset.orderId;
@@ -459,7 +706,7 @@ function saveNote(btn) {
     fd.append('csrf_token', getCsrf());
     fd.append('note', note);
     fetch(`/admin/order/${orderId}/note`, {
-        method: 'POST', headers: { 'X-Requested-With': 'XMLHttpRequest' }, body: fd
+        method:'POST', headers:{'X-Requested-With':'XMLHttpRequest'}, body:fd
     }).then(r => r.json()).then(data => {
         btn.disabled = false;
         if (data.ok) { msg.style.display = 'inline'; setTimeout(() => msg.style.display = 'none', 2500); }
@@ -467,9 +714,9 @@ function saveNote(btn) {
 }
 
 /* ── Search ── */
-document.getElementById('adminOrderSearch').addEventListener('input', function(e) {
+document.getElementById('ordSearch').addEventListener('input', function(e) {
     const term = e.target.value.toLowerCase().trim();
-    document.querySelectorAll('#orderTable tbody tr.order-parent-row').forEach(row => {
+    document.querySelectorAll('#ordTable tbody tr.parent-row').forEach(row => {
         const match = !term
             || (row.dataset.id||'').includes(term)
             || (row.dataset.fullname||'').includes(term)
@@ -482,73 +729,72 @@ document.getElementById('adminOrderSearch').addEventListener('input', function(e
     });
 });
 
-/* ── Toggle details ── */
+/* ── Toggle details (row click) ── */
 function toggleDetails(id) {
     const el = document.getElementById('details-' + id);
+    if (!el) return;
     el.style.display = el.style.display === 'none' ? 'table-row' : 'none';
 }
-document.querySelectorAll('.order-parent-row').forEach(row => {
+document.querySelectorAll('tr.parent-row').forEach(row => {
     row.addEventListener('click', function(e) {
-        if (!e.target.closest('form') && !e.target.closest('.action-btn') && !e.target.closest('button')) {
+        if (!e.target.closest('[onclick*="event.stopPropagation"]') &&
+            !e.target.closest('.status-dropdown') &&
+            !e.target.closest('.tbl-actions') &&
+            !e.target.closest('input[type=checkbox]')) {
             toggleDetails(this.dataset.id);
         }
     });
 });
 
-/* ── Print Invoice (opens new window) ── */
+/* ── Print Invoice ── */
 function printInvoice(orderId) {
-    /* Make the details row temporarily visible so we can read it */
     const detRow = document.getElementById('details-' + orderId);
     if (!detRow) return;
     const wasHidden = detRow.style.display === 'none';
     if (wasHidden) detRow.style.display = 'table-row';
 
-    /* Gather items */
     const items = [];
-    detRow.querySelectorAll('.order-item-product').forEach(el => {
-        const qty   = (el.querySelector('.item-qty')   || {}).textContent?.trim()  || '';
-        const name  = (el.querySelector('.item-name')  || {}).textContent?.trim()  || '';
-        const price = (el.querySelector('.item-price') || {}).textContent?.trim()  || '';
+    detRow.querySelectorAll('.ord-item-row').forEach(el => {
+        const qty   = (el.querySelector('.ord-item-qty')   || {}).textContent?.trim() || '';
+        const name  = (el.querySelector('.ord-item-name')  || {}).textContent?.trim() || '';
+        const price = (el.querySelector('.ord-item-price') || {}).textContent?.trim() || '';
         items.push(`<tr><td style="padding:6px 8px;">${qty}</td><td style="padding:6px 8px;">${name}</td><td style="padding:6px 8px;text-align:right;">${price}</td></tr>`);
     });
 
-    /* Gather customer details */
     const details = {};
     detRow.querySelectorAll('.details-item').forEach(d => {
-        const label = (d.querySelector('span')   || {}).textContent?.replace(':','').trim() || '';
+        const label = (d.querySelector('span')   || {}).textContent?.trim() || '';
         const val   = (d.querySelector('strong') || {}).textContent?.trim() || '';
         if (label) details[label] = val;
     });
 
-    /* Total from the items summary row */
     let total = '';
-    const totalEl = detRow.querySelector('.order-items-list [style*="font-weight:800"] span:last-child');
+    const totalEl = detRow.querySelector('.ord-items-total span:last-child');
     if (totalEl) total = totalEl.textContent.trim();
-
     if (wasHidden) detRow.style.display = 'none';
 
-    const orderId8 = orderId.substring(0, 8).toUpperCase();
-    const today    = new Date().toLocaleDateString('sq-AL', { year:'numeric', month:'long', day:'numeric' });
+    const orderId8 = orderId.substring(0,8).toUpperCase();
+    const today = new Date().toLocaleDateString('sq-AL', { year:'numeric', month:'long', day:'numeric' });
 
     const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Faturë #${orderId8}</title>
     <style>
-        body { font-family: 'Helvetica Neue', Arial, sans-serif; color: #111; margin: 0; padding: 2cm; }
-        * { box-sizing: border-box; }
-        .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 3px solid #4F5D4E; padding-bottom: 16px; margin-bottom: 24px; }
-        .brand-name { font-size: 22px; font-weight: 800; color: #4F5D4E; }
-        .brand-sub  { font-size: 12px; color: #666; margin-top: 4px; }
-        .inv-label  { font-size: 20px; font-weight: 700; text-align: right; }
-        .inv-meta   { font-size: 12px; color: #666; text-align: right; margin-top: 4px; }
-        .section-title { font-size: 11px; font-weight: 700; color: #4F5D4E; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
-        .client-row { font-size: 13px; margin-bottom: 3px; }
-        .client-row .lbl { color: #666; }
-        table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 13px; }
-        thead tr { background: #4F5D4E; color: white; }
-        th, td { padding: 8px 10px; text-align: left; }
-        th:last-child, td:last-child { text-align: right; }
-        tbody tr:nth-child(even) { background: #f5f5f5; }
-        .total-row { text-align: right; font-size: 15px; font-weight: 800; border-top: 2px solid #4F5D4E; padding-top: 10px; margin-top: 4px; }
-        .footer { margin-top: 36px; font-size: 11px; color: #aaa; text-align: center; border-top: 1px solid #eee; padding-top: 12px; }
+        body { font-family:'Helvetica Neue',Arial,sans-serif; color:#111; margin:0; padding:2cm; }
+        * { box-sizing:border-box; }
+        .header { display:flex; justify-content:space-between; align-items:flex-start; border-bottom:3px solid #4F5D4E; padding-bottom:16px; margin-bottom:24px; }
+        .brand-name { font-size:22px; font-weight:800; color:#4F5D4E; }
+        .brand-sub { font-size:12px; color:#666; margin-top:4px; }
+        .inv-label { font-size:20px; font-weight:700; text-align:right; }
+        .inv-meta { font-size:12px; color:#666; text-align:right; margin-top:4px; }
+        .section-title { font-size:11px; font-weight:700; color:#4F5D4E; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px; }
+        .client-row { font-size:13px; margin-bottom:3px; }
+        .client-row .lbl { color:#666; }
+        table { width:100%; border-collapse:collapse; margin:20px 0; font-size:13px; }
+        thead tr { background:#4F5D4E; color:white; }
+        th, td { padding:8px 10px; text-align:left; }
+        th:last-child, td:last-child { text-align:right; }
+        tbody tr:nth-child(even) { background:#f5f5f5; }
+        .total-row { text-align:right; font-size:15px; font-weight:800; border-top:2px solid #4F5D4E; padding-top:10px; margin-top:4px; }
+        .footer { margin-top:36px; font-size:11px; color:#aaa; text-align:center; border-top:1px solid #eee; padding-top:12px; }
     </style></head><body>
     <div class="header">
         <div>
@@ -573,7 +819,7 @@ function printInvoice(orderId) {
     <script>window.onload = function(){ window.print(); };<\/script>
     </body></html>`;
 
-    const w = window.open('', '_blank', 'width=750,height=900');
+    const w = window.open('','_blank','width=750,height=900');
     if (w) { w.document.write(html); w.document.close(); }
 }
 </script>

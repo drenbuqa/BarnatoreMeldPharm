@@ -1,0 +1,622 @@
+{% extends "admin/base.html" %}
+{% block title %}Analitika - Meld Pharm Admin{% endblock %}
+{% block page_title %}Analitika{% endblock %}
+
+{% block page_action %}
+{# Period selector — affects the visitor behaviour section only #}
+<div style="display:flex;align-items:center;gap:0.5rem;">
+    <span style="font-size:0.72rem;color:var(--adm-muted);font-weight:600;white-space:nowrap;">Periudha e vizitorëve:</span>
+    <div style="display:flex;background:var(--adm-border);border-radius:8px;padding:3px;gap:2px;">
+        {% for d, lbl in [(7,'7 Ditë'),(30,'30 Ditë'),(90,'3 Muaj')] %}
+        <a href="{{ url_for('admin.analytics_page', days=d) }}"
+           style="padding:0.3rem 0.75rem;border-radius:6px;font-size:0.75rem;font-weight:700;text-decoration:none;white-space:nowrap;transition:all 0.15s;
+                  {% if days == d %}background:#4F5D4E;color:#f7f3ee;box-shadow:0 1px 4px rgba(0,0,0,0.18);
+                  {% else %}color:var(--adm-muted);{% endif %}">
+            {{ lbl }}
+        </a>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
+
+{% block admin_content %}
+<style>
+/* ── Section titles ── */
+.an-section{margin-top:2rem;}
+.an-section:first-child{margin-top:0;}
+.an-title{font-size:0.68rem;font-weight:800;letter-spacing:.09em;text-transform:uppercase;
+          color:var(--adm-muted);margin:0 0 0.8rem;display:flex;align-items:center;gap:0.45rem;}
+.an-title i{font-size:0.7rem;}
+
+/* ── Funnel cards ── */
+.funnel-row{display:grid;grid-template-columns:repeat(5,1fr);gap:0.9rem;}
+@media(max-width:1000px){.funnel-row{grid-template-columns:repeat(3,1fr);}}
+@media(max-width:580px){.funnel-row{grid-template-columns:repeat(2,1fr);}}
+.fc{background:var(--adm-card-bg);border:1px solid var(--adm-border);border-radius:12px;
+    padding:1rem 0.9rem 0.85rem;position:relative;overflow:hidden;}
+.fc::before{content:'';position:absolute;top:0;left:0;width:4px;height:100%;background:var(--fc-clr);}
+.fc-ico{width:38px;height:38px;border-radius:9px;display:flex;align-items:center;justify-content:center;
+        font-size:1rem;margin-bottom:0.55rem;background:color-mix(in srgb,var(--fc-clr) 13%,transparent);}
+.fc-ico i{color:var(--fc-clr);}
+.fc-num{font-size:1.8rem;font-weight:900;color:var(--adm-text);line-height:1;}
+.fc-label{font-size:0.72rem;font-weight:700;color:var(--adm-text);margin-top:0.25rem;}
+.fc-rate{margin-top:0.5rem;display:inline-flex;align-items:center;gap:0.25rem;
+         border-radius:6px;padding:0.2rem 0.55rem;font-size:0.68rem;font-weight:700;}
+.fc-rate.ok {background:#dcfce7;color:#15803d;}
+.fc-rate.warn{background:#fef3c7;color:#b45309;}
+.fc-rate.bad {background:#fee2e2;color:#dc2626;}
+.fc-rate.neu {background:color-mix(in srgb,var(--fc-clr) 11%,transparent);color:var(--fc-clr);}
+.fc-desc{font-size:0.68rem;color:var(--adm-muted);margin-top:0.15rem;}
+.fc-bench{font-size:0.63rem;color:var(--adm-muted);margin-top:0.3rem;}
+
+/* ── Abandonment banner ── */
+.abandon-strip{display:flex;align-items:center;gap:1rem;margin-top:0.9rem;
+               background:color-mix(in srgb,#ef4444 7%,var(--adm-card-bg));
+               border:1px solid color-mix(in srgb,#ef4444 22%,transparent);
+               border-radius:12px;padding:0.9rem 1.2rem;}
+.abandon-pct{font-size:2rem;font-weight:900;color:#ef4444;line-height:1;}
+.abandon-text{font-size:0.8rem;color:var(--adm-text);line-height:1.55;}
+.abandon-text strong{color:#ef4444;}
+
+/* ── Empty state ── */
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;
+             padding:2.5rem 1rem;text-align:center;}
+.empty-state i{font-size:2.5rem;color:var(--adm-border);margin-bottom:0.75rem;}
+.empty-state p{margin:0;font-size:0.85rem;font-weight:600;color:var(--adm-muted);}
+.empty-state span{font-size:0.75rem;color:var(--adm-muted);opacity:0.7;margin-top:0.3rem;display:block;max-width:280px;}
+
+/* ── Two-col grid ── */
+.an-two{display:grid;grid-template-columns:1fr 1fr;gap:1.1rem;}
+@media(max-width:768px){.an-two{grid-template-columns:1fr;}}
+
+/* ── Card ── */
+.an-card{background:var(--adm-card-bg);border:1px solid var(--adm-border);border-radius:12px;overflow:hidden;}
+.an-card-hd{padding:0.85rem 1rem 0.65rem;border-bottom:1px solid var(--adm-border);}
+.an-card-hd h3{margin:0;font-size:0.84rem;font-weight:700;color:var(--adm-text);}
+.an-card-hd p{margin:0.15rem 0 0;font-size:0.7rem;color:var(--adm-muted);}
+
+/* ── Product table ── */
+.an-tbl{width:100%;border-collapse:collapse;}
+.an-tbl th{font-size:0.65rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+           color:var(--adm-muted);padding:0.45rem 0.7rem;text-align:left;
+           border-bottom:2px solid var(--adm-border);}
+.an-tbl td{padding:0.6rem 0.7rem;border-bottom:1px solid var(--adm-border);font-size:0.8rem;vertical-align:middle;}
+.an-tbl tr:last-child td{border-bottom:none;}
+.an-tbl tr[onclick]:hover td{background:color-mix(in srgb,var(--adm-primary) 8%,var(--adm-card-bg));transition:background 0.15s;}
+.an-tbl tr[onclick]:hover .an-li-name{text-decoration:underline;}
+.an-tbl tr[onclick] td{transition:background 0.15s;}
+.pt{width:34px;height:34px;border-radius:7px;object-fit:cover;}
+.pt-ph{width:34px;height:34px;border-radius:7px;background:var(--adm-border);
+       display:flex;align-items:center;justify-content:center;color:var(--adm-muted);font-size:0.8rem;}
+.rk{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;
+    border-radius:50%;font-size:0.65rem;font-weight:800;background:var(--adm-border);color:var(--adm-muted);}
+.rk.g{background:#fef3c7;color:#d97706;}
+.rk.s{background:#f1f5f9;color:#64748b;}
+.rk.b{background:#fef9f0;color:#b45309;}
+.bar-bg{background:var(--adm-border);border-radius:4px;height:5px;min-width:50px;margin-top:4px;}
+.bar-fill{height:5px;border-radius:4px;}
+.rate-pill{display:inline-block;padding:0.13rem 0.45rem;border-radius:5px;font-size:0.65rem;font-weight:700;}
+.rate-low{background:#fef3c7;color:#d97706;}
+.rate-ok{background:#dcfce7;color:#15803d;}
+
+/* ── Chart wrap ── */
+.an-chart-wrap{background:var(--adm-card-bg);border:1px solid var(--adm-border);border-radius:12px;padding:1rem 1.1rem 0.85rem;}
+
+/* ── Chart + chart empty ── */
+.chart-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;
+             min-height:140px;gap:0.6rem;color:var(--adm-muted);}
+.chart-empty i{font-size:2rem;opacity:0.25;}
+.chart-empty p{margin:0;font-size:0.8rem;font-weight:600;}
+.chart-empty span{font-size:0.72rem;opacity:0.7;text-align:center;max-width:260px;}
+
+/* ── List item ── */
+.an-li{display:flex;align-items:center;gap:0.65rem;padding:0.65rem 1rem;border-bottom:1px solid var(--adm-border);transition:background 0.15s;text-decoration:none;}
+.an-li:last-child{border-bottom:none;}
+a.an-li:hover{background:color-mix(in srgb,var(--adm-primary) 8%,var(--adm-card-bg));cursor:pointer;}
+a.an-li:hover .an-li-name{text-decoration:underline;color:var(--adm-primary);}
+.an-li-info{flex:1;min-width:0;}
+.an-li-name{font-weight:600;font-size:0.8rem;color:var(--adm-text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.an-li-meta{font-size:0.68rem;color:var(--adm-muted);}
+.an-li-count{font-weight:800;font-size:0.85rem;color:var(--adm-text);white-space:nowrap;}
+
+/* ── Seed banner (dev) ── */
+.seed-banner{background:color-mix(in srgb,#f59e0b 8%,var(--adm-card-bg));
+             border:1.5px dashed color-mix(in srgb,#f59e0b 40%,transparent);
+             border-radius:10px;padding:0.75rem 1rem;display:flex;align-items:center;
+             justify-content:space-between;gap:1rem;margin-bottom:1.5rem;}
+.seed-banner p{margin:0;font-size:0.78rem;color:var(--adm-text);}
+.seed-banner p strong{color:#d97706;}
+.seed-btn{background:#f59e0b;color:#fff;border:none;border-radius:7px;padding:0.4rem 0.9rem;
+          font-size:0.77rem;font-weight:700;cursor:pointer;font-family:inherit;}
+.seed-btn:hover{background:#d97706;}
+</style>
+
+{# ══ TEST DATA BANNER (shows when no events exist) ══════════════════ #}
+{% if not has_activity and not top_viewed %}
+<div class="seed-banner">
+    <p><strong>Nuk ka të dhëna akoma.</strong> Për të testuar nëse gjithçka funksionon, mund të gjeneroni të dhëna fiktive për 30 ditët e fundit.</p>
+    <form method="POST" action="{{ url_for('admin.seed_test_events') }}" onsubmit="this.querySelector('button').textContent='Duke ngarkuar…';this.querySelector('button').disabled=true;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="seed-btn"><i class="fas fa-flask"></i> Gjenero Të Dhëna Teste</button>
+    </form>
+</div>
+{% endif %}
+
+{# ══ 1. VISITOR FUNNEL ════════════════════════════════════════════════ #}
+<div class="an-section">
+    <p class="an-title"><i class="fas fa-filter"></i> Rruga e Blerjes — {{ days }} ditët e fundit</p>
+    {#
+      Benchmarks for an online pharmacy (what % convert at each step):
+        Views→Cart:     good ≥10%  |  warn 5–10%  |  bad <5%
+        Cart→Checkout:  good ≥50%  |  warn 30–50% |  bad <30%
+        Checkout→Order: good ≥60%  |  warn 40–60% |  bad <40%
+    #}
+    {% set bench = [
+        (none, none, none),
+        (none, none, none),
+        (10,   5,    'Norma e mirë: mbi 10% e shikimeve'),
+        (50,   30,   'Norma e mirë: mbi 50% e shportës'),
+        (60,   40,   'Norma e mirë: mbi 60% e checkout'),
+    ] %}
+    <div class="funnel-row">
+        {% for card in funnel %}
+        {% set bk = bench[loop.index0] %}
+        <div class="fc" style="--fc-clr:{{ card.color }};">
+            <div class="fc-ico"><i class="fas {{ card.icon }}"></i></div>
+            <div class="fc-num">{{ "{:,}".format(card.count) }}</div>
+            <div class="fc-label">{{ card.label }}</div>
+            {% if card.get('rate') is not none and bk[0] is not none %}
+                {% if card.rate >= bk[0] %}{% set cls = 'ok' %}
+                {% elif card.rate >= bk[1] %}{% set cls = 'warn' %}
+                {% else %}{% set cls = 'bad' %}{% endif %}
+            <div class="fc-rate {{ cls }}">
+                <i class="fas fa-arrow-down" style="font-size:0.55rem;"></i> {{ card.rate }}% {{ card.desc }}
+            </div>
+            <div class="fc-bench">
+                {% if cls == 'ok' %}✓ Mirë ({{ bk[2] }})
+                {% elif cls == 'warn' %}⚠ Mesatar ({{ bk[2] }})
+                {% else %}✗ E ulët ({{ bk[2] }}){% endif %}
+            </div>
+            {% elif card.get('rate') is not none %}
+            <div class="fc-rate neu"><i class="fas fa-arrow-down" style="font-size:0.55rem;"></i> {{ card.rate }}% {{ card.desc }}</div>
+            {% else %}
+            <div class="fc-desc">{{ card.desc }}</div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    {% if abandonment_rate is not none %}
+    <div class="abandon-strip">
+        <div class="abandon-pct">{{ abandonment_rate }}%</div>
+        <div class="abandon-text">
+            <strong>braktisin checkout-in.</strong>
+            {% if abandonment_rate > 60 %}
+                Shifër e lartë — shikoni nëse çmimi i transportit shfaqet befas, nëse forma e pagesës ka gabime, ose nëse mungon besimi (siguri, kthim malli).
+            {% elif abandonment_rate > 40 %}
+                Shifër normale për dyqane online (40–60% është mesatare). Provoni të shtoni garanci ose komente klientësh në faqen e checkout.
+            {% else %}
+                Shumë mirë — shumica e njerëzve që fillojnë checkout e plotësojnë porosinë.
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+{# ══ 2. VISUAL FUNNEL ════════════════════════════════════════════════ #}
+<div class="an-section">
+    <p class="an-title"><i class="fas fa-filter"></i> Sa kalojnë në çdo hap — {{ days }} ditët e fundit</p>
+    <div class="an-card" style="padding:1.5rem 1.75rem;">
+        {% set base = funnel[0].count if funnel[0].count > 0 else 1 %}
+        {% set stages = [
+            (funnel[0], none,          none,  none),
+            (funnel[1], funnel[0],     none,  none),
+            (funnel[2], funnel[1],     10,    5),
+            (funnel[3], funnel[2],     50,    30),
+            (funnel[4], funnel[3],     60,    40),
+        ] %}
+        <div style="display:flex;flex-direction:column;gap:0;">
+        {% for stage, prev, good_t, warn_t in stages %}
+            {% set bar_pct = [(stage.count / base * 100)|int, 4]|max %}
+            {# Rate vs previous step #}
+            {% if prev and prev.count > 0 %}
+                {% set step_rate = (stage.count / prev.count * 100)|round(1) %}
+                {% set lost = prev.count - stage.count %}
+            {% else %}
+                {% set step_rate = none %}
+                {% set lost = none %}
+            {% endif %}
+            {# Colour of the bar #}
+            {% if step_rate is none %}
+                {% set bar_color = '#4F5D4E' %}
+            {% elif good_t and step_rate >= good_t %}
+                {% set bar_color = '#16a34a' %}
+            {% elif warn_t and step_rate >= warn_t %}
+                {% set bar_color = '#d97706' %}
+            {% else %}
+                {% set bar_color = '#dc2626' %}
+            {% endif %}
+
+            {# Drop-off row between stages #}
+            {% if lost is not none and lost > 0 %}
+            <div style="display:flex;align-items:center;gap:0.75rem;padding:0.25rem 0 0.25rem 0.5rem;">
+                <div style="width:18px;display:flex;justify-content:center;">
+                    <div style="width:1.5px;height:22px;background:var(--adm-border);"></div>
+                </div>
+                <span style="font-size:0.68rem;color:#dc2626;font-weight:600;">
+                    <i class="fas fa-arrow-right" style="transform:rotate(45deg);display:inline-block;font-size:0.6rem;"></i>
+                    {{ "{:,}".format(lost) }} {% if lost == 1 %}person{% else %}persona{% endif %} u ndal këtu
+                    ({{ (lost / prev.count * 100)|round(1) }}% u larguan)
+                </span>
+            </div>
+            {% elif lost is not none %}
+            <div style="padding:0.2rem 0 0.2rem 0.5rem;">
+                <div style="width:18px;display:flex;justify-content:center;">
+                    <div style="width:1.5px;height:14px;background:var(--adm-border);"></div>
+                </div>
+            </div>
+            {% endif %}
+
+            {# Stage row #}
+            <div style="display:grid;grid-template-columns:180px 1fr 110px;align-items:center;gap:1rem;padding:0.5rem 0;">
+                {# Label #}
+                <div style="display:flex;align-items:center;gap:0.55rem;min-width:0;">
+                    <div style="width:32px;height:32px;border-radius:8px;flex-shrink:0;display:flex;align-items:center;justify-content:center;
+                                background:color-mix(in srgb,{{ bar_color }} 12%,transparent);">
+                        <i class="fas {{ stage.icon }}" style="color:{{ bar_color }};font-size:0.85rem;"></i>
+                    </div>
+                    <span style="font-size:0.78rem;font-weight:700;color:var(--adm-text);line-height:1.3;">{{ stage.label }}</span>
+                </div>
+                {# Bar #}
+                <div style="position:relative;">
+                    <div style="background:var(--adm-border);border-radius:6px;height:28px;overflow:hidden;">
+                        <div style="width:{{ bar_pct }}%;height:100%;background:{{ bar_color }};border-radius:6px;
+                                    transition:width 0.6s ease;display:flex;align-items:center;padding-left:0.6rem;">
+                            {% if bar_pct > 20 %}
+                            <span style="font-size:0.7rem;font-weight:800;color:{% if bar_color == '#d97706' %}#7c3b00{% else %}#fff{% endif %};white-space:nowrap;">
+                                {{ "{:,}".format(stage.count) }} persona
+                            </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% if bar_pct <= 20 and stage.count > 0 %}
+                    <span style="position:absolute;left:calc({{ bar_pct }}% + 8px);top:50%;transform:translateY(-50%);
+                                 font-size:0.7rem;font-weight:800;color:var(--adm-text);white-space:nowrap;">
+                        {{ "{:,}".format(stage.count) }} persona
+                    </span>
+                    {% endif %}
+                </div>
+                {# Rate badge #}
+                <div style="text-align:right;">
+                    {% if step_rate is not none %}
+                    <div style="display:inline-flex;flex-direction:column;align-items:flex-end;gap:0.1rem;">
+                        <span style="font-size:1.05rem;font-weight:900;color:{{ bar_color }};">{{ step_rate }}%</span>
+                        <span style="font-size:0.62rem;color:var(--adm-muted);">{{ stage.rate_label }}</span>
+                    </div>
+                    {% else %}
+                    <span style="font-size:0.68rem;color:var(--adm-muted);font-style:italic;">pikënisja</span>
+                    {% endif %}
+                </div>
+            </div>
+        {% endfor %}
+        </div>
+
+        {% if funnel[0].count == 0 %}
+        <div class="adm-empty" style="border:none;padding:2rem 1rem;margin-top:.5rem;">
+            <div class="adm-empty-icon"><i class="fas fa-filter"></i></div>
+            <p class="adm-empty-title" style="font-size:.85rem;">Nuk ka të dhëna për këtë periudhë</p>
+            <p class="adm-empty-desc" style="font-size:.78rem;margin:0;">Prit që vizitorët të fillojnë të shfletojnë faqen.</p>
+        </div>
+        {% endif %}
+
+        {# Legend for colours #}
+        <div style="display:flex;gap:1.25rem;margin-top:1.25rem;padding-top:1rem;border-top:1px solid var(--adm-border);flex-wrap:wrap;">
+            <span style="font-size:0.68rem;font-weight:700;color:var(--adm-muted);">Normat:</span>
+            <span style="font-size:0.68rem;color:#16a34a;font-weight:700;"><i class="fas fa-circle" style="font-size:0.5rem;"></i> Mirë</span>
+            <span style="font-size:0.68rem;color:#d97706;font-weight:700;"><i class="fas fa-circle" style="font-size:0.5rem;"></i> Mesatar</span>
+            <span style="font-size:0.68rem;color:#dc2626;font-weight:700;"><i class="fas fa-circle" style="font-size:0.5rem;"></i> E ulët — vlen të shikohet</span>
+            <span style="font-size:0.68rem;color:#4F5D4E;font-weight:700;"><i class="fas fa-circle" style="font-size:0.5rem;"></i> Pikënisja (pa benchmark)</span>
+        </div>
+    </div>
+</div>
+
+{# ══ 3. REVENUE & ORDERS — 6 months ═════════════════════════════════ #}
+<div class="an-section">
+    <p class="an-title"><i class="fas fa-euro-sign"></i> Shitjet — 6 Muajt e Fundit</p>
+    <div class="an-two">
+        <div class="an-chart-wrap">
+            <div style="font-size:0.75rem;font-weight:700;color:var(--adm-muted);margin-bottom:0.5rem;">Të Ardhura (€)</div>
+            {% if trend_revenue and trend_revenue|sum > 0 %}
+            <div style="height:160px;"><canvas id="revenueChart"></canvas></div>
+            {% else %}
+            <div class="chart-empty" style="min-height:100px;">
+                <i class="fas fa-euro-sign"></i>
+                <p>Nuk ka shitje akoma</p>
+                <span>Të ardhurat do të shfaqen këtu sapo të bëhet porosia e parë</span>
+            </div>
+            {% endif %}
+        </div>
+        <div class="an-chart-wrap">
+            <div style="font-size:0.75rem;font-weight:700;color:var(--adm-muted);margin-bottom:0.5rem;">Numri i Porosive</div>
+            {% if trend_orders and trend_orders|sum > 0 %}
+            <div style="height:160px;"><canvas id="ordersChart"></canvas></div>
+            {% else %}
+            <div class="chart-empty" style="min-height:100px;">
+                <i class="fas fa-shopping-bag"></i>
+                <p>Nuk ka porosi akoma</p>
+                <span>Numri i porosive do të shfaqet këtu sapo të bëhet porosia e parë</span>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{# ══ 4. TOP PRODUCTS ═════════════════════════════════════════════════ #}
+<div class="an-section">
+    <p class="an-title"><i class="fas fa-star"></i> Produktet — {{ days }} ditët e fundit</p>
+    <div class="an-two">
+
+        {# Most viewed #}
+        <div class="an-card">
+            <div class="an-card-hd">
+                <h3><i class="fas fa-eye" style="color:#4F5D4E;margin-right:0.35rem;"></i>Më të Shikuara</h3>
+                <p>Produktet ku vizitorët kanë klikuar më shumë</p>
+            </div>
+            {% if top_viewed %}
+            {% set mv = top_viewed[0].count %}
+            <table class="an-tbl">
+                <thead><tr><th>#</th><th>Produkti</th><th style="text-align:right">Shikime</th></tr></thead>
+                <tbody>
+                {% for p in top_viewed %}
+                <tr onclick="window.location='{{ url_for('main.product_detail', product_id=p.pid) }}'" style="cursor:pointer;">
+                    <td><span class="rk {% if loop.index==1 %}g{% elif loop.index==2 %}s{% elif loop.index==3 %}b{% endif %}">{{ loop.index }}</span></td>
+                    <td>
+                        <div style="display:flex;align-items:center;gap:0.55rem;">
+                            {% if p.image_url %}<img src="{{ p.image_url }}" class="pt" alt="">
+                            {% else %}<div class="pt-ph"><i class="fas fa-box"></i></div>{% endif %}
+                            <div>
+                                <div class="an-li-name" style="max-width:160px;color:var(--adm-primary);">{{ p.name[:42] }}{% if p.name|length > 42 %}…{% endif %}</div>
+                                {% if p.brand %}<div class="an-li-meta">{{ p.brand }}</div>{% endif %}
+                            </div>
+                        </div>
+                    </td>
+                    <td style="text-align:right;">
+                        <div style="font-weight:700;">{{ p.count }}</div>
+                        <div class="bar-bg"><div class="bar-fill" style="width:{{ (p.count/mv*100)|int }}%;background:#4F5D4E;"></div></div>
+                    </td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="empty-state">
+                <i class="fas fa-eye-slash"></i>
+                <p>Nuk ka shikime akoma</p>
+                <span>Kur vizitorët të hapin faqet e produkteve, ato do të shfaqen këtu</span>
+            </div>
+            {% endif %}
+        </div>
+
+        {# Most carted #}
+        <div class="an-card">
+            <div class="an-card-hd">
+                <h3><i class="fas fa-cart-plus" style="color:#f59e0b;margin-right:0.35rem;"></i>Më të Shtuar në Shportë</h3>
+                <p>Produktet që vizitorët i shtojnë më shpesh</p>
+            </div>
+            {% if top_carted %}
+            {% set mc = top_carted[0].count %}
+            <table class="an-tbl">
+                <thead><tr><th>#</th><th>Produkti</th><th style="text-align:right">Shtime</th></tr></thead>
+                <tbody>
+                {% for p in top_carted %}
+                <tr onclick="window.location='{{ url_for('main.product_detail', product_id=p.pid) }}'" style="cursor:pointer;">
+                    <td><span class="rk {% if loop.index==1 %}g{% elif loop.index==2 %}s{% elif loop.index==3 %}b{% endif %}">{{ loop.index }}</span></td>
+                    <td>
+                        <div style="display:flex;align-items:center;gap:0.55rem;">
+                            {% if p.image_url %}<img src="{{ p.image_url }}" class="pt" alt="">
+                            {% else %}<div class="pt-ph"><i class="fas fa-box"></i></div>{% endif %}
+                            <div>
+                                <div class="an-li-name" style="max-width:160px;color:var(--adm-primary);">{{ p.name[:42] }}{% if p.name|length > 42 %}…{% endif %}</div>
+                                {% if p.brand %}<div class="an-li-meta">{{ p.brand }}</div>{% endif %}
+                            </div>
+                        </div>
+                    </td>
+                    <td style="text-align:right;">
+                        <div style="font-weight:700;">{{ p.count }}</div>
+                        <div class="bar-bg"><div class="bar-fill" style="width:{{ (p.count/mc*100)|int }}%;background:#f59e0b;"></div></div>
+                    </td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="empty-state">
+                <i class="fas fa-cart-plus"></i>
+                <p>Asnjë produkt nuk është shtuar akoma</p>
+                <span>Sapo vizitorët të shtojnë produkte në shportë, lista do të shfaqet këtu</span>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{# ══ 5. MOST ORDERED & MOST LIKED (all-time) ════════════════════════ #}
+<div class="an-section">
+    <p class="an-title"><i class="fas fa-trophy"></i> Të Gjitha Kohërat</p>
+    <div class="an-two">
+        <div class="an-card">
+            <div class="an-card-hd">
+                <h3><i class="fas fa-shopping-basket" style="color:#3b82f6;margin-right:0.35rem;"></i>Më të Porosituara (6 muaj)</h3>
+                <p>Produktet me numrin më të lartë të porosive</p>
+            </div>
+            {% if most_ordered %}
+            {% for p in most_ordered %}
+            <a class="an-li" href="{{ url_for('main.product_detail', product_id=p.pid) }}" {% if not p.pid %}style="pointer-events:none;"{% endif %}>
+                {% if p.image_url %}<img src="{{ p.image_url }}" class="pt" alt="" onerror="this.style.display='none'">
+                {% else %}<div class="pt-ph"><i class="fas fa-box"></i></div>{% endif %}
+                <div class="an-li-info"><div class="an-li-name">{{ p.name }}</div></div>
+                <div class="an-li-count">{{ p.order_count }} porosi</div>
+            </a>
+            {% endfor %}
+            {% else %}
+            <div class="empty-state">
+                <i class="fas fa-shopping-basket"></i>
+                <p>Nuk ka porosi akoma</p>
+            </div>
+            {% endif %}
+        </div>
+        <div class="an-card">
+            <div class="an-card-hd">
+                <h3><i class="fas fa-heart" style="color:#ef4444;margin-right:0.35rem;"></i>Më të Preferuara</h3>
+                <p>Produktet që klientët i kanë ruajtur në listën e dëshirave</p>
+            </div>
+            {% if most_liked %}
+            {% for p in most_liked %}
+            <a class="an-li" href="{{ url_for('main.product_detail', product_id=p._id) }}">
+                {% if p.image_url %}<img src="{{ p.image_url }}" class="pt" alt="" onerror="this.style.display='none'">
+                {% else %}<div class="pt-ph"><i class="fas fa-box"></i></div>{% endif %}
+                <div class="an-li-info"><div class="an-li-name">{{ p.name }}</div></div>
+                <div class="an-li-count" style="color:#ef4444;">{{ p.fav_count }} ♥</div>
+            </a>
+            {% endfor %}
+            {% else %}
+            <div class="empty-state">
+                <i class="fas fa-heart"></i>
+                <p>Asnjë produkt nuk ka të preferuar akoma</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{# ══ 6. LOW CONVERSION — opportunity products ════════════════════════ #}
+{% if low_conversion %}
+<div class="an-section">
+    <p class="an-title"><i class="fas fa-lightbulb" style="color:#f59e0b;"></i> Mundësi Përmirësimi — Shikohen Por Nuk Blihen</p>
+    <div class="an-card">
+        <div class="an-card-hd">
+            <h3>Produkte me Interes të Lartë por Blerje të Ulët</h3>
+            <p>Këta produkte tërheqin shumë vizita por rrallë shtohen në shportë — çmimi, fotot ose mungesa e informacionit mund të jenë arsyeja</p>
+        </div>
+        <table class="an-tbl">
+            <thead><tr><th>Produkti</th><th style="text-align:center">Shikime</th><th style="text-align:center">Shportë</th><th style="text-align:center">Konversion</th></tr></thead>
+            <tbody>
+            {% for p in low_conversion %}
+            <tr onclick="window.location='{{ url_for('main.product_detail', product_id=p.pid) }}'" style="cursor:pointer;">
+                <td>
+                    <div style="display:flex;align-items:center;gap:0.55rem;">
+                        {% if p.image_url %}<img src="{{ p.image_url }}" class="pt" alt="">
+                        {% else %}<div class="pt-ph"><i class="fas fa-box"></i></div>{% endif %}
+                        <div>
+                            <div class="an-li-name" style="max-width:200px;color:var(--adm-primary);">{{ p.name[:48] }}{% if p.name|length > 48 %}…{% endif %}</div>
+                            {% if p.brand %}<div class="an-li-meta">{{ p.brand }}</div>{% endif %}
+                        </div>
+                    </div>
+                </td>
+                <td style="text-align:center;font-weight:700;">{{ p.count }}</td>
+                <td style="text-align:center;color:var(--adm-muted);">{{ p.cart_count }}</td>
+                <td style="text-align:center;">
+                    <span class="rate-pill {% if p.rate < 5 %}rate-low{% else %}rate-ok{% endif %}">{{ p.rate }}%</span>
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+{# ══ 7. BRAND & CATEGORY CHARTS ═════════════════════════════════════ #}
+<div class="an-section">
+    <p class="an-title"><i class="fas fa-chart-pie"></i> Shpërndarja e Produkteve</p>
+    <div class="an-two">
+        <div class="an-chart-wrap">
+            <div style="font-size:0.75rem;font-weight:700;color:var(--adm-muted);margin-bottom:0.6rem;">Sipas Kategorisë</div>
+            {% if category_sales %}
+            <div style="height:180px;"><canvas id="categoryChart"></canvas></div>
+            {% else %}
+            <div class="chart-empty"><i class="fas fa-chart-pie"></i><p>Nuk ka produkte akoma</p></div>
+            {% endif %}
+        </div>
+        <div class="an-chart-wrap">
+            <div style="font-size:0.75rem;font-weight:700;color:var(--adm-muted);margin-bottom:0.6rem;">Sipas Markës</div>
+            {% if brand_distribution %}
+            <div style="height:180px;"><canvas id="brandChart"></canvas></div>
+            {% else %}
+            <div class="chart-empty"><i class="fas fa-crown"></i><p>Nuk ka produkte akoma</p></div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div style="height:2rem;"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+(function(){
+    const isDark = document.documentElement.getAttribute('data-theme')==='dark'
+        || (!document.documentElement.getAttribute('data-theme') && window.matchMedia('(prefers-color-scheme:dark)').matches);
+    const grid  = isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.05)';
+    const tick  = isDark ? '#999' : '#888';
+    const baseOpts = {
+        responsive:true, maintainAspectRatio:false,
+        interaction:{mode:'index',intersect:false},
+        plugins:{legend:{labels:{color:tick,font:{size:11}}}},
+        scales:{
+            x:{ticks:{color:tick,font:{size:10}},grid:{color:grid}},
+            y:{ticks:{color:tick,font:{size:10}},grid:{color:grid},beginAtZero:true}
+        }
+    };
+
+
+    {% if trend_revenue and trend_revenue|sum > 0 %}
+    new Chart(document.getElementById('revenueChart'),{
+        type:'line',
+        data:{
+            labels:{{ trend_labels|tojson }},
+            datasets:[{label:'Të Ardhura (€)',data:{{ trend_revenue|tojson }},borderColor:'#16a34a',backgroundColor:'rgba(22,163,74,0.09)',fill:true,tension:.4,pointRadius:4,pointBackgroundColor:'#16a34a'}]
+        },
+        options:{...baseOpts,plugins:{legend:{display:false}},scales:{
+            y:{...baseOpts.scales.y,ticks:{color:tick,font:{size:10},callback:v=>'€'+v}},
+            x:{...baseOpts.scales.x}
+        }}
+    });
+    {% endif %}
+
+    {% if trend_orders and trend_orders|sum > 0 %}
+    new Chart(document.getElementById('ordersChart'),{
+        type:'bar',
+        data:{
+            labels:{{ trend_labels|tojson }},
+            datasets:[{label:'Porosi',data:{{ trend_orders|tojson }},backgroundColor:'rgba(124,58,237,0.75)',borderRadius:6,borderSkipped:false}]
+        },
+        options:{...baseOpts,plugins:{legend:{display:false}},scales:{
+            y:{...baseOpts.scales.y,ticks:{color:tick,font:{size:10},precision:0}},
+            x:{...baseOpts.scales.x}
+        }}
+    });
+    {% endif %}
+
+    {% if category_sales %}
+    new Chart(document.getElementById('categoryChart'),{
+        type:'doughnut',
+        data:{labels:{{ category_sales.keys()|list|tojson }},datasets:[{data:{{ category_sales.values()|list|tojson }},
+            backgroundColor:['#4F5D4E','#3b82f6','#f59e0b','#ef4444','#8b5cf6','#10b981','#6366f1','#f97316'],borderWidth:0}]},
+        options:{responsive:true,maintainAspectRatio:false,
+            plugins:{legend:{position:'bottom',labels:{usePointStyle:true,padding:14,color:tick,font:{size:10}}}},cutout:'68%'}
+    });
+    {% endif %}
+
+    {% if brand_distribution %}
+    new Chart(document.getElementById('brandChart'),{
+        type:'bar',
+        data:{labels:{{ brand_distribution.keys()|list|tojson }},datasets:[{label:'Produkte',
+            data:{{ brand_distribution.values()|list|tojson }},backgroundColor:'#4F5D4E',borderRadius:7}]},
+        options:{responsive:true,maintainAspectRatio:false,
+            scales:{y:{beginAtZero:true,grid:{color:grid},ticks:{color:tick,font:{size:10},precision:0}},
+                    x:{grid:{display:false},ticks:{color:tick,font:{size:10}}}},
+            plugins:{legend:{display:false}}}
+    });
+    {% endif %}
+})();
+</script>
+{% endblock %}

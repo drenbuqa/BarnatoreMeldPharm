@@ -135,7 +135,7 @@
     </div>
 
     <div class="hp-carousel-outer">
-      <button class="hp-carousel-arrow hp-prev" onclick="this.closest('.hp-carousel-outer').querySelector('.hp-carousel').scrollBy({left:-660,behavior:'smooth'})">
+      <button type="button" class="hp-carousel-arrow hp-prev" onclick="(function(btn){var c=btn.closest('.hp-carousel-outer').querySelector('.hp-carousel');c.scrollBy({left:-(c.offsetWidth||660),behavior:'smooth'});})(this)">
         <i class="fas fa-chevron-left"></i>
       </button>
 
@@ -153,7 +153,8 @@
                 <div class="best-seller-badge">Më i Shituri</div>
               {% endif %}
             </div>
-            <img src="{{ product.image_url|cld(400) }}" alt="{{ product.name }}" loading="lazy">
+            <img src="{{ product.image_url|cld(400) }}" alt="{{ product.name }}"
+              {% if loop.index <= 4 %}fetchpriority="high"{% else %}loading="lazy"{% endif %}>
             {% if product.in_stock == False %}
               <div class="hp-out-stock"><span>Jashtë Stokut</span></div>
             {% endif %}
@@ -193,7 +194,7 @@
         {% endfor %}
       </div>
 
-      <button class="hp-carousel-arrow hp-next" onclick="this.closest('.hp-carousel-outer').querySelector('.hp-carousel').scrollBy({left:660,behavior:'smooth'})">
+      <button type="button" class="hp-carousel-arrow hp-next" onclick="(function(btn){var c=btn.closest('.hp-carousel-outer').querySelector('.hp-carousel');c.scrollBy({left:(c.offsetWidth||660),behavior:'smooth'});})(this)">
         <i class="fas fa-chevron-right"></i>
       </button>
     </div>
@@ -363,7 +364,8 @@
               <div class="best-seller-badge">Më i Shituri</div>
             {% endif %}
           </div>
-          <img src="{{ product.image_url|cld(400) }}" alt="{{ product.name }}" loading="lazy">
+          <img src="{{ product.image_url|cld(400) }}" alt="{{ product.name }}"
+            {% if loop.index <= 6 %}fetchpriority="high"{% else %}loading="lazy"{% endif %}>
           <button class="btn-favorite {{ 'active' if (current_user.is_authenticated and product.favorites and current_user.id in product.favorites) or (not current_user.is_authenticated and product._id|string in session.get('liked_products', [])) else '' }}"
               onclick="toggleFavorite(this, '{{ product._id }}')">
             <i class="{{ 'fas' if (current_user.is_authenticated and product.favorites and current_user.id in product.favorites) or (not current_user.is_authenticated and product._id|string in session.get('liked_products', [])) else 'far' }} fa-heart"></i>

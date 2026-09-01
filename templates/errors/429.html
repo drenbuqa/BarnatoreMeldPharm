@@ -1,16 +1,28 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container section" style="text-align: center; padding: 5rem 1rem;">
-    <div style="max-width: 600px; margin: 0 auto;">
-        <i class="fas fa-clock" style="font-size: 5rem; color: var(--text-muted); margin-bottom: 2rem;"></i>
-        <h1 style="font-size: 3rem; margin-bottom: 1rem; color: var(--text-main);">Shumë kërkesa</h1>
-        <p style="font-size: 1.1rem; color: var(--text-muted); margin-bottom: 2rem;">
-            Keni bërë shumë kërkesa në kohë të shkurtër. Prisni pak sekonda dhe provoni përsëri.
+<div class="container section" style="min-height:65vh; display:flex; align-items:center; justify-content:center; padding:3rem 1rem;">
+    <div style="max-width:520px; margin:0 auto; text-align:center;">
+
+        <div style="width:96px; height:96px; background:color-mix(in srgb, var(--primary) 10%, transparent); border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 1.75rem;">
+            <i class="fas fa-clock" style="font-size:2.4rem; color:var(--primary);"></i>
+        </div>
+
+        <p style="font-size:0.8rem; font-weight:800; letter-spacing:0.12em; text-transform:uppercase; color:var(--primary); margin-bottom:0.5rem;">Gabim 429</p>
+        <h1 style="font-size:1.85rem; font-weight:800; color:var(--text-main); margin-bottom:0.75rem; line-height:1.2;">Shumë kërkesa</h1>
+        <p style="color:var(--text-muted); font-size:1rem; margin-bottom:2.25rem; line-height:1.6;">
+            Keni bërë shumë kërkesa në kohë të shkurtër.<br>Prisni disa sekonda dhe provoni përsëri.
         </p>
-        <a href="{{ url_for('main.index') }}" class="btn btn-primary" style="padding: 1rem 2rem;">
-            <i class="fas fa-home"></i> Kthehu në Ballinë
-        </a>
+
+        <div style="display:flex; gap:0.75rem; justify-content:center; flex-wrap:wrap;">
+            <a href="{{ url_for('main.index') }}" class="btn btn-primary" style="padding:0.75rem 1.75rem;">
+                <i class="fas fa-home" style="margin-right:0.4rem;"></i>Ballina
+            </a>
+            <a href="{{ url_for('main.products') }}" class="btn btn-outline" style="padding:0.75rem 1.75rem;">
+                <i class="fas fa-box" style="margin-right:0.4rem;"></i>Produktet
+            </a>
+        </div>
+
     </div>
 </div>
 {% endblock %}

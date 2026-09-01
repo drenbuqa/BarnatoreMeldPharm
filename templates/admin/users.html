@@ -109,9 +109,12 @@
                 </tr>
                 {% else %}
                 <tr>
-                    <td colspan="7" style="text-align:center; padding:3rem;">
-                        <i class="fas fa-users fa-3x" style="color:#cbd5e1; display:block; margin-bottom:1rem;"></i>
-                        <p style="color:#94a3b8;">Nuk u gjet asnjë përdorues.</p>
+                    <td colspan="7">
+                        <div class="adm-empty">
+                            <div class="adm-empty-icon"><i class="fas fa-users"></i></div>
+                            <p class="adm-empty-title">Nuk u gjet asnjë përdorues</p>
+                            <p class="adm-empty-desc">Përdoruesit regjistrohen vetë. Do të shfaqen këtu pasi të kenë krijuar një llogari.</p>
+                        </div>
                     </td>
                 </tr>
                 {% endfor %}

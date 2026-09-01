@@ -100,20 +100,38 @@
                         </div>
 
                         <div class="form-group {% if not product or not product.discount_price %}hidden-group{% endif %}"
-                            id="discount-until-group">
-                            <label for="discount_until">Data e Përfundimit të Ofertës</label>
-                            {% set discount_val = "" %}
-                            {% if product and product.discount_until %}
-                            {% if product.discount_until.strftime %}
-                            {% set discount_val = product.discount_until.strftime('%Y-%m-%d') %}
-                            {% else %}
-                            {% set discount_val = product.discount_until[:10] %}
-                            {% endif %}
-                            {% endif %}
-                            <input type="date" id="discount_until" name="discount_until"
-                                class="form-control premium-input" value="{{ discount_val }}">
-                            <small class="helper-text"><i class="fas fa-info-circle"></i> Pas kësaj date, produkti
-                                kthehet në çmimin normal.</small>
+                            id="discount-dates-group" style="display:{% if not product or not product.discount_price %}none{% else %}block{% endif %};">
+                            <div style="display:flex;gap:1rem;">
+                                <div style="flex:1;">
+                                    <label for="discount_from">Data e Fillimit të Ofertës</label>
+                                    {% set from_val = "" %}
+                                    {% if product and product.discount_from %}
+                                        {% if product.discount_from.strftime %}
+                                            {% set from_val = product.discount_from.strftime('%Y-%m-%d') %}
+                                        {% else %}
+                                            {% set from_val = product.discount_from[:10] %}
+                                        {% endif %}
+                                    {% endif %}
+                                    <input type="date" id="discount_from" name="discount_from"
+                                        class="form-control premium-input"
+                                        value="{{ from_val }}">
+                                    <small class="helper-text"><i class="fas fa-info-circle"></i> Oferta fillon në këtë datë.</small>
+                                </div>
+                                <div style="flex:1;">
+                                    <label for="discount_until">Data e Përfundimit të Ofertës</label>
+                                    {% set discount_val = "" %}
+                                    {% if product and product.discount_until %}
+                                        {% if product.discount_until.strftime %}
+                                            {% set discount_val = product.discount_until.strftime('%Y-%m-%d') %}
+                                        {% else %}
+                                            {% set discount_val = product.discount_until[:10] %}
+                                        {% endif %}
+                                    {% endif %}
+                                    <input type="date" id="discount_until" name="discount_until"
+                                        class="form-control premium-input" value="{{ discount_val }}">
+                                    <small class="helper-text"><i class="fas fa-info-circle"></i> Pas kësaj date, produkti kthehet në çmimin normal.</small>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -900,18 +918,23 @@
     categorySelect.addEventListener('change', updateSubcategories);
     if (categorySelect.value) updateSubcategories();
 
-    // Toggle discount until
+    // Toggle discount date fields
     const discountPriceInput = document.getElementById('discount_price');
-    const discountUntilGroup = document.getElementById('discount-until-group');
+    const discountDatesGroup = document.getElementById('discount-dates-group');
+    const discountFromInput = document.getElementById('discount_from');
 
-    if (discountPriceInput && discountUntilGroup) {
-        discountPriceInput.addEventListener('input', function () {
-            if (this.value && parseFloat(this.value) > 0) {
-                discountUntilGroup.classList.remove('hidden-group');
-            } else {
-                discountUntilGroup.classList.add('hidden-group');
-            }
-        });
+    function toggleDiscountDates() {
+        const hasDiscount = discountPriceInput.value && parseFloat(discountPriceInput.value) > 0;
+        discountDatesGroup.style.display = hasDiscount ? 'block' : 'none';
+        // Set today as default for discount_from only when first showing
+        if (hasDiscount && discountFromInput && !discountFromInput.value) {
+            const today = new Date().toISOString().split('T')[0];
+            discountFromInput.value = today;
+        }
+    }
+
+    if (discountPriceInput && discountDatesGroup) {
+        discountPriceInput.addEventListener('input', toggleDiscountDates);
     }
 
     // Image Previews
@@ -1129,8 +1152,8 @@ function handleTagInput(e, gi) {
         const input = e.target;
         const raw = input.value.replace(/,/g,'').trim();
         if (!raw) return;
-        // Support pasting comma-separated values like "38,39,40"
-        const parts = raw.split(/[,،\s]+/).map(s=>s.trim()).filter(Boolean);
+        // Split only on commas — spaces are allowed within a value (e.g. "Nr 40")
+        const parts = raw.split(/[,،]+/).map(s=>s.trim()).filter(Boolean);
         parts.forEach(p => addValue(gi, p));
         input.value = '';
         input.style.width = '80px';

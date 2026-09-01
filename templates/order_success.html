@@ -3,8 +3,17 @@
 {% block content %}
 <div class="container section" style="min-height:60vh;padding-top:3rem;padding-bottom:5rem;text-align:center;">
     <div style="max-width:560px;margin:0 auto;">
-        <div style="width:80px;height:80px;background:#d1fae5;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1.5rem;">
-            <i class="fas fa-check" style="font-size:2rem;color:#059669;"></i>
+        <div style="margin:0 auto 1.75rem; width:88px; height:88px;">
+            <svg viewBox="0 0 88 88" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;">
+                <circle cx="44" cy="44" r="42" fill="color-mix(in srgb,var(--primary) 14%,transparent)" stroke="var(--primary)" stroke-width="2"
+                        stroke-dasharray="264" stroke-dashoffset="264">
+                    <animate attributeName="stroke-dashoffset" from="264" to="0" dur="0.5s" fill="freeze" begin="0s"/>
+                </circle>
+                <path d="M26 44L38 56L62 32" stroke="var(--primary)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"
+                      stroke-dasharray="48" stroke-dashoffset="48">
+                    <animate attributeName="stroke-dashoffset" from="48" to="0" dur="0.35s" fill="freeze" begin="0.4s"/>
+                </path>
+            </svg>
         </div>
         <h1 style="font-size:1.75rem;font-weight:800;color:var(--text-main);margin-bottom:0.5rem;">
             Faleminderit, {{ order.fullname }}!
@@ -15,7 +24,7 @@
 
         <div style="background:#f8fafc;border-radius:16px;padding:1.5rem;text-align:left;margin-bottom:2rem;">
             <h3 style="font-size:1rem;font-weight:700;margin-bottom:1rem;color:var(--text-main);">Detajet e porosisë</h3>
-            {% for item in order.items %}
+            {% for item in order['items'] %}
             <div style="display:flex;justify-content:space-between;align-items:center;padding:0.5rem 0;border-bottom:1px solid #e2e8f0;">
                 <div>
                     <span style="font-weight:600;font-size:0.9rem;">{{ item.name }}</span>
@@ -34,6 +43,106 @@
         <a href="{{ url_for('main.products') }}" class="btn btn-primary" style="padding:0.85rem 2.5rem;font-size:1rem;">
             Vazhdo me blerjet
         </a>
+
+        {% if not current_user.is_authenticated or not current_user.newsletter_subscribed %}
+        <div style="margin-top:2rem; background:var(--bg-soft,#f8fafc); border:1.5px solid var(--border-light,#e2e8f0); border-radius:16px; padding:1.5rem; text-align:left;">
+            <div style="display:flex; align-items:center; gap:0.6rem; margin-bottom:0.4rem;">
+                <i class="fas fa-bell" style="color:var(--primary); font-size:1rem;"></i>
+                <strong style="font-size:0.95rem; color:var(--text-main);">Qëndroni të informuar</strong>
+            </div>
+            {% if not current_user.is_authenticated %}
+            <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:1.1rem; line-height:1.5;">
+                Krijoni llogari për të ndjekur porositë dhe merrni njoftime kur produktet janë me zbritje.
+            </p>
+            <div style="display:flex; gap:0.6rem; flex-wrap:wrap;" id="guest-cta-btns">
+                <a href="{{ url_for('auth.register', email=order.get('email', ''), next=request.path) }}"
+                   style="flex:1; min-width:160px; background:var(--primary); color:#fff; text-align:center; padding:0.7rem 1.25rem; border-radius:10px; font-size:0.88rem; font-weight:700; text-decoration:none; display:block;">
+                    <i class="fas fa-user-plus" style="margin-right:0.35rem;"></i>Krijoni Llogari
+                </a>
+                <button type="button" id="guest-newsletter-btn"
+                   style="flex:1; min-width:160px; background:#fff; color:var(--primary); border:1.5px solid var(--primary); padding:0.7rem 1.25rem; border-radius:10px; font-size:0.88rem; font-weight:700; cursor:pointer;">
+                    <i class="fas fa-envelope" style="margin-right:0.35rem;"></i>Vetëm Newsletter
+                </button>
+            </div>
+            <div id="guest-newsletter-form" style="display:none; margin-top:0.85rem;">
+            {% else %}
+            <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:0.85rem; line-height:1.5;">
+                Merrni njoftime kur kemi zbritje të reja dhe produkte të reja.
+            </p>
+            <div id="guest-newsletter-form" style="margin-top:0;">
+            {% endif %}
+                <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+                    <input type="email" id="guest-nl-email" value="{{ order.get('email', '') if not current_user.is_authenticated else current_user.email }}"
+                           placeholder="Email adresa juaj"
+                           style="flex:1; min-width:0; padding:0.6rem 0.85rem; border:1.5px solid var(--border-light,#e2e8f0); border-radius:8px; font-size:0.85rem; background:#fff; color:var(--text-main); outline:none;">
+                    <button type="button" id="guest-nl-submit"
+                            style="background:var(--primary); color:#fff; border:none; padding:0.6rem 1.1rem; border-radius:8px; font-size:0.85rem; font-weight:700; cursor:pointer; white-space:nowrap;">
+                        Abonohu
+                    </button>
+                </div>
+            </div>
+            <p id="guest-nl-msg" style="display:none; font-size:0.85rem; margin-top:0.75rem;"></p>
+        </div>
+        <script>
+        (function() {
+            const nlBtn = document.getElementById('guest-newsletter-btn');
+            if (nlBtn) {
+                nlBtn.addEventListener('click', function() {
+                    document.getElementById('guest-newsletter-form').style.display = 'block';
+                    this.style.display = 'none';
+                });
+            }
+
+            document.getElementById('guest-nl-submit').addEventListener('click', function() {
+                const email = document.getElementById('guest-nl-email').value.trim();
+                const msg = document.getElementById('guest-nl-msg');
+                const btn = this;
+                if (!email || !email.includes('@')) {
+                    msg.textContent = 'Ju lutem shkruani një email të vlefshëm.';
+                    msg.style.color = '#ef4444';
+                    msg.style.display = 'block';
+                    return;
+                }
+                btn.disabled = true;
+                btn.textContent = '...';
+                const fd = new FormData();
+                fd.append('email', email);
+                fd.append('csrf_token', '{{ csrf_token() }}');
+                fetch('{{ url_for("main.newsletter_subscribe") }}', { method: 'POST', body: fd })
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.ok) {
+                            document.getElementById('guest-newsletter-form').style.display = 'none';
+                            const ctaBtns = document.getElementById('guest-cta-btns');
+                            if (ctaBtns) ctaBtns.style.display = 'none';
+                            msg.style.display = 'block';
+                            if (data.already) {
+                                msg.textContent = 'Ky email është tashmë i abonuar — do t\'i merrni njoftimet tona.';
+                                msg.style.color = 'var(--text-muted)';
+                            } else {
+                                msg.textContent = '✓ U abonuat me sukses! Do t\'ju njoftojmë për zbritjet dhe produktet e reja.';
+                                msg.style.color = 'var(--primary)';
+                            }
+                        } else {
+                            msg.textContent = data.message || 'Ndodhi një gabim. Provoni përsëri.';
+                            msg.style.color = '#ef4444';
+                            msg.style.display = 'block';
+                            btn.disabled = false;
+                            btn.textContent = 'Abonohu';
+                        }
+                    })
+                    .catch(() => {
+                        msg.textContent = 'Ndodhi një gabim. Provoni përsëri.';
+                        msg.style.color = '#ef4444';
+                        msg.style.display = 'block';
+                        btn.disabled = false;
+                        btn.textContent = 'Abonohu';
+                    });
+            });
+        })();
+        </script>
+        {% endif %}
+
     </div>
 </div>
 {% endblock %}
@@ -43,8 +152,8 @@
 <script>
 (function() {
     var params = {
-        content_ids: [{% for item in order.items %}{{ item.product_id | tojson }}{% if not loop.last %},{% endif %}{% endfor %}],
-        contents: [{% for item in order.items %}{'id': {{ item.product_id | tojson }}, 'quantity': {{ item.quantity }}}{% if not loop.last %},{% endif %}{% endfor %}],
+        content_ids: [{% for item in order['items'] %}{{ item.product_id | tojson }}{% if not loop.last %},{% endif %}{% endfor %}],
+        contents: [{% for item in order['items'] %}{'id': {{ item.product_id | tojson }}, 'quantity': {{ item.quantity }}}{% if not loop.last %},{% endif %}{% endfor %}],
         content_type: 'product',
         value: {{ order.grand_total | float }},
         currency: 'EUR'

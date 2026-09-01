@@ -22,6 +22,7 @@
             {% for product in favorites %}
             <div class="product-card fade-in">
                 <div class="product-image">
+                    <div class="badge-stack">
                     {% if product.offer_type == 'multi_buy' %}
                     <div class="special-offer-badge red-badge">{{ product.offer_badge_text or '1+1' }}</div>
                     {% elif product.discount_price %}
@@ -30,6 +31,7 @@
                     {% if product.is_best_seller %}
                     <div class="best-seller-badge">Më i Shituri</div>
                     {% endif %}
+                    </div>
                     <img src="{{ product.image_url }}" alt="{{ product.name }}">
                     <button class="btn-favorite active" onclick="toggleFavorite(this, '{{ product._id }}')">
                         <i class="fas fa-heart"></i>

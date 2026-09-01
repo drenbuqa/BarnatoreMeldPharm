@@ -308,7 +308,7 @@
 
 /* ── Offers carousel ──────────────────────────────────────── */
 .hp-section-ivory { background: var(--hp-ivory); }
-.hp-carousel-outer { position: relative; }
+.hp-carousel-outer { position: relative; overflow: visible; }
 .hp-carousel {
     display: flex;
     gap: 1rem;
@@ -1191,6 +1191,11 @@
     .hp-promo-text { padding: 1.5rem 1.25rem; }
     .hp-promo-text h2 { font-size: 1.55rem; }
     .hp-card { width: 168px; }
+    .hp-card-badge {
+        font-size: 0.52rem;
+        padding: 2px 6px;
+        letter-spacing: 0.02em;
+    }
     #recommended-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 0.75rem !important; }
     .hp-section { padding: 1.75rem 0; }
     .hp-promo-img { max-height: 190px; }

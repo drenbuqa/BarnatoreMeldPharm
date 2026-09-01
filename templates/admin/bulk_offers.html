@@ -1,1406 +1,1243 @@
 {% extends "admin/base.html" %}
 
-{% block title %}Menaxhimi i Ofertave në Masë - Meld Pharm Admin{% endblock %}
+{% block title %}Ofertat — Meld Pharm Admin{% endblock %}
 {% block page_title %}Menaxhimi i Ofertave{% endblock %}
 
 {% block admin_content %}
-<div class="admin-page-container">
+<style>
+/* ─── Layout ─── */
+.off-layout {
+    display:grid;
+    grid-template-columns:310px 1fr;
+    gap:1.25rem;
+    align-items:start;
+}
+.off-left {
+    position:sticky;
+    top:1rem;
+    display:flex;
+    flex-direction:column;
+    gap:1rem;
+    max-height:calc(100vh - 2rem);
+    overflow-y:auto;
+    scrollbar-width:thin;
+    scrollbar-color:#d4dcd3 transparent;
+    padding-right:2px;
+}
+.off-right { display:flex; flex-direction:column; gap:.75rem; }
 
-    <div class="bulk-header-v4">
-        <div class="header-info">
-            <h1 class="v4-title">Konfigurimi i Ofertave në Masë</h1>
-            <p class="v4-subtitle">Zgjidhni produktet specifike ose filtroni grupet për të aplikuar zbritje manuale.</p>
+/* ─── Cards ─── */
+.off-card {
+    background:#fff;
+    border:1px solid #eef0ed;
+    border-radius:14px;
+    padding:1.25rem;
+    box-shadow:0 1px 3px rgba(0,0,0,.04);
+    flex-shrink:0;
+}
+.off-card-title {
+    font-size:.71rem;
+    font-weight:800;
+    text-transform:uppercase;
+    letter-spacing:.07em;
+    color:#8a9186;
+    margin-bottom:.9rem;
+    display:flex;
+    align-items:center;
+    gap:.4rem;
+}
+
+/* ─── Active offers list ─── */
+.aor {
+    display:flex;
+    align-items:center;
+    gap:.6rem;
+    padding:.6rem .75rem;
+    border-radius:9px;
+    background:#f8faf7;
+    border:1.5px solid #eef0ed;
+    margin-bottom:.45rem;
+    cursor:pointer;
+    transition:all .15s;
+}
+.aor:last-child { margin-bottom:0; }
+.aor:hover { border-color:var(--adm-accent); background:#f0fdf4; }
+.aor.editing { border-color:var(--adm-accent); background:#f0fdf4; box-shadow:0 0 0 3px rgba(79,93,78,.12); }
+.aor-dot { width:8px; height:8px; border-radius:50%; background:var(--adm-accent); flex-shrink:0; }
+.aor-info { flex:1; min-width:0; }
+.aor-name { font-size:.84rem; font-weight:700; color:#1a1f18; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:block; }
+.aor-meta { font-size:.71rem; color:#8a9186; display:block; margin-top:1px; }
+.aor-del {
+    width:24px; height:24px; border-radius:6px; border:none;
+    background:#fef2f2; color:#dc2626; cursor:pointer; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center; font-size:.7rem;
+    transition:all .15s;
+}
+.aor-del:hover { background:#dc2626; color:#fff; }
+.no-offers-msg { text-align:center; padding:1.2rem; color:#9aa095; font-size:.83rem; }
+
+/* ─── Selection badge ─── */
+.sel-badge-wrap { text-align:center; margin-bottom:1rem; }
+.sel-badge {
+    display:inline-flex; align-items:center; justify-content:center;
+    background:var(--adm-accent); color:#fff;
+    font-size:2rem; font-weight:900;
+    width:68px; height:68px; border-radius:18px;
+    margin-bottom:.4rem;
+    transition:transform .15s;
+}
+.sel-badge.pop { transform:scale(1.12); }
+.sel-label { font-size:.75rem; color:#8a9186; font-weight:600; display:block; }
+
+/* ─── Form fields ─── */
+.off-field { margin-bottom:.85rem; }
+.off-field:last-of-type { margin-bottom:0; }
+.off-label { display:block; font-size:.73rem; font-weight:700; color:#6b7280; margin-bottom:.35rem; }
+.off-input {
+    width:100%; padding:.55rem .75rem;
+    border:1.5px solid #e2e8f0; border-radius:9px;
+    font-size:.84rem; font-family:inherit; color:#1a1f18;
+    background:#fafafa; outline:none; box-sizing:border-box;
+    transition:border-color .15s;
+}
+.off-input:focus { border-color:var(--adm-accent); background:#fff; }
+
+/* ─── CUSTOM SELECT ─── */
+.csel { position:relative; user-select:none; }
+.csel-trigger {
+    display:flex; align-items:center; gap:.5rem;
+    padding:.55rem .75rem;
+    background:#fafafa; border:1.5px solid #e2e8f0; border-radius:9px;
+    font-size:.84rem; color:#1a1f18; cursor:pointer;
+    transition:all .15s;
+}
+.csel-trigger:hover { border-color:#c4cfc3; background:#f5f7f4; }
+.csel-trigger.open { border-color:var(--adm-accent); background:#fff; border-radius:9px 9px 0 0; }
+.csel-icon { font-size:.82rem; flex-shrink:0; }
+.csel-label { flex:1; font-weight:600; }
+.csel-arrow { margin-left:auto; font-size:.62rem; color:#9aa095; transition:transform .2s; }
+.csel-trigger.open .csel-arrow { transform:rotate(180deg); }
+.csel-panel {
+    position:absolute; top:100%; left:0; right:0; z-index:300;
+    background:#fff; border:1.5px solid var(--adm-accent);
+    border-top:none; border-radius:0 0 10px 10px;
+    box-shadow:0 8px 20px rgba(0,0,0,.1);
+    display:none; flex-direction:column; overflow:hidden;
+    max-height:220px; overflow-y:auto;
+    scrollbar-width:thin; scrollbar-color:#d4dcd3 transparent;
+}
+.csel-panel.open { display:flex; }
+.csel-opt {
+    display:flex; align-items:center; gap:.55rem;
+    padding:.55rem .85rem; cursor:pointer; font-size:.83rem; color:#374151;
+    transition:background .1s; border-bottom:1px solid #f5f7f4;
+}
+.csel-opt:last-child { border-bottom:none; }
+.csel-opt:hover { background:#f5f7f4; color:#1a1f18; }
+.csel-opt.selected { background:#f0fdf4; color:var(--adm-accent); font-weight:700; }
+.csel-opt-icon { font-size:.82rem; width:18px; text-align:center; flex-shrink:0; }
+.csel-check { margin-left:auto; font-size:.7rem; color:var(--adm-accent); opacity:0; }
+.csel-opt.selected .csel-check { opacity:1; }
+
+/* ─── CUSTOM DATE PICKER ─── */
+.cdp { position:relative; user-select:none; }
+.cdp-trigger {
+    display:flex; align-items:center; gap:.6rem;
+    padding:.55rem .75rem;
+    background:#fafafa; border:1.5px solid #e2e8f0; border-radius:9px;
+    font-size:.84rem; color:#9aa095; cursor:pointer;
+    transition:all .15s;
+}
+.cdp-trigger.has-value { color:#1a1f18; }
+.cdp-trigger:hover { border-color:#c4cfc3; background:#f5f7f4; }
+.cdp-trigger.open { border-color:var(--adm-accent); background:#fff; }
+.cdp-trigger i { color:#9aa095; font-size:.82rem; flex-shrink:0; }
+.cdp-txt { flex:1; font-weight:600; }
+.cdp-clear {
+    margin-left:auto; width:18px; height:18px; border-radius:4px;
+    background:#fee2e2; color:#dc2626; border:none; cursor:pointer;
+    font-size:.62rem; display:none; align-items:center; justify-content:center;
+    transition:all .15s;
+}
+.cdp-clear:hover { background:#dc2626; color:#fff; }
+.cdp-trigger.has-value .cdp-clear { display:flex; }
+
+.cdp-panel {
+    position:absolute; left:0; z-index:400;
+    background:#fff; border:1.5px solid #eef0ed; border-radius:14px;
+    box-shadow:0 12px 32px rgba(0,0,0,.13);
+    padding:1rem; display:none; flex-direction:column; gap:.75rem;
+    min-width:268px;
+    /* default: drop down */
+    top:calc(100% + 6px); bottom:auto;
+}
+.cdp-panel.drop-up {
+    top:auto; bottom:calc(100% + 6px);
+}
+.cdp-panel.open { display:flex; }
+.cdp-header { display:flex; align-items:center; gap:.5rem; }
+.cdp-nav {
+    width:30px; height:30px; border:1.5px solid #eef0ed; border-radius:8px;
+    background:#f5f7f4; cursor:pointer; display:flex; align-items:center;
+    justify-content:center; font-size:.72rem; color:#374151; transition:all .15s;
+}
+.cdp-nav:hover { background:var(--adm-accent); color:#fff; border-color:var(--adm-accent); }
+.cdp-month-year {
+    flex:1; text-align:center; font-size:.88rem; font-weight:800; color:#1a1f18; cursor:pointer;
+}
+.cdp-weekdays {
+    display:grid; grid-template-columns:repeat(7,1fr); gap:2px;
+    text-align:center;
+}
+.cdp-wd { font-size:.67rem; font-weight:700; color:#9aa095; padding:.2rem 0; text-transform:uppercase; }
+.cdp-days { display:grid; grid-template-columns:repeat(7,1fr); gap:2px; }
+.cdp-day {
+    aspect-ratio:1; display:flex; align-items:center; justify-content:center;
+    font-size:.8rem; font-weight:600; color:#374151; border-radius:7px;
+    cursor:pointer; transition:all .12s;
+}
+.cdp-day:hover:not(.empty):not(.disabled) { background:#f0fdf4; color:var(--adm-accent); }
+.cdp-day.today { font-weight:900; color:var(--adm-accent); }
+.cdp-day.selected { background:var(--adm-accent) !important; color:#fff !important; font-weight:800; }
+.cdp-day.other-month { color:#d1d5db; }
+.cdp-day.empty { cursor:default; }
+.cdp-day.disabled { color:#e5e7eb; cursor:not-allowed; }
+.cdp-footer { display:flex; gap:.5rem; justify-content:flex-end; }
+.cdp-footer-btn {
+    padding:.38rem .75rem; border-radius:7px; font-size:.78rem; font-weight:700;
+    cursor:pointer; border:1.5px solid #eef0ed; background:#f5f7f4; color:#6b7280;
+    font-family:inherit; transition:all .15s;
+}
+.cdp-footer-btn.primary { background:var(--adm-accent); color:#fff; border-color:var(--adm-accent); }
+.cdp-footer-btn:hover { opacity:.85; }
+
+/* ─── Buttons ─── */
+.off-btn-apply {
+    width:100%; padding:.72rem;
+    background:var(--adm-accent); color:#fff;
+    border:none; border-radius:10px;
+    font-size:.88rem; font-weight:700; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; gap:.45rem;
+    transition:all .15s; margin-bottom:.5rem;
+}
+.off-btn-apply:hover { opacity:.88; transform:translateY(-1px); }
+.off-btn-apply:disabled { opacity:.38; cursor:not-allowed; transform:none; }
+.off-btn-remove {
+    width:100%; padding:.62rem;
+    background:#fff; color:#dc2626;
+    border:1.5px solid #fca5a5; border-radius:10px;
+    font-size:.82rem; font-weight:700; cursor:pointer;
+    transition:all .15s; font-family:inherit;
+}
+.off-btn-remove:hover { background:#fef2f2; }
+
+/* ─── Toolbar ─── */
+.off-toolbar {
+    background:#fff; border:1px solid #eef0ed; border-radius:14px;
+    padding:.85rem 1rem; display:flex; align-items:center; gap:.6rem;
+    flex-wrap:wrap; box-shadow:0 1px 3px rgba(0,0,0,.04);
+}
+.off-search { position:relative; flex:1; min-width:180px; max-width:300px; }
+.off-search i { position:absolute; left:.7rem; top:50%; transform:translateY(-50%); color:#9aa095; font-size:.78rem; pointer-events:none; }
+.off-search input {
+    width:100%; padding:.52rem .75rem .52rem 2.1rem;
+    border:1.5px solid #e2e8f0; border-radius:8px; font-size:.84rem;
+    background:#fafafa; color:#1a1f18; outline:none; box-sizing:border-box;
+    transition:border-color .15s;
+}
+.off-search input:focus { border-color:var(--adm-accent); background:#fff; }
+
+/* Toolbar custom select (larger variant for toolbar) */
+.csel-sm .csel-trigger {
+    padding:.52rem .8rem;
+    font-size:.83rem;
+    border-radius:8px;
+    min-width:130px;
+}
+.csel-sm .csel-panel { border-radius:0 0 9px 9px; }
+.csel-sm .csel-opt { padding:.5rem .8rem; font-size:.82rem; }
+
+/* Brand multi-select */
+.ms-wrap { position:relative; }
+.ms-trigger {
+    padding:.52rem .8rem; border:1.5px solid #e2e8f0; border-radius:8px;
+    font-size:.83rem; cursor:pointer; background:#fafafa; color:#1a1f18;
+    display:flex; align-items:center; gap:.4rem; white-space:nowrap;
+    transition:all .15s; user-select:none; min-width:130px;
+}
+.ms-trigger:hover, .ms-trigger.open { border-color:var(--adm-accent); background:#fff; }
+.ms-trigger i.arrow { margin-left:auto; font-size:.6rem; color:#9aa095; transition:transform .15s; }
+.ms-trigger.open i.arrow { transform:rotate(180deg); }
+.ms-panel {
+    position:absolute; top:calc(100% + 4px); left:0; z-index:200;
+    background:#fff; border:1.5px solid #eef0ed; border-radius:10px;
+    box-shadow:0 8px 24px rgba(0,0,0,.12); min-width:180px; max-width:240px;
+    display:none; flex-direction:column; overflow:hidden;
+}
+.ms-panel.open { display:flex; }
+.ms-search-wrap { padding:.5rem .6rem; border-bottom:1px solid #f0f0ee; }
+.ms-search {
+    width:100%; padding:.4rem .6rem; border:1.5px solid #e2e8f0; border-radius:7px;
+    font-size:.78rem; font-family:inherit; outline:none; box-sizing:border-box;
+}
+.ms-search:focus { border-color:var(--adm-accent); }
+.ms-opts { max-height:200px; overflow-y:auto; padding:.3rem 0; }
+.ms-opt {
+    display:flex; align-items:center; gap:.5rem;
+    padding:.38rem .75rem; cursor:pointer; font-size:.8rem; color:#1a1f18;
+    transition:background .1s;
+}
+.ms-opt:hover { background:#f5f7f4; }
+.ms-opt input { accent-color:var(--adm-accent); width:14px; height:14px; cursor:pointer; flex-shrink:0; }
+.ms-footer { padding:.4rem .6rem; border-top:1px solid #f0f0ee; }
+.ms-clear { width:100%; padding:.35rem; background:#f5f7f4; border:none; border-radius:6px; font-size:.75rem; color:#6b7280; cursor:pointer; font-family:inherit; }
+.ms-clear:hover { background:#eef0ed; }
+
+/* Select-all */
+.off-selall {
+    display:flex; align-items:center; gap:.45rem;
+    font-size:.79rem; font-weight:700; color:#6b7280; cursor:pointer;
+    white-space:nowrap; user-select:none;
+}
+.off-selall input { accent-color:var(--adm-accent); width:15px; height:15px; cursor:pointer; }
+
+/* ─── Product card & rows ─── */
+.off-prod-card {
+    background:#fff; border:1px solid #eef0ed; border-radius:14px;
+    overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,.04);
+}
+.off-tbl-head {
+    display:grid; grid-template-columns:36px 44px 1fr 110px 70px;
+    gap:.6rem; padding:.55rem 1rem;
+    background:#fafafa; border-bottom:2px solid #eef0ed;
+}
+.off-tbl-head span { font-size:.67rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:#8a9186; }
+.off-prod-list {
+    max-height:calc(100vh - 280px); overflow-y:auto;
+    scrollbar-width:thin; scrollbar-color:#d4dcd3 transparent;
+}
+.off-prod-row {
+    display:grid; grid-template-columns:36px 44px 1fr 110px 70px;
+    align-items:center; gap:.6rem; padding:.55rem 1rem;
+    border-bottom:1px solid #f3f4f2; cursor:pointer; transition:background .1s;
+}
+.off-prod-row:last-child { border-bottom:none; }
+.off-prod-row:hover { background:#f8faf7; }
+.off-prod-row.selected { background:#f0fdf4; }
+.off-prod-row input[type=checkbox] { width:16px; height:16px; accent-color:var(--adm-accent); cursor:pointer; }
+.off-prod-img { width:40px; height:40px; border-radius:8px; object-fit:contain; background:#f5f7f4; }
+.off-prod-info { min-width:0; }
+.off-prod-brand { font-size:.67rem; font-weight:700; color:#8a9186; text-transform:uppercase; letter-spacing:.04em; display:block; }
+.off-prod-name { font-size:.82rem; font-weight:700; color:#1a1f18; display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.off-prod-cat { font-size:.7rem; color:#9aa095; }
+.off-offer-tag { font-size:.68rem; font-weight:700; background:#f0fdf4; color:var(--adm-accent); border:1px solid #c6d4c5; padding:2px 8px; border-radius:20px; white-space:nowrap; display:inline-block; max-width:100px; overflow:hidden; text-overflow:ellipsis; }
+.off-prod-price { font-size:.82rem; font-weight:800; color:#1a1f18; white-space:nowrap; }
+.off-empty-row { padding:3rem; text-align:center; color:#9aa095; font-size:.88rem; }
+
+/* ─── Pagination ─── */
+.off-pager {
+    background:#fff; border:1px solid #eef0ed; border-radius:14px;
+    padding:.75rem 1rem; display:grid; grid-template-columns:1fr auto 1fr;
+    align-items:center; box-shadow:0 1px 3px rgba(0,0,0,.04);
+}
+.pg-info { font-size:.76rem; color:#8a9186; font-weight:600; white-space:nowrap; }
+.pg-buttons { display:flex; align-items:center; gap:.35rem; justify-content:center; }
+.pg-btn {
+    padding:.38rem .65rem; border:1.5px solid #e2e8f0; border-radius:7px;
+    font-size:.78rem; font-weight:600; cursor:pointer; background:#fff; color:#374151;
+    transition:all .15s; min-width:32px; text-align:center; font-family:inherit;
+}
+.pg-btn:hover:not(:disabled) { border-color:var(--adm-accent); color:var(--adm-accent); }
+.pg-btn.active { background:var(--adm-accent); color:#fff; border-color:var(--adm-accent); }
+.pg-btn:disabled { opacity:.35; cursor:not-allowed; }
+
+@media(max-width:1100px) { .off-layout { grid-template-columns:270px 1fr; } }
+@media(max-width:768px) {
+    .off-layout { grid-template-columns:1fr; }
+    .off-left { position:static; max-height:none; }
+    .off-prod-list { max-height:55vh; }
+}
+</style>
+
+<!-- ── Compact product data as JSON ── -->
+<script>
+const PD = [{% for p in all_products %}{"id":"{{ p._id }}","n":{{ p.name|tojson }},"b":{{ (p.brand or '')|tojson }},"c":{{ p.category|tojson }},"sc":{{ (p.subcategory or '')|tojson }},"p":{{ p.price|float }},"img":{{ (p.image_url or '')|tojson }},"on":{{ (p.offer_name or '')|tojson }}}{% if not loop.last %},{% endif %}{% endfor %}];
+</script>
+
+<!-- ── Delete offer confirmation modal ── -->
+<div id="delOfferModal" style="display:none;position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.45);align-items:center;justify-content:center;">
+    <div style="background:#fff;border-radius:16px;padding:1.75rem;max-width:380px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,.2);" onclick="event.stopPropagation();">
+        <div style="width:48px;height:48px;border-radius:12px;background:#fef2f2;display:flex;align-items:center;justify-content:center;margin-bottom:1rem;">
+            <i class="fas fa-trash" style="color:#dc2626;font-size:1.1rem;"></i>
         </div>
-    </div>
-
-    <!-- Section: Active Offers List -->
-    <div class="active-offers-summary">
-        <div class="active-header"
-            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-            <div class="section-title" style="margin-bottom: 0; font-size: 1rem;">
-                <i class="fas fa-fire-alt"></i> Ofertat Aktive
-            </div>
-            <button type="button" class="btn-new-offer" onclick="toggleOfferForm()"
-                style="padding: 0.5rem 1rem; font-size: 0.85rem;">
-                <i class="fas fa-plus"></i> Krijo
+        <div style="font-size:1rem;font-weight:800;color:#1a1f18;margin-bottom:.4rem;">Fshi Ofertën?</div>
+        <div style="font-size:.84rem;color:#6b7280;margin-bottom:1.25rem;" id="delOfferMsg">Kjo veprim do të heqë ofertën nga të gjitha produktet.</div>
+        <div style="display:flex;gap:.6rem;justify-content:flex-end;">
+            <button type="button" onclick="closeDelModal()"
+                style="padding:.55rem 1.1rem;border:1.5px solid #e2e8f0;border-radius:9px;background:#fff;color:#374151;font-size:.84rem;font-weight:700;cursor:pointer;font-family:inherit;">
+                Anulo
+            </button>
+            <button type="button" id="delOfferConfirmBtn" onclick="confirmDeleteOffer()"
+                style="padding:.55rem 1.1rem;border:none;border-radius:9px;background:#dc2626;color:#fff;font-size:.84rem;font-weight:700;cursor:pointer;font-family:inherit;">
+                <i class="fas fa-trash"></i> Po, Fshi
             </button>
         </div>
-        <div class="offers-grid-v4">
+    </div>
+</div>
+
+<form method="POST" action="{{ url_for('admin.bulk_offers') }}" id="offForm">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+<input type="hidden" name="target_name" id="targetName" value="">
+<!-- Hidden inputs for custom selects -->
+<input type="hidden" name="offer_type" id="offerTypeVal" value="discount">
+<input type="hidden" name="multi_buy_type" id="multiBuyTypeVal" value="1+1">
+<input type="hidden" name="discount_from" id="discountFromVal" value="">
+<input type="hidden" name="discount_until" id="discountUntilVal" value="">
+
+<div class="off-layout">
+
+    <!-- ────────── LEFT PANEL ────────── -->
+    <div class="off-left">
+
+        <!-- Active offers -->
+        <div class="off-card">
+            <div class="off-card-title"><i class="fas fa-fire-alt" style="color:#d97706;"></i> Ofertat Aktive</div>
             {% if active_offers_info %}
             {% for offer in active_offers_info %}
-            <div class="offer-pill-v4" data-offer-name="{{ offer.name }}"
-                onclick="filterByOffer(this.dataset.offerName)">
-                <div class="pill-info">
-                    <span class="pill-name">{{ offer.name }}</span>
-                    <span class="pill-details">{{ offer.count }} produkte • {% if offer.type == 'discount' %}{{ offer.value }}% zbritje{% else %}{{ offer.value }}{% endif %}</span>
+            <div class="aor" id="aor-{{ loop.index }}"
+                 data-name="{{ offer.name|e }}"
+                 data-type="{{ offer.type|e }}"
+                 data-value="{{ offer.value|e }}"
+                 data-start="{{ offer.start or '' }}"
+                 data-expiry="{{ offer.expiry or '' }}">
+                <div class="aor-dot"></div>
+                <div class="aor-info">
+                    <span class="aor-name">{{ offer.name }}</span>
+                    <span class="aor-meta">{{ offer.count }} produkte ·
+                        {% if offer.type == 'discount' %}{{ offer.value }}% zbritje{% else %}{{ offer.value }}{% endif %}
+                        {% if offer.expiry %} · skadon {{ offer.expiry }}{% endif %}
+                    </span>
                 </div>
-                <div class="pill-actions">
-                    <button type="button" class="pill-edit" data-name="{{ offer.name }}"
-                        data-type="{{ offer.type }}" data-value="{{ offer.value }}" 
-                        data-expiry="{{ offer.expiry }}"
-                        onclick="event.stopPropagation(); const d=this.dataset; editOffer(d.name, d.type, d.value, d.expiry)"
-                        title="Edito">
-                        <i class="fas fa-edit"></i>
-                    </button>
-                    <form action="{{ url_for('admin.bulk_offers') }}" method="POST" style="margin: 0;">
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                        <input type="hidden" name="target_name" value="{{ offer.name }}">
-                        <button type="submit" name="action" value="delete_named_offer" class="pill-delete"
-                            onclick="event.stopPropagation(); return confirm('A jeni i sigurt qe doni te fshini kete oferte?')"
-                            title="Fshij Ofertën">
-                            <i class="fas fa-times"></i>
-                        </button>
-                    </form>
-                </div>
+                <button type="button" class="aor-del" title="Fshi ofertën"
+                        data-offer="{{ offer.name|e }}">
+                    <i class="fas fa-times"></i>
+                </button>
             </div>
             {% endfor %}
             {% else %}
-            <div class="no-offers-msg">Nuk ka oferta aktive aktualisht.</div>
+            <div class="no-offers-msg">
+                <i class="fas fa-tag" style="font-size:1.4rem;opacity:.18;display:block;margin-bottom:.4rem;"></i>
+                Nuk ka oferta aktive
+            </div>
             {% endif %}
+        </div>
+
+        <!-- Config + actions -->
+        <div class="off-card">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+                <div class="off-card-title" style="margin-bottom:0;" id="configCardTitle">
+                    <i class="fas fa-sliders-h"></i> Konfigurimi
+                </div>
+                <button type="button" id="newOfferBtn" onclick="resetToNew()"
+                    style="padding:.32rem .65rem;background:#f0fdf4;border:1.5px solid #c6d4c5;border-radius:7px;
+                           font-size:.74rem;font-weight:700;color:var(--adm-accent);cursor:pointer;
+                           display:flex;align-items:center;gap:.3rem;transition:all .15s;white-space:nowrap;">
+                    <i class="fas fa-plus"></i> Ofertë e Re
+                </button>
+            </div>
+            <div class="sel-badge-wrap">
+                <div class="sel-badge" id="selBadge">0</div>
+                <div class="sel-label">produkte të zgjedhura</div>
+            </div>
+
+            <div class="off-field">
+                <label class="off-label"><i class="fas fa-tag"></i> Emri i Ofertës</label>
+                <input type="text" name="offer_name" id="offerName" class="off-input" placeholder="p.sh. Oferta e Verës" required>
+            </div>
+
+            <div class="off-field">
+                <label class="off-label"><i class="fas fa-list"></i> Lloji i Ofertës</label>
+                <div class="csel" id="cselType">
+                    <div class="csel-trigger" onclick="toggleCsel('cselType')">
+                        <i class="fas fa-percent csel-icon" style="font-size:.72rem;color:#6b7280;"></i>
+                        <span class="csel-label" id="cselTypeLabel">Zbritje (%)</span>
+                        <i class="fas fa-chevron-down csel-arrow"></i>
+                    </div>
+                    <div class="csel-panel" id="cselTypePanel">
+                        <div class="csel-opt selected" data-value="discount" onclick="pickCsel('cselType','discount','','Zbritje (%)');toggleOfferType();">
+                            <i class="fas fa-percent csel-opt-icon" style="font-size:.72rem;color:#6b7280;"></i> Zbritje (%)
+                            <i class="fas fa-check csel-check"></i>
+                        </div>
+                        <div class="csel-opt" data-value="multi_buy" onclick="pickCsel('cselType','multi_buy','','Multi Buy');toggleOfferType();">
+                            <i class="fas fa-layer-group csel-opt-icon" style="font-size:.72rem;color:#6b7280;"></i> Multi Buy
+                            <i class="fas fa-check csel-check"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="off-field" id="discountField">
+                <label class="off-label"><i class="fas fa-percent"></i> Përqindja e Zbritjes</label>
+                <input type="number" name="discount_percent" id="discountPercent" class="off-input"
+                       min="1" max="99" placeholder="p.sh. 20">
+            </div>
+
+            <div class="off-field" id="multiBuyField" style="display:none;">
+                <label class="off-label"><i class="fas fa-layer-group"></i> Lloji Multi Buy</label>
+                <div class="csel" id="cselMB">
+                    <div class="csel-trigger" onclick="toggleCsel('cselMB')">
+                        <i class="fas fa-layer-group csel-icon" style="font-size:.72rem;color:#6b7280;"></i>
+                        <span class="csel-label" id="cselMBLabel">1+1 — Bli 1, Merr 1 Falas</span>
+                        <i class="fas fa-chevron-down csel-arrow"></i>
+                    </div>
+                    <div class="csel-panel" id="cselMBPanel">
+                        <div class="csel-opt selected" data-value="1+1" onclick="pickCsel('cselMB','1+1','','1+1 — Bli 1, Merr 1 Falas')">
+                            1+1 — Bli 1, Merr 1 Falas <i class="fas fa-check csel-check"></i>
+                        </div>
+                        <div class="csel-opt" data-value="2+1" onclick="pickCsel('cselMB','2+1','','2+1 — Bli 2, Merr 1 Falas')">
+                            2+1 — Bli 2, Merr 1 Falas <i class="fas fa-check csel-check"></i>
+                        </div>
+                        <div class="csel-opt" data-value="3+1" onclick="pickCsel('cselMB','3+1','','3+1 — Bli 3, Merr 1 Falas')">
+                            3+1 — Bli 3, Merr 1 Falas <i class="fas fa-check csel-check"></i>
+                        </div>
+                        <div class="csel-opt" data-value="buy2get50" onclick="pickCsel('cselMB','buy2get50','','Bli 2, Merr 50% Zbritje')">
+                            Bli 2, Merr 50% Zbritje <i class="fas fa-check csel-check"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="off-field">
+                <label class="off-label"><i class="fas fa-calendar-check"></i> Fillon më (default: sot)</label>
+                <div class="cdp" id="cdpFromWrap">
+                    <div class="cdp-trigger" id="cdpFromTrigger" onclick="toggleCdpFrom()">
+                        <i class="fas fa-calendar"></i>
+                        <span class="cdp-txt" id="cdpFromDisplay">Sot (default)</span>
+                        <button type="button" class="cdp-clear" onclick="event.stopPropagation();clearFromDate()"><i class="fas fa-times"></i></button>
+                    </div>
+                    <div class="cdp-panel" id="cdpFromPanel">
+                        <div class="cdp-header">
+                            <button type="button" class="cdp-nav" onclick="cdpFromNav(-1)"><i class="fas fa-chevron-left"></i></button>
+                            <div class="cdp-month-year" id="cdpFromMonthYear"></div>
+                            <button type="button" class="cdp-nav" onclick="cdpFromNav(1)"><i class="fas fa-chevron-right"></i></button>
+                        </div>
+                        <div class="cdp-weekdays" id="cdpFromWeekdays"></div>
+                        <div class="cdp-days" id="cdpFromDays"></div>
+                        <div class="cdp-footer">
+                            <button type="button" class="cdp-footer-btn" onclick="clearFromDate()">Pastro</button>
+                            <button type="button" class="cdp-footer-btn primary" onclick="closeCdpFrom()">Mbyll</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="off-field">
+                <label class="off-label"><i class="fas fa-calendar-alt"></i> Skadon më (opsionale)</label>
+                <div class="cdp" id="cdpWrap">
+                    <div class="cdp-trigger" id="cdpTrigger" onclick="toggleCdp()">
+                        <i class="fas fa-calendar"></i>
+                        <span class="cdp-txt" id="cdpDisplay">Zgjidh datën...</span>
+                        <button type="button" class="cdp-clear" onclick="event.stopPropagation();clearDate()"><i class="fas fa-times"></i></button>
+                    </div>
+                    <div class="cdp-panel" id="cdpPanel">
+                        <div class="cdp-header">
+                            <button type="button" class="cdp-nav" onclick="cdpNav(-1)"><i class="fas fa-chevron-left"></i></button>
+                            <div class="cdp-month-year" id="cdpMonthYear"></div>
+                            <button type="button" class="cdp-nav" onclick="cdpNav(1)"><i class="fas fa-chevron-right"></i></button>
+                        </div>
+                        <div class="cdp-weekdays" id="cdpWeekdays"></div>
+                        <div class="cdp-days" id="cdpDays"></div>
+                        <div class="cdp-footer">
+                            <button type="button" class="cdp-footer-btn" onclick="clearDate()">Pastro</button>
+                            <button type="button" class="cdp-footer-btn primary" onclick="closeCdp()">Mbyll</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="margin-top:1rem;">
+                <button type="submit" name="action" value="apply" class="off-btn-apply">
+                    <i class="fas fa-check-circle"></i> Apliko Ofertën
+                </button>
+                <button type="submit" name="action" value="remove" class="off-btn-remove">
+                    <i class="fas fa-ban"></i> Largo Ofertën nga Produktet
+                </button>
+            </div>
         </div>
     </div>
 
-    <!-- Creation Section (Hidden by default) -->
-    <div id="offerCreationSection"
-        style="display: none; opacity: 0; transform: translateY(20px); transition: all 0.4s ease;">
+    <!-- ────────── RIGHT PANEL ────────── -->
+    <div class="off-right">
+        <div class="off-toolbar">
+            <div class="off-search">
+                <i class="fas fa-search"></i>
+                <input type="text" id="offSearch" placeholder="Kërko produkt..." autocomplete="off">
+            </div>
 
-        <form action="{{ url_for('admin.bulk_offers') }}" method="POST" id="bulkOfferForm">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <!-- Category custom select -->
+            <div class="csel csel-sm" id="cselCat">
+                <div class="csel-trigger" onclick="toggleCsel('cselCat')">
+                    <span class="csel-label" id="cselCatLabel">Kategoria</span>
+                    <i class="fas fa-chevron-down csel-arrow"></i>
+                </div>
+                <div class="csel-panel" id="cselCatPanel">
+                    <div class="csel-opt selected" data-value="" onclick="pickCat('')">
+                        Të gjitha kategorite <i class="fas fa-check csel-check"></i>
+                    </div>
+                    {% for cat in categories.keys() %}
+                    <div class="csel-opt" data-value="{{ cat }}" onclick="pickCat('{{ cat|e }}')">
+                        {{ cat }} <i class="fas fa-check csel-check"></i>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
 
-            <!-- Step 1: Offer Details (Sticky Bar) -->
-            <div class="offer-settings-card">
-                <div class="settings-grid">
-                    <div class="setting-item">
-                        <label><i class="fas fa-tag"></i> Emri i Ofertës</label>
-                        <div class="input-wrapper-v4">
-                            <input type="text" name="offer_name" id="offerName" placeholder="Psh: Oferta e Verës">
-                        </div>
+            <!-- Brand multi-select -->
+            <div class="ms-wrap" id="msWrap">
+                <div class="ms-trigger" id="msTrigger" onclick="toggleBrandDD()">
+                    <i class="fas fa-building" style="font-size:.7rem;color:#9aa095;"></i>
+                    <span id="msLabel">Brendi</span>
+                    <i class="fas fa-chevron-down arrow"></i>
+                </div>
+                <div class="ms-panel" id="msPanel">
+                    <div class="ms-search-wrap">
+                        <input type="text" class="ms-search" id="msSearch" placeholder="Kërko brend..." oninput="filterBrandOpts(this.value)">
                     </div>
-                    <div class="setting-item">
-                        <label><i class="fas fa-list"></i> Lloji i Ofertës</label>
-                        <select name="offer_type" id="offerType" class="v4-select">
-                            <option value="discount">Zbritje (%)</option>
-                            <option value="multi_buy">Multi Buy Offer</option>
-                        </select>
+                    <div class="ms-opts" id="msOpts">
+                        {% for brand in brands %}
+                        <label class="ms-opt">
+                            <input type="checkbox" value="{{ brand }}" onchange="onBrandChange()"> {{ brand }}
+                        </label>
+                        {% endfor %}
                     </div>
-                    <div class="setting-item" id="discountItem">
-                        <label><i class="fas fa-percent"></i> Përqindja e Zbritjes</label>
-                        <div class="input-wrapper-v4">
-                            <input type="number" name="discount_percent" id="discountPercent" min="1" max="99"
-                                placeholder="Psh: 20">
-                            <span class="unit">%</span>
-                        </div>
-                    </div>
-                    <div class="setting-item" id="multiBuyItem" style="display: none;">
-                        <label><i class="fas fa-layers"></i> Lloji i Multi Buy</label>
-                        <select name="multi_buy_type" id="multiBuyType" class="v4-select">
-                            <option value="1+1">1+1 (Bli 1, Merr 1)</option>
-                            <option value="2+1">2+1 (Bli 2, Merr 1)</option>
-                            <option value="3+1">3+1 (Bli 3, Merr 1)</option>
-                            <option value="buy2get50">Bli 2, Merr 50% Zbritje</option>
-                        </select>
-                    </div>
-                    <div class="setting-item">
-                        <label><i class="fas fa-calendar-alt"></i> Skadimi (Opsionale)</label>
-                        <div class="input-wrapper-v4">
-                            <input type="date" name="discount_until" id="discountUntil">
-                        </div>
-                    </div>
-                    <div class="setting-action">
-                        <button type="submit" name="action" value="apply" class="btn-apply-v4-small" id="submitBtn">
-                            <span>Ruaj Ofertën</span>
-                            <i class="fas fa-check-circle"></i>
-                        </button>
+                    <div class="ms-footer">
+                        <button type="button" class="ms-clear" onclick="clearBrands()">Hiq filtrat e brendeve</button>
                     </div>
                 </div>
             </div>
 
-            <!-- Step 2: Filters & Selection -->
-            <div class="products-selection-section">
-                <div class="selection-controls">
-                    <div class="filters-sidebar">
-                        <div class="filter-group-v4">
-                            <h3><i class="fas fa-filter"></i> Filtrat</h3>
+            <label class="off-selall">
+                <input type="checkbox" id="selectAll" onchange="toggleAll(this)"> Të gjitha
+            </label>
+        </div>
 
-                            <div class="control-item">
-                                <label>Brendi</label>
-                                <select name="brand" id="brandFilter" class="v4-select">
-                                    <option value="all">Të gjitha brendet</option>
-                                    {% for brand in brands %}
-                                    <option value="{{ brand }}">{{ brand }}</option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-
-                            <div class="control-item">
-                                <label>Kategoria</label>
-                                <select name="category" id="categoryFilter" class="v4-select">
-                                    <option value="all">Të gjitha kategoritë</option>
-                                    {% for cat in categories.keys() %}
-                                    <option value="{{ cat }}">{{ cat }}</option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-
-                            <div class="control-item">
-                                <label>Nënkategoria</label>
-                                <select name="subcategory" id="subcategoryFilter" class="v4-select">
-                                    <option value="all">Të gjitha</option>
-                                </select>
-                            </div>
-
-                            <div class="control-item">
-                                <label>Ofertat Aktive</label>
-                                <select name="offer_filter" id="offerFilter" class="v4-select">
-                                    <option value="all">Të gjitha ofertat</option>
-                                    {% for offer in active_offers_info %}
-                                    <option value="{{ offer.name }}">{{ offer.name }}</option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-                        </div>
-
-                        <div class="selection-summary-card">
-                            <div class="summary-stat">
-                                <span id="selectedCount">0</span>
-                                <label>Produkte të Zgjedhura</label>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="products-list-v4">
-                        <div class="list-actions"
-                            style="display: flex; justify-content: flex-start; align-items: center; gap: 3rem; padding: 1.5rem 2.5rem;">
-
-                            <div class="search-box-v4" style="flex: 1; max-width: 600px;">
-                                <i class="fas fa-search" style="left: 1.25rem;"></i>
-                                <input type="text" id="bulkProductSearch"
-                                    placeholder="Kërko produktet sipas emrit ose brendit..."
-                                    style="padding: 1.1rem 1.25rem 1.1rem 3.25rem; font-size: 1.05rem; border-radius: 14px;">
-                            </div>
-
-                            <label class="checkbox-container-v4">
-                                <input type="checkbox" id="selectAll">
-                                <span class="checkmark"></span>
-                                Te gjitha
-                            </label>
-                        </div>
-
-                        <div class="v4-table-wrapper">
-                            <table class="v4-products-table">
-                                <thead>
-                                    <tr>
-                                        <th style="width: 50px;"></th>
-                                        <th>Produkti & Brendi</th>
-                                        <th>Kategoria</th>
-                                        <th>Oferta Aktuale</th>
-                                        <th>Çmimi/Statusi</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="productsTableBody">
-                                    {% for p in all_products %}
-                                    <tr class="v4-row" data-brand="{{ (p.brand or '')|trim|lower|e }}"
-                                        data-category="{{ p.category|lower|e }}"
-                                        data-subcategory="{{ p.subcategory|lower|e }}" data-name="{{ p.name|lower|e }}"
-                                        data-offer="{{ p.offer_name|lower|e if p.offer_name else '' }}">
-                                        <td>
-                                            <label class="checkbox-container-v4">
-                                                <input type="checkbox" name="selected_products" value="{{ p._id }}"
-                                                    class="product-checkbox">
-                                                <span class="checkmark"></span>
-                                            </label>
-                                        </td>
-                                        <td>
-                                            <div class="v4-product-cell">
-                                                <img src="{{ p.image_url }}" alt=""
-                                                    onerror="this.src='/static/img/placeholder.png'">
-                                                <div class="v4-p-info">
-                                                    <span class="v4-p-brand">{{ p.brand }}</span>
-                                                    <span class="v4-p-name">{{ p.name }}</span>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <div class="v4-cat-badge">{{ p.category }}</div>
-                                        </td>
-                                        <td>
-                                            {% if p.offer_name %}
-                                            <span class="v4-offer-label">
-                                                <i class="fas fa-tag"></i> {{ p.offer_name }}
-                                            </span>
-                                            {% else %}
-                                            <span class="text-muted" style="font-size: 0.8rem;">Pa ofertë</span>
-                                            {% endif %}
-                                        </td>
-                                        <td>
-                                            <div class="v4-price">€{{ "%.2f"|format(p.price) }}</div>
-                                        </td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
+        <div class="off-prod-card">
+            <div class="off-tbl-head">
+                <span></span><span></span>
+                <span>Produkti</span>
+                <span>Oferta</span>
+                <span>Çmimi</span>
             </div>
-        </form>
+            <div class="off-prod-list" id="prodList">
+                <div class="adm-skeleton-row"><div class="adm-skeleton adm-skeleton-avatar"></div><div class="adm-skeleton-lines"><div class="adm-skeleton adm-skeleton-line" style="width:55%"></div><div class="adm-skeleton adm-skeleton-line" style="width:30%"></div></div></div>
+                <div class="adm-skeleton-row"><div class="adm-skeleton adm-skeleton-avatar"></div><div class="adm-skeleton-lines"><div class="adm-skeleton adm-skeleton-line" style="width:70%"></div><div class="adm-skeleton adm-skeleton-line" style="width:40%"></div></div></div>
+                <div class="adm-skeleton-row"><div class="adm-skeleton adm-skeleton-avatar"></div><div class="adm-skeleton-lines"><div class="adm-skeleton adm-skeleton-line" style="width:45%"></div><div class="adm-skeleton adm-skeleton-line" style="width:25%"></div></div></div>
+                <div class="adm-skeleton-row"><div class="adm-skeleton adm-skeleton-avatar"></div><div class="adm-skeleton-lines"><div class="adm-skeleton adm-skeleton-line" style="width:60%"></div><div class="adm-skeleton adm-skeleton-line" style="width:35%"></div></div></div>
+            </div>
+        </div>
+
+        <div class="off-pager" id="pager" style="display:none;"></div>
     </div>
 
-    <style>
-        :root {
-            --v4-primary: #4F5D4E;
-            --v4-primary-dark: #3d4a3c;
-            --v4-bg: #F7F3EE;
-            --v4-card: #ffffff;
-            --v4-text: #2B2B2B;
-            --v4-text-muted: #7A7068;
-            --v4-border: #E8E2DA;
-            --v4-amber: #f59e0b;
-        }
-
-        .admin-page-container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 2rem 1.5rem;
-            background: var(--v4-bg);
-            min-height: 100vh;
-        }
-
-        /* Header */
-        .bulk-header-v4 {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-end;
-            margin-bottom: 2.5rem;
-        }
-
-        .v4-title {
-            font-size: 2.5rem;
-            font-weight: 900;
-            color: var(--v4-text);
-            letter-spacing: -1px;
-            margin-bottom: 0.5rem;
-        }
-
-        .v4-subtitle {
-            color: var(--v4-text-muted);
-            font-size: 1.1rem;
-        }
-
-        /* Active Offers Section */
-        .active-offers-summary {
-            margin-bottom: 2.5rem;
-            background: white;
-            padding: 2rem;
-            border-radius: 2rem;
-            border: 1px solid var(--v4-border);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
-        }
-
-        .section-title {
-            font-size: 1.25rem;
-            font-weight: 800;
-            color: var(--v4-text);
-            margin-bottom: 1.5rem;
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-        }
-
-        .section-title i {
-            color: #f59e0b;
-        }
-
-        .offers-grid-v4 {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 1rem;
-        }
-
-        .offer-pill-v4 {
-            background: var(--v4-bg);
-            border: 1px solid var(--v4-border);
-            padding: 0.75rem 1.25rem;
-            border-radius: 100px;
-            display: flex;
-            align-items: center;
-            gap: 1.5rem;
-            transition: all 0.2s;
-            cursor: pointer;
-        }
-
-        .offer-pill-v4:hover {
-            border-color: var(--v4-primary);
-            background: #EFE7DE;
-            transform: translateY(-2px);
-        }
-
-        .pill-info {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .pill-name {
-            font-weight: 800;
-            color: var(--v4-text);
-            font-size: 0.95rem;
-        }
-
-        .pill-details {
-            font-size: 0.8rem;
-            color: var(--v4-text-muted);
-            font-weight: 600;
-        }
-
-        .pill-delete {
-            width: 28px;
-            height: 28px;
-            border-radius: 50%;
-            background: #fee2e2;
-            color: #ef4444;
-            border: none;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .pill-delete:hover {
-            background: #ef4444;
-            color: white;
-            transform: rotate(90deg);
-        }
-
-        .no-offers-msg {
-            color: var(--v4-text-muted);
-            font-style: italic;
-            font-weight: 500;
-        }
-
-        .visual-badge {
-            background: white;
-            padding: 0.6rem 1.2rem;
-            border-radius: 50px;
-            font-weight: 700;
-            color: var(--v4-primary);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .admin-nav-item.active {
-            background: var(--v4-primary);
-            color: white !important;
-            box-shadow: 0 8px 20px rgba(79, 93, 78, 0.25);
-        }
-
-        /* Offer Settings (Sticky Bar) */
-        .offer-settings-card {
-            background: white;
-            padding: 1.5rem 2rem;
-            border-radius: 1.5rem;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
-            border: 1px solid var(--v4-border);
-            margin-bottom: 2.5rem;
-            position: sticky;
-            top: 20px;
-            z-index: 100;
-        }
-
-        .settings-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 1.5rem;
-            align-items: flex-end;
-        }
-
-        .btn-apply-v4,
-        .btn-remove-v4 {
-            padding: 1.1rem 2.2rem;
-            border-radius: 12px;
-            font-weight: 800;
-            font-size: 1rem;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 0.8rem;
-            transition: all 0.3s;
-            border: none;
-        }
-
-        .btn-apply-v4 {
-            background: var(--v4-primary);
-            color: white;
-            box-shadow: 0 8px 20px rgba(79, 93, 78, 0.2);
-        }
-
-        .btn-remove-v4 {
-            background: #ef4444;
-            color: white;
-            box-shadow: 0 8px 20px rgba(239, 68, 68, 0.2);
-        }
-
-        .setting-action {
-            display: flex;
-            gap: 1rem;
-        }
-
-        .btn-apply-v4:hover,
-        .btn-remove-v4:hover {
-            transform: translateY(-2px);
-            filter: brightness(1.1);
-        }
-
-        .setting-item label {
-            display: block;
-            font-weight: 700;
-            font-size: 0.9rem;
-            color: var(--v4-text-muted);
-            margin-bottom: 0.75rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .input-wrapper-v4 {
-            position: relative;
-            display: flex;
-            align-items: center;
-        }
-
-        .input-wrapper-v4 input {
-            width: 100%;
-            padding: 1rem 1.25rem;
-            background: #F7F3EE;
-            border: 2px solid transparent;
-            border-radius: 12px;
-            font-size: 1.1rem;
-            font-weight: 600;
-            transition: all 0.2s;
-        }
-
-        .input-wrapper-v4 input:focus {
-            background: white;
-            border-color: var(--v4-primary);
-            box-shadow: 0 0 0 4px rgba(79, 93, 78, 0.1);
-            outline: none;
-        }
-
-        .input-wrapper-v4 .unit {
-            position: absolute;
-            right: 1.25rem;
-            font-weight: 800;
-            color: var(--v4-text-muted);
-        }
-
-        .btn-apply-v4 {
-            background: var(--v4-primary);
-            color: white;
-            border: none;
-            padding: 1.1rem 2.5rem;
-            border-radius: 12px;
-            font-weight: 800;
-            font-size: 1.1rem;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            transition: all 0.3s;
-            box-shadow: 0 8px 20px rgba(79, 93, 78, 0.2);
-        }
-
-        .btn-apply-v4:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 12px 25px rgba(79, 93, 78, 0.3);
-            filter: brightness(1.1);
-        }
-
-        .btn-apply-v4-small {
-            padding: 0.8rem 1.8rem;
-            background: var(--v4-primary);
-            border: none;
-            border-radius: 12px;
-            color: white;
-            font-weight: 800;
-            font-size: 0.95rem;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 0.6rem;
-            transition: all 0.3s;
-            box-shadow: 0 4px 12px rgba(79, 93, 78, 0.2);
-            flex-shrink: 0;
-        }
-
-        .btn-apply-v4-small:hover {
-            transform: translateY(-2px);
-            filter: brightness(1.1);
-            box-shadow: 0 8px 20px rgba(79, 93, 78, 0.3);
-        }
-
-        .selection-controls {
-            display: grid;
-            grid-template-columns: 320px 1fr;
-            gap: 2.5rem;
-        }
-
-        /* Sidebar */
-        .filter-group-v4 {
-            background: white;
-            padding: 2rem;
-            border-radius: 1.5rem;
-            border: 1px solid var(--v4-border);
-            margin-bottom: 1.5rem;
-        }
-
-        .filter-group-v4 h3 {
-            font-size: 1.25rem;
-            /* Smaller as requested */
-            font-weight: 800;
-            margin-bottom: 1.5rem;
-            color: var(--v4-text);
-            display: flex;
-            align-items: center;
-            gap: 0.6rem;
-        }
-
-        .control-item {
-            margin-bottom: 1.5rem;
-        }
-
-        .control-item label {
-            display: block;
-            font-size: 0.95rem;
-            /* Smaller as requested */
-            font-weight: 700;
-            margin-bottom: 0.6rem;
-            color: var(--v4-text);
-        }
-
-        .v4-select {
-            width: 100%;
-            padding: 0.7rem 1rem;
-            /* Smaller as requested */
-            background: var(--v4-bg);
-            border: 2px solid var(--v4-border);
-            border-radius: 10px;
-            font-weight: 700;
-            font-size: 0.9rem;
-            /* Smaller text */
-            color: var(--v4-text);
-            cursor: pointer;
-            appearance: none;
-            -webkit-appearance: none;
-            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%2364748b'%3e%3cpath fill-rule='evenodd' d='M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z' clip-rule='evenodd'/%3e%3c/svg%3e");
-            background-repeat: no-repeat;
-            background-position: right 1rem center;
-            background-size: 1.1rem;
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        .v4-select:hover {
-            border-color: var(--v4-primary);
-            background-color: #ffffff;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-        }
-
-        .search-box-v4 {
-            position: relative;
-            z-index: 1;
-            /* Ensure search bar is above other elements if needed */
-        }
-
-        .search-box-v4 i {
-            position: absolute;
-            left: 1rem;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--v4-text-muted);
-            pointer-events: none;
-            /* Allow clicks to pass through to input */
-        }
-
-        .search-box-v4 input {
-            width: 100%;
-            padding: 0.85rem 1rem 0.85rem 2.5rem;
-            background: var(--v4-bg);
-            border: 2px solid var(--v4-border);
-            border-radius: 10px;
-            font-weight: 500;
-        }
-
-        .v4-offer-label {
-            background: #EFE7DE;
-            color: var(--v4-primary);
-            padding: 0.25rem 0.75rem;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: 700;
-            border: 1px solid #d5ccc4;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.4rem;
-        }
-
-        .selection-summary-card {
-            background: linear-gradient(135deg, var(--v4-primary) 0%, var(--v4-primary-dark) 100%);
-            padding: 2rem;
-            border-radius: 1.5rem;
-            color: white;
-            box-shadow: 0 10px 20px rgba(79, 93, 78, 0.1);
-        }
-
-        .summary-stat {
-            text-align: center;
-            margin-bottom: 1rem;
-        }
-
-        .summary-stat span {
-            font-size: 3rem;
-            font-weight: 900;
-            display: block;
-            color: white;
-            /* Changed from primary to white as requested */
-            line-height: 1;
-        }
-
-        .summary-stat label {
-            font-weight: 700;
-            font-size: 0.9rem;
-            opacity: 0.8;
-        }
-
-        .summary-note {
-            font-size: 0.8rem;
-            opacity: 0.6;
-            line-height: 1.4;
-            text-align: center;
-        }
-
-        /* Products List */
-        .products-list-v4 {
-            background: white;
-            border-radius: 1.5rem;
-            border: 1px solid var(--v4-border);
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .list-actions {
-            padding: 1.5rem 2rem;
-            background: #fbfcfd;
-            border-bottom: 1px solid var(--v4-border);
-        }
-
-        .v4-table-wrapper {
-            flex: 1;
-            max-height: 800px;
-            overflow-y: auto;
-        }
-
-        .v4-products-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        .v4-products-table th {
-            text-align: left;
-            padding: 1.25rem 2rem;
-            background: white;
-            position: sticky;
-            top: 0;
-            z-index: 10;
-            font-weight: 700;
-            color: var(--v4-text-muted);
-            font-size: 0.8rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            border-bottom: 1px solid var(--v4-border);
-        }
-
-        .v4-row {
-            transition: background 0.2s;
-        }
-
-        .v4-row:hover {
-            background: var(--v4-bg);
-        }
-
-        .v4-row td {
-            padding: 1.25rem 2rem;
-            border-bottom: 1px solid #f1f5f9;
-            vertical-align: middle;
-        }
-
-        .v4-product-cell {
-            display: flex;
-            align-items: center;
-            gap: 1.25rem;
-        }
-
-        .v4-product-cell img {
-            width: 50px;
-            height: 50px;
-            border-radius: 8px;
-            object-fit: contain;
-            background: var(--v4-bg);
-            border: 1px solid #eef2f6;
-        }
-
-        .v4-p-info {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .v4-p-brand {
-            font-size: 0.75rem;
-            font-weight: 800;
-            color: var(--v4-primary);
-            text-transform: uppercase;
-        }
-
-        .v4-p-name {
-            font-weight: 700;
-            color: var(--v4-text);
-            font-size: 0.85rem;
-            /* Smaller as requested */
-            line-height: 1.3;
-            display: block;
-            margin-top: 0.1rem;
-        }
-
-        .v4-sub-text {
-            font-size: 0.8rem;
-            color: var(--v4-text-muted);
-            font-weight: 500;
-            margin-top: 0.25rem;
-        }
-
-        .v4-cat-badge {
-            display: inline-block;
-            padding: 0.25rem 0.6rem;
-            background: #F7F3EE;
-            border-radius: 6px;
-            font-size: 0.75rem;
-            font-weight: 700;
-            color: #475569;
-        }
-
-        /* New Styles */
-        .btn-new-offer {
-            background: var(--v4-primary);
-            color: white;
-            border: none;
-            padding: 0.7rem 1.4rem;
-            /* Smaller as requested */
-            border-radius: 50px;
-            font-weight: 800;
-            font-size: 1rem;
-            /* Smaller as requested */
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 0.6rem;
-            transition: all 0.3s;
-        }
-
-        .btn-new-offer:hover {
-            transform: scale(1.05);
-            box-shadow: 0 4px 15px rgba(79, 93, 78, 0.3);
-        }
-
-        .pill-actions {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .pill-edit {
-            width: 28px;
-            height: 28px;
-            border-radius: 50%;
-            background: #e0f2fe;
-            color: #0284c7;
-            border: none;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .pill-edit:hover {
-            background: #0284c7;
-            color: white;
-        }
-
-        /* Custom Checkbox */
-        .checkbox-container-v4 {
-            display: block;
-            position: relative;
-            padding-left: 30px;
-            margin-bottom: 0;
-            cursor: pointer;
-            font-size: 1rem;
-            user-select: none;
-            font-weight: 600;
-        }
-
-        .checkbox-container-v4 input {
-            position: absolute;
-            opacity: 0;
-            cursor: pointer;
-            height: 0;
-            width: 0;
-        }
-
-        .checkmark {
-            position: absolute;
-            top: 0;
-            left: 0;
-            height: 22px;
-            width: 22px;
-            background-color: #f1f5f9;
-            border: 2px solid #e2e8f0;
-            border-radius: 6px;
-            transition: all 0.2s;
-        }
-
-        .checkbox-container-v4:hover input~.checkmark {
-            background-color: #e2e8f0;
-        }
-
-        .checkbox-container-v4 input:checked~.checkmark {
-            background-color: var(--v4-primary);
-            border-color: var(--v4-primary);
-        }
-
-        .checkmark:after {
-            content: "";
-            position: absolute;
-            display: none;
-        }
-
-        .checkbox-container-v4 input:checked~.checkmark:after {
-            display: block;
-        }
-
-        .checkbox-container-v4 .checkmark:after {
-            left: 7px;
-            top: 3px;
-            width: 5px;
-            height: 10px;
-            border: solid white;
-            border-width: 0 2px 2px 0;
-            transform: rotate(45deg);
-        }
-
-        @media (max-width: 1024px) {
-            .selection-controls {
-                grid-template-columns: 1fr;
-            }
-
-            .settings-grid {
-                grid-template-columns: 1fr;
-                gap: 1rem;
-            }
-
-            .setting-action {
-                grid-column: span 1;
-            }
-        }
-
-        @media (max-width: 768px) {
-            .admin-page-container {
-                padding: 1rem 0.75rem;
-            }
-
-            .bulk-header-v4 {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 1.5rem;
-                margin-bottom: 2rem;
-            }
-
-            .v4-title {
-                font-size: 1.8rem;
-            }
-
-            .btn-new-offer {
-                width: 100%;
-                justify-content: center;
-            }
-
-            /* Step 1: Offer Details Form */
-            .offer-settings-card {
-                padding: 1.25rem;
-                border-radius: 12px;
-            }
-
-            .setting-item label {
-                font-size: 0.85rem;
-                margin-bottom: 0.4rem;
-            }
-
-            .input-wrapper-v4 input {
-                padding: 0.6rem 0.75rem !important;
-                /* Shorter as requested */
-                font-size: 0.95rem !important;
-                height: 42px !important;
-            }
-
-            .btn-apply-v4-small {
-                width: 100%;
-                height: 48px;
-                justify-content: center;
-                font-size: 1rem;
-            }
-
-            /* Step 2: Filters & Selection */
-            .products-selection-section {
-                padding: 0;
-                background: transparent;
-                box-shadow: none;
-            }
-
-            .selection-controls {
-                display: flex;
-                flex-direction: column;
-                gap: 1.5rem;
-            }
-
-            .filters-sidebar {
-                padding: 1.25rem;
-                background: white;
-                border: 1px solid var(--v4-border);
-                border-radius: 12px;
-                order: 1;
-            }
-
-            .filter-group-v4 h3 {
-                margin-bottom: 1rem;
-                font-size: 1rem;
-            }
-
-            .filter-group-v4 {
-                display: flex;
-                flex-direction: column;
-                gap: 0.75rem;
-            }
-
-            .v4-select {
-                height: 42px;
-                font-size: 0.9rem;
-            }
-
-            .selection-summary-card {
-                order: 2;
-                margin-top: -0.75rem;
-            }
-
-            .products-list-v4 {
-                order: 3;
-                background: transparent;
-                padding: 0;
-                box-shadow: none;
-                width: 100%;
-                overflow: hidden;
-                /* Prevent horizontal scroll */
-            }
-
-            .list-actions {
-                flex-direction: column !important;
-                padding: 0 !important;
-                gap: 1rem !important;
-                align-items: stretch !important;
-                background: transparent !important;
-                margin-bottom: 1rem;
-            }
-
-            .search-box-v4 {
-                max-width: 100% !important;
-                width: 100% !important;
-            }
-
-            .search-box-v4 input {
-                height: 46px !important;
-                font-size: 0.95rem !important;
-            }
-
-            .list-actions .checkbox-container-v4 {
-                background: white;
-                padding: 0.75rem 1rem 0.75rem 35px !important;
-                border: 1px solid var(--v4-border);
-                border-radius: 10px;
-                font-size: 0.9rem;
-            }
-
-            /* List View for Products */
-            .v4-table-wrapper {
-                background: transparent !important;
-                border: none !important;
-                padding: 0 !important;
-                overflow: visible !important;
-                width: 100% !important;
-            }
-
-            .v4-products-table {
-                display: block !important;
-                width: 100% !important;
-            }
-
-            .v4-products-table thead {
-                display: none !important;
-            }
-
-            .v4-products-table tbody {
-                display: flex !important;
-                flex-direction: column !important;
-                gap: 0.75rem !important;
-                width: 100% !important;
-            }
-
-            .v4-products-table tr.v4-row {
-                display: grid !important;
-                grid-template-columns: 40px 1fr !important;
-                grid-template-areas:
-                    "check info"
-                    "check offer";
-                column-gap: 0.75rem !important;
-                row-gap: 0.5rem !important;
-                background: white !important;
-                border: 1px solid var(--v4-border) !important;
-                border-radius: 14px !important;
-                padding: 1.25rem 0.75rem !important;
-                align-items: center !important;
-                width: 100% !important;
-                box-sizing: border-box !important;
-                height: auto !important;
-                position: relative !important;
-                margin-bottom: 0.25rem;
-            }
-
-            .v4-product-cell {
-                flex-direction: column !important;
-                align-items: flex-start !important;
-                gap: 0.25rem !important;
-                padding-right: 70px !important;
-                /* Space for absolute img/price */
-            }
-
-            .v4-p-name {
-                font-size: 1rem !important;
-                font-weight: 700 !important;
-                color: var(--v4-text);
-                line-height: 1.3 !important;
-                display: -webkit-box !important;
-                -webkit-line-clamp: 2 !important;
-                line-clamp: 2 !important;
-                -webkit-box-orient: vertical !important;
-                overflow: hidden !important;
-                white-space: normal !important;
-            }
-
-            .v4-products-table tr.v4-row td:nth-child(5) {
-                /* Price */
-                position: absolute !important;
-                right: 0.75rem !important;
-                bottom: 1.25rem !important;
-                display: block !important;
-            }
-
-            .v4-price {
-                font-size: 1.1rem !important;
-                font-weight: 800 !important;
-                color: var(--v4-primary);
-            }
-
-            .v4-product-cell img {
-                width: 55px !important;
-                height: 55px !important;
-                position: absolute !important;
-                right: 0.75rem !important;
-                top: 1.25rem !important;
-            }
-
-            .v4-p-brand {
-                display: none !important;
-                /* Hide brand on mobile as requested */
-            }
-
-            .v4-p-name {
-                font-size: 0.95rem !important;
-                max-width: 80% !important;
-                /* Make room for image */
-            }
-
-            .v4-price {
-                font-size: 1.1rem !important;
-                font-weight: 800 !important;
-                color: var(--v4-primary);
-                position: absolute;
-                right: 0.75rem;
-                top: 5rem;
-            }
-
-            .v4-offer-label {
-                font-size: 0.7rem !important;
-                margin-top: 0.25rem;
-                display: inline-flex;
-            }
-        }
-    </style>
-
-    <script id="categories-data" type="application/json">
-    {{ categories | tojson | safe }}
-</script>
-
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            console.log("Bulk Offers Script: Initializing...");
-
-            // Get core elements
-            const bulkForm = document.getElementById('bulkOfferForm');
-            const productSearch = document.getElementById('bulkProductSearch');
-            const brandFilter = document.getElementById('brandFilter');
-            const categoryFilter = document.getElementById('categoryFilter');
-            const subcategoryFilter = document.getElementById('subcategoryFilter');
-            const offerFilter = document.getElementById('offerFilter');
-            const selectAll = document.getElementById('selectAll');
-            const selectedCountSpan = document.getElementById('selectedCount');
-            const categoriesData = JSON.parse(document.getElementById('categories-data').textContent);
-            
-            // Offer type elements
-            const offerTypeSelect = document.getElementById('offerType');
-            const discountItem = document.getElementById('discountItem');
-            const multiBuyItem = document.getElementById('multiBuyItem');
-
-            // Handle offer type change
-            if (offerTypeSelect) {
-                offerTypeSelect.addEventListener('change', function () {
-                    if (this.value === 'discount') {
-                        discountItem.style.display = 'block';
-                        multiBuyItem.style.display = 'none';
-                    } else {
-                        discountItem.style.display = 'none';
-                        multiBuyItem.style.display = 'block';
-                    }
-                });
-            }
-
-            // Function to perform filtering
-            function runFiltering() {
-                const searchVal = (productSearch.value || "").toLowerCase().trim();
-                const brandVal = (brandFilter.value || "all").toLowerCase();
-                const catVal = (categoryFilter.value || "all").toLowerCase();
-                const subVal = (subcategoryFilter.value || "all").toLowerCase();
-                const offerVal = (offerFilter.value || "all").toLowerCase();
-
-                console.log("Filtering:", { searchVal, brandVal, catVal, subVal, offerVal });
-
-                const rows = document.querySelectorAll('.v4-row');
-                let visibleCount = 0;
-
-                rows.forEach(row => {
-                    const name = (row.getAttribute('data-name') || "").toLowerCase();
-                    const brand = (row.getAttribute('data-brand') || "").toLowerCase();
-                    const category = (row.getAttribute('data-category') || "").toLowerCase();
-                    const subcategory = (row.getAttribute('data-subcategory') || "").toLowerCase();
-                    const offer = (row.getAttribute('data-offer') || "").toLowerCase();
-
-                    let matchesSearch = true;
-                    if (searchVal) {
-                        const terms = searchVal.split(' ').filter(t => t);
-                        matchesSearch = terms.every(t => name.includes(t) || brand.includes(t));
-                    }
-                    const matchesBrand = brandVal === 'all' || brand.trim() === brandVal.trim();
-                    const matchesCat = catVal === 'all' || category === catVal;
-                    const matchesSub = subVal === 'all' || subcategory === subVal;
-                    const matchesOffer = offerVal === 'all' || offer === offerVal;
-
-                    if (matchesSearch && matchesBrand && matchesCat && matchesSub && matchesOffer) {
-                        row.style.display = 'table-row';
-                        visibleCount++;
-                    } else {
-                        row.style.display = 'none';
-                    }
-                });
-
-                console.log("Visible rows:", visibleCount);
-                updateSelectedCount();
-            }
-
-            // Global access for onclick handlers
-            window.filterProducts = runFiltering;
-
-            // Event Listeners
-            if (productSearch) {
-                productSearch.addEventListener('input', runFiltering);
-                productSearch.addEventListener('keyup', runFiltering);
-                productSearch.addEventListener('keydown', function (e) {
-                    if (e.key === 'Enter') {
-                        e.preventDefault();
-                        runFiltering();
-                        return false;
-                    }
-                });
-            }
-
-            if (brandFilter) brandFilter.addEventListener('change', runFiltering);
-            if (categoryFilter) {
-                categoryFilter.addEventListener('change', () => {
-                    updateSubcategories();
-                    runFiltering();
-                });
-            }
-            if (subcategoryFilter) subcategoryFilter.addEventListener('change', runFiltering);
-            if (offerFilter) offerFilter.addEventListener('change', runFiltering);
-
-            // Block Enter key submission for the entire form
-            if (bulkForm) {
-                bulkForm.addEventListener('keydown', function (e) {
-                    if (e.key === 'Enter') {
-                        const nodename = e.target.nodeName.toUpperCase();
-                        if (nodename === 'INPUT' && e.target.type !== 'submit') {
-                            e.preventDefault();
-                            return false;
-                        }
-                    }
-                });
-            }
-
-            // Subcategory helper
-            function updateSubcategories() {
-                const selected = categoryFilter.value;
-                const subs = categoriesData[selected] || [];
-                subcategoryFilter.innerHTML = '<option value="all">Të gjitha</option>';
-                subs.forEach(s => {
-                    const opt = document.createElement('option');
-                    opt.value = s;
-                    opt.textContent = s;
-                    subcategoryFilter.appendChild(opt);
-                });
-            }
-
-            // Selection Logic
-            if (selectAll) {
-                selectAll.addEventListener('change', function () {
-                    const isChecked = this.checked;
-                    const visibleCheckboxes = document.querySelectorAll('.v4-row[style*="display: table-row"] .product-checkbox');
-                    // Fallback if style attribute is empty (default state)
-                    const rows = document.querySelectorAll('.v4-row');
-                    rows.forEach(row => {
-                        if (row.style.display !== 'none') {
-                            const cb = row.querySelector('.product-checkbox');
-                            if (cb) cb.checked = isChecked;
-                        }
-                    });
-                    updateSelectedCount();
-                });
-            }
-
-            // Checkbox changes
-            document.addEventListener('change', function (e) {
-                if (e.target.classList.contains('product-checkbox')) {
-                    updateSelectedCount();
-                }
-            });
-
-            function updateSelectedCount() {
-                if (selectedCountSpan) {
-                    const count = document.querySelectorAll('.product-checkbox:checked').length;
-                    selectedCountSpan.textContent = count;
-                }
-            }
-
-            // External Actions
-            window.toggleOfferForm = function () {
-                const section = document.getElementById('offerCreationSection');
-                if (!section) return;
-                if (section.style.display === 'none') {
-                    section.style.display = 'block';
-                    setTimeout(() => {
-                        section.style.opacity = '1';
-                        section.style.transform = 'translateY(0)';
-                    }, 10);
-                    window.scrollTo({ top: section.offsetTop - 100, behavior: 'smooth' });
-                } else {
-                    section.style.opacity = '0';
-                    section.style.transform = 'translateY(20px)';
-                    setTimeout(() => {
-                        section.style.display = 'none';
-                    }, 400);
-                }
-            }
-
-            window.filterByOffer = function (offerName) {
-                if (offerFilter) {
-                    const target = offerName.toLowerCase().trim();
-                    let match = 'all';
-                    Array.from(offerFilter.options).forEach(opt => {
-                        if (opt.value.toLowerCase().trim() === target) match = opt.value;
-                    });
-                    offerFilter.value = match;
-                    runFiltering();
-                    const table = document.querySelector('.products-list-v4');
-                    if (table) window.scrollTo({ top: table.offsetTop - 150, behavior: 'smooth' });
-                }
-            }
-
-            window.editOffer = function (name, type, value, expiry) {
-                // Reset all filters
-                if (offerFilter) offerFilter.value = 'all';
-                if (brandFilter) brandFilter.value = 'all';
-                if (categoryFilter) {
-                    categoryFilter.value = 'all';
-                    updateSubcategories();
-                }
-                if (productSearch) productSearch.value = '';
-                runFiltering();
-
-                const section = document.getElementById('offerCreationSection');
-                if (section && section.style.display === 'none') window.toggleOfferForm();
-
-                const nInp = document.querySelector('input[name="offer_name"]');
-                const tInp = document.querySelector('select[name="offer_type"]');
-                const dInp = document.querySelector('input[name="discount_percent"]');
-                const mInp = document.querySelector('select[name="multi_buy_type"]');
-                const uInp = document.querySelector('input[name="discount_until"]');
-
-                if (nInp) nInp.value = name;
-                if (tInp) {
-                    tInp.value = type;
-                    tInp.dispatchEvent(new Event('change'));
-                }
-                if (type === 'discount' && dInp) dInp.value = value;
-                if (type === 'multi_buy' && mInp) mInp.value = value;
-                if (uInp) uInp.value = expiry || '';
-
-                const rows = document.querySelectorAll('.v4-row');
-                rows.forEach(row => {
-                    const rowOffer = (row.getAttribute('data-offer') || "").toLowerCase();
-                    const cb = row.querySelector('.product-checkbox');
-                    if (cb) {
-                        if (rowOffer === name.toLowerCase()) {
-                            cb.checked = true;
-                            row.style.background = '#EFE7DE';
-                        } else {
-                            cb.checked = false;
-                            row.style.background = '';
-                        }
-                    }
-                });
-                updateSelectedCount();
-            }
+</div>
+</form>
+
+<script>
+/* ════════════════════════════════════════
+   CUSTOM SELECT
+════════════════════════════════════════ */
+let _openCsel = null;
+function toggleCsel(id) {
+    const panel = document.getElementById(id+'Panel');
+    const trigger = document.querySelector('#'+id+' .csel-trigger');
+    if (_openCsel && _openCsel !== id) closeCselById(_openCsel);
+    if (panel.classList.contains('open')) { closeCselById(id); }
+    else { panel.classList.add('open'); trigger.classList.add('open'); _openCsel = id; }
+}
+function closeCselById(id) {
+    const panel = document.getElementById(id+'Panel');
+    const trigger = document.querySelector('#'+id+' .csel-trigger');
+    if (panel) panel.classList.remove('open');
+    if (trigger) trigger.classList.remove('open');
+    if (_openCsel === id) _openCsel = null;
+}
+function pickCsel(id, value, icon, label) {
+    document.getElementById(id+'Label').textContent = label;
+    // mark selected
+    document.querySelectorAll('#'+id+'Panel .csel-opt').forEach(o => {
+        o.classList.toggle('selected', o.dataset.value === value);
+    });
+    closeCselById(id);
+    // update hidden input
+    if (id === 'cselType') document.getElementById('offerTypeVal').value = value;
+    if (id === 'cselMB')   document.getElementById('multiBuyTypeVal').value = value;
+}
+
+/* Category picker */
+let catFilter = '';
+function pickCat(val) {
+    catFilter = val;
+    const label = val || 'Kategoria';
+    document.getElementById('cselCatLabel').textContent = label;
+    document.querySelectorAll('#cselCatPanel .csel-opt').forEach(o => {
+        o.classList.toggle('selected', o.dataset.value === val);
+    });
+    closeCselById('cselCat');
+    currentPage = 1;
+    applyFilters();
+}
+
+/* Close any open csel on outside click */
+document.addEventListener('click', e => {
+    if (_openCsel) {
+        const el = document.getElementById(_openCsel);
+        if (el && !el.contains(e.target)) closeCselById(_openCsel);
+    }
+    if (!document.getElementById('msWrap').contains(e.target)) closeBrandDD();
+    if (!document.getElementById('cdpWrap').contains(e.target)) closeCdp();
+});
+
+function toggleOfferType() {
+    const v = document.getElementById('offerTypeVal').value;
+    document.getElementById('discountField').style.display  = v==='discount'  ? '' : 'none';
+    document.getElementById('multiBuyField').style.display  = v==='multi_buy' ? '' : 'none';
+}
+
+/* ════════════════════════════════════════
+   CUSTOM DATE PICKER
+════════════════════════════════════════ */
+const MONTHS_ALB = ['Janar','Shkurt','Mars','Prill','Maj','Qershor','Korrik','Gusht','Shtator','Tetor','Nëntor','Dhjetor'];
+const DAYS_ALB   = ['Hë','Ma','Më','En','Pr','Sh','Di'];
+let cdpYear, cdpMonth, cdpSelected = null;
+
+function initCdp() {
+    const now = new Date();
+    cdpYear  = now.getFullYear();
+    cdpMonth = now.getMonth();
+    renderCdp();
+}
+function toggleCdp() {
+    const panel = document.getElementById('cdpPanel');
+    if (panel.classList.contains('open')) { closeCdp(); return; }
+    // Smart direction: flip up if not enough space below
+    const trigger = document.getElementById('cdpTrigger');
+    const rect = trigger.getBoundingClientRect();
+    const spaceBelow = window.innerHeight - rect.bottom;
+    panel.classList.toggle('drop-up', spaceBelow < 320);
+    panel.classList.add('open');
+    trigger.classList.add('open');
+    renderCdp();
+}
+function closeCdp() {
+    document.getElementById('cdpPanel').classList.remove('open');
+    document.getElementById('cdpTrigger').classList.remove('open');
+}
+function cdpNav(dir) {
+    cdpMonth += dir;
+    if (cdpMonth > 11) { cdpMonth = 0; cdpYear++; }
+    if (cdpMonth < 0)  { cdpMonth = 11; cdpYear--; }
+    renderCdp();
+}
+function renderCdp() {
+    document.getElementById('cdpMonthYear').textContent = MONTHS_ALB[cdpMonth]+' '+cdpYear;
+    // Weekday headers
+    const wdEl = document.getElementById('cdpWeekdays');
+    wdEl.innerHTML = DAYS_ALB.map(d=>`<div class="cdp-wd">${d}</div>`).join('');
+    // Days
+    const firstDay = new Date(cdpYear, cdpMonth, 1).getDay(); // 0=Sun
+    const startOffset = (firstDay + 6) % 7; // Mon-first
+    const daysInMonth = new Date(cdpYear, cdpMonth+1, 0).getDate();
+    const today = new Date(); today.setHours(0,0,0,0);
+    let html = '';
+    for (let i=0; i<startOffset; i++) html += '<div class="cdp-day empty"></div>';
+    for (let d=1; d<=daysInMonth; d++) {
+        const date = new Date(cdpYear, cdpMonth, d);
+        const isPast = date < today;
+        const isSel = cdpSelected && date.toDateString()===cdpSelected.toDateString();
+        const isToday = date.toDateString()===today.toDateString();
+        html += `<div class="cdp-day${isSel?' selected':''}${isToday&&!isSel?' today':''}${isPast?' disabled':''}"
+                      onclick="${isPast?'':'selectDay('+d+')'}">
+                    ${d}
+                 </div>`;
+    }
+    document.getElementById('cdpDays').innerHTML = html;
+}
+function selectDay(d) {
+    cdpSelected = new Date(cdpYear, cdpMonth, d);
+    const y = cdpSelected.getFullYear();
+    const m = String(cdpSelected.getMonth()+1).padStart(2,'0');
+    const day = String(cdpSelected.getDate()).padStart(2,'0');
+    const iso = `${y}-${m}-${day}`;
+    document.getElementById('discountUntilVal').value = iso;
+    document.getElementById('cdpDisplay').textContent = `${d} ${MONTHS_ALB[cdpSelected.getMonth()]} ${y}`;
+    document.getElementById('cdpTrigger').classList.add('has-value');
+    renderCdp();
+    closeCdp();
+}
+function clearDate() {
+    cdpSelected = null;
+    document.getElementById('discountUntilVal').value = '';
+    document.getElementById('cdpDisplay').textContent = 'Zgjidh datën...';
+    document.getElementById('cdpTrigger').classList.remove('has-value');
+    const now = new Date();
+    cdpYear = now.getFullYear(); cdpMonth = now.getMonth();
+    renderCdp();
+}
+function setCdpValue(isoStr) {
+    if (!isoStr) { clearDate(); return; }
+    const [y,m,d] = isoStr.split('-').map(Number);
+    cdpSelected = new Date(y, m-1, d);
+    cdpYear = y; cdpMonth = m-1;
+    document.getElementById('discountUntilVal').value = isoStr;
+    document.getElementById('cdpDisplay').textContent = `${d} ${MONTHS_ALB[m-1]} ${y}`;
+    document.getElementById('cdpTrigger').classList.add('has-value');
+    renderCdp();
+}
+
+/* ════════════════════════════════════════
+   CUSTOM DATE PICKER — FROM (start date)
+════════════════════════════════════════ */
+let cdpFromYear, cdpFromMonth, cdpFromSelected = null;
+
+function initCdpFrom() {
+    const now = new Date();
+    cdpFromYear = now.getFullYear(); cdpFromMonth = now.getMonth();
+    renderCdpFrom();
+    // Weekday headers (same as main CDP)
+    const wd = document.getElementById('cdpFromWeekdays');
+    if (wd) { wd.innerHTML = ''; DAYS_ALB.forEach(d => { const s = document.createElement('div'); s.className = 'cdp-wd'; s.textContent = d; wd.appendChild(s); }); }
+}
+function renderCdpFrom() {
+    const el = document.getElementById('cdpFromDays');
+    const my = document.getElementById('cdpFromMonthYear');
+    if (!el || !my) return;
+    my.textContent = `${MONTHS_ALB[cdpFromMonth]} ${cdpFromYear}`;
+    const first = new Date(cdpFromYear, cdpFromMonth, 1).getDay();
+    const offset = (first + 6) % 7;
+    const days = new Date(cdpFromYear, cdpFromMonth + 1, 0).getDate();
+    el.innerHTML = '';
+    for (let i = 0; i < offset; i++) { const e = document.createElement('div'); e.className = 'cdp-day empty'; el.appendChild(e); }
+    for (let d = 1; d <= days; d++) {
+        const e = document.createElement('div'); e.className = 'cdp-day';
+        const date = new Date(cdpFromYear, cdpFromMonth, d);
+        const today = new Date(); today.setHours(0,0,0,0);
+        if (date.toDateString() === today.toDateString()) e.classList.add('today');
+        if (cdpFromSelected && date.toDateString() === cdpFromSelected.toDateString()) e.classList.add('selected');
+        e.textContent = d;
+        e.onclick = () => selectFromDay(d);
+        el.appendChild(e);
+    }
+}
+function toggleCdpFrom() {
+    const panel = document.getElementById('cdpFromPanel');
+    if (panel.classList.contains('open')) { closeCdpFrom(); return; }
+    document.getElementById('cdpPanel').classList.remove('open');
+    document.getElementById('cdpFromTrigger').classList.add('open');
+    panel.classList.add('open');
+    renderCdpFrom();
+}
+function closeCdpFrom() {
+    document.getElementById('cdpFromPanel').classList.remove('open');
+    document.getElementById('cdpFromTrigger').classList.remove('open');
+}
+function cdpFromNav(dir) { cdpFromMonth += dir; if (cdpFromMonth > 11) { cdpFromMonth = 0; cdpFromYear++; } else if (cdpFromMonth < 0) { cdpFromMonth = 11; cdpFromYear--; } renderCdpFrom(); }
+function selectFromDay(d) {
+    cdpFromSelected = new Date(cdpFromYear, cdpFromMonth, d);
+    const y = cdpFromSelected.getFullYear();
+    const m = String(cdpFromSelected.getMonth()+1).padStart(2,'0');
+    const day = String(cdpFromSelected.getDate()).padStart(2,'0');
+    const iso = `${y}-${m}-${day}`;
+    document.getElementById('discountFromVal').value = iso;
+    document.getElementById('cdpFromDisplay').textContent = `${d} ${MONTHS_ALB[cdpFromSelected.getMonth()]} ${y}`;
+    document.getElementById('cdpFromTrigger').classList.add('has-value');
+    renderCdpFrom();
+    closeCdpFrom();
+}
+function clearFromDate() {
+    cdpFromSelected = null;
+    document.getElementById('discountFromVal').value = '';
+    document.getElementById('cdpFromDisplay').textContent = 'Sot (default)';
+    document.getElementById('cdpFromTrigger').classList.remove('has-value');
+    const now = new Date(); cdpFromYear = now.getFullYear(); cdpFromMonth = now.getMonth();
+    renderCdpFrom();
+}
+function setCdpFromValue(isoStr) {
+    if (!isoStr) { clearFromDate(); return; }
+    const [y,m,d] = isoStr.split('-').map(Number);
+    cdpFromSelected = new Date(y, m-1, d);
+    cdpFromYear = y; cdpFromMonth = m-1;
+    document.getElementById('discountFromVal').value = isoStr;
+    document.getElementById('cdpFromDisplay').textContent = `${d} ${MONTHS_ALB[m-1]} ${y}`;
+    document.getElementById('cdpFromTrigger').classList.add('has-value');
+    renderCdpFrom();
+}
+// Close from-CDP on outside click
+document.addEventListener('click', e => {
+    if (!document.getElementById('cdpFromWrap').contains(e.target)) closeCdpFrom();
+});
+initCdpFrom();
+
+/* ════════════════════════════════════════
+   PRODUCT STATE
+════════════════════════════════════════ */
+const PAGE_SIZE = 100;
+let currentPage = 1;
+let selectedIds = new Set();
+let filteredData = [];
+let pinnedOffer = '';
+let searchQ = '';
+let brandFilter = new Set();
+
+document.addEventListener('DOMContentLoaded', () => {
+    filteredData = [...PD];
+    renderPage();
+    updateCount();
+    initCdp();
+
+    // ── Search ──
+    let t;
+    document.getElementById('offSearch').addEventListener('input', e => {
+        clearTimeout(t);
+        t = setTimeout(() => { searchQ = e.target.value.toLowerCase().trim(); currentPage=1; applyFilters(); }, 220);
+    });
+    document.getElementById('offSearch').addEventListener('keydown', e => { if (e.key==='Enter') e.preventDefault(); });
+
+    // ── Active offer rows — use data-* attributes to avoid tojson-in-onclick escaping bugs ──
+    document.querySelectorAll('.aor').forEach(row => {
+        row.addEventListener('click', function(e) {
+            // If the delete button was clicked, handle that instead
+            const delBtn = e.target.closest('.aor-del');
+            if (delBtn) { e.stopPropagation(); deleteOffer(delBtn.dataset.offer); return; }
+            loadOffer(this.dataset.name, this.dataset.type, this.dataset.value, this.dataset.expiry, this.dataset.start);
         });
+    });
 
-        // Modal close on click outside
-        window.onclick = function (event) {
-            const modal = document.getElementById('offerDetailsModal');
-            if (event.target == modal) closeModal();
+    // ── Form submit: inject hidden inputs for ALL selected IDs (not just the visible page) ──
+    document.getElementById('offForm').addEventListener('submit', function() {
+        // Re-sync date pickers from JS state so browser autofill / DOM quirks can't clear them
+        console.log('[offForm] cdpFromSelected:', cdpFromSelected, 'discountFromVal:', document.getElementById('discountFromVal').value);
+        if (cdpFromSelected) {
+            const y = cdpFromSelected.getFullYear();
+            const m = String(cdpFromSelected.getMonth()+1).padStart(2,'0');
+            const d = String(cdpFromSelected.getDate()).padStart(2,'0');
+            document.getElementById('discountFromVal').value = `${y}-${m}-${d}`;
         }
-    </script>
-    {% endblock %}
+        if (typeof cdpSelected !== 'undefined' && cdpSelected) {
+            const y = cdpSelected.getFullYear();
+            const m = String(cdpSelected.getMonth()+1).padStart(2,'0');
+            const d = String(cdpSelected.getDate()).padStart(2,'0');
+            document.getElementById('discountUntilVal').value = `${y}-${m}-${d}`;
+        }
+        // Remove previously injected dynamic inputs
+        this.querySelectorAll('.sel-hidden').forEach(el => el.remove());
+        // Add one hidden input per selected product
+        selectedIds.forEach(id => {
+            const inp = document.createElement('input');
+            inp.type = 'hidden';
+            inp.name = 'selected_products';
+            inp.value = id;
+            inp.className = 'sel-hidden';
+            this.appendChild(inp);
+        });
+    });
+});
+
+/* ════════════════════════════════════════
+   FILTERING & RENDERING
+════════════════════════════════════════ */
+function applyFilters() {
+    filteredData = PD.filter(p => {
+        const matchQ = !searchQ || (p.n+' '+p.b).toLowerCase().includes(searchQ);
+        const matchC = !catFilter || p.c === catFilter;
+        const matchB = brandFilter.size===0 || brandFilter.has(p.b);
+        return matchQ && matchC && matchB;
+    });
+    if (pinnedOffer) {
+        filteredData.sort((a,b) => {
+            const aP = a.on.toLowerCase()===pinnedOffer ? 0 : 1;
+            const bP = b.on.toLowerCase()===pinnedOffer ? 0 : 1;
+            return aP - bP;
+        });
+    }
+    currentPage = 1;
+    renderPage();
+}
+
+function renderPage() {
+    const start = (currentPage-1)*PAGE_SIZE;
+    const slice = filteredData.slice(start, start+PAGE_SIZE);
+    const list  = document.getElementById('prodList');
+
+    if (filteredData.length === 0) {
+        list.innerHTML = `<div class="adm-empty" style="border:none;padding:2.5rem 1rem;">
+            <div class="adm-empty-icon"><i class="fas fa-search"></i></div>
+            <p class="adm-empty-title">Nuk u gjet asnjë produkt</p>
+            <p class="adm-empty-desc">Provo të ndryshosh filtrat ose fjalën e kërkimit.</p>
+        </div>`;
+        document.getElementById('pager').style.display = 'none';
+        return;
+    }
+
+    list.innerHTML = slice.map(p => {
+        const chk = selectedIds.has(p.id);
+        const tag = p.on ? `<span class="off-offer-tag" title="${esc(p.on)}"><i class="fas fa-tag"></i> ${esc(p.on)}</span>` : '';
+        return `<div class="off-prod-row${chk?' selected':''}" onclick="toggleRow('${p.id}',this)">
+            <input type="checkbox" value="${p.id}" ${chk?'checked':''}
+                   onclick="event.stopPropagation();" onchange="onCbChange('${p.id}',this)">
+            <img class="off-prod-img" src="${esc(p.img||'/static/img/placeholder.png')}"
+                 onerror="this.src='/static/img/placeholder.png'" loading="lazy" alt="">
+            <div class="off-prod-info">
+                <span class="off-prod-brand">${esc(p.b||'—')}</span>
+                <span class="off-prod-name">${esc(p.n)}</span>
+                <span class="off-prod-cat">${esc(p.c)}${p.sc?' · '+esc(p.sc):''}</span>
+            </div>
+            <div>${tag}</div>
+            <span class="off-prod-price">€${p.p.toFixed(2)}</span>
+        </div>`;
+    }).join('');
+
+    renderPagination();
+    syncSelectAll();
+}
+
+function esc(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function renderPagination() {
+    const total = filteredData.length;
+    const totalPages = Math.ceil(total / PAGE_SIZE);
+    const pager = document.getElementById('pager');
+    if (totalPages <= 1) { pager.style.display='none'; return; }
+    pager.style.display='grid';
+
+    let btns = `<button class="pg-btn" onclick="goPage(${currentPage-1})" ${currentPage===1?'disabled':''}>‹</button>`;
+    getPageRange(currentPage,totalPages).forEach(pg => {
+        if (pg==='…') btns+=`<span style="padding:0 .2rem;color:#9aa095;font-size:.85rem;">…</span>`;
+        else btns+=`<button class="pg-btn ${pg===currentPage?'active':''}" onclick="goPage(${pg})">${pg}</button>`;
+    });
+    btns += `<button class="pg-btn" onclick="goPage(${currentPage+1})" ${currentPage===totalPages?'disabled':''}>›</button>`;
+
+    pager.innerHTML = `<span class="pg-info">Fq. ${currentPage}/${totalPages} · ${total} produkte</span>
+        <div class="pg-buttons">${btns}</div>
+        <div></div>`;
+}
+
+function getPageRange(cur, total) {
+    if (total<=7) return Array.from({length:total},(_,i)=>i+1);
+    const r=[];
+    if (cur<=4)       { for(let i=1;i<=5;i++) r.push(i); r.push('…'); r.push(total); }
+    else if(cur>=total-3){ r.push(1); r.push('…'); for(let i=total-4;i<=total;i++) r.push(i); }
+    else { r.push(1); r.push('…'); for(let i=cur-1;i<=cur+1;i++) r.push(i); r.push('…'); r.push(total); }
+    return r;
+}
+
+function goPage(p) {
+    const max = Math.ceil(filteredData.length/PAGE_SIZE);
+    if (p<1||p>max) return;
+    currentPage=p; renderPage();
+    document.getElementById('prodList').scrollTop=0;
+}
+
+/* ════════════════════════════════════════
+   SELECTION
+════════════════════════════════════════ */
+function toggleRow(id,row) {
+    if (selectedIds.has(id)) { selectedIds.delete(id); row.classList.remove('selected'); row.querySelector('input').checked=false; }
+    else                     { selectedIds.add(id);    row.classList.add('selected');    row.querySelector('input').checked=true; }
+    updateCount(); syncSelectAll();
+}
+function onCbChange(id,cb) {
+    const row=cb.closest('.off-prod-row');
+    if(cb.checked){selectedIds.add(id);row.classList.add('selected');}
+    else{selectedIds.delete(id);row.classList.remove('selected');}
+    updateCount(); syncSelectAll();
+}
+function toggleAll(masterCb) {
+    const start=(currentPage-1)*PAGE_SIZE;
+    filteredData.slice(start,start+PAGE_SIZE).forEach(p => {
+        if(masterCb.checked) selectedIds.add(p.id); else selectedIds.delete(p.id);
+    });
+    renderPage(); updateCount();
+}
+function syncSelectAll() {
+    const slice=filteredData.slice((currentPage-1)*PAGE_SIZE,(currentPage)*PAGE_SIZE);
+    const checked=slice.filter(p=>selectedIds.has(p.id)).length;
+    const sa=document.getElementById('selectAll');
+    if(checked===0){sa.checked=false;sa.indeterminate=false;}
+    else if(checked===slice.length){sa.checked=true;sa.indeterminate=false;}
+    else{sa.checked=false;sa.indeterminate=true;}
+}
+function updateCount() {
+    const n=selectedIds.size;
+    const badge=document.getElementById('selBadge');
+    badge.textContent=n;
+    badge.classList.add('pop');
+    setTimeout(()=>badge.classList.remove('pop'),200);
+}
+
+/* ════════════════════════════════════════
+   LOAD OFFER
+════════════════════════════════════════ */
+function loadOffer(name, type, value, expiry, start) {
+    // Offer name
+    document.getElementById('offerName').value = name;
+
+    // Offer type custom select
+    const typeLabel = type==='discount' ? 'Zbritje (%)' : 'Multi Buy';
+    document.getElementById('cselTypeLabel').textContent = typeLabel;
+    document.querySelectorAll('#cselTypePanel .csel-opt').forEach(o => {
+        o.classList.toggle('selected', o.dataset.value === type);
+    });
+    document.getElementById('offerTypeVal').value = type;
+    toggleOfferType();
+
+    if (type === 'discount') {
+        document.getElementById('discountPercent').value = value;
+    } else {
+        const strVal = String(value);
+        const mbLabels = {'1+1':'1+1 — Bli 1, Merr 1 Falas','2+1':'2+1 — Bli 2, Merr 1 Falas','3+1':'3+1 — Bli 3, Merr 1 Falas','buy2get50':'Bli 2, Merr 50% Zbritje'};
+        document.getElementById('cselMBLabel').textContent = mbLabels[strVal] || strVal;
+        document.querySelectorAll('#cselMBPanel .csel-opt').forEach(o => {
+            o.classList.toggle('selected', o.dataset.value === strVal);
+        });
+        document.getElementById('multiBuyTypeVal').value = strVal;
+    }
+
+    // Start date
+    setCdpFromValue(start || '');
+
+    // Expiry date
+    setCdpValue(expiry || '');
+
+    // Highlight the clicked offer row
+    document.querySelectorAll('.aor').forEach(r => {
+        r.classList.toggle('editing', r.querySelector('.aor-name')?.textContent?.trim() === name);
+    });
+
+    // Pin offer's products to top + select only them
+    pinnedOffer = name.toLowerCase();
+    selectedIds.clear();
+    PD.forEach(p => { if (p.on && p.on.toLowerCase() === pinnedOffer) selectedIds.add(p.id); });
+
+    // Clear all filters so all products are visible, pinned ones on top
+    searchQ = ''; catFilter = ''; brandFilter.clear();
+    document.getElementById('offSearch').value = '';
+    // Reset category selector label without triggering full pickCat (which would re-filter before we're ready)
+    document.getElementById('cselCatLabel').textContent = 'Kategoria';
+    document.querySelectorAll('#cselCatPanel .csel-opt').forEach(o => o.classList.toggle('selected', o.dataset.value === ''));
+    clearBrandsState();
+    currentPage = 1;
+    applyFilters();
+    updateCount();
+
+    // Update config card title to show editing mode
+    document.getElementById('configCardTitle').innerHTML =
+        `<i class="fas fa-pen"></i> Edito: ${esc(name)}`;
+
+    // Scroll product list to top so pinned products are immediately visible
+    document.getElementById('prodList').scrollTop = 0;
+}
+
+function resetToNew() {
+    // Clear form fields
+    document.getElementById('offerName').value = '';
+    document.getElementById('discountPercent').value = '';
+    document.getElementById('cselTypeLabel').textContent = 'Zbritje (%)';
+    document.querySelectorAll('#cselTypePanel .csel-opt').forEach(o => o.classList.toggle('selected', o.dataset.value==='discount'));
+    document.getElementById('offerTypeVal').value = 'discount';
+    toggleOfferType();
+    clearDate();
+    clearFromDate();
+
+    // Remove editing highlight
+    document.querySelectorAll('.aor').forEach(r => r.classList.remove('editing'));
+
+    // Reset title
+    document.getElementById('configCardTitle').innerHTML = '<i class="fas fa-sliders-h"></i> Konfigurimi';
+
+    // Clear selections and pinned offer
+    pinnedOffer = '';
+    selectedIds.clear();
+
+    // Reset filters and re-render
+    searchQ = ''; catFilter = ''; brandFilter.clear();
+    document.getElementById('offSearch').value = '';
+    document.getElementById('cselCatLabel').textContent = 'Kategoria';
+    document.querySelectorAll('#cselCatPanel .csel-opt').forEach(o => o.classList.toggle('selected', o.dataset.value===''));
+    clearBrandsState();
+    currentPage = 1;
+    filteredData = [...PD];
+    renderPage();
+    updateCount();
+}
+
+/* ════════════════════════════════════════
+   BRAND MULTI-SELECT
+════════════════════════════════════════ */
+function toggleBrandDD() {
+    const panel=document.getElementById('msPanel');
+    const trigger=document.getElementById('msTrigger');
+    const isOpen=panel.classList.contains('open');
+    if(isOpen) closeBrandDD();
+    else { panel.classList.add('open'); trigger.classList.add('open'); document.getElementById('msSearch').focus(); }
+}
+function closeBrandDD() {
+    document.getElementById('msPanel').classList.remove('open');
+    document.getElementById('msTrigger').classList.remove('open');
+}
+function filterBrandOpts(q) {
+    const ql=q.toLowerCase();
+    document.querySelectorAll('#msOpts .ms-opt').forEach(o => {
+        o.style.display=o.textContent.toLowerCase().includes(ql)?'':'none';
+    });
+}
+function onBrandChange() {
+    brandFilter.clear();
+    document.querySelectorAll('#msOpts input:checked').forEach(cb=>brandFilter.add(cb.value));
+    updateBrandLabel(); currentPage=1; applyFilters();
+}
+function clearBrands() { clearBrandsState(); currentPage=1; applyFilters(); }
+function clearBrandsState() {
+    brandFilter.clear();
+    document.querySelectorAll('#msOpts input').forEach(cb=>cb.checked=false);
+    updateBrandLabel();
+}
+function updateBrandLabel() {
+    const lbl=document.getElementById('msLabel');
+    if(brandFilter.size===0) lbl.textContent='Brendi';
+    else if(brandFilter.size===1) lbl.textContent=[...brandFilter][0].substring(0,14);
+    else lbl.textContent=`Brendet (${brandFilter.size})`;
+}
+
+/* ════════════════════════════════════════
+   DELETE OFFER MODAL
+════════════════════════════════════════ */
+let _delOfferName = null;
+function deleteOffer(name) {
+    _delOfferName = name;
+    document.getElementById('delOfferMsg').textContent = `Kjo do të heqë ofertën "${name}" nga të gjitha produktet e saj.`;
+    document.getElementById('delOfferModal').style.display = 'flex';
+}
+function closeDelModal() {
+    _delOfferName = null;
+    document.getElementById('delOfferModal').style.display = 'none';
+}
+function confirmDeleteOffer() {
+    if (!_delOfferName) return;
+    document.getElementById('targetName').value = _delOfferName;
+    const btn = document.createElement('input');
+    btn.type='hidden'; btn.name='action'; btn.value='delete_named_offer';
+    document.getElementById('offForm').appendChild(btn);
+    document.getElementById('offForm').submit();
+}
+// Close modal on backdrop click
+document.getElementById('delOfferModal').addEventListener('click', closeDelModal);
+
+// "Largo Ofertën" button — deselect all products in UI, then submit to remove from DB
+document.querySelector('.off-btn-remove').addEventListener('click', function(e) {
+    // The backend remove action handles DB cleanup for checked products.
+    // Nothing extra needed — form submit event injects the hidden inputs.
+});
+</script>
+{% endblock %}

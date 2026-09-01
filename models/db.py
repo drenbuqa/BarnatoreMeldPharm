@@ -39,6 +39,15 @@ def _ensure_indexes():
         orders.create_index([("created_at", -1)], name="idx_orders_created_at")
         orders.create_index([("user_id", 1), ("created_at", -1)], name="idx_orders_user_id")
         orders.create_index([("status", 1)], name="idx_orders_status")
+
+        # Behaviour events: funnel queries by type+time, product queries, session dedup.
+        # TTL index auto-deletes events older than 90 days to keep the collection lean.
+        events = mongo.db.events
+        events.create_index([("e", 1), ("ts", -1)], name="idx_events_type_ts")
+        events.create_index([("pid", 1), ("e", 1), ("ts", -1)], name="idx_events_pid_type_ts")
+        events.create_index([("sid", 1), ("e", 1)], name="idx_events_sid_type")
+        events.create_index([("ts", 1)], name="idx_events_ttl",
+                            expireAfterSeconds=90 * 24 * 3600)
     except Exception as exc:
         logging.warning("Mongo index setup skipped: %s", exc)
 

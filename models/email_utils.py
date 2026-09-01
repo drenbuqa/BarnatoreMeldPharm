@@ -49,7 +49,7 @@ def _get_smtp_config():
     }
 
 
-PHARMACY_PHONE = "+383 045 559 911"
+PHARMACY_PHONE = "+383 45 590 455"
 PHARMACY_EMAIL_CONTACT = "meldpharm@hotmail.com"
 PHARMACY_ADDRESS = "72 Eqrem Çabej, Prishtinë 10000"
 SITE_BASE_URL = os.getenv("SITE_BASE_URL", "https://barnatoremeldpharm.com")
@@ -69,14 +69,14 @@ def _order_timeline_html(active_step):
     label_row = ""
     for i, (icon, label) in enumerate(steps):
         is_done = i <= active_step
-        circle_bg = "#0f766e" if is_done else "#e5e7eb"
+        circle_bg = "#4F5D4E" if is_done else "#e5e7eb"
         circle_color = "#fff" if is_done else "#94a3b8"
-        label_color = "#0f776e" if is_done else "#94a3b8"
+        label_color = "#4F5D4E" if is_done else "#94a3b8"
         label_weight = "700" if i == active_step else ("600" if is_done else "400")
         circle_row += f'<td style="text-align:center;vertical-align:middle;width:40px;padding:0;"><div style="width:36px;height:36px;border-radius:50%;background:{circle_bg};color:{circle_color};font-size:14px;line-height:36px;text-align:center;margin:0 auto;">{icon}</div></td>'
         label_row += f'<td style="text-align:center;vertical-align:top;width:40px;padding:6px 2px 0;"><div style="font-size:10px;color:{label_color};font-weight:{label_weight};line-height:1.3;">{label}</div></td>'
         if i < n - 1:
-            conn_color = "#0f766e" if i < active_step else "#e5e7eb"
+            conn_color = "#4F5D4E" if i < active_step else "#e5e7eb"
             circle_row += f'<td style="vertical-align:middle;padding:0;"><div style="height:2px;background:{conn_color};width:100%;"></div></td>'
             label_row += '<td></td>'
     return f"""
@@ -131,20 +131,20 @@ def _email_html(title, body_html, cfg):
     return f"""
 <div style="font-family:Arial,sans-serif;color:#1f2937;line-height:1.6;max-width:600px;margin:0 auto;background:#fff;">
   <!-- Header -->
-  <div style="text-align:center;padding:28px 20px 20px;border-bottom:2px solid #f1f5f9;background:#f0fdf4;">
-    <div style="font-size:22px;font-weight:800;color:#0f766e;letter-spacing:-0.5px;">{name}</div>
-    <div style="font-size:13px;color:#64748b;margin-top:5px;">{title}</div>
+  <div style="text-align:center;padding:28px 20px 20px;border-bottom:2px solid #eef0ed;background:#f5f7f4;">
+    <div style="font-size:22px;font-weight:800;color:#4F5D4E;letter-spacing:-0.5px;">{name}</div>
+    <div style="font-size:13px;color:#8a9186;margin-top:5px;">{title}</div>
   </div>
   <!-- Body -->
   <div style="padding:28px 32px;">
     {body_html}
   </div>
   <!-- Footer -->
-  <div style="background:#f8fafc;border-top:1px solid #e5e7eb;padding:18px 28px;text-align:center;color:#64748b;font-size:12px;line-height:2;">
+  <div style="background:#f5f7f4;border-top:1px solid #eef0ed;padding:18px 28px;text-align:center;color:#8a9186;font-size:12px;line-height:2;">
     <strong style="color:#374151;">{name}</strong><br>
     {PHARMACY_ADDRESS}<br>
     Tel: {PHARMACY_PHONE} &nbsp;·&nbsp;
-    <a href="mailto:{PHARMACY_EMAIL_CONTACT}" style="color:#0f766e;text-decoration:none;">{PHARMACY_EMAIL_CONTACT}</a>
+    <a href="mailto:{PHARMACY_EMAIL_CONTACT}" style="color:#4F5D4E;text-decoration:none;">{PHARMACY_EMAIL_CONTACT}</a>
   </div>
 </div>"""
 
@@ -266,7 +266,7 @@ def send_order_confirmation_email(order_or_id):
   </tr>
 </table>
 <div style="text-align:center;margin:20px 0 4px;">
-  <a href="{SITE_BASE_URL}/orders" style="display:inline-block;background:#0f766e;color:#fff;text-decoration:none;font-size:14px;font-weight:600;padding:12px 28px;border-radius:8px;">Shiko Porosinë &#8594;</a>
+  <a href="{SITE_BASE_URL}/orders" style="display:inline-block;background:#4F5D4E;color:#fff;text-decoration:none;font-size:14px;font-weight:600;padding:12px 28px;border-radius:8px;">Shiko Porosinë &#8594;</a>
 </div>"""
 
     html = _email_html(f"Porosia #{short_id} · Konfirmuar", body_html, cfg)
@@ -275,7 +275,7 @@ def send_order_confirmation_email(order_or_id):
             f"Data: {created_at_text}\nAdresa: {order.get('address','')}, {order.get('city','')}\n\n"
             + "\n".join(order_lines) +
             f"\n\nTotali: {_format_currency(order.get('grand_total'))}\n\nTel: {PHARMACY_PHONE} · {PHARMACY_EMAIL_CONTACT}")
-    subject = f"Porosia #{short_id} u konfirmua ✓"
+    subject = f"Porosia #{short_id} u konfirmua"
     ok, msg = _send_simple_email(cfg, recipient_email, subject, text, html)
     if ok:
         mongo.db.orders.update_one(
@@ -301,9 +301,9 @@ def send_order_shipped_email(order_or_id, tracking_number=None):
     tracking_block = ""
     if tracking_number:
         tracking_block = f"""
-<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:14px 16px;margin:16px 0;">
+<div style="background:#f5f7f4;border:1px solid #d4dcd3;border-radius:10px;padding:14px 16px;margin:16px 0;">
   <div style="font-size:12px;color:#64748b;margin-bottom:4px;">Numri i gjurmimit (Flex Posta)</div>
-  <div style="font-size:15px;font-weight:700;color:#0f766e;letter-spacing:1px;">{tracking_number}</div>
+  <div style="font-size:15px;font-weight:700;color:#4F5D4E;letter-spacing:1px;">{tracking_number}</div>
 </div>"""
 
     body_html = f"""
@@ -323,7 +323,7 @@ def send_order_shipped_email(order_or_id, tracking_number=None):
             f"Porosia juaj është në rrugë drejt jush.{tracking_text}\n"
             f"Adresa: {order.get('address','')}, {order.get('city','')}\n\n"
             f"Tel: {PHARMACY_PHONE} · {PHARMACY_EMAIL_CONTACT}")
-    subject = f"Porosia #{short_id} është nisur 🚚"
+    subject = f"Porosia #{short_id} është nisur"
     ok, msg = _send_simple_email(cfg, recipient_email, subject, text, html)
     if ok:
         mongo.db.orders.update_one(
@@ -362,7 +362,7 @@ def send_order_delivered_email(order_or_id):
     text = (f"Porosia #{short_id} u dorëzua!\n\nPërshëndetje {order.get('fullname','')},\n"
             f"Porosia juaj është dorëzuar me sukses. Shpresojmë t'i gëzoni produktet!\n\n"
             f"Tel: {PHARMACY_PHONE} · {PHARMACY_EMAIL_CONTACT}")
-    subject = f"Porosia #{short_id} u dorëzua ✓"
+    subject = f"Porosia #{short_id} u dorëzua"
     ok, msg = _send_simple_email(cfg, recipient_email, subject, text, html)
     if ok:
         mongo.db.orders.update_one(
@@ -403,30 +403,144 @@ def send_order_cancelled_email(order_or_id, reason=None):
 
 
 # ---------------------------------------------------------------------------
-# Welcome email (on registration)
+# Order: Rejected (distinct from cancelled — admin refused to fulfil)
 # ---------------------------------------------------------------------------
-def send_welcome_email(recipient_email, username):
+def send_order_rejected_email(order_or_id, reason=None):
+    order = _get_order(order_or_id)
+    if not order:
+        return False, "Order not found."
+    recipient_email = order.get("email")
+    if not recipient_email:
+        return False, "Order email missing."
+
     cfg = _get_smtp_config()
-    name = cfg["sender_name"]
+    short_id = str(order.get("_id"))[-6:]
+    reason_block = ""
+    if reason:
+        reason_block = f"""
+<div style="background:#fef9f0;border:1px solid #fed7aa;border-radius:10px;padding:14px 16px;margin:16px 0;">
+  <div style="font-size:11px;font-weight:700;color:#92400e;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Arsyeja</div>
+  <div style="font-size:13px;color:#1f2937;">{reason}</div>
+</div>"""
 
     body_html = f"""
-<h2 style="margin:0 0 8px;color:#0f172a;font-size:1.15rem;">Mirë se vini, {username}!</h2>
-<p style="margin:0 0 16px;color:#64748b;">Faleminderit që u regjistruat në <strong>{name}</strong>. Llogaria juaj është gati.</p>
-<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:16px 18px;margin:0 0 16px;">
-  <p style="margin:0 0 10px;font-weight:700;color:#065f46;font-size:0.9rem;">Me llogarinë tuaj mund të:</p>
-  <ul style="margin:0;padding-left:18px;color:#374151;line-height:2;font-size:0.9rem;">
+<h2 style="margin:0 0 4px;color:#1a1f18;font-size:1.15rem;">Porosia #{short_id} nuk mund të plotësohet</h2>
+<p style="margin:0 0 16px;color:#64748b;font-size:0.9rem;">Përshëndetje {order.get('fullname', '')},</p>
+<p style="margin:0 0 12px;font-size:0.9rem;color:#374151;">Na vjen keq, por porosia juaj #{short_id} nuk mund të plotësohet për momentin.</p>
+{reason_block}
+<p style="margin:12px 0;font-size:0.9rem;color:#374151;">Nëse dëshironi të bëni një porosi të re ose keni pyetje, jemi të disponueshëm për t'ju ndihmuar:</p>
+<div style="background:#f5f7f4;border:1px solid #eef0ed;border-radius:10px;padding:14px 16px;margin:16px 0;font-size:13px;color:#374151;line-height:1.8;">
+  Tel: {PHARMACY_PHONE}<br>
+  Email: <a href="mailto:{PHARMACY_EMAIL_CONTACT}" style="color:#4F5D4E;text-decoration:none;">{PHARMACY_EMAIL_CONTACT}</a><br>
+  {PHARMACY_ADDRESS}
+</div>
+<p style="font-size:0.85rem;color:#8a9186;">Faleminderit për mirëkuptimin tuaj.</p>"""
+
+    html = _email_html(f"Porosia #{short_id} · Refuzuar", body_html, cfg)
+    reason_text = f"\nArsyeja: {reason}" if reason else ""
+    text = (f"Porosia #{short_id} nuk mund të plotësohet.\n\nPërshëndetje {order.get('fullname','')},{reason_text}\n\n"
+            f"Na kontaktoni:\nTel: {PHARMACY_PHONE} · {PHARMACY_EMAIL_CONTACT}")
+    subject = f"Informacion mbi porosinë #{short_id}"
+    return _send_simple_email(cfg, recipient_email, subject, text, html)
+
+
+# ---------------------------------------------------------------------------
+# Welcome email (on registration)
+# ---------------------------------------------------------------------------
+def _promo_blocks_html(base, offer_products=None, cat_images=None):
+    """Build the shared offers + categories HTML block used in welcome emails."""
+    from models.image_utils import cld
+
+    # Hardcoded category images (same as home page)
+    _CAT_META = [
+        ('Dermokozmetikë',        'Kujdes profesional për lëkurën',   f'{base}/products?category=Dermokozmetik%C3%AB',               '#eef5ee', '#2d5a2d',
+         'https://res.cloudinary.com/drljgepgy/image/upload/v1782338006/ChatGPT_Image_Jun_24_2026_at_11_23_35_PM_uqsw1l.png'),
+        ('Suplemente & Vitamina', 'Shëndeti fillon nga brenda',        f'{base}/products?category=Suplemente+%26+Vitamina',           '#eef2ff', '#3730a3',
+         'https://res.cloudinary.com/drljgepgy/image/upload/v1782338009/ChatGPT_Image_Jun_24_2026_at_11_25_37_PM_wpohzj.png'),
+        ('Kujdes Personal & Higjienë', 'Produkte të përditshme',      f'{base}/products?category=Kujdes+Personal+%26+Higjiën%C3%AB', '#fff7ed', '#92400e',
+         'https://res.cloudinary.com/drljgepgy/image/upload/v1782338009/ChatGPT_Image_Jun_24_2026_at_11_27_26_PM_om9wnq.png'),
+    ]
+
+    html = ''
+
+    # ── Offers row ──────────────────────────────────────────────────────────
+    if offer_products:
+        cols = ''
+        for p in offer_products[:3]:
+            pid   = str(p['_id'])
+            pname = p.get('name', '')[:40]
+            orig  = p.get('price') or 0
+            disc  = p.get('discount_price') or orig
+            img   = cld(p.get('image_url', ''), 300)
+            pct   = int(round((orig - disc) / orig * 100)) if orig > disc else 0
+            pct_badge = f'<div style="display:inline-block;background:#dc2626;color:#fff;font-size:9px;font-weight:800;padding:2px 6px;border-radius:20px;margin-bottom:6px;">-{pct}%</div>' if pct else ''
+            # contain keeps full product visible; white bg hides any transparent areas cleanly
+            img_tag = f'<img src="{img}" width="120" height="120" alt="{pname}" style="width:120px;height:120px;object-fit:contain;background:#fff;border-radius:6px;display:block;margin:0 auto 8px;">' if img else ''
+            cols += f"""
+      <td style="width:33%;padding:4px;vertical-align:top;">
+        <a href="{base}/product/{pid}" style="text-decoration:none;display:block;height:100%;background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:10px;text-align:center;">
+          {img_tag}
+          {pct_badge}
+          <div style="font-size:11px;font-weight:600;color:#1a1f18;line-height:1.3;margin-bottom:5px;">{pname}</div>
+          <div style="font-size:12px;font-weight:800;color:#4F5D4E;">{disc:.0f} €</div>
+          {"" if not pct else f'<div style="font-size:10px;color:#9ca3af;text-decoration:line-through;">{orig:.0f} €</div>'}
+        </a>
+      </td>"""
+        html += f"""
+<p style="margin:0 0 8px;font-weight:700;color:#1a1f18;font-size:0.85rem;">Ofertat e momentit:</p>
+<table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:18px;"><tr>{cols}</tr></table>"""
+
+    # ── Categories row ───────────────────────────────────────────────────────
+    cat_cells = ''
+    for cat_name, cat_desc, cat_url, bg, fg, cat_img_url in _CAT_META:
+        img_src = cld(cat_img_url, 300)
+        img_tag = f'<img src="{img_src}" width="160" height="80" alt="{cat_name}" style="width:100%;height:80px;object-fit:cover;border-radius:6px;display:block;margin-bottom:8px;">'
+        cat_cells += f"""
+      <td style="width:33%;padding:4px;vertical-align:top;">
+        <a href="{cat_url}" style="text-decoration:none;display:block;background:{bg};border-radius:10px;overflow:hidden;padding:10px;text-align:center;">
+          {img_tag}
+          <div style="font-size:11px;font-weight:800;color:{fg};margin-bottom:3px;line-height:1.3;">{cat_name}</div>
+          <div style="font-size:9px;color:#6b7280;line-height:1.4;margin-bottom:6px;">{cat_desc}</div>
+          <div style="font-size:10px;font-weight:700;color:{fg};">Shiko &rarr;</div>
+        </a>
+      </td>"""
+    html += f"""
+<p style="margin:0 0 8px;font-weight:700;color:#1a1f18;font-size:0.85rem;">Eksploroni kategorit tona:</p>
+<table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:18px;"><tr>{cat_cells}</tr></table>"""
+
+    return html
+
+
+def send_welcome_email(recipient_email, username, offer_products=None, cat_images=None):
+    cfg = _get_smtp_config()
+    name = cfg["sender_name"]
+    base = SITE_BASE_URL.rstrip('/')
+
+    promo = _promo_blocks_html(base, offer_products, cat_images)
+
+    body_html = f"""
+<h2 style="margin:0 0 6px;color:#1a1f18;font-size:1.1rem;">Mirë se vini, {username}!</h2>
+<p style="margin:0 0 18px;color:#64748b;font-size:0.9rem;">Faleminderit që u regjistruat. Jemi këtu për çdo nevojë shëndetësore dhe kozmetike.</p>
+
+<div style="background:#f5f7f4;border:1px solid #d4dcd3;border-radius:10px;padding:14px 16px;margin:0 0 20px;">
+  <p style="margin:0 0 8px;font-weight:700;color:#4F5D4E;font-size:0.85rem;">Me llogarinë tuaj mund të:</p>
+  <ul style="margin:0;padding-left:16px;color:#374151;line-height:1.9;font-size:0.85rem;">
     <li>Shikoni historikun e të gjitha porosive tuaja</li>
     <li>Ruani adresën tuaj për checkout më të shpejtë</li>
     <li>Menaxhoni listën tuaj të dëshirave nga çdo pajisje</li>
-    <li>Merrni njoftime mbi ofertat dhe produktet e reja</li>
   </ul>
+</div>
+
+{promo}
+
+<div style="text-align:center;margin-bottom:4px;">
+  <a href="{base}/products?discount_only=true" style="display:inline-block;background:#4F5D4E;color:#fff;text-decoration:none;font-size:13px;font-weight:700;padding:11px 30px;border-radius:9px;">Shiko Ofertat Tona</a>
 </div>"""
 
     html = _email_html("Mirë se vini!", body_html, cfg)
     text = (f"Mirë se vini, {username}!\n\nFaleminderit që u regjistruat në {name}.\n\n"
-            "Me llogarinë tuaj mund të:\n- Shikoni historikun e porosive\n"
-            "- Ruani adresën për checkout të shpejtë\n- Menaxhoni wishlistën\n"
-            "- Merrni njoftime mbi ofertat\n\n"
+            f"Eksploroni: {base}/products\n"
+            f"Ofertat: {base}/products?discount_only=true\n\n"
             f"Tel: {PHARMACY_PHONE} · {PHARMACY_EMAIL_CONTACT}")
     subject = f"Mirë se vini në {name}!"
     return _send_simple_email(cfg, recipient_email, subject, text, html)
@@ -449,7 +563,7 @@ def send_admin_digest(recipient_email, period_label, stats):
         anuluar, recent_orders (list of dicts with fullname, grand_total, status, created_at)
     """
     cfg = _get_smtp_config()
-    subject = f"📊 Digest Porosive — {period_label}"
+    subject = f"Digest Porosive — {period_label}"
 
     def status_color(s):
         s = (s or '').lower()
@@ -523,7 +637,7 @@ def send_admin_digest(recipient_email, period_label, stats):
     </table>
 
     <div style="margin-top:1.5rem; text-align:center;">
-      <a href="{SITE_BASE_URL}/admin/orders" style="display:inline-block; padding:12px 28px; background:linear-gradient(135deg,#0f766e,#14b8a6); color:#fff; text-decoration:none; border-radius:10px; font-weight:700; font-size:0.9rem;">
+      <a href="{SITE_BASE_URL}/admin/orders" style="display:inline-block; padding:12px 28px; background:#4F5D4E; color:#fff; text-decoration:none; border-radius:10px; font-weight:700; font-size:0.9rem;">
         Shiko Të Gjitha Porositë →
       </a>
     </div>
@@ -563,62 +677,41 @@ def send_new_order_notification(order: dict):
     grand    = float(order.get("grand_total", 0))
     items    = order.get("items", [])
 
-    subject = f"🛒 Porosi e Re — {fullname} — €{grand:.2f}"
+    subject = f"Porosi e Re — {fullname} — €{grand:.2f}"
 
-    items_html = ""
-    for it in items:
-        variant_span = (
-            '  <span style="color:#94a3b8;font-size:11px;">(' + it["variant"] + ')</span>'
-            if it.get("variant") else ""
-        )
-        items_html += (
-            f'<tr>'
-            f'<td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;font-size:13px;">'
-            f'{it.get("quantity",1)}× {it.get("name","")}{variant_span}'
-            f'</td>'
-            f'<td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;font-size:13px;text-align:right;font-weight:700;color:#0f766e;">'
-            f'€{float(it.get("item_total",0)):.2f}</td>'
-            f'</tr>'
-        )
+    items_html = _order_items_html(items)
 
     content_html = f"""
-    <h2 style="font-size:1.2rem;font-weight:800;color:#1e293b;margin:0 0 1.25rem;">
-      🛒 Porosi e Re ka Ardhur
+    <h2 style="font-size:1.2rem;font-weight:800;color:#1a1f18;margin:0 0 1.25rem;">
+      Porosi e Re ka Ardhur
     </h2>
 
     <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:1.25rem;">
       <tr>
         <td style="width:50%;padding:0 8px 0 0;">
-          <div style="background:#f8fafc;border-radius:12px;padding:14px 16px;">
-            <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;color:#94a3b8;margin-bottom:8px;">Klienti</div>
-            <div style="font-size:14px;font-weight:700;color:#1e293b;">{fullname}</div>
+          <div style="background:#f5f7f4;border:1px solid #eef0ed;border-radius:12px;padding:14px 16px;">
+            <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;color:#8a9186;margin-bottom:8px;">Klienti</div>
+            <div style="font-size:14px;font-weight:700;color:#1a1f18;">{fullname}</div>
             <div style="font-size:12px;color:#475569;margin-top:3px;">{phone}</div>
             <div style="font-size:12px;color:#475569;margin-top:2px;">{address}, {city}</div>
           </div>
         </td>
         <td style="width:50%;padding:0 0 0 8px;">
-          <div style="background:#f8fafc;border-radius:12px;padding:14px 16px;">
-            <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;color:#94a3b8;margin-bottom:8px;">Detajet</div>
+          <div style="background:#f5f7f4;border:1px solid #eef0ed;border-radius:12px;padding:14px 16px;">
+            <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;color:#8a9186;margin-bottom:8px;">Detajet</div>
             <div style="font-size:12px;color:#475569;"><strong>Pagesa:</strong> {payment}</div>
             <div style="font-size:12px;color:#475569;margin-top:3px;"><strong>Dërgesa:</strong> {"Marrje në dyqan" if shipping == "pickup" else "Dërgesë"}</div>
-            <div style="font-size:16px;font-weight:800;color:#0f766e;margin-top:8px;">€{grand:.2f}</div>
+            <div style="font-size:16px;font-weight:800;color:#4F5D4E;margin-top:8px;">€{grand:.2f}</div>
           </div>
         </td>
       </tr>
     </table>
 
-    <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;margin-bottom:1.5rem;">
-      <thead>
-        <tr style="background:#f8fafc;">
-          <th style="padding:10px 12px;text-align:left;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;">Produkti</th>
-          <th style="padding:10px 12px;text-align:right;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;">Çmimi</th>
-        </tr>
-      </thead>
-      <tbody>{items_html}</tbody>
-    </table>
+    <div style="font-size:11px;font-weight:700;color:#8a9186;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">Produktet e porositura</div>
+    {items_html}
 
-    <div style="text-align:center;">
-      <a href="{SITE_BASE_URL}/admin/orders" style="display:inline-block;background:linear-gradient(135deg,#0f766e,#14b8a6);color:#fff;text-decoration:none;font-size:14px;font-weight:700;padding:12px 32px;border-radius:10px;">
+    <div style="text-align:center;margin-top:1.5rem;">
+      <a href="{SITE_BASE_URL}/admin/orders" style="display:inline-block;background:#4F5D4E;color:#fff;text-decoration:none;font-size:14px;font-weight:700;padding:12px 32px;border-radius:10px;">
         Shiko Porosinë në Panel →
       </a>
     </div>

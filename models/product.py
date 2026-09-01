@@ -35,6 +35,12 @@ class Product:
         if status and status != 'active':
             return False
 
+        discount_from = product.get('discount_from')
+        if discount_from:
+            from_date = discount_from.date() if hasattr(discount_from, 'date') else None
+            if from_date and from_date > datetime.now().date():
+                return False
+
         deadline_date = Product._offer_deadline_date(product.get('discount_until'))
         if deadline_date and deadline_date < datetime.now().date():
             return False
@@ -146,6 +152,8 @@ class Product:
         product['offer_progress_text'] = pricing['offer_progress_text']
         product['qualifies_for_free_item'] = pricing['qualifies_for_free_item']
         product['free_items'] = pricing['free_items']
+        product['offer_type'] = pricing['offer_type']
+        product['multi_buy_type'] = pricing['multi_buy_type']
         return product
 
     @staticmethod
@@ -197,7 +205,14 @@ class Product:
             query["brand"] = {"$regex": f"^\\s*{escaped_brand}\\s*$", "$options": "i"}
 
         if discount_only:
+            from datetime import datetime as _dt
+            _now = _dt.now()
             query["discount_price"] = {"$ne": None, "$gt": 0}
+            query["$or"] = [
+                {"discount_from": {"$exists": False}},
+                {"discount_from": None},
+                {"discount_from": {"$lte": _now}},
+            ]
         elif no_discount:
             query["$or"] = [
                 {"discount_price": {"$exists": False}},
@@ -294,11 +309,21 @@ class Product:
         pipeline = [
             {
                 "$addFields": {
+                    "_offer_started": {
+                        "$or": [
+                            {"$eq": ["$discount_from", None]},
+                            {"$not": {"$gt": ["$discount_from", "$$NOW"]}},
+                        ]
+                    },
                     "effective_price": {
                         "$cond": [
                             {"$and": [
                                 {"$gt": ["$discount_price", 0]},
-                                {"$ne": ["$discount_price", None]}
+                                {"$ne": ["$discount_price", None]},
+                                {"$or": [
+                                    {"$eq": ["$discount_from", None]},
+                                    {"$not": {"$gt": ["$discount_from", "$$NOW"]}}
+                                ]}
                             ]},
                             "$discount_price",
                             "$price"
@@ -308,7 +333,11 @@ class Product:
                         "$cond": [
                             {"$and": [
                                 {"$gt": ["$discount_price", 0]},
-                                {"$ne": ["$discount_price", None]}
+                                {"$ne": ["$discount_price", None]},
+                                {"$or": [
+                                    {"$eq": ["$discount_from", None]},
+                                    {"$not": {"$gt": ["$discount_from", "$$NOW"]}}
+                                ]}
                             ]},
                             {"$divide": [{"$subtract": ["$price", "$discount_price"]}, "$price"]},
                             0
@@ -388,6 +417,12 @@ class Product:
     def _decorate_product(product, quantity=1):
         if not product:
             return None
+        # Suppress discount fields on the dict itself when offer hasn't started yet,
+        # so templates that read discount_price directly also get the right value.
+        if not Product._offer_is_active(product):
+            product['discount_price'] = None
+            product['offer_badge_text'] = None
+            product['offer_status'] = 'inactive'
         pricing = Product.get_offer_pricing(product, quantity)
         product['display_price'] = pricing['unit_price']
         product['display_original_price'] = pricing['original_price']
@@ -398,6 +433,8 @@ class Product:
         product['offer_progress_text'] = pricing['offer_progress_text']
         product['qualifies_for_free_item'] = pricing['qualifies_for_free_item']
         product['free_items'] = pricing['free_items']
+        product['offer_type'] = pricing['offer_type']
+        product['multi_buy_type'] = pricing['multi_buy_type']
         return product
 
     @staticmethod
@@ -427,11 +464,15 @@ class Product:
 
         # Changed to return discounted products as per request
 
+        _now_feat = datetime.now()
         products = list(mongo.db.products.find({
-
             "discount_price": {"$ne": None, "$gt": 0},
-            "is_deleted": {"$ne": True}
-
+            "is_deleted": {"$ne": True},
+            "$or": [
+                {"discount_from": {"$exists": False}},
+                {"discount_from": None},
+                {"discount_from": {"$lte": _now_feat}},
+            ],
         }).sort([('_id', -1)]).limit(limit))
         return Product._decorate_products(products)
 

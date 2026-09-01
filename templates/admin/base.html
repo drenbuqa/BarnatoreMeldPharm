@@ -2,6 +2,7 @@
 
 {% block navbar %}{% endblock %}
 {% block footer %}{% endblock %}
+{% block flash_messages %}{% endblock %}
 
 {% block content %}
 <meta name="csrf-token" content="{{ csrf_token() }}">
@@ -55,8 +56,8 @@
                 <i class="fas fa-paper-plane"></i>
                 <span>Buletini</span>
             </a>
-            <a href="{{ url_for('admin.dashboard', view='analytics') }}"
-               class="sidebar-nav-item {% if request.endpoint == 'admin.dashboard' and request.args.get('view') == 'analytics' %}active{% endif %}">
+            <a href="{{ url_for('admin.analytics_page') }}"
+               class="sidebar-nav-item {% if request.endpoint == 'admin.analytics_page' %}active{% endif %}">
                 <i class="fas fa-chart-bar"></i>
                 <span>Analitika</span>
             </a>
@@ -97,18 +98,16 @@
             </div>
         </div>
 
-        <!-- Flash Messages -->
+        <!-- Flash messages are shown as toasts (see JS below) -->
         {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
-        <div class="admin-flash-messages">
+        <script>
+        document.addEventListener('DOMContentLoaded', function() {
             {% for category, message in messages %}
-            <div class="admin-flash admin-flash-{{ category }}">
-                <i class="fas {% if category == 'success' %}fa-check-circle{% elif category == 'danger' %}fa-exclamation-circle{% elif category == 'warning' %}fa-exclamation-triangle{% else %}fa-info-circle{% endif %}"></i>
-                {{ message }}
-                <button class="flash-close" onclick="this.parentElement.remove()">&times;</button>
-            </div>
+            showToast({{ message | tojson }}, {{ category | tojson }});
             {% endfor %}
-        </div>
+        });
+        </script>
         {% endif %}
         {% endwith %}
 
@@ -119,7 +118,11 @@
     </div>
 </div>
 
+<!-- Toast container -->
+<div class="adm-toast-wrap" id="admToastWrap"></div>
+
 <script>
+/* ── Sidebar ── */
 function openSidebar() {
     document.getElementById('adminSidebar').classList.add('open');
     document.getElementById('sidebarOverlay').classList.add('open');
@@ -127,6 +130,68 @@ function openSidebar() {
 function closeSidebar() {
     document.getElementById('adminSidebar').classList.remove('open');
     document.getElementById('sidebarOverlay').classList.remove('open');
+}
+
+/* ── Toast system ── */
+const _toastIcons = {
+    success: 'fa-check-circle',
+    danger:  'fa-exclamation-circle',
+    warning: 'fa-exclamation-triangle',
+    info:    'fa-info-circle'
+};
+function showToast(message, type = 'info', duration = 4000) {
+    const wrap = document.getElementById('admToastWrap');
+    const t = document.createElement('div');
+    t.className = `adm-toast adm-toast-${type}`;
+    t.style.setProperty('--dur', duration + 'ms');
+    t.innerHTML = `
+        <i class="fas ${_toastIcons[type] || 'fa-info-circle'} adm-toast-icon"></i>
+        <div class="adm-toast-body"><div class="adm-toast-msg">${message}</div></div>
+        <button class="adm-toast-close" onclick="removeToast(this.closest('.adm-toast'))">
+            <i class="fas fa-times"></i>
+        </button>
+        <div class="adm-toast-bar"></div>`;
+    t.addEventListener('click', e => {
+        if (!e.target.closest('.adm-toast-close')) removeToast(t);
+    });
+    wrap.appendChild(t);
+    setTimeout(() => removeToast(t), duration + 200);
+}
+function removeToast(t) {
+    if (!t || !t.isConnected) return;
+    t.classList.add('removing');
+    setTimeout(() => t.remove(), 200);
+}
+
+/* ── Loading helpers ── */
+function showLoading(container) {
+    if (!container) return;
+    container.style.position = 'relative';
+    let ov = container.querySelector('.adm-loading-overlay');
+    if (!ov) {
+        ov = document.createElement('div');
+        ov.className = 'adm-loading-overlay';
+        ov.innerHTML = '<div class="adm-spinner"></div>';
+        container.appendChild(ov);
+    }
+    requestAnimationFrame(() => ov.classList.add('show'));
+}
+function hideLoading(container) {
+    const ov = container && container.querySelector('.adm-loading-overlay');
+    if (ov) { ov.classList.remove('show'); }
+}
+
+/* ── Skeleton helper ── */
+function skeletonRows(n = 5) {
+    return Array.from({length: n}, () => `
+        <div class="adm-skeleton-row">
+            <div class="adm-skeleton adm-skeleton-avatar"></div>
+            <div class="adm-skeleton-lines">
+                <div class="adm-skeleton adm-skeleton-line" style="width:60%"></div>
+                <div class="adm-skeleton adm-skeleton-line" style="width:35%"></div>
+            </div>
+            <div class="adm-skeleton adm-skeleton-line" style="width:60px;height:22px;border-radius:20px;"></div>
+        </div>`).join('');
 }
 </script>
 {% endblock %}

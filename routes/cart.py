@@ -2,6 +2,7 @@ from flask import Blueprint, render_template, session, redirect, url_for, reques
 from models.product import Product
 from models.order import Order
 from models.user import User
+from models.analytics import log_event
 from flask_login import current_user
 cart_bp = Blueprint('cart', __name__, url_prefix='/cart')
 
@@ -179,6 +180,9 @@ def add_to_cart(product_id):
     session.modified = True
     if current_user.is_authenticated:
         User.update_cart(current_user.id, cart)
+
+    uid = current_user.id if current_user.is_authenticated else None
+    log_event('ac', product_id=product_id, user_id=uid)
 
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         country = current_user.country if current_user.is_authenticated and current_user.country else 'Kosova'
@@ -482,7 +486,9 @@ def checkout():
     country = current_user.country if current_user.is_authenticated and current_user.country else 'Kosova'
     shipping_cost = calculate_shipping(total_price, country)
     grand_total = total_price + shipping_cost
-    
+
+    log_event('bc', user_id=current_user.id if current_user.is_authenticated else None)
+
     return render_template('checkout.html', cart_items=cart_items, total_price=total_price, shipping_cost=shipping_cost, grand_total=grand_total)
 
 @cart_bp.route('/place_order', methods=['POST'])
@@ -506,6 +512,21 @@ def place_order():
     if method == 'card':
         flash('Pagesat me kartë nuk janë ende aktive.', 'warning')
         return redirect(url_for('cart.checkout'))
+
+    if not fullname or len(fullname.split()) < 2:
+        flash('Ju lutem shkruani emrin dhe mbiemrin tuaj të plotë.', 'danger')
+        return redirect(url_for('cart.checkout'))
+
+    if shipping_method == 'delivery':
+        if not phone or len(phone.strip()) < 6:
+            flash('Numri i telefonit është i detyrueshëm.', 'danger')
+            return redirect(url_for('cart.checkout'))
+        if not address or not address.strip():
+            flash('Adresa është e detyrueshme.', 'danger')
+            return redirect(url_for('cart.checkout'))
+        if not city or not city.strip():
+            flash('Qyteti është i detyrueshëm.', 'danger')
+            return redirect(url_for('cart.checkout'))
 
     # Re-calculate Cart items for the order record
     cart = session.get('cart', {})
@@ -586,9 +607,9 @@ def place_order():
     if current_user.is_authenticated:
         User.update_cart(current_user.id, {})
 
-    # Notify admin of new order (non-blocking background thread)
+    # Notify admin + send customer confirmation (non-blocking background threads)
     try:
-        from models.email_utils import send_new_order_notification, send_email_in_background
+        from models.email_utils import send_new_order_notification, send_order_confirmation_email, send_email_in_background
         order_snapshot = {
             "fullname": fullname, "phone": phone, "email": email,
             "address": address, "city": city, "payment_method": method,
@@ -596,9 +617,11 @@ def place_order():
             "grand_total": grand_total,
         }
         send_email_in_background(send_new_order_notification, order_snapshot)
+        if email:
+            send_email_in_background(send_order_confirmation_email, order_id)
     except Exception as _e:
         import logging
-        logging.error(f"Admin order notification failed: {_e}")
+        logging.error(f"Order notification failed: {_e}")
 
     return redirect(url_for('cart.order_success', order_id=order_id))
 
@@ -631,5 +654,8 @@ def order_success(order_id):
     # Always stamp session (fast path for subsequent requests in same session)
     session[pixel_key] = True
     session.modified = True
+
+    if fire_pixel:
+        log_event('pu', user_id=current_user.id if current_user.is_authenticated else None)
 
     return render_template('order_success.html', order=order, fire_pixel=fire_pixel)
