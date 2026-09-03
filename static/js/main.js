@@ -755,8 +755,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 const currentPage = parseInt(loadMoreBtn ? loadMoreBtn.getAttribute('data-page') : '1') || 1;
                 if (window._shopTotalPages && currentPage >= window._shopTotalPages) return;
                 window._shopScrollLock = true;
+                const wrap = document.getElementById('load-more-products-wrap');
+                if (wrap) wrap.classList.remove('d-none');
                 window.updateShop(true);
-            }, { rootMargin: '300px' });
+            }, { rootMargin: '0px 0px 400px 0px' });
             shopObserver.observe(productsSentinel);
         }
 

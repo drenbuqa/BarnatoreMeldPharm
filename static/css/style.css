@@ -35,3 +35,26 @@
     0%   { background-position: 200% 0; }
     100% { background-position: -200% 0; }
 }
+
+/* Infinite scroll bottom loader */
+.scroll-loader {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+.scroll-loader span {
+    display: block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #4F5D4E;
+    opacity: 0.25;
+    animation: scroll-dot 1.2s ease-in-out infinite;
+}
+.scroll-loader span:nth-child(1) { animation-delay: 0s; }
+.scroll-loader span:nth-child(2) { animation-delay: 0.2s; }
+.scroll-loader span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes scroll-dot {
+    0%, 80%, 100% { opacity: 0.25; transform: scale(1); }
+    40%           { opacity: 1;    transform: scale(1.35); }
+}
