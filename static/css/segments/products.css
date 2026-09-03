@@ -354,12 +354,24 @@
     overflow: hidden;
     aspect-ratio: 1/1;
     min-height: 180px;
-    background: #ffffff;
+    background: transparent;
     width: 100%;
     display: flex;
     align-items: center;
     justify-content: center;
 }
+
+/* Shimmer overlay — a real element, not ::before, so it never fights absolutely-positioned children */
+.product-image .img-shimmer {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, #f0f2ef 25%, #e8ebe6 50%, #f0f2ef 75%);
+    background-size: 200% 100%;
+    animation: img-shimmer 1.4s infinite;
+    pointer-events: none;
+    z-index: 0;
+}
+.product-image .img-shimmer.hidden { display: none; }
 
 .product-image img {
     width: 100%;
@@ -367,7 +379,17 @@
     object-fit: contain;
     object-position: center;
     padding: 1rem;
-    transition: transform 0.35s ease;
+    transition: transform 0.35s ease, opacity 0.25s ease;
+    opacity: 0;
+    position: relative;
+    z-index: 1;
+}
+.product-image img.loaded {
+    opacity: 1;
+}
+.product-image img.error {
+    opacity: 0.35;
+    padding: 1.5rem;
 }
 
 @media (hover: hover) {

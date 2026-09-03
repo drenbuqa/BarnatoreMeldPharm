@@ -153,8 +153,11 @@
                 <div class="best-seller-badge">Më i Shituri</div>
               {% endif %}
             </div>
+            <div class="img-shimmer"></div>
             <img src="{{ product.image_url|cld(400) }}" alt="{{ product.name }}"
-              {% if loop.index <= 4 %}fetchpriority="high"{% else %}loading="lazy"{% endif %}>
+              {% if loop.index <= 4 %}fetchpriority="high"{% else %}loading="lazy"{% endif %}
+              onload="this.classList.add('loaded');var s=this.parentElement.querySelector('.img-shimmer');if(s)s.classList.add('hidden')"
+              onerror="this.src='/static/img/placeholder.png';this.classList.add('error','loaded');var s=this.parentElement.querySelector('.img-shimmer');if(s)s.classList.add('hidden')">
             {% if product.in_stock == False %}
               <div class="hp-out-stock"><span>Jashtë Stokut</span></div>
             {% endif %}
@@ -398,12 +401,12 @@
       {% endfor %}
     </div>
 
-    <div class="load-more-container text-center {{ 'd-none' if not total_pages_regular or total_pages_regular <= 1 else '' }}"
-         style="margin-top:2.5rem; margin-bottom:1rem;">
-      <button id="load-more-btn" class="btn btn-load-more" onclick="loadMoreHome()" data-page="1" data-category="all">
-        <span>Shiko të gjitha produktet</span> <i class="fas fa-arrow-right ml-2"></i>
-      </button>
+    <div id="home-sentinel" style="height:1px;"></div>
+    <div id="home-load-more-wrap" class="text-center d-none" style="margin:2rem 0;">
+      <i class="fas fa-spinner fa-spin" style="color:#4F5D4E;font-size:1.5rem;"></i>
     </div>
+    <!-- hidden element keeps state -->
+    <span id="load-more-btn" data-page="1" data-category="all" style="display:none;"></span>
   </div>
 </section>
 

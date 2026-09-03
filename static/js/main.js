@@ -31,7 +31,11 @@ window.createProductCardHtml = function (p) {
                 ${p.is_best_seller ? `<div class="best-seller-badge">Më i Shituri</div>` : ''}
                 ${p.is_pharmacist_choice ? `<div class="pharmacist-badge"><i class="fas fa-user-md"></i> Farmacisti</div>` : ''}
                 </div>
-                <img src="${window.cldUrl(p.image_url, 400)}" alt="${p.name}" class="loading" onload="this.classList.remove('loading'); this.classList.add('loaded');">
+                <div class="img-shimmer"></div>
+                <img src="${window.cldUrl(p.image_url, 400)}" alt="${p.name}"
+                     loading="lazy"
+                     onload="this.classList.add('loaded');var s=this.parentElement.querySelector('.img-shimmer');if(s)s.classList.add('hidden')"
+                     onerror="this.src='/static/img/placeholder.png';this.classList.add('error','loaded');var s=this.parentElement.querySelector('.img-shimmer');if(s)s.classList.add('hidden')">
                 <button class="btn-favorite ${isFav}" onclick="toggleFavorite(this, '${p.id}')">
                     <i class="${heartIconClass} fa-heart"></i>
                 </button>
@@ -122,34 +126,41 @@ window.renderSkeletons = function (grid, count = 10, append = false) {
 };
 
 
+window._homeLoading = false;
+window._homeDone = false;
+
 window.loadMoreHome = function () {
+    if (window._homeLoading || window._homeDone) return;
     const btn = document.getElementById('load-more-btn');
     const grid = document.getElementById('recommended-grid');
-    if (!btn || !grid) return;
+    const spinner = document.getElementById('home-load-more-wrap');
+    if (!grid) return;
 
-    // Show skeletons immediately — 24 matches per_page and is a multiple of 6 columns
-    window.renderSkeletons(grid, 24);
+    const nextPage = (parseInt(btn ? btn.getAttribute('data-page') : '1') || 1) + 1;
+    const category = btn ? (btn.getAttribute('data-category') || 'all') : 'all';
 
-    // Hide button while loading
-    btn.parentElement.classList.add('d-none');
+    window._homeLoading = true;
+    if (spinner) spinner.classList.remove('d-none');
 
-    const category = btn.getAttribute('data-category') || 'all';
-    let url = `/products?ajax=1&all=true`;
-    if (category !== 'all') {
-        url += `&category=${encodeURIComponent(category)}`;
-    }
+    let url = `/products?ajax=1&page=${nextPage}`;
+    if (category !== 'all') url += `&category=${encodeURIComponent(category)}`;
 
     fetch(url)
         .then(res => res.json())
         .then(data => {
             if (data.products && data.products.length > 0) {
-                grid.innerHTML = '';
                 window.appendProducts(data.products, grid);
+                if (btn) btn.setAttribute('data-page', String(nextPage));
+            }
+            if (nextPage >= (data.total_pages || 1)) {
+                window._homeDone = true;
             }
         })
-        .catch(err => {
-            console.error('Error loading more home:', err);
-            btn.parentElement.classList.remove('d-none');
+        .catch(err => console.error('Error loading more home:', err))
+        .finally(() => {
+            window._homeLoading = false;
+            if (spinner && window._homeDone) spinner.classList.add('d-none');
+            else if (spinner) spinner.classList.add('d-none');
         });
 };
 
@@ -539,9 +550,7 @@ window.updateShop = function (isLoadMore = false, loadAll = false) {
     }
 
     const urlParams = new URLSearchParams(window.location.search);
-    if (loadAll) {
-        urlParams.set('all', 'true');
-    }
+    urlParams.delete('all');
 
     // Set search if exists in input, or delete it if input is empty (so clearing search clears the query)
     const searchInput = document.getElementById('adminOrderSearch') || document.getElementById('productSearch');
@@ -578,19 +587,10 @@ window.updateShop = function (isLoadMore = false, loadAll = false) {
     urlParams.set('ajax', '1');
     urlParams.set('page', page);
 
-    if (!isLoadMore && !loadAll) {
+    if (!isLoadMore) {
         window.renderSkeletons(productGrid, 12);
-    } else if (isLoadMore) {
-        // Append skeletons at the end
+    } else {
         window.renderSkeletons(productGrid, 4, true);
-    }
-
-    // Show loading state on button
-    let originalBtnText = '';
-    if ((isLoadMore || loadAll) && loadMoreBtn) {
-        originalBtnText = loadMoreBtn.innerHTML;
-        loadMoreBtn.disabled = true;
-        loadMoreBtn.innerHTML = 'Duke u ngarkuar... <i class="fas fa-spinner fa-spin ml-2"></i>';
     }
 
     const currentPath = window.location.pathname.includes('/products') ? window.location.pathname : '/products';
@@ -607,9 +607,8 @@ window.updateShop = function (isLoadMore = false, loadAll = false) {
             const skeletons = productGrid.querySelectorAll('.skeleton-card');
             skeletons.forEach(s => s.remove());
 
-            if (isLoadMore || loadAll) {
+            if (isLoadMore) {
                 if (data.products && data.products.length > 0) {
-                    if (loadAll) productGrid.innerHTML = '';
                     window.appendProducts(data.products, productGrid);
                     if (loadMoreBtn) loadMoreBtn.setAttribute('data-page', page);
                 }
@@ -618,6 +617,7 @@ window.updateShop = function (isLoadMore = false, loadAll = false) {
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             }
 
+            window._shopTotalPages = data.total_pages || 1;
             window.updateResultsCount(data.total_count);
             // Update mobile sidebar button to reflect loading
             const mobileBtn = document.getElementById('closeSidebarAlt');
@@ -640,18 +640,7 @@ window.updateShop = function (isLoadMore = false, loadAll = false) {
                 }
             }
 
-            if (loadMoreBtn) {
-                const totalPages = data.total_pages || 1;
-                const currentPage = isLoadMore ? page : 1;
-                if (currentPage >= totalPages || loadAll) {
-                    loadMoreBtn.parentElement.classList.add('d-none');
-                } else {
-                    loadMoreBtn.parentElement.classList.remove('d-none');
-                    loadMoreBtn.setAttribute('data-page', currentPage);
-                }
-            }
-
-            if (!isLoadMore && !loadAll) {
+            if (!isLoadMore) {
                 urlParams.delete('ajax');
                 window.history.pushState({}, '', `${currentPath}?${urlParams.toString()}`);
             }
@@ -661,10 +650,9 @@ window.updateShop = function (isLoadMore = false, loadAll = false) {
             productGrid.style.opacity = '1';
             const sortMenu = document.getElementById('sortMenu');
             if (sortMenu) sortMenu.classList.remove('show');
-            if ((isLoadMore || loadAll) && loadMoreBtn) {
-                loadMoreBtn.disabled = false;
-                loadMoreBtn.innerHTML = originalBtnText;
-            }
+            const wrap = document.getElementById('load-more-products-wrap');
+            if (wrap) wrap.classList.add('d-none');
+            window._shopScrollLock = false;
         });
 };
 
@@ -676,6 +664,9 @@ window.filterHomeCategory = function (category, btnElement) {
     const grid = document.getElementById('recommended-grid');
     const loadMoreBtn = document.getElementById('load-more-btn');
     if (!grid) return;
+
+    window._homeDone = false;
+    window._homeLoading = false;
 
     // 6 skeletons = one full row of the recommended grid (6 columns)
     window.renderSkeletons(grid, 6);
@@ -749,6 +740,34 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
         // Fallback for older browsers
         document.querySelectorAll('.fade-in-section').forEach(s => s.classList.add('visible'));
+    }
+
+    // --- INFINITE SCROLL ---
+    if ('IntersectionObserver' in window) {
+        // Products page infinite scroll
+        const productsSentinel = document.getElementById('products-sentinel');
+        if (productsSentinel) {
+            window._shopScrollLock = false;
+            const shopObserver = new IntersectionObserver((entries) => {
+                if (!entries[0].isIntersecting) return;
+                if (window._shopScrollLock) return;
+                const loadMoreBtn = document.getElementById('load-more-products');
+                const currentPage = parseInt(loadMoreBtn ? loadMoreBtn.getAttribute('data-page') : '1') || 1;
+                if (window._shopTotalPages && currentPage >= window._shopTotalPages) return;
+                window._shopScrollLock = true;
+                window.updateShop(true);
+            }, { rootMargin: '300px' });
+            shopObserver.observe(productsSentinel);
+        }
+
+        // Home page infinite scroll
+        const homeSentinel = document.getElementById('home-sentinel');
+        if (homeSentinel) {
+            const homeObserver = new IntersectionObserver((entries) => {
+                if (entries[0].isIntersecting) window.loadMoreHome();
+            }, { rootMargin: '300px' });
+            homeObserver.observe(homeSentinel);
+        }
     }
 
     // --- SEARCH FOCUS HANDLER ---

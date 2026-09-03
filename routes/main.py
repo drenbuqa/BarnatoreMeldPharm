@@ -848,9 +848,7 @@ def products():
     discount_only = request.args.get('discount_only') == 'true'
     no_discount = request.args.get('no_discount') == 'true'
     best_sellers = request.args.get('best_sellers') == 'true'
-    per_page = 24 if request.args.get('ajax') == '1' else 20
-    if request.args.get('all') == 'true':
-        per_page = 1000 # Show all products
+    per_page = 32
     
     pharmacist_choice = request.args.get('pharmacist_choice') == 'true'
     

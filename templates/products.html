@@ -202,7 +202,10 @@
                             <div class="pharmacist-badge"><i class="fas fa-user-md"></i> Farmacisti</div>
                             {% endif %}
                             </div>
-                            <img src="{{ product.image_url|cld(400) }}" alt="{{ product.name }}" loading="lazy">
+                            <div class="img-shimmer"></div>
+                            <img src="{{ product.image_url|cld(400) }}" alt="{{ product.name }}" loading="lazy"
+                                 onload="this.classList.add('loaded');var s=this.parentElement.querySelector('.img-shimmer');if(s)s.classList.add('hidden')"
+                                 onerror="this.src='/static/img/placeholder.png';this.classList.add('error','loaded');var s=this.parentElement.querySelector('.img-shimmer');if(s)s.classList.add('hidden')">
                             <button
                                 class="btn-favorite {{ 'active' if (current_user.is_authenticated and product.favorites and current_user.id in product.favorites) or (not current_user.is_authenticated and product._id|string in session.get('liked_products', [])) else '' }}"
                                 onclick="toggleFavorite(this, '{{ product._id }}')">
@@ -265,13 +268,13 @@
                     {% endif %}
                 </div>
 
-                <div class="load-more-container text-center {{ 'd-none' if not total_pages or total_pages <= 1 else '' }}"
-                    style="margin-top: 4rem; margin-bottom: 4rem;">
-                    <button id="load-more-products" class="btn btn-load-more" data-page="1"
-                        onclick="window.updateShop(true, true)">
-                        <span>Shiko të gjitha produktet</span> <i class="fas fa-arrow-right ml-2"></i>
-                    </button>
+                <div id="products-sentinel" style="height:1px;"></div>
+                <div id="load-more-products-wrap" class="text-center d-none" style="margin:2rem 0;">
+                    <i class="fas fa-spinner fa-spin" style="color:#4F5D4E;font-size:1.5rem;"></i>
                 </div>
+                <!-- hidden element keeps data-page state -->
+                <span id="load-more-products" data-page="1" style="display:none;"></span>
+                <script>window._shopTotalPages = {{ total_pages|default(1) }};</script>
             </main>
         </div>
     </div>
