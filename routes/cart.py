@@ -639,23 +639,27 @@ def order_success(order_id):
     already_fired = session.get(pixel_key, False) or order.get('meta_pixel_fired', False)
     fire_pixel = not already_fired
 
-    if fire_pixel:
-        # Persist immediately so any concurrent/refresh request also sees it
-        from models.db import mongo
-        from bson import ObjectId
-        try:
-            mongo.db.orders.update_one(
-                {'_id': ObjectId(order_id)},
-                {'$set': {'meta_pixel_fired': True}}
-            )
-        except Exception:
-            pass
-
     # Always stamp session (fast path for subsequent requests in same session)
     session[pixel_key] = True
     session.modified = True
 
     if fire_pixel:
         log_event('pu', user_id=current_user.id if current_user.is_authenticated else None)
+        # Persist to DB after response is sent so a render error can't permanently
+        # block Purchase from ever firing again on this order.
+        from flask import after_this_request
+        from models.db import mongo
+        from bson import ObjectId
+        _oid = order_id
+        @after_this_request
+        def _mark_pixel_fired(response):
+            try:
+                mongo.db.orders.update_one(
+                    {'_id': ObjectId(_oid)},
+                    {'$set': {'meta_pixel_fired': True}}
+                )
+            except Exception:
+                pass
+            return response
 
     return render_template('order_success.html', order=order, fire_pixel=fire_pixel)

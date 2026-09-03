@@ -44,7 +44,7 @@
          * IMPORTANT: _loadMetaPixel() deletes this stub before running the
          * real pixel loader, because the loader bails early if fbq already exists.
          */
-        window.fbq = function() {};
+        window.fbq = window.__fbqStub = function() {};
 
         function _loadMetaPixel() {
             if (window._metaPixelLoaded) return;

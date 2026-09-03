@@ -151,18 +151,38 @@
 {% if fire_pixel %}
 <script>
 (function() {
-    var params = {
-        content_ids: [{% for item in order['items'] %}{{ item.product_id | tojson }}{% if not loop.last %},{% endif %}{% endfor %}],
-        contents: [{% for item in order['items'] %}{'id': {{ item.product_id | tojson }}, 'quantity': {{ item.quantity }}}{% if not loop.last %},{% endif %}{% endfor %}],
-        content_type: 'product',
-        value: {{ order.grand_total | float }},
-        currency: 'EUR'
-    };
-    if (window._metaPixelLoaded) {
-        fbq('track', 'Purchase', params);
-        window._metaPixelPendingEvent = null;
-    } else {
-        window._metaPixelPendingEvent = { event: 'Purchase', params: params };
+    try {
+        var params = {
+            content_ids: [{% for item in order['items'] %}"{{ item.product_id }}"{% if not loop.last %},{% endif %}{% endfor %}],
+            contents: [{% for item in order['items'] %}{"id":"{{ item.product_id }}","quantity":{{ item.quantity | int }}}{% if not loop.last %},{% endif %}{% endfor %}],
+            content_type: 'product',
+            value: {{ (order.grand_total or 0) | float }},
+            currency: 'EUR'
+        };
+
+        function _firePurchase() {
+            if (window._metaPixelLoaded && typeof fbq === 'function' && fbq !== window.__fbqStub) {
+                fbq('track', 'Purchase', params);
+                window._metaPixelPendingEvent = null;
+            } else {
+                // Store for when pixel loads (new visitor accepts cookies)
+                window._metaPixelPendingEvent = { event: 'Purchase', params: params };
+                // Poll up to 10s in case consent is given after page load
+                var _attempts = 0;
+                var _iv = setInterval(function() {
+                    if (++_attempts > 100) { clearInterval(_iv); return; }
+                    if (window._metaPixelLoaded && typeof fbq === 'function') {
+                        clearInterval(_iv);
+                        fbq('track', 'Purchase', params);
+                        window._metaPixelPendingEvent = null;
+                    }
+                }, 100);
+            }
+        }
+
+        _firePurchase();
+    } catch(e) {
+        console.error('[Meta Pixel] Purchase event error:', e);
     }
 })();
 </script>
