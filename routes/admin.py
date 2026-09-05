@@ -1725,8 +1725,8 @@ def analytics_page():
                 {"$group": {"_id": "$pid", "n": {"$sum": 1}}},
                 {"$sort": {"n": -1}}, {"$limit": 10}
             ],
-            # Unique visitors = all distinct sessions with any tracked event
-            "unique_visitors": [{"$group": {"_id": "$sid"}}, {"$count": "n"}],
+            # Unique visitors = sessions that fired a 'uv' event (once per session on first home/products visit)
+            "unique_visitors": [{"$match": {"e": "uv"}}, {"$group": {"_id": "$sid"}}, {"$count": "n"}],
             "daily_trend": [
                 {"$group": {"_id": {
                     "day": {"$dateToString": {"format": "%Y-%m-%d", "date": "$ts"}},
@@ -1811,6 +1811,19 @@ def analytics_page():
 
     pending_orders_count = mongo.db.orders.count_documents({'status': {'$in': ['Pending', 'Në Pritje']}})
 
+    # ── Newsletter subscribers ────────────────────────────────────
+    newsletter_total = (
+        mongo.db.newsletter_subscribers.count_documents({}) +
+        mongo.db.users.count_documents({'newsletter_subscribed': True})
+    )
+    newsletter_period = (
+        mongo.db.newsletter_subscribers.count_documents({'subscribed_at': {'$gte': cutoff}}) +
+        mongo.db.users.count_documents({'newsletter_subscribed': True, 'created_at': {'$gte': cutoff}})
+    )
+    newsletter_recent = list(mongo.db.newsletter_subscribers.find(
+        {}, {'email': 1, 'subscribed_at': 1, '_id': 0}
+    ).sort('subscribed_at', -1).limit(8))
+
     return render_template('admin/analytics.html',
                            days=days,
                            funnel=funnel,
@@ -1827,6 +1840,9 @@ def analytics_page():
                            most_liked=most_liked,
                            brand_distribution=brand_distribution,
                            category_sales=category_sales,
+                           newsletter_total=newsletter_total,
+                           newsletter_period=newsletter_period,
+                           newsletter_recent=newsletter_recent,
                            pending_orders_count=pending_orders_count)
 
 
@@ -1847,49 +1863,3 @@ def recent_events():
     return jsonify(docs)
 
 
-@admin.route('/seed-test-events', methods=['POST'])
-@login_required
-@admin_required
-def seed_test_events():
-    """Insert realistic fake events for the last 30 days — only in DEBUG mode."""
-    import os
-    if not os.getenv('FLASK_DEBUG', '1') in ('1', 'true', 'True'):
-        from flask import abort
-        abort(403)
-    import random
-    from bson import ObjectId
-    from datetime import datetime, timedelta
-
-    # Get up to 20 real product IDs to reference
-    products = list(mongo.db.products.find({"is_deleted": {"$ne": True}}, {"_id": 1}).limit(20))
-    if not products:
-        return {"error": "Nuk ka produkte"}, 400
-
-    pids = [p["_id"] for p in products]
-    now = datetime.utcnow()
-    docs = []
-
-    for day_offset in range(30):
-        ts_base = now - timedelta(days=day_offset)
-        n_visits = random.randint(3, 25)
-        for _ in range(n_visits):
-            sid = f"seed_{random.randint(1000, 9999)}"
-            ts = ts_base.replace(hour=random.randint(8, 22), minute=random.randint(0, 59))
-            # View a product
-            pid = random.choice(pids)
-            docs.append({"e": "vp", "pid": pid, "sid": sid, "ts": ts})
-            # ~40% add to cart
-            if random.random() < 0.40:
-                docs.append({"e": "ac", "pid": pid, "sid": sid,
-                              "ts": ts + timedelta(minutes=random.randint(1, 5))})
-                # ~50% of those start checkout
-                if random.random() < 0.50:
-                    docs.append({"e": "bc", "sid": sid,
-                                 "ts": ts + timedelta(minutes=random.randint(6, 12))})
-                    # ~60% of those complete order
-                    if random.random() < 0.60:
-                        docs.append({"e": "pu", "sid": sid,
-                                     "ts": ts + timedelta(minutes=random.randint(13, 20))})
-
-    mongo.db.events.insert_many(docs)
-    return {"inserted": len(docs), "ok": True}

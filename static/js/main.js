@@ -928,18 +928,20 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        searchInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                e.preventDefault(); // Stop form submission if inside a form
-                const term = searchInput.value;
-                if (term.length >= 2 && window.location.pathname !== '/') {
-                    window.location.href = `/products?q=${encodeURIComponent(term)}`;
-                } else if (searchPreview) {
-                    searchPreview.classList.remove('active');
-                    searchPreview.style.display = '';
-                }
+        const doSearch = () => {
+            const term = searchInput.value.trim();
+            if (searchPreview) { searchPreview.classList.remove('active'); searchPreview.style.display = ''; }
+            if (term.length >= 1) {
+                window.location.href = `/products?search=${encodeURIComponent(term)}`;
             }
+        };
+
+        searchInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') { e.preventDefault(); doSearch(); }
         });
+
+        const btn = searchInput.closest('form') && searchInput.closest('form').querySelector('button[type="submit"]');
+        if (btn) btn.addEventListener('click', (e) => { e.preventDefault(); doSearch(); });
 
         document.addEventListener('click', (e) => {
             if (searchPreview && !searchInput.contains(e.target) && !searchPreview.contains(e.target)) {

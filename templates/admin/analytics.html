@@ -527,7 +527,41 @@ a.an-li:hover .an-li-name{text-decoration:underline;color:var(--adm-primary);}
 </div>
 {% endif %}
 
-{# ══ 7. BRAND & CATEGORY CHARTS ═════════════════════════════════════ #}
+{# ══ 7. NEWSLETTER ═══════════════════════════════════════════════════ #}
+<div class="an-section">
+    <p class="an-title"><i class="fas fa-envelope"></i> Abonentët e Newsletter</p>
+    <div class="an-card">
+        <div style="display:flex;gap:1.5rem;flex-wrap:wrap;margin-bottom:1.2rem;">
+            <div style="flex:1;min-width:140px;background:var(--adm-bg);border-radius:10px;padding:1rem 1.2rem;border:1px solid var(--adm-border);">
+                <div style="font-size:1.8rem;font-weight:700;color:var(--adm-primary);">{{ newsletter_total }}</div>
+                <div style="font-size:0.8rem;color:var(--adm-muted);margin-top:2px;">Gjithsej abonentë</div>
+            </div>
+            <div style="flex:1;min-width:140px;background:var(--adm-bg);border-radius:10px;padding:1rem 1.2rem;border:1px solid var(--adm-border);">
+                <div style="font-size:1.8rem;font-weight:700;color:#16a34a;">+{{ newsletter_period }}</div>
+                <div style="font-size:0.8rem;color:var(--adm-muted);margin-top:2px;">Të rinj — {{ days }} ditët e fundit</div>
+            </div>
+        </div>
+        {% if newsletter_recent %}
+        <table class="an-tbl">
+            <thead><tr><th>Email</th><th style="text-align:right;">U abonua më</th></tr></thead>
+            <tbody>
+            {% for s in newsletter_recent %}
+            <tr>
+                <td style="font-size:0.85rem;">{{ s.email }}</td>
+                <td style="text-align:right;color:var(--adm-muted);font-size:0.8rem;white-space:nowrap;">
+                    {{ s.subscribed_at.strftime('%d %b %Y, %H:%M') if s.subscribed_at else '—' }}
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p style="color:var(--adm-muted);font-size:0.85rem;">Nuk ka abonentë akoma.</p>
+        {% endif %}
+    </div>
+</div>
+
+{# ══ 8. BRAND & CATEGORY CHARTS ═════════════════════════════════════ #}
 <div class="an-section">
     <p class="an-title"><i class="fas fa-chart-pie"></i> Shpërndarja e Produkteve</p>
     <div class="an-two">

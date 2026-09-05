@@ -61,6 +61,21 @@ app.config['GOOGLE_CLIENT_SECRET'] = os.getenv('GOOGLE_CLIENT_SECRET', '')
 def make_session_permanent():
     session.permanent = True
 
+@app.after_request
+def set_analytics_cookie(response):
+    from flask import g
+    aid = getattr(g, '_meld_aid_new', None)
+    if aid:
+        secure = os.getenv('RENDER') is not None
+        response.set_cookie(
+            '_meld_aid', aid,
+            max_age=60 * 60 * 24 * 365,
+            httponly=True,
+            samesite='Lax',
+            secure=secure
+        )
+    return response
+
 # Initialize Extensions
 csrf.init_app(app)
 limiter.init_app(app)

@@ -806,8 +806,8 @@ def _build_chatbot_reply(user_query, conversation_id=None):
 
 @main.route('/')
 def index():
-    from models.analytics import log_event
-    log_event('pv')
+    from models.analytics import log_unique_visit
+    log_unique_visit()
     payload = _get_home_payload()
 
     return render_template('index.html',
@@ -832,7 +832,6 @@ def exit_guest():
 @main.route('/products')
 def products():
     from models.analytics import log_event
-    log_event('pv')
     page = request.args.get('page', 1, type=int)
     category = request.args.get('category', 'all')
     subcategory = request.args.get('subcategory', 'all')

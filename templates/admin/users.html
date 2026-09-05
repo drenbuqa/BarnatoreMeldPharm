@@ -24,7 +24,7 @@
     <div class="kpi-card kpi-green">
         <div class="kpi-icon"><i class="fas fa-paper-plane"></i></div>
         <div class="kpi-body">
-            <div class="kpi-number">{{ users | selectattr('newsletter_subscribed') | list | length }}</div>
+            <div class="kpi-number">{{ total_subscriber_count }}</div>
             <div class="kpi-label">Abonentë Buletini</div>
         </div>
     </div>
@@ -139,10 +139,10 @@
                 </tr>
             </thead>
             <tbody>
-                {% for g in guest_subscribers %}
+                {% for sub in guest_subscribers %}
                 <tr>
-                    <td><span style="color:#475569; font-size:0.9rem;">{{ g.email }}</span></td>
-                    <td><span style="color:#64748b; font-size:0.85rem;">{% if g.subscribed_at %}{{ g.subscribed_at.strftime('%d.%m.%Y') }}{% else %}—{% endif %}</span></td>
+                    <td><span style="color:#475569; font-size:0.9rem;">{{ sub.email }}</span></td>
+                    <td><span style="color:#64748b; font-size:0.85rem;">{% if sub.subscribed_at %}{{ sub.subscribed_at.strftime('%d.%m.%Y') }}{% else %}—{% endif %}</span></td>
                 </tr>
                 {% endfor %}
             </tbody>
