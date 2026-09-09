@@ -52,6 +52,10 @@
         color: var(--primary);
     }
 
+    .sticky-checkout-bar {
+        display: none;
+    }
+
     @media (max-width: 768px) {
         .checkout-grid {
             grid-template-columns: 1fr !important;
@@ -59,8 +63,66 @@
         }
 
         .order-summary {
-            order: -1;
-            /* Show summary first on mobile */
+            order: 1;
+        }
+
+        .checkout-submit-btn {
+            display: none !important;
+        }
+
+        body {
+            padding-bottom: 160px;
+        }
+
+        .sticky-checkout-bar {
+            display: block;
+            position: fixed;
+            bottom: 65px;
+            left: 0;
+            right: 0;
+            z-index: 900;
+            background: white;
+            border-top: 1px solid #e2e8f0;
+            box-shadow: 0 -4px 16px rgba(0,0,0,0.10);
+            padding: 0.85rem 1.25rem;
+        }
+
+        .sticky-checkout-inner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .sticky-checkout-total {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sticky-checkout-total span:first-child {
+            font-size: 0.72rem;
+            color: #64748b;
+            font-weight: 500;
+            line-height: 1;
+            margin-bottom: 0.15rem;
+        }
+
+        .sticky-checkout-total span:last-child {
+            font-size: 1.15rem;
+            font-weight: 800;
+            color: #1e293b;
+            line-height: 1;
+        }
+
+        .sticky-checkout-bar button {
+            flex-shrink: 0;
+            padding: 0.85rem 2rem !important;
+            font-size: 1rem !important;
+            font-weight: 700 !important;
+            border-radius: 10px !important;
+            white-space: nowrap;
         }
     }
 </style>
@@ -179,45 +241,17 @@
                     </div>
                     {% endif %}
 
-                    <h3 style="margin-top: 2rem; margin-bottom: 1.5rem;">Mënyra e Pagesës</h3>
+                    <input type="hidden" name="payment_method" value="cash">
 
-                    <div style="margin-bottom: 1rem;">
-                        <label
-                            style="display: flex; align-items: center; gap: 1rem; padding: 1rem; border: 1px solid #e5e7eb; border-radius: var(--radius-md); cursor: pointer;">
-                            <input type="radio" name="payment_method" value="cash" checked
-                                onchange="toggleCardPayment(false)">
-                            <i class="fas fa-money-bill-wave" style="color: var(--primary); font-size: 1.2rem;"></i>
-                            <div>
-                                <span style="font-weight: 600; display: block;">Paguj në Dorëzim</span>
-                                <span style="font-size: 0.85rem; color: var(--text-muted);">Paguani kur të arrin
-                                    porosia</span>
-                            </div>
-                        </label>
+                    <div style="display: flex; align-items: center; gap: 0.85rem; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: var(--radius-md); padding: 1rem 1.25rem; margin-top: 2rem; margin-bottom: 2rem;">
+                        <i class="fas fa-money-bill-wave" style="color: #16a34a; font-size: 1.3rem; flex-shrink: 0;"></i>
+                        <div>
+                            <span style="font-weight: 700; display: block; color: #15803d;">Pagesa me Para në Dorë</span>
+                            <span style="font-size: 0.85rem; color: #166534;">Paguani kur porosia të arrijë te ju — nuk nevojitet kartë.</span>
+                        </div>
                     </div>
 
-                    <div style="margin-bottom: 2rem;">
-                        <label
-                            style="display: flex; align-items: center; gap: 1rem; padding: 1rem; border: 1px solid #e5e7eb; border-radius: var(--radius-md); cursor: pointer;">
-                            <input type="radio" name="payment_method" value="card" onchange="toggleCardPayment(true)">
-                            <i class="far fa-credit-card" style="color: var(--text-muted); font-size: 1.2rem;"></i>
-                            <div>
-                                <span style="font-weight: 600; display: block;">Kartë Bankare (Stripe)</span>
-                                <span style="font-size: 0.85rem; color: var(--text-muted);">Visa, Mastercard,
-                                    etj.</span>
-                            </div>
-                        </label>
-                    </div>
-
-                    <!-- Placeholder for Card Element -->
-                    <div id="card-element-container"
-                        style="display: none; padding: 1rem; background: #f9fafb; border-radius: var(--radius-md); margin-bottom: 2rem;">
-                        <p style="color: var(--text-muted); font-size: 0.9rem;">
-                            <i class="fas fa-info-circle"></i> Pagesat me kartë janë duke u konfiguruar dhe do të jenë
-                            së shpejti në dispozicion. Ju lutem zgjedhni "Paguj në Dorëzim".
-                        </p>
-                    </div>
-
-                    <button type="submit" class="btn btn-primary"
+                    <button type="submit" class="btn btn-primary checkout-submit-btn"
                         style="width: 100%; justify-content: center; padding: 1rem;">
                         Konfirmo Porosinë
                     </button>
@@ -278,6 +312,19 @@
                 </div>
             </div>
         </div>
+    </div>
+</div>
+
+<!-- Sticky bottom bar — mobile only -->
+<div class="sticky-checkout-bar" id="stickyCheckoutBar">
+    <div class="sticky-checkout-inner">
+        <div class="sticky-checkout-total">
+            <span>Totali</span>
+            <span id="sticky-grand-total">€{{ "%.2f"|format(grand_total) }}</span>
+        </div>
+        <button type="button" class="btn btn-primary" onclick="document.getElementById('checkout-form').requestSubmit()">
+            Konfirmo Porosinë
+        </button>
     </div>
 </div>
 
@@ -358,22 +405,10 @@
 
         const grandTotal = subtotal + fee;
         grandTotalDisplay.innerHTML = '€' + grandTotal.toFixed(2);
+        const stickyTotal = document.getElementById('sticky-grand-total');
+        if (stickyTotal) stickyTotal.innerHTML = '€' + grandTotal.toFixed(2);
     }
 
-    function toggleCardPayment(show) {
-        const container = document.getElementById('card-element-container');
-        const btn = document.querySelector('button[type="submit"]');
-
-        if (show) {
-            container.style.display = 'block';
-            btn.disabled = true;
-            btn.textContent = "Së Shpejti...";
-        } else {
-            container.style.display = 'none';
-            btn.disabled = false;
-            btn.textContent = "Konfirmo Porosinë";
-        }
-    }
 
     // ── Inline Form Validation ────────────────────────────────────────────
     (function () {

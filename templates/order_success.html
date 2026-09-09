@@ -40,9 +40,14 @@
             </div>
         </div>
 
-        <a href="{{ url_for('main.products') }}" class="btn btn-primary" style="padding:0.85rem 2.5rem;font-size:1rem;">
-            Vazhdo me blerjet
-        </a>
+        <div style="display:flex;gap:0.75rem;flex-wrap:wrap;justify-content:center;">
+            <a href="{{ url_for('main.products') }}" class="btn btn-primary" style="padding:0.85rem 2rem;font-size:1rem;">
+                <i class="fas fa-search" style="margin-right:0.5rem;"></i>Shfleto Produktet
+            </a>
+            <a href="{{ url_for('main.orders') }}" class="btn" style="padding:0.85rem 2rem;font-size:1rem;background:var(--bg-soft,#f1f5f9);color:var(--text-main);border:1.5px solid var(--border-light,#e2e8f0);border-radius:var(--radius-md);font-weight:600;text-decoration:none;">
+                <i class="fas fa-box" style="margin-right:0.5rem;"></i>Porositë e Mia
+            </a>
+        </div>
 
         {% if not current_user.is_authenticated or not current_user.newsletter_subscribed %}
         <div style="margin-top:2rem; background:var(--bg-soft,#f8fafc); border:1.5px solid var(--border-light,#e2e8f0); border-radius:16px; padding:1.5rem; text-align:left;">
