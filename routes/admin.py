@@ -1752,12 +1752,8 @@ def analytics_page():
     total_views   = (f.get("total_vp") or [{}])[0].get("n", 0)
 
     funnel = [
-        {"label": "Vizita Unike",        "count": visitors,    "icon": "fa-users",       "color": "#4F5D4E",
-         "desc": "Vizitorë unikë (home/produkte)",  "rate_label": None},
-        {"label": "Faqe Produkti Hapur", "count": total_views, "icon": "fa-eye",         "color": "#6b7c6a",
-         "desc": "Hapje totale faqesh produkti",
-         "rate": round(total_views / visitors, 2) if visitors else 0,
-         "rate_label": "faqe produkti mesatarisht për vizitor", "rate_is_avg": True},
+        {"label": "Faqe Produkti Hapur", "count": total_views, "icon": "fa-eye",         "color": "#4F5D4E",
+         "desc": "Hapje totale faqesh produkti", "rate_label": None},
         {"label": "Shtuar në Shportë",   "count": adds,      "icon": "fa-cart-plus",   "color": "#f59e0b",
          "desc": "nga ata që hapën produkte", "rate": pct(adds, view_sessions),
          "rate_label": "nga ata që hapën ≥1 produkt"},

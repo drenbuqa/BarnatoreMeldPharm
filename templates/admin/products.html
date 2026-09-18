@@ -11,6 +11,7 @@
 
 {% block admin_content %}
 <style>
+:root { --adm-primary: #4F5D4E; }
 /* ── Filter bar ── */
 .pf-bar {
     background:#fff; border:1px solid #eef0ed; border-radius:14px;
@@ -22,48 +23,83 @@
 .pf-search { position:relative; flex:1; min-width:180px; max-width:280px; }
 .pf-search i { position:absolute; left:0.75rem; top:50%; transform:translateY(-50%); color:#9aa095; font-size:0.8rem; pointer-events:none; }
 .pf-search input {
-    width:100%; padding:0.55rem 0.75rem 0.55rem 2.2rem;
-    border:1.5px solid #e2e8f0; border-radius:9px; font-size:0.85rem;
+    width:100%; height:38px; padding:0 0.75rem 0 2.2rem;
+    border:1.5px solid #e2e8f0; border-radius:9px; font-size:0.84rem;
     background:#fafafa; color:#1a1f18; outline:none; box-sizing:border-box;
 }
 .pf-search input:focus { border-color:var(--adm-primary); background:#fff; }
 
-/* Selects */
-.pf-select {
-    padding:0.55rem 2rem 0.55rem 0.75rem;
-    border:1.5px solid #e2e8f0; border-radius:9px; font-size:0.83rem;
-    background:#fafafa url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%239aa095'/%3E%3C/svg%3E") no-repeat right 0.6rem center;
-    color:#1a1f18; appearance:none; outline:none; cursor:pointer; font-family:inherit;
-    min-width:120px; max-width:180px;
+/* Custom dropdown */
+.pf-dd { position:relative; display:inline-block; }
+.pf-dd-trigger {
+    display:inline-flex; align-items:center; gap:0.45rem;
+    height:38px; padding:0 0.85rem; border:1.5px solid #e2e8f0; border-radius:9px;
+    font-size:0.83rem; font-weight:600; color:#6b7280; background:#fafafa;
+    cursor:pointer; white-space:nowrap; user-select:none; transition:all 0.15s;
+    min-width:120px; justify-content:space-between; box-sizing:border-box;
 }
-.pf-select:focus { border-color:var(--adm-primary); background-color:#fff; }
-.pf-select.active { border-color:var(--adm-primary); background-color:#f0fdf4; color:var(--adm-primary); font-weight:700; }
-
-/* Toggle chips */
-.pf-chip {
-    display:inline-flex; align-items:center; gap:0.35rem;
-    padding:0.5rem 0.85rem; border-radius:9px;
-    font-size:0.8rem; font-weight:700; white-space:nowrap;
-    border:1.5px solid #e2e8f0; background:#fafafa; color:#6b7280;
-    cursor:pointer; transition:all 0.15s; text-decoration:none;
+.pf-dd-trigger:hover { border-color:#4F5D4E; color:#4F5D4E; background:#f5f7f4; }
+.pf-dd-trigger.active {
+    background:#4F5D4E; border-color:#4F5D4E; color:#fff; font-weight:700;
+    box-shadow:0 2px 8px rgba(79,93,78,0.25);
 }
-.pf-chip:hover { background:#f0fdf4; border-color:var(--adm-primary); color:var(--adm-primary); }
-.pf-chip.active { background:var(--adm-primary); border-color:var(--adm-primary); color:#fff; }
-.pf-chip.chip-red { border-color:#fca5a5; background:#fef2f2; color:#dc2626; }
-.pf-chip.chip-red:hover { background:#fee2e2; }
+.pf-dd-trigger .dd-arrow { font-size:0.6rem; opacity:0.6; transition:transform 0.18s; flex-shrink:0; }
+.pf-dd.open .pf-dd-trigger .dd-arrow { transform:rotate(180deg); }
+.pf-dd-menu {
+    position:absolute; top:calc(100% + 6px); left:0; z-index:9999;
+    background:#fff; border:1.5px solid #e2e8f0; border-radius:12px;
+    box-shadow:0 8px 28px rgba(0,0,0,0.12); min-width:200px; max-width:280px;
+    overflow:hidden; display:none; flex-direction:column;
+}
+.pf-dd.open .pf-dd-menu { display:flex; }
+.pf-dd-search {
+    padding:0.55rem 0.75rem; border-bottom:1px solid #f0f2f0;
+    display:flex; align-items:center; gap:0.5rem;
+}
+.pf-dd-search i { color:#9aa095; font-size:0.78rem; flex-shrink:0; }
+.pf-dd-search input {
+    border:none; outline:none; font-size:0.83rem; color:#1a1f18;
+    background:transparent; width:100%; font-family:inherit;
+}
+.pf-dd-list { overflow-y:auto; max-height:240px; padding:0.3rem 0; }
+.pf-dd-opt {
+    display:flex; align-items:center; gap:0.55rem;
+    padding:0.48rem 0.85rem; font-size:0.83rem; color:#374151;
+    cursor:pointer; transition:background 0.1s; white-space:nowrap;
+    overflow:hidden; text-overflow:ellipsis;
+}
+.pf-dd-opt:hover { background:#f5f7f4; color:#4F5D4E; }
+.pf-dd-opt.selected { background:#eef5ee; color:#4F5D4E; font-weight:700; }
+.pf-dd-opt.selected::after { content:'✓'; margin-left:auto; font-size:0.75rem; }
+.pf-dd-opt.clear-opt { color:#9aa095; font-style:italic; border-bottom:1px solid #f0f2f0; margin-bottom:0.2rem; }
+.pf-dd-opt.clear-opt:hover { color:#dc2626; background:#fef2f2; }
+.pf-dd-empty { padding:0.75rem 0.85rem; font-size:0.8rem; color:#9aa095; font-style:italic; }
 
 /* Active filter chips strip */
 .pf-chips-row { display:flex; align-items:center; gap:0.4rem; flex-wrap:wrap; margin-top:0.65rem; }
 .active-chip {
     display:inline-flex; align-items:center; gap:0.35rem;
-    padding:0.3rem 0.65rem; border-radius:20px;
-    font-size:0.78rem; font-weight:700;
-    background:#f0fdf4; color:var(--adm-primary); border:1px solid #d4dcd3;
-    text-decoration:none;
+    padding:0.28rem 0.6rem; border-radius:20px;
+    font-size:0.76rem; font-weight:700;
+    background:#eef5ee; color:#4F5D4E; border:1px solid #c8d8c6;
+    text-decoration:none; transition:all 0.12s;
 }
-.active-chip i { font-size:0.65rem; opacity:0.7; }
-.active-chip:hover { background:#e2ebe0; }
+.active-chip i { font-size:0.6rem; opacity:0.7; }
+.active-chip:hover { background:#dceadb; border-color:#4F5D4E; }
 
+/* Toggle chips */
+.pf-chip {
+    display:inline-flex; align-items:center; gap:0.35rem;
+    height:38px; padding:0 0.85rem; border-radius:9px;
+    font-size:0.8rem; font-weight:700; white-space:nowrap;
+    border:1.5px solid #e2e8f0; background:#fafafa; color:#6b7280;
+    cursor:pointer; transition:all 0.15s; text-decoration:none; box-sizing:border-box;
+}
+.pf-chip:hover { background:#eef2ee; border-color:#4F5D4E; color:#4F5D4E; }
+.pf-chip.active {
+    background:#4F5D4E; border-color:#4F5D4E; color:#fff;
+    box-shadow:0 2px 8px rgba(79,93,78,0.25);
+}
 /* Count badges */
 .pf-count { font-size:0.78rem; color:#8a9186; margin-left:auto; white-space:nowrap; }
 
@@ -128,10 +164,24 @@
 .prod-empty i { font-size:2.5rem; opacity:0.2; display:block; margin-bottom:1rem; color:#1a1f18; }
 
 @media(max-width:768px) {
-    .pf-row { flex-direction:column; align-items:stretch; }
-    .pf-search { max-width:100%; }
-    .pf-select { max-width:100%; }
-    .prod-name { max-width:160px; }
+    .pf-bar { padding:0.85rem 1rem; }
+    /* search full-width on its own row, then 4 filters in one row */
+    .pf-row { display:flex; flex-wrap:wrap; gap:0.5rem; align-items:center; }
+    .pf-search { flex:0 0 100%; max-width:100%; order:-1; }
+    .pf-count  { display:none; }
+    /* dropdowns share remaining space equally */
+    .pf-dd { flex:1; min-width:0; }
+    .pf-dd-trigger { width:100%; justify-content:space-between; box-sizing:border-box; padding:0.55rem 0.7rem; font-size:0.78rem; }
+    .pf-dd-menu { min-width:0 !important; width:max-content; max-width:90vw; }
+    /* icon-only chip buttons */
+    .pf-chip { flex:0 0 40px; width:40px; height:40px; padding:0; justify-content:center; border-radius:9px; }
+    .pf-chip .chip-lbl { display:none; }
+    .pf-chip i { font-size:0.88rem; margin:0; }
+    .prod-name { max-width:140px; }
+}
+@media(max-width:480px) {
+    .prod-name { max-width:110px; }
+    .pp-info { display:none; }
 }
 </style>
 
@@ -148,6 +198,12 @@
 
 <!-- Filter bar (GET form — all params in URL) -->
 <form method="GET" action="{{ url_for('admin.products_page') }}" id="pFilterForm" class="pf-bar">
+    <!-- Hidden inputs for custom dropdowns -->
+    <input type="hidden" name="category" id="hCategory" value="{{ filter_category }}">
+    <input type="hidden" name="brand"    id="hBrand"    value="{{ filter_brand }}">
+    <input type="hidden" name="on_offer" id="hOnOffer"  value="{{ '1' if filter_on_offer else '' }}">
+    <input type="hidden" name="stock"    id="hStock"    value="{{ filter_stock }}">
+
     <div class="pf-row">
         <!-- Search -->
         <div class="pf-search">
@@ -156,50 +212,66 @@
                    id="pSearchInput" autocomplete="off">
         </div>
 
-        <!-- Category -->
-        <select name="category" class="pf-select {{ 'active' if filter_category }}"
-                onchange="this.form.submit()">
-            <option value="">Kategoria</option>
-            {% for cat in all_categories %}
-            <option value="{{ cat }}" {{ 'selected' if filter_category == cat }}>{{ cat }}</option>
-            {% endfor %}
-        </select>
+        <!-- Category custom dropdown -->
+        <div class="pf-dd" id="ddCategory">
+            <div class="pf-dd-trigger {{ 'active' if filter_category }}" onclick="toggleDd('ddCategory')">
+                <span id="ddCategoryLabel">{{ filter_category or 'Kategoria' }}</span>
+                <i class="fas fa-chevron-down dd-arrow"></i>
+            </div>
+            <div class="pf-dd-menu">
+                <div class="pf-dd-list" id="ddCategoryList">
+                    {% for cat in all_categories %}
+                    <div class="pf-dd-opt {{ 'selected' if filter_category == cat }}"
+                         onclick="pickDd('ddCategory','{{ cat }}','{{ cat }}','hCategory')">{{ cat }}</div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
 
-        <!-- Brand -->
-        <select name="brand" class="pf-select {{ 'active' if filter_brand }}"
-                onchange="this.form.submit()">
-            <option value="">Brendi</option>
-            {% for br in all_brands %}
-            <option value="{{ br }}" {{ 'selected' if filter_brand == br }}>{{ br }}</option>
-            {% endfor %}
-        </select>
+        <!-- Brand custom searchable dropdown -->
+        <div class="pf-dd" id="ddBrand">
+            <div class="pf-dd-trigger {{ 'active' if filter_brand }}" onclick="toggleDd('ddBrand')">
+                <span id="ddBrandLabel">{{ filter_brand or 'Brendi' }}</span>
+                <i class="fas fa-chevron-down dd-arrow"></i>
+            </div>
+            <div class="pf-dd-menu">
+                <div class="pf-dd-search" onclick="event.stopPropagation()" onmousedown="event.stopPropagation()">
+                    <i class="fas fa-search"></i>
+                    <input type="text" placeholder="Kërko brend..." id="brandSearchInput"
+                           autocomplete="off" oninput="adminFilterBrandList(this.value)">
+                </div>
+                <div class="pf-dd-list" id="ddBrandList">
+                    <div class="pf-dd-opt clear-opt" onclick="pickDd('ddBrand','','Brendi','hBrand')" style="display:none;">
+                    </div>
+                    {% for br in all_brands %}
+                    <div class="pf-dd-opt {{ 'selected' if filter_brand == br }}"
+                         data-brand="{{ br|lower }}"
+                         onclick="pickDd('ddBrand','{{ br }}','{{ br }}','hBrand')">{{ br }}</div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
 
         <!-- Offer toggle -->
-        <input type="hidden" name="on_offer" value="">
         <button type="button" class="pf-chip {{ 'active' if filter_on_offer }}"
-                onclick="toggleChip(this,'on_offer','{{ '1' if not filter_on_offer else '' }}')">
-            <i class="fas fa-tag"></i> Oferta
+                title="Filtro produktet në ofertë"
+                onclick="toggleChip('hOnOffer','{{ '' if filter_on_offer else '1' }}',this)">
+            <i class="fas fa-percent"></i><span class="chip-lbl"> Oferta</span>
         </button>
 
         <!-- Stock toggle -->
-        <input type="hidden" name="stock" value="{{ filter_stock }}">
         <button type="button" class="pf-chip {{ 'active' if filter_stock == 'out' }}"
-                onclick="toggleChip(this,'stock','{{ '' if filter_stock == 'out' else 'out' }}')">
-            <i class="fas fa-exclamation-circle"></i> Pa Stok
+                title="Filtro produktet pa stok"
+                onclick="toggleChip('hStock','{{ '' if filter_stock == 'out' else 'out' }}',this)">
+            <i class="fas fa-box-open"></i><span class="chip-lbl"> Pa Stok</span>
         </button>
-
-        {% if any_filter %}
-        <a href="{{ url_for('admin.products_page') }}" class="pf-chip chip-red" title="Hiq të gjitha filtrat">
-            <i class="fas fa-times"></i> Hiq
-        </a>
-        {% endif %}
 
         <span class="pf-count">
             {% if any_filter %}{{ filtered_total }} / {{ total_count }}{% else %}{{ total_count }}{% endif %} produkte
         </span>
     </div>
 
-    <!-- Active filter chips -->
+    <!-- Active filter chips (one per active filter, click X to remove) -->
     {% if any_filter %}
     <div class="pf-chips-row">
         {% if search_q %}
@@ -345,24 +417,57 @@
 {% endif %}
 
 <script>
-/* Category/brand selects also preserve other form fields on change */
-document.getElementById('pFilterForm').addEventListener('change', function(e) {
-    if (e.target.tagName === 'SELECT') {
-        /* reset page to 1 on filter change */
-        const existing = this.querySelector('input[name="page"]');
-        if (existing) existing.remove();
+/* ── Custom dropdown logic ── */
+function toggleDd(id) {
+    const dd = document.getElementById(id);
+    const isOpen = dd.classList.contains('open');
+    document.querySelectorAll('.pf-dd.open').forEach(d => d.classList.remove('open'));
+    if (!isOpen) {
+        dd.classList.add('open');
+        if (id === 'ddBrand') {
+            setTimeout(function() {
+                const si = document.getElementById('brandSearchInput');
+                if (si) { si.value = ''; adminFilterBrandList(''); si.focus(); }
+            }, 10);
+        }
+    }
+}
+
+function pickDd(ddId, value, label, hiddenId) {
+    document.getElementById(hiddenId).value = value;
+    document.getElementById(ddId + 'Label').textContent = label;
+    const trigger = document.querySelector('#' + ddId + ' .pf-dd-trigger');
+    if (value) { trigger.classList.add('active'); } else { trigger.classList.remove('active'); }
+    document.getElementById(ddId).classList.remove('open');
+    submitFilters();
+}
+
+function adminFilterBrandList(q) {
+    const ql = q.toLowerCase();
+    document.querySelectorAll('#ddBrandList .pf-dd-opt').forEach(function(o) {
+        if (o.classList.contains('clear-opt')) return;
+        o.style.display = o.textContent.trim().toLowerCase().includes(ql) ? '' : 'none';
+    });
+}
+
+// Close dropdowns when clicking outside
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('.pf-dd')) {
+        document.querySelectorAll('.pf-dd.open').forEach(d => d.classList.remove('open'));
     }
 });
 
-/* Toggle chip: set hidden input value then submit */
-function toggleChip(btn, fieldName, newValue) {
+function submitFilters() {
     const form = document.getElementById('pFilterForm');
-    const input = form.querySelector(`input[name="${fieldName}"]`);
-    if (input) input.value = newValue;
-    /* reset page */
     const pg = form.querySelector('input[name="page"]');
     if (pg) pg.remove();
     form.submit();
+}
+
+/* Toggle chip: set hidden input value then submit */
+function toggleChip(hiddenId, newValue, btn) {
+    document.getElementById(hiddenId).value = newValue;
+    submitFilters();
 }
 
 /* Live AJAX search — updates table in place without page reload */

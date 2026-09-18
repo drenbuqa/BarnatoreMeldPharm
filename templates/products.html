@@ -144,6 +144,7 @@
 
             <!-- Main Shop Content -->
             <main class="shop-main-content">
+                <div class="shop-controls-holder">
                 <div class="shop-controls-container">
                     <div class="results-count">
                         Gjithsej <span id="current-count">{{ total_count }}</span> produkte
@@ -178,6 +179,7 @@
                         </button>
                     </div>
                 </div>
+                </div>{# end shop-controls-holder #}
 
                 <div id="productGrid" class="product-grid">
                     {% for product in products %}
@@ -274,6 +276,13 @@
                         <span></span><span></span><span></span>
                     </div>
                 </div>
+                <div id="products-end-msg" class="products-end-msg" style="{{ 'display:block' if total_pages <= 1 else 'display:none' }}">
+                    <div class="products-end-inner">
+                        <div class="products-end-line"></div>
+                        <span class="products-end-text">Keni parë të gjitha produktet</span>
+                        <div class="products-end-line"></div>
+                    </div>
+                </div>
                 <!-- hidden element keeps data-page state -->
                 <span id="load-more-products" data-page="1" style="display:none;"></span>
                 <script>window._shopTotalPages = {{ total_pages|default(1) }};</script>
@@ -281,6 +290,18 @@
         </div>
     </div>
 </section>
+<style>
+.products-end-msg{padding:2rem 1rem 1.5rem;animation:fadeInUp .4s ease both}
+.products-end-inner{display:flex;align-items:center;gap:1rem}
+.products-end-line{flex:1;height:1px;background:#e2e8f0}
+.products-end-text{white-space:nowrap;font-size:.8rem;color:#94a3b8;font-weight:500;letter-spacing:.04em}
+@keyframes fadeInUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+@media(max-width:992px){
+  .shop-section{padding-bottom:0!important;}
+  .shop-main-content{padding-bottom:0!important;}
+  .products-end-msg{padding:1rem 1rem 0!important;}
+}
+</style>
 <script>
 // ── Desktop: sidebar fixed-sticky ──────────────────────────────────
 (function(){
@@ -290,6 +311,9 @@
 
     var NAVBAR = 88; // px below viewport top to stick at
     var ph = null, fixed = false, natLeft = 0, natWidth = 0;
+
+    // Add transition on the sidebar once
+    sidebar.style.transition = 'top 0.25s ease';
 
     function fix() {
         if (fixed) return;
@@ -332,56 +356,64 @@
     update();
 })();
 
-// ── Mobile: controls-bar fixed-sticky ──────────────────────────────
+// ── Mobile: controls-bar fixed-sticky (wrapper holds space, class toggles position) ──
 (function(){
-    var bar  = document.querySelector('.shop-controls-container');
-    var mhdr = document.querySelector('.mobile-header');
-    if (!bar) return;
+    var bar    = document.querySelector('.shop-controls-container');
+    var holder = document.querySelector('.shop-controls-holder');
+    var mhdr   = document.querySelector('.mobile-header');
+    if (!bar || !holder || window.innerWidth > 992) return;
 
-    var ph = null, fixed = false, barH = 0;
+    // Include the bar's bottom margin so the holder reserves full visual space
+    var barMarginBottom = parseInt(getComputedStyle(bar).marginBottom) || 40;
+    var barH   = bar.offsetHeight + barMarginBottom;
+    holder.style.cssText = 'height:' + barH + 'px;flex-shrink:0;';
 
-    function hdrH() { return mhdr ? mhdr.offsetHeight : 0; }
+    // Inject styles — top is NOT hardcoded here; set live in update()
+    var s = document.createElement('style');
+    s.textContent =
+        '.shop-controls-container.bar-fixed{' +
+            'position:fixed!important;' +
+            'left:0!important;right:0!important;' +
+            'margin:0!important;border-radius:0!important;' +
+            'box-shadow:0 4px 14px rgba(0,0,0,0.10)!important;' +
+            'z-index:9999!important;' +
+            'background:#fff!important;' +
+            'border-bottom:1px solid #f1f5f9!important;' +
+        '}';
+    document.head.appendChild(s);
 
-    function fix() {
-        if (fixed) return;
-        barH = bar.offsetHeight;
-        ph = document.createElement('div');
-        ph.style.height = barH + 'px';
-        bar.parentNode.insertBefore(ph, bar);
-        bar.style.position    = 'fixed';
-        bar.style.top         = hdrH() + 'px';
-        bar.style.left        = '0';
-        bar.style.right       = '0';
-        bar.style.margin      = '0';
-        bar.style.borderRadius = '0';
-        bar.style.boxShadow   = '0 4px 12px rgba(0,0,0,0.1)';
-        bar.style.zIndex      = '9999';
-        bar.style.borderBottom = '1px solid #f1f5f9';
-        fixed = true;
-    }
+    var isFixed = false;
 
-    function unfix() {
-        if (!fixed) return;
-        bar.style.position = bar.style.top = bar.style.left =
-        bar.style.right = bar.style.margin = bar.style.borderRadius =
-        bar.style.boxShadow = bar.style.zIndex = bar.style.borderBottom = '';
-        if (ph && ph.parentNode) ph.parentNode.removeChild(ph);
-        ph = null; fixed = false;
+    function hdrH() {
+        // Read live every time — header shrinks when scrolled
+        return mhdr ? mhdr.getBoundingClientRect().bottom : 60;
     }
 
     function update() {
-        if (window.innerWidth > 992) { unfix(); return; }
-        var anchor = ph ? ph.getBoundingClientRect().top : bar.getBoundingClientRect().top;
-        if (anchor <= hdrH() + 1) {
-            fix();
-            bar.style.top = hdrH() + 'px'; // track header collapse
-        } else {
-            unfix();
+        var h = hdrH();
+        var holderTop = holder.getBoundingClientRect().top;
+        if (!isFixed && holderTop <= h) {
+            bar.style.top = h + 'px';
+            bar.classList.add('bar-fixed');
+            isFixed = true;
+        } else if (isFixed) {
+            // Keep top in sync as header animates
+            bar.style.top = h + 'px';
+            if (holderTop > h) {
+                bar.classList.remove('bar-fixed');
+                bar.style.top = '';
+                isFixed = false;
+            }
         }
     }
 
-    window.addEventListener('scroll', update, { passive: true });
-    window.addEventListener('resize', function(){ unfix(); setTimeout(update, 50); }, { passive: true });
+    var ticking = false;
+    window.addEventListener('scroll', function(){
+        if (ticking) return;
+        ticking = true;
+        requestAnimationFrame(function(){ update(); ticking = false; });
+    }, { passive: true });
+
     update();
 })();
 

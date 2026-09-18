@@ -40,8 +40,8 @@
     </div>
 </div>
 
-<!-- Users Table -->
-<div class="admin-table-card">
+<!-- Users Table (desktop) -->
+<div class="admin-table-card usr-tbl-wrap">
     <div class="table-responsive">
         <table class="premium-admin-table" id="usersTable">
             <thead>
@@ -58,69 +58,53 @@
             <tbody>
                 {% for user in users %}
                 <tr data-name="{{ user.username|lower if user.username else '' }}" data-email="{{ user.email|lower if user.email else '' }}">
-                    <td>
-                        <div class="user-cell">
-                            <div class="user-avatar">{{ (user.username or user.email or 'U')[0]|upper }}</div>
-                            <span class="user-name">{{ user.username or '—' }}</span>
-                        </div>
-                    </td>
-                    <td>
-                        <span style="color:#475569; font-size:0.9rem;">{{ user.email or '—' }}</span>
-                    </td>
-                    <td>
-                        <span style="color:#64748b; font-size:0.85rem;">
-                            {% if user.created_at %}{{ user.created_at.strftime('%d.%m.%Y') }}{% else %}—{% endif %}
-                        </span>
-                    </td>
-                    <td>
-                        <span class="table-cat-badge">{{ user.order_count if user.order_count is defined else 0 }}</span>
-                    </td>
-                    <td>
-                        {% if user.is_admin %}
-                        <span class="role-badge role-admin"><i class="fas fa-shield-alt"></i> Admin</span>
-                        {% else %}
-                        <span class="role-badge role-user"><i class="fas fa-user"></i> Përdorues</span>
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if user.newsletter_subscribed %}
-                        <span class="sub-badge sub-yes"><i class="fas fa-check"></i> Abonuar</span>
-                        {% else %}
-                        <span class="sub-badge sub-no">—</span>
-                        {% endif %}
-                    </td>
-                    <td>
-                        <div class="table-actions" style="justify-content:flex-end;">
-                            <a href="{{ url_for('admin.user_orders', user_id=user._id) }}"
-                               class="action-btn" title="Shiko Porositë" style="text-decoration:none;">
-                                <i class="fas fa-shopping-bag"></i>
-                            </a>
-                            <form action="{{ url_for('admin.toggle_admin', user_id=user._id) }}" method="POST"
-                                  onsubmit="return confirmToggleAdmin(this, '{{ user.username or user.email }}', {{ 'true' if user.is_admin else 'false' }});">
-                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-                                <button type="submit"
-                                    class="action-btn {{ 'btn-remove-admin' if user.is_admin else 'btn-make-admin' }}"
-                                    title="{{ 'Hiq të drejtat Admin' if user.is_admin else 'Bëje Admin' }}">
-                                    <i class="fas {{ 'fa-user-minus' if user.is_admin else 'fa-user-plus' }}"></i>
-                                </button>
-                            </form>
-                        </div>
-                    </td>
+                    <td><div class="user-cell"><div class="user-avatar">{{ (user.username or user.email or 'U')[0]|upper }}</div><span class="user-name">{{ user.username or '—' }}</span></div></td>
+                    <td><span style="color:#475569;font-size:0.9rem;">{{ user.email or '—' }}</span></td>
+                    <td><span style="color:#64748b;font-size:0.85rem;">{% if user.created_at %}{{ user.created_at.strftime('%d.%m.%Y') }}{% else %}—{% endif %}</span></td>
+                    <td><span class="table-cat-badge">{{ user.order_count if user.order_count is defined else 0 }}</span></td>
+                    <td>{% if user.is_admin %}<span class="role-badge role-admin"><i class="fas fa-shield-alt"></i> Admin</span>{% else %}<span class="role-badge role-user"><i class="fas fa-user"></i> Përdorues</span>{% endif %}</td>
+                    <td>{% if user.newsletter_subscribed %}<span class="sub-badge sub-yes"><i class="fas fa-check"></i> Abonuar</span>{% else %}<span class="sub-badge sub-no">—</span>{% endif %}</td>
+                    <td><div class="table-actions" style="justify-content:flex-end;"><a href="{{ url_for('admin.user_orders', user_id=user._id) }}" class="action-btn" title="Shiko Porositë" style="text-decoration:none;"><i class="fas fa-shopping-bag"></i></a><form action="{{ url_for('admin.toggle_admin', user_id=user._id) }}" method="POST" onsubmit="return confirmToggleAdmin(this,'{{ user.username or user.email }}',{{ 'true' if user.is_admin else 'false' }});"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/><button type="submit" class="action-btn {{ 'btn-remove-admin' if user.is_admin else 'btn-make-admin' }}" title="{{ 'Hiq të drejtat Admin' if user.is_admin else 'Bëje Admin' }}"><i class="fas {{ 'fa-user-minus' if user.is_admin else 'fa-user-plus' }}"></i></button></form></div></td>
                 </tr>
                 {% else %}
-                <tr>
-                    <td colspan="7">
-                        <div class="adm-empty">
-                            <div class="adm-empty-icon"><i class="fas fa-users"></i></div>
-                            <p class="adm-empty-title">Nuk u gjet asnjë përdorues</p>
-                            <p class="adm-empty-desc">Përdoruesit regjistrohen vetë. Do të shfaqen këtu pasi të kenë krijuar një llogari.</p>
-                        </div>
-                    </td>
-                </tr>
+                <tr><td colspan="7"><div class="adm-empty"><div class="adm-empty-icon"><i class="fas fa-users"></i></div><p class="adm-empty-title">Nuk u gjet asnjë përdorues</p><p class="adm-empty-desc">Përdoruesit regjistrohen vetë.</p></div></td></tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
+</div>
+
+<!-- Users Card List (mobile only) -->
+<div class="usr-card-list" id="usrCardList">
+    {% for user in users %}
+    <div class="usr-card" data-name="{{ user.username|lower if user.username else '' }}" data-email="{{ user.email|lower if user.email else '' }}">
+        <div class="usr-card-left">
+            <div class="user-avatar usr-av-lg">{{ (user.username or user.email or 'U')[0]|upper }}</div>
+        </div>
+        <div class="usr-card-body">
+            <div class="usr-card-name">{{ user.username or '—' }}</div>
+            <div class="usr-card-email">{{ user.email or '—' }}</div>
+            <div class="usr-card-meta">
+                {% if user.is_admin %}
+                <span class="role-badge role-admin"><i class="fas fa-shield-alt"></i> Admin</span>
+                {% else %}
+                <span class="role-badge role-user"><i class="fas fa-user"></i> Përdorues</span>
+                {% endif %}
+                <span class="usr-orders-badge"><i class="fas fa-box"></i> {{ user.order_count if user.order_count is defined else 0 }}</span>
+                {% if user.newsletter_subscribed %}<span class="sub-badge sub-yes"><i class="fas fa-check"></i> Abonuar</span>{% endif %}
+            </div>
+        </div>
+        <div class="usr-card-actions">
+            <a href="{{ url_for('admin.user_orders', user_id=user._id) }}" class="action-btn" title="Porositë" style="text-decoration:none;"><i class="fas fa-shopping-bag"></i></a>
+            <form action="{{ url_for('admin.toggle_admin', user_id=user._id) }}" method="POST" onsubmit="return confirmToggleAdmin(this,'{{ user.username or user.email }}',{{ 'true' if user.is_admin else 'false' }});">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <button type="submit" class="action-btn {{ 'btn-remove-admin' if user.is_admin else 'btn-make-admin' }}" title="{{ 'Hiq të drejtat Admin' if user.is_admin else 'Bëje Admin' }}"><i class="fas {{ 'fa-user-minus' if user.is_admin else 'fa-user-plus' }}"></i></button>
+            </form>
+        </div>
+    </div>
+    {% else %}
+    <div class="adm-empty"><div class="adm-empty-icon"><i class="fas fa-users"></i></div><p class="adm-empty-title">Nuk u gjet asnjë përdorues</p></div>
+    {% endfor %}
 </div>
 
 {% if guest_subscribers %}
@@ -165,6 +149,43 @@
 .sub-badge { display:inline-flex; align-items:center; gap:0.3rem; padding:0.25rem 0.6rem; border-radius:20px; font-size:0.75rem; font-weight:700; }
 .sub-yes { background:#dcfce7; color:#15803d; }
 .sub-no  { color:#94a3b8; }
+
+/* ── Mobile card list (hidden on desktop) ── */
+.usr-card-list { display:none; }
+.usr-card { display:flex; align-items:center; gap:0.75rem; padding:0.85rem 1rem; border-bottom:1px solid #f1f5f9; }
+.usr-card:last-child { border-bottom:none; }
+.usr-av-lg { width:40px; height:40px; font-size:0.95rem; flex-shrink:0; }
+.usr-card-body { flex:1; min-width:0; }
+.usr-card-name { font-weight:700; color:#1e293b; font-size:0.9rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.usr-card-email { font-size:0.75rem; color:#64748b; margin-top:0.1rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.usr-card-meta { display:flex; align-items:center; gap:0.35rem; margin-top:0.35rem; flex-wrap:wrap; }
+.usr-orders-badge { display:inline-flex; align-items:center; gap:0.25rem; font-size:0.72rem; font-weight:700; color:#64748b; background:#f1f5f9; padding:0.2rem 0.5rem; border-radius:20px; }
+.usr-card-actions { display:flex; flex-direction:column; gap:0.35rem; flex-shrink:0; }
+
+@media(max-width:768px){
+    /* ── KPI cards: compact ── */
+    .kpi-grid { grid-template-columns:repeat(3,1fr) !important; gap:0.5rem !important; margin-bottom:1rem !important; }
+    .kpi-card { padding:0.65rem 0.7rem; gap:0.45rem; border-radius:12px; }
+    .kpi-icon { width:30px; height:30px; border-radius:8px; font-size:0.75rem; flex-shrink:0; }
+    .kpi-number { font-size:1.25rem; letter-spacing:-0.02em; }
+    .kpi-label { font-size:0.57rem; letter-spacing:0; white-space:normal; line-height:1.2; margin-top:0.15rem; }
+
+    /* ── Search ── */
+    .admin-actions-bar { margin-bottom:0.75rem !important; }
+
+    /* ── Hide desktop table, show card list ── */
+    .usr-tbl-wrap { display:none !important; }
+    .usr-card-list { display:block; background:#fff; border:1px solid #eef0ed; border-radius:14px; overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,0.04); }
+
+    /* ── Guest subscribers: compact ── */
+    .admin-table-card:not(.usr-tbl-wrap) thead { display:none; }
+    .admin-table-card:not(.usr-tbl-wrap) table,
+    .admin-table-card:not(.usr-tbl-wrap) tbody { display:block; }
+    .admin-table-card:not(.usr-tbl-wrap) tbody tr { display:flex; flex-direction:column; gap:0.15rem; padding:0.6rem 1rem; border-bottom:1px solid #f1f5f9; }
+    .admin-table-card:not(.usr-tbl-wrap) tbody tr:last-child { border-bottom:none; }
+    .admin-table-card:not(.usr-tbl-wrap) tbody tr td { padding:0; border:none; }
+    .admin-table-card:not(.usr-tbl-wrap) tbody tr td span { font-size:0.8rem !important; }
+}
 </style>
 
 <script>
@@ -174,6 +195,11 @@ document.getElementById('userSearch').addEventListener('input', function(e) {
         const name = row.getAttribute('data-name') || '';
         const email = row.getAttribute('data-email') || '';
         row.style.display = (!term || name.includes(term) || email.includes(term)) ? '' : 'none';
+    });
+    document.querySelectorAll('#usrCardList .usr-card').forEach(card => {
+        const name = card.getAttribute('data-name') || '';
+        const email = card.getAttribute('data-email') || '';
+        card.style.display = (!term || name.includes(term) || email.includes(term)) ? '' : 'none';
     });
 });
 

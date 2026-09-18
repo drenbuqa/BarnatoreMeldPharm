@@ -11,6 +11,7 @@
 
 {% block admin_content %}
 <style>
+:root { --adm-primary: #4F5D4E; }
 .db-grid-4 { display:grid; grid-template-columns:repeat(4,1fr); gap:1rem; margin-bottom:1.5rem; }
 .db-grid-2 { display:grid; grid-template-columns:1.6fr 1fr; gap:1.25rem; margin-bottom:1.25rem; }
 .db-grid-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:1.25rem; }
@@ -85,23 +86,35 @@
 /* Top products */
 .db-prod-row {
     display:flex; align-items:center; gap:0.75rem;
-    padding:0.6rem 0; border-bottom:1px solid #f3f4f2;
+    padding:0.6rem 0.5rem; border-bottom:1px solid #f3f4f2;
+    border-radius:8px; margin:0 -0.5rem;
+    text-decoration:none; color:inherit;
+    transition:background 0.14s ease;
+    cursor:pointer;
 }
 .db-prod-row:last-child { border-bottom:none; }
-.db-prod-img { width:36px; height:36px; border-radius:8px; object-fit:contain; background:#f8f8f6; flex-shrink:0; }
-.db-prod-name { font-size:0.82rem; font-weight:600; color:#1a1f18; line-height:1.3; }
+.db-prod-row:hover { background:#f5f7f4; }
+.db-prod-row:hover .db-prod-name { color:var(--adm-primary); }
+.db-prod-img { width:36px; height:36px; border-radius:8px; object-fit:contain; background:#f8f8f6; flex-shrink:0; transition:transform 0.14s ease; }
+.db-prod-row:hover .db-prod-img { transform:scale(1.06); }
+.db-prod-name { font-size:0.82rem; font-weight:600; color:#1a1f18; line-height:1.3; transition:color 0.14s ease; }
 .db-prod-count { font-size:0.75rem; color:#9aa095; }
 .db-prod-rank { font-size:0.7rem; font-weight:800; color:#c8cdc6; min-width:16px; }
 
 /* Out of stock */
 .db-stock-row {
     display:flex; align-items:center; gap:0.6rem;
-    padding:0.55rem 0; border-bottom:1px solid #f3f4f2; font-size:0.82rem;
-    min-width:0; overflow:hidden;
+    padding:0.55rem 0.5rem; border-bottom:1px solid #f3f4f2; font-size:0.82rem;
+    min-width:0; overflow:hidden; border-radius:8px; margin:0 -0.5rem;
+    text-decoration:none; color:inherit;
+    transition:background 0.14s ease;
+    cursor:pointer;
 }
 .db-stock-row:last-child { border-bottom:none; }
+.db-stock-row:hover { background:#fef2f2; }
+.db-stock-row:hover .db-stock-name { color:#dc2626; }
 .db-stock-dot { width:6px; height:6px; border-radius:50%; background:#ef4444; flex-shrink:0; }
-.db-stock-name { flex:1; min-width:0; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; color:#374151; }
+.db-stock-name { flex:1; min-width:0; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; color:#374151; transition:color 0.14s ease; }
 
 @media(max-width:1100px) {
     .db-grid-4 { grid-template-columns:repeat(2,1fr); }
@@ -109,8 +122,48 @@
     .db-grid-3 { grid-template-columns:1fr 1fr; }
 }
 @media(max-width:640px) {
-    .db-grid-4 { grid-template-columns:repeat(2,1fr); }
-    .db-grid-3 { grid-template-columns:1fr; }
+    /* ── KPI grid: tighter ── */
+    .db-grid-4 { grid-template-columns:repeat(2,1fr); gap:0.55rem; margin-bottom:0.85rem; }
+    .db-grid-2 { gap:0.65rem; margin-bottom:0.65rem; }
+    .db-grid-3 { grid-template-columns:1fr; gap:0.65rem; }
+
+    /* ── KPI card: horizontal layout (icon left, stats right) ── */
+    .db-metric {
+        display:grid;
+        grid-template-columns:34px 1fr;
+        grid-template-rows:auto auto auto;
+        column-gap:0.65rem;
+        padding:0.8rem 0.9rem;
+        align-items:center;
+    }
+    .db-metric-icon {
+        grid-column:1; grid-row:1 / 4;
+        width:34px; height:34px; border-radius:9px;
+        font-size:0.82rem; margin-bottom:0; align-self:center;
+    }
+    .db-metric-label {
+        grid-column:2; grid-row:1;
+        font-size:0.6rem; margin-bottom:0.1rem;
+    }
+    .db-metric-value {
+        grid-column:2; grid-row:2;
+        font-size:1.3rem; font-weight:800; line-height:1;
+    }
+    .db-metric-sub {
+        grid-column:2; grid-row:3;
+        font-size:0.67rem; margin-top:0.1rem;
+    }
+
+    /* ── Other cards ── */
+    .db-card { padding:0.9rem 1rem; }
+    .db-card-header { margin-bottom:0.65rem; }
+    .db-chart-wrap { height:130px; }
+
+    /* ── Compact empty state ── */
+    .adm-empty { padding:1.1rem 1rem !important; }
+    .adm-empty .adm-empty-icon { width:44px; height:44px; font-size:1.1rem; margin-bottom:0.5rem; }
+    .adm-empty .adm-empty-title { font-size:0.8rem !important; margin-bottom:0.15rem; }
+    .adm-empty .adm-empty-desc { font-size:0.72rem !important; }
 }
 </style>
 
@@ -199,14 +252,15 @@
         </div>
         {% if analytics.most_ordered %}
         {% for p in analytics.most_ordered %}
-        <div class="db-prod-row">
+        <a class="db-prod-row" href="{{ url_for('admin.edit_product', product_id=p._id) }}">
             <span class="db-prod-rank">{{ loop.index }}</span>
             <img src="{{ p.image_url }}" alt="" class="db-prod-img" onerror="this.src='/static/img/placeholder.png'">
             <div style="flex:1; min-width:0;">
                 <div class="db-prod-name" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ p.name }}</div>
                 <div class="db-prod-count">{{ p.order_count }} porosi</div>
             </div>
-        </div>
+            <i class="fas fa-chevron-right" style="font-size:0.65rem;color:#c8cdc6;flex-shrink:0;"></i>
+        </a>
         {% endfor %}
         {% else %}
         <div class="adm-empty" style="border:none;padding:2rem 1rem;">
@@ -224,14 +278,15 @@
         </div>
         {% if analytics.most_liked %}
         {% for p in analytics.most_liked %}
-        <div class="db-prod-row">
+        <a class="db-prod-row" href="{{ url_for('admin.edit_product', product_id=p._id) }}">
             <span class="db-prod-rank">{{ loop.index }}</span>
             <img src="{{ p.image_url }}" alt="" class="db-prod-img" onerror="this.src='/static/img/placeholder.png'">
             <div style="flex:1; min-width:0;">
                 <div class="db-prod-name" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ p.name }}</div>
                 <div class="db-prod-count">{{ p.fav_count }} të preferuar</div>
             </div>
-        </div>
+            <i class="fas fa-chevron-right" style="font-size:0.65rem;color:#c8cdc6;flex-shrink:0;"></i>
+        </a>
         {% endfor %}
         {% else %}
         <div class="adm-empty" style="border:none;padding:2rem 1rem;">
@@ -249,10 +304,11 @@
         </div>
         {% if analytics.out_of_stock %}
         {% for p in analytics.out_of_stock %}
-        <div class="db-stock-row">
+        <a class="db-stock-row" href="{{ url_for('admin.edit_product', product_id=p._id) }}">
             <span class="db-stock-dot"></span>
             <span class="db-stock-name">{{ p.name }}</span>
-        </div>
+            <i class="fas fa-chevron-right" style="font-size:0.65rem;color:#fca5a5;flex-shrink:0;margin-left:auto;"></i>
+        </a>
         {% endfor %}
         {% else %}
         <div class="adm-empty" style="border:none;padding:2rem 1rem;">

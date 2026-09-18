@@ -53,6 +53,15 @@ app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=31)
 app.config['SESSION_COOKIE_SECURE'] = os.getenv('RENDER') is not None
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16 MB upload limit
 
+# Gzip compression for text-based responses
+app.config['COMPRESS_REGISTER'] = True
+app.config['COMPRESS_LEVEL'] = 6
+app.config['COMPRESS_MIN_SIZE'] = 500
+app.config['COMPRESS_MIMETYPES'] = [
+    'text/html', 'text/css', 'application/javascript',
+    'application/json', 'text/javascript', 'text/plain',
+]
+
 # Google OAuth
 app.config['GOOGLE_CLIENT_ID'] = os.getenv('GOOGLE_CLIENT_ID', '')
 app.config['GOOGLE_CLIENT_SECRET'] = os.getenv('GOOGLE_CLIENT_SECRET', '')
@@ -60,6 +69,15 @@ app.config['GOOGLE_CLIENT_SECRET'] = os.getenv('GOOGLE_CLIENT_SECRET', '')
 @app.before_request
 def make_session_permanent():
     session.permanent = True
+
+@app.after_request
+def set_static_cache_headers(response):
+    # Cache static files for 1 year in browsers; bust via ?v= query params in templates
+    if request.path.startswith('/static/'):
+        response.cache_control.max_age = 31536000
+        response.cache_control.public = True
+        response.cache_control.immutable = True
+    return response
 
 @app.after_request
 def set_analytics_cookie(response):

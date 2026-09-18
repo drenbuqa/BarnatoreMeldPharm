@@ -5,6 +5,7 @@
 
 {% block admin_content %}
 <style>
+:root { --adm-primary: #4F5D4E; }
 /* ── KPI Cards (monochromatic, matching dashboard) ── */
 .ord-kpi-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:1rem; margin-bottom:1.5rem; }
 .ord-kpi { background:#fff; border:1px solid #eef0ed; border-radius:14px; padding:1.1rem 1.3rem;
@@ -27,12 +28,26 @@
 .ord-search-wrap input:focus { border-color:var(--adm-primary); background:#fff; }
 
 /* ── Status tabs ── */
-.ord-tabs { display:flex; gap:0.3rem; flex-wrap:wrap; flex:1; }
-.ord-tab { padding:0.45rem 0.85rem; border-radius:8px; font-size:0.78rem; font-weight:700; text-decoration:none; color:#6b7280; background:#f3f4f2; transition:all 0.15s; white-space:nowrap; }
-.ord-tab:hover { background:#e9ebe7; color:#1a1f18; }
-.ord-tab.active { background:var(--adm-primary); color:#fff; }
-.ord-tab .tab-ct { display:inline-flex; align-items:center; justify-content:center; background:rgba(255,255,255,0.25); color:inherit; font-size:0.68rem; font-weight:800; min-width:16px; height:16px; border-radius:8px; padding:0 4px; margin-left:4px; }
-.ord-tab:not(.active) .tab-ct { background:rgba(0,0,0,0.08); }
+.ord-tabs { display:flex; gap:0.4rem; flex-wrap:wrap; flex:1; }
+.ord-tab {
+    padding:0.45rem 0.9rem; border-radius:8px; font-size:0.78rem; font-weight:600;
+    text-decoration:none; color:#6b7280; background:#f3f4f2;
+    border:1.5px solid transparent;
+    transition:all 0.15s; white-space:nowrap;
+}
+.ord-tab:hover { background:#e9ebe7; color:#1a1f18; border-color:#dde0db; }
+.ord-tab.active {
+    background:#4F5D4E; color:#fff;
+    border-color:#4F5D4E;
+    box-shadow:0 2px 8px rgba(79,93,78,0.25);
+}
+.ord-tab .tab-ct {
+    display:inline-flex; align-items:center; justify-content:center;
+    font-size:0.68rem; font-weight:800; min-width:16px; height:16px;
+    border-radius:6px; padding:0 4px; margin-left:5px;
+    background:rgba(255,255,255,0.22); color:inherit;
+}
+.ord-tab:not(.active) .tab-ct { background:rgba(0,0,0,0.08); color:#6b7280; }
 
 /* ── Bulk bar ── */
 .bulk-bar {
@@ -148,6 +163,11 @@ tr.parent-row:hover td:first-child { border-left-color:var(--adm-primary); }
 .admin-note-save-btn { margin-top:0.5rem; padding:0.45rem 1rem; background:var(--adm-primary); color:#fff; border:none; border-radius:7px; font-size:0.8rem; font-weight:700; cursor:pointer; }
 .note-saved-msg { margin-left:0.5rem; }
 
+/* det-head / det-info / det-note-section: desktop defaults */
+.det-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:0.85rem; }
+.det-info { margin-bottom:1rem; }
+.det-note-section { margin-top:0.75rem; }
+
 /* Print invoice */
 .btn-print { padding:0.4rem 0.8rem; background:#fff; border:1.5px solid #e2e8f0; border-radius:8px; font-size:0.78rem; font-weight:700; cursor:pointer; color:#475569; display:inline-flex; align-items:center; gap:0.35rem; }
 .btn-print:hover { border-color:var(--adm-primary); color:var(--adm-primary); }
@@ -188,9 +208,136 @@ tr.parent-row:hover td:first-child { border-left-color:var(--adm-primary); }
     .details-grid { grid-template-columns:1fr; }
 }
 @media(max-width:640px) {
-    .ord-kpi-grid { grid-template-columns:repeat(2,1fr); }
-    .ord-toolbar { flex-direction:column; align-items:stretch; }
-    .ord-tabs { overflow-x:auto; flex-wrap:nowrap; }
+    /* KPI */
+    .ord-kpi-grid { grid-template-columns:repeat(2,1fr); gap:0.6rem; }
+    .ord-kpi { padding:0.85rem 1rem; }
+    .ord-kpi-num { font-size:1.5rem; }
+
+    /* Toolbar */
+    .ord-toolbar { flex-direction:column; align-items:stretch; gap:0.6rem; padding:0.85rem 1rem; }
+    .ord-search-wrap { max-width:100%; }
+    .ord-tabs { overflow-x:auto; flex-wrap:nowrap; width:100%; -webkit-overflow-scrolling:touch; scrollbar-width:none; padding-bottom:2px; }
+    .ord-tabs::-webkit-scrollbar { display:none; }
+    .ord-tab { padding:0.45rem 0.8rem; font-size:0.76rem; }
+
+    /* Bulk bar */
+    .bulk-bar { gap:0.5rem; flex-wrap:wrap; }
+    .bulk-status-select { flex:1; min-width:0; }
+
+    /* ── Table → card list ── */
+    /* Allow dropdowns to escape the card without clipping */
+    .ord-table-card { overflow:visible; }
+    .table-responsive { overflow:visible !important; }
+
+    .ord-table thead { display:none; }
+    .ord-table,
+    .ord-table tbody { display:block; width:100%; }
+
+    /* Each row is a 3-column card: [checkbox] [ID+name] [total+status] */
+    .ord-table tr.parent-row {
+        display:grid;
+        grid-template-columns:28px 1fr auto;
+        gap:0.2rem 0.6rem;
+        padding:0.75rem 0.9rem;
+        border-bottom:1px solid #f3f4f2;
+        border-left:3px solid transparent;
+        box-sizing:border-box; width:100%;
+        align-items:center;
+    }
+    .ord-table tr.parent-row:hover { background:#f5f7f4; border-left-color:var(--adm-primary); }
+    tr.parent-row td:first-child { border-left:none !important; }
+
+    /* Checkbox */
+    .ord-table tr.parent-row td:nth-child(1) {
+        grid-column:1; grid-row:1/3;
+        padding:0; display:flex; align-items:center; align-self:center;
+    }
+    /* ID / Date */
+    .ord-table tr.parent-row td:nth-child(2) {
+        grid-column:2; grid-row:1; padding:0;
+    }
+    /* Customer */
+    .ord-table tr.parent-row td:nth-child(3) {
+        grid-column:2; grid-row:2; padding:0;
+    }
+    /* City, Payment → hidden (available in expanded details) */
+    .ord-table tr.parent-row td:nth-child(4),
+    .ord-table tr.parent-row td:nth-child(5) { display:none; }
+    /* Total */
+    .ord-table tr.parent-row td:nth-child(6) {
+        grid-column:3; grid-row:1;
+        padding:0; text-align:right;
+    }
+    /* Status */
+    .ord-table tr.parent-row td:nth-child(7) {
+        grid-column:3; grid-row:2;
+        padding:0; text-align:right; display:flex; justify-content:flex-end;
+    }
+    /* Delete action → hide in row; delete is in the expanded details */
+    .ord-table tr.parent-row td:nth-child(8) { display:none; }
+
+    /* Compact status badge */
+    .status-trigger { font-size:0.7rem; padding:0.25rem 0.45rem; gap:0.25rem; }
+    .status-trigger span { max-width:68px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .status-trigger i:last-child { display:none; }
+    /* Status dropdown: open upwards to stay on screen */
+    .status-drop-menu { bottom:calc(100% + 4px); top:auto; right:0; }
+
+    /* Details row */
+    .ord-table tr.details-row { display:block; width:100%; box-sizing:border-box; }
+    .ord-table tr.details-row > td { display:block; padding:0; }
+
+    /* ── Expanded details: clean mobile redesign ── */
+    .ord-details { padding:0.75rem 1rem 0.85rem; }
+    .details-grid { grid-template-columns:1fr; gap:0; }
+
+    /* Left column: thin bottom border separates from products */
+    .details-grid > div:first-child {
+        border-bottom:1px solid #eef0ed;
+        padding-bottom:0.65rem;
+        margin-bottom:0.65rem;
+    }
+
+    /* Section header row */
+    .det-head { margin-bottom:0.55rem; }
+    .btn-print { padding:0.3rem 0.6rem; font-size:0.73rem; }
+
+    /* Customer info block */
+    .det-info { margin-bottom:0; }
+
+    /* Detail rows: compact grid table */
+    .ord-details .details-subtitle { font-size:0.63rem; margin-bottom:0.4rem; letter-spacing:0.03em; }
+    .ord-details .details-item {
+        display:grid;
+        grid-template-columns:56px 1fr;
+        gap:0 0.5rem;
+        padding:0.22rem 0;
+        font-size:0.82rem;
+        line-height:1.35;
+        border-bottom:1px solid #f0f1ef;
+        align-items:baseline;
+    }
+    .ord-details .details-item:last-child { border-bottom:none; }
+    .ord-details .details-item span { font-size:0.73rem; color:#9aa095; }
+    .ord-details .details-item strong { font-size:0.82rem; font-weight:600; }
+
+    /* Note section */
+    .det-note-section { margin-top:0.55rem; }
+    .det-note-section .details-subtitle { margin-bottom:0.35rem; }
+    .ord-details .admin-note-textarea {
+        font-size:0.82rem; padding:0.5rem 0.65rem;
+        border-radius:8px; min-height:0;
+    }
+    .ord-details .admin-note-save-btn {
+        margin-top:0.4rem; padding:0.42rem 0.9rem;
+        font-size:0.8rem; border-radius:7px;
+    }
+
+    /* Products */
+    .ord-details .ord-item-row { padding:0.28rem 0; font-size:0.82rem; line-height:1.3; }
+    .ord-details .ord-item-qty { font-size:0.73rem; min-width:20px; }
+    .ord-details .ord-item-price { font-size:0.82rem; }
+    .ord-details .ord-items-total { padding:0.5rem 0 0; font-size:0.9rem; margin-top:0.25rem; }
 }
 </style>
 
@@ -343,13 +490,13 @@ tr.parent-row:hover td:first-child { border-left-color:var(--adm-primary); }
                             <div class="details-grid">
                                 <!-- Left col: Customer info + admin note -->
                                 <div>
-                                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.85rem;">
+                                    <div class="det-head">
                                         <div class="details-subtitle" style="margin-bottom:0;"><i class="fas fa-user-circle"></i> Klienti & Dërgesa</div>
                                         <button class="btn-print" onclick="printInvoice('{{ order._id }}')">
                                             <i class="fas fa-print"></i> Faturë
                                         </button>
                                     </div>
-                                    <div style="margin-bottom:1rem;">
+                                    <div class="det-info">
                                         <div class="details-item"><span>Emri</span><strong>{{ order.fullname }}</strong></div>
                                         <div class="details-item"><span>Email</span><strong>{{ order.email or 'Nuk ka' }}</strong></div>
                                         <div class="details-item"><span>Tel</span><strong>{{ order.phone }}</strong></div>
@@ -360,14 +507,16 @@ tr.parent-row:hover td:first-child { border-left-color:var(--adm-primary); }
                                         {% if order.get('notes') %}<div class="details-item"><span>Shënim</span><strong>{{ order.notes }}</strong></div>{% endif %}
                                         {% if order.get('cancel_reason') %}<div class="details-item"><span>Arsyeja</span><strong style="color:#dc2626;">{{ order.cancel_reason }}</strong></div>{% endif %}
                                     </div>
-                                    <div class="details-subtitle"><i class="fas fa-sticky-note" style="color:#d97706;"></i> Shënim Intern</div>
-                                    <div class="admin-note-wrapper" data-order-id="{{ order._id }}">
-                                        <textarea class="admin-note-textarea" rows="2"
-                                            placeholder="Shënim për ekipin (i padukshëm për klientin)...">{{ order.admin_note or '' }}</textarea>
-                                        <button type="button" class="admin-note-save-btn" onclick="saveNote(this)">
-                                            <i class="fas fa-save"></i> Ruaj
-                                        </button>
-                                        <span class="note-saved-msg" style="display:none; color:#16a34a; font-size:0.8rem; font-weight:700;">✓ U ruajt</span>
+                                    <div class="det-note-section">
+                                        <div class="details-subtitle"><i class="fas fa-sticky-note" style="color:#d97706;"></i> Shënim Intern</div>
+                                        <div class="admin-note-wrapper" data-order-id="{{ order._id }}">
+                                            <textarea class="admin-note-textarea" rows="2"
+                                                placeholder="Shënim për ekipin (i padukshëm për klientin)...">{{ order.admin_note or '' }}</textarea>
+                                            <button type="button" class="admin-note-save-btn" onclick="saveNote(this)">
+                                                <i class="fas fa-save"></i> Ruaj
+                                            </button>
+                                            <span class="note-saved-msg" style="display:none; color:#16a34a; font-size:0.8rem; font-weight:700;">✓ U ruajt</span>
+                                        </div>
                                     </div>
                                 </div>
                                 <!-- Right col: Products -->

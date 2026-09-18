@@ -7,6 +7,18 @@
 {% block content %}
 <meta name="csrf-token" content="{{ csrf_token() }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/segments/admin.css') }}">
+<style>
+@media(max-width:992px){
+  .main-content{margin-top:0!important;padding-bottom:0!important}
+  .mobile-bottom-nav{display:none!important}
+  .mobile-header{display:none!important}
+}
+@media(max-width:768px){
+  html,body{min-height:0!important;height:auto!important}
+  .main-content,.admin-shell,.admin-main{min-height:0!important;height:auto!important}
+  .admin-content-body{flex:none!important}
+}
+</style>
 
 <div class="admin-shell">
     <!-- Sidebar Overlay (mobile) -->

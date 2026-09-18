@@ -9,6 +9,73 @@
 @media(max-width:920px){ .nl-grid{ grid-template-columns:1fr; } }
 .nl-col { display:flex; flex-direction:column; gap:1rem; }
 
+/* ── Mobile tab system ── */
+.mob-nl-tabs    { display:none; }
+.mob-nl-sendbar { display:none; }
+
+@media(max-width:920px) {
+    /* Tab bar */
+    .mob-nl-tabs {
+        display:flex; background:#fff; border:1px solid #eef0ed;
+        border-radius:12px; padding:4px; margin-bottom:1rem;
+        box-shadow:0 1px 4px rgba(0,0,0,.04); flex-shrink:0;
+    }
+    .mob-nl-tab {
+        flex:1; padding:.6rem .5rem; text-align:center; border-radius:9px;
+        font-size:.82rem; font-weight:700; color:#6b7280; cursor:pointer;
+        border:none; background:transparent; font-family:inherit;
+        display:flex; align-items:center; justify-content:center; gap:.38rem;
+        transition:all .18s;
+    }
+    .mob-nl-tab.active { background:#4F5D4E; color:#fff; box-shadow:0 2px 8px rgba(79,93,78,.25); }
+
+    /* Show/hide columns based on active tab */
+    .nl-col-config, .nl-col-preview {
+        display:none; width:100%; min-width:0; box-sizing:border-box;
+    }
+    .nl-col-config.mob-active, .nl-col-preview.mob-active {
+        display:flex; padding-bottom:80px; width:100%; min-width:0;
+    }
+    /* Prevent grid from letting columns overflow */
+    .nl-grid { overflow:hidden; }
+
+    /* Hide inline send button (replaced by sticky bar) */
+    .nl-send-btn { display:none; }
+
+    /* Sticky bottom send bar */
+    .mob-nl-sendbar {
+        display:flex; align-items:center; gap:.75rem;
+        position:fixed; bottom:0; left:0; right:0; z-index:700;
+        background:#fff; border-top:1px solid #eef0ed;
+        padding:.7rem 1.25rem;
+        padding-bottom:calc(.7rem + env(safe-area-inset-bottom,0px));
+        box-shadow:0 -4px 16px rgba(0,0,0,.09);
+    }
+    .mob-nl-subcount {
+        flex:1; min-width:0;
+        font-size:.75rem; font-weight:600; color:#8a9186;
+        white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    }
+    .mob-nl-subcount strong { color:#1a1f18; font-size:.9rem; font-weight:800; display:block; }
+    .mob-nl-sendbtn {
+        flex-shrink:0; padding:.68rem 1.25rem; background:#4F5D4E; color:#fff;
+        border:none; border-radius:11px; font-size:.88rem; font-weight:700;
+        font-family:inherit; cursor:pointer; display:flex; align-items:center; gap:.45rem;
+    }
+    .mob-nl-sendbtn:active { opacity:.82; }
+
+    /* Preview fills screen height */
+    .nl-col-sticky { position:static; max-height:none; }
+    .nl-col-sticky-inner { max-height:none; overflow-y:visible; }
+    .nl-preview-frame { height:calc(100vh - 220px); max-height:700px; }
+
+    /* Minor layout tweaks */
+    .nl-grid { gap:0; }
+    .nl-card { max-width:100%; box-sizing:border-box; }
+    .test-send-row { flex-direction:column; align-items:stretch; gap:.5rem; }
+    .test-send-row button { width:100%; justify-content:center; }
+}
+
 /* ── Subscriber pill ── */
 .nl-stat {
     display:flex; align-items:center; gap:.7rem;
@@ -216,10 +283,20 @@
 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 <input type="hidden" name="accent_color" id="accentColorVal" value="#4F5D4E">
 
+<!-- Mobile-only tab bar -->
+<div class="mob-nl-tabs">
+    <button type="button" class="mob-nl-tab active" data-tab="config" onclick="switchNlTab('config')">
+        <i class="fas fa-sliders-h"></i> Konfiguro
+    </button>
+    <button type="button" class="mob-nl-tab" data-tab="preview" onclick="switchNlTab('preview')">
+        <i class="fas fa-eye"></i> Pamja Paraprake
+    </button>
+</div>
+
 <div class="nl-grid">
 
   <!-- ── LEFT: Config ── -->
-  <div class="nl-col">
+  <div class="nl-col nl-col-config mob-active">
 
     <!-- Subscriber count -->
     <div class="nl-stat">
@@ -394,13 +471,13 @@
     <!-- Test send -->
     <div class="nl-card" style="margin-bottom:0;">
       <div class="nl-card-hd"><i class="fas fa-flask" style="color:var(--adm-accent);"></i> Dërgo Email Testues</div>
-      <div class="nl-card-body" style="display:flex;gap:.6rem;align-items:center;">
+      <div class="nl-card-body test-send-row" style="display:flex;gap:.6rem;align-items:center;">
         <input type="email" id="testEmailInput" class="nl-input" placeholder="emaili-juaj@gmail.com"
                value="{{ current_user.email if current_user.is_authenticated else '' }}"
                style="flex:1;margin:0;" autocomplete="email">
         <button type="button" id="testSendBtn" onclick="sendTestEmail()"
                 style="flex-shrink:0;padding:.65rem 1.1rem;background:var(--adm-accent);color:#fff;border:none;
-                       border-radius:9px;font-size:.85rem;font-weight:700;cursor:pointer;white-space:nowrap;">
+                       border-radius:9px;font-size:.85rem;font-weight:700;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:.4rem;">
           <i class="fas fa-vial"></i> Dërgo Test
         </button>
       </div>
@@ -421,7 +498,7 @@
   </div><!-- .nl-col left -->
 
   <!-- ── RIGHT: Live preview ── -->
-  <div class="nl-col nl-col-sticky"><div class="nl-col-sticky-inner">
+  <div class="nl-col nl-col-preview nl-col-sticky"><div class="nl-col-sticky-inner">
     <div class="nl-preview-card">
       <div class="nl-preview-hd">
         <i class="fas fa-eye" style="color:var(--adm-accent);"></i>
@@ -448,6 +525,17 @@
 
 </div><!-- .nl-grid -->
 </form>
+
+<!-- Mobile sticky send bar -->
+<div class="mob-nl-sendbar">
+    <div class="mob-nl-subcount">
+        <strong>{{ (subscriber_count|default(0)) + (guest_sub_count|default(0)) }}</strong>
+        abonentë do të marrin
+    </div>
+    <button type="button" class="mob-nl-sendbtn" onclick="openSendModal()">
+        <i class="fas fa-paper-plane"></i> Dërgo
+    </button>
+</div>
 
 <!-- Confirm send modal -->
 <div class="nl-modal-overlay" id="sendModal" onclick="if(event.target===this)this.style.display='none'">
@@ -741,6 +829,14 @@ function sendTestEmail() {
             btn.disabled = false;
             btn.innerHTML = '<i class="fas fa-vial"></i> Dërgo Test';
         });
+}
+
+/* ── Mobile tab switching ── */
+function switchNlTab(tab) {
+    document.querySelectorAll('.mob-nl-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+    document.querySelector('.nl-col-config').classList.toggle('mob-active', tab === 'config');
+    document.querySelector('.nl-col-preview').classList.toggle('mob-active', tab === 'preview');
+    if (tab === 'preview') buildPreview();
 }
 
 // Init

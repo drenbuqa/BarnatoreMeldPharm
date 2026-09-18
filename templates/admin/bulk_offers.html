@@ -247,59 +247,60 @@
 }
 .off-search input:focus { border-color:var(--adm-accent); background:#fff; }
 
-/* Toolbar custom select (larger variant for toolbar) */
-.csel-sm .csel-trigger {
-    padding:.52rem .8rem;
-    font-size:.83rem;
-    border-radius:8px;
-    min-width:130px;
+/* ─── Toolbar pf-dd filters (matches products page style) ─── */
+.pf-dd { position:relative; display:inline-block; }
+.pf-dd-trigger {
+    display:inline-flex; align-items:center; gap:.45rem;
+    height:38px; padding:0 .85rem; border:1.5px solid #e2e8f0; border-radius:9px;
+    font-size:.83rem; font-weight:600; color:#6b7280; background:#fafafa;
+    cursor:pointer; white-space:nowrap; user-select:none; transition:all .15s;
+    min-width:120px; justify-content:space-between; box-sizing:border-box;
 }
-.csel-sm .csel-panel { border-radius:0 0 9px 9px; }
-.csel-sm .csel-opt { padding:.5rem .8rem; font-size:.82rem; }
-
-/* Brand multi-select */
-.ms-wrap { position:relative; }
-.ms-trigger {
-    padding:.52rem .8rem; border:1.5px solid #e2e8f0; border-radius:8px;
-    font-size:.83rem; cursor:pointer; background:#fafafa; color:#1a1f18;
-    display:flex; align-items:center; gap:.4rem; white-space:nowrap;
-    transition:all .15s; user-select:none; min-width:130px;
+.pf-dd-trigger:hover { border-color:#4F5D4E; color:#4F5D4E; background:#f5f7f4; }
+.pf-dd-trigger.active {
+    background:#4F5D4E; border-color:#4F5D4E; color:#fff; font-weight:700;
+    box-shadow:0 2px 8px rgba(79,93,78,.25);
 }
-.ms-trigger:hover, .ms-trigger.open { border-color:var(--adm-accent); background:#fff; }
-.ms-trigger i.arrow { margin-left:auto; font-size:.6rem; color:#9aa095; transition:transform .15s; }
-.ms-trigger.open i.arrow { transform:rotate(180deg); }
-.ms-panel {
-    position:absolute; top:calc(100% + 4px); left:0; z-index:200;
-    background:#fff; border:1.5px solid #eef0ed; border-radius:10px;
-    box-shadow:0 8px 24px rgba(0,0,0,.12); min-width:180px; max-width:240px;
-    display:none; flex-direction:column; overflow:hidden;
+.pf-dd-trigger .dd-arrow { font-size:.6rem; opacity:.6; transition:transform .18s; flex-shrink:0; }
+.pf-dd.open .pf-dd-trigger .dd-arrow { transform:rotate(180deg); }
+.pf-dd-menu {
+    position:absolute; top:calc(100% + 6px); left:0; z-index:9999;
+    background:#fff; border:1.5px solid #e2e8f0; border-radius:12px;
+    box-shadow:0 8px 28px rgba(0,0,0,.12); min-width:200px; max-width:280px;
+    overflow:hidden; display:none; flex-direction:column;
 }
-.ms-panel.open { display:flex; }
-.ms-search-wrap { padding:.5rem .6rem; border-bottom:1px solid #f0f0ee; }
-.ms-search {
-    width:100%; padding:.4rem .6rem; border:1.5px solid #e2e8f0; border-radius:7px;
-    font-size:.78rem; font-family:inherit; outline:none; box-sizing:border-box;
-}
-.ms-search:focus { border-color:var(--adm-accent); }
-.ms-opts { max-height:200px; overflow-y:auto; padding:.3rem 0; }
-.ms-opt {
+.pf-dd.open .pf-dd-menu { display:flex; }
+.pf-dd-search {
+    padding:.55rem .75rem; border-bottom:1px solid #f0f2f0;
     display:flex; align-items:center; gap:.5rem;
-    padding:.38rem .75rem; cursor:pointer; font-size:.8rem; color:#1a1f18;
-    transition:background .1s;
 }
-.ms-opt:hover { background:#f5f7f4; }
-.ms-opt input { accent-color:var(--adm-accent); width:14px; height:14px; cursor:pointer; flex-shrink:0; }
-.ms-footer { padding:.4rem .6rem; border-top:1px solid #f0f0ee; }
-.ms-clear { width:100%; padding:.35rem; background:#f5f7f4; border:none; border-radius:6px; font-size:.75rem; color:#6b7280; cursor:pointer; font-family:inherit; }
-.ms-clear:hover { background:#eef0ed; }
+.pf-dd-search i { color:#9aa095; font-size:.78rem; flex-shrink:0; }
+.pf-dd-search input {
+    border:none; outline:none; font-size:.83rem; color:#1a1f18;
+    background:transparent; width:100%; font-family:inherit;
+}
+.pf-dd-list { overflow-y:auto; max-height:240px; padding:.3rem 0; }
+.pf-dd-opt {
+    display:flex; align-items:center; gap:.55rem;
+    padding:.48rem .85rem; font-size:.83rem; color:#374151;
+    cursor:pointer; transition:background .1s; white-space:nowrap;
+    overflow:hidden; text-overflow:ellipsis;
+}
+.pf-dd-opt:hover { background:#f5f7f4; color:#4F5D4E; }
+.pf-dd-opt.selected { background:#eef5ee; color:#4F5D4E; font-weight:700; }
+.pf-dd-opt.selected::after { content:'✓'; margin-left:auto; font-size:.75rem; }
+.pf-dd-opt input[type=checkbox] { accent-color:#4F5D4E; width:13px; height:13px; cursor:pointer; flex-shrink:0; }
+.pf-dd-footer { padding:.4rem .6rem; border-top:1px solid #f0f2f0; }
 
 /* Select-all */
 .off-selall {
     display:flex; align-items:center; gap:.45rem;
     font-size:.79rem; font-weight:700; color:#6b7280; cursor:pointer;
-    white-space:nowrap; user-select:none;
+    white-space:nowrap; user-select:none; margin-left:auto;
 }
 .off-selall input { accent-color:var(--adm-accent); width:15px; height:15px; cursor:pointer; }
+.ms-clear { width:100%; padding:.35rem; background:#f5f7f4; border:none; border-radius:6px; font-size:.75rem; color:#6b7280; cursor:pointer; font-family:inherit; }
+.ms-clear:hover { background:#eef0ed; }
 
 /* ─── Product card & rows ─── */
 .off-prod-card {
@@ -337,6 +338,7 @@
 .var-pill { font-size:.72rem; font-weight:600; padding:2px 10px; border-radius:20px; border:1.5px solid var(--adm-accent); color:var(--adm-accent); background:#f0fdf4; cursor:pointer; user-select:none; transition:all .15s; white-space:nowrap; }
 .var-pill.excl { background:#f5f5f5; color:#9aa095; border-color:#d1d5db; text-decoration:line-through; }
 .off-empty-row { padding:3rem; text-align:center; color:#9aa095; font-size:.88rem; }
+.off-offer-tag-inline { display:none; }  /* shown only on mobile */
 
 /* ─── Pagination ─── */
 .off-pager {
@@ -356,10 +358,100 @@
 .pg-btn:disabled { opacity:.35; cursor:not-allowed; }
 
 @media(max-width:1100px) { .off-layout { grid-template-columns:270px 1fr; } }
+
+/* ─── Mobile-only elements hidden on desktop ─── */
+.mob-overlay { display:none; }
+.mob-bar     { display:none; }
+.off-left-handle { display:none; }
+.off-left-topbar { display:none; }
+
 @media(max-width:768px) {
-    .off-layout { grid-template-columns:1fr; }
-    .off-left { position:static; max-height:none; }
-    .off-prod-list { max-height:55vh; }
+    /* ── Layout: only show right panel in normal flow ── */
+    .off-layout { display:block; }
+
+    /* ── Left panel becomes a bottom sheet ── */
+    .off-left {
+        position:fixed; left:0; right:0; bottom:0; z-index:820;
+        top:auto; max-height:0; overflow:hidden;
+        background:#fff; border-radius:20px 20px 0 0;
+        box-shadow:0 -8px 32px rgba(0,0,0,.2);
+        transition:max-height .38s cubic-bezier(.4,0,.2,1);
+        padding-right:0; overflow-y:auto; scrollbar-width:none;
+    }
+    .off-left::-webkit-scrollbar { display:none; }
+    .off-left.mob-open { max-height:92vh; }
+
+    .off-left-handle {
+        display:block; width:36px; height:4px; background:#dde0db;
+        border-radius:2px; margin:.7rem auto .2rem; flex-shrink:0;
+    }
+    .off-left-topbar {
+        display:flex; align-items:center; justify-content:space-between;
+        padding:.4rem 1.25rem .75rem; flex-shrink:0;
+    }
+    .off-left-topbar-title {
+        font-size:.93rem; font-weight:800; color:#1a1f18;
+        display:flex; align-items:center; gap:.45rem;
+    }
+    .off-left-close-btn {
+        width:30px; height:30px; border:1.5px solid #eef0ed; border-radius:9px;
+        background:#f5f7f4; cursor:pointer; display:flex; align-items:center;
+        justify-content:center; font-size:.85rem; color:#6b7280;
+    }
+    .off-left-inner { padding:0 1.25rem calc(1.5rem + env(safe-area-inset-bottom,0px)); }
+
+    /* ── Overlay ── */
+    .mob-overlay {
+        display:block; position:fixed; inset:0; z-index:810;
+        background:rgba(0,0,0,.45); opacity:0; pointer-events:none;
+        transition:opacity .3s;
+    }
+    .mob-overlay.open { opacity:1; pointer-events:auto; }
+
+    /* ── Fixed bottom action bar ── */
+    .mob-bar {
+        display:flex; align-items:center; justify-content:space-between; gap:1rem;
+        position:fixed; bottom:0; left:0; right:0; z-index:700;
+        background:#fff; border-top:1px solid #eef0ed;
+        padding:.7rem 1.25rem;
+        padding-bottom:calc(.7rem + env(safe-area-inset-bottom,0px));
+        box-shadow:0 -4px 20px rgba(0,0,0,.09);
+    }
+    .mob-bar-info { line-height:1.2; }
+    .mob-bar-label { font-size:.68rem; color:#8a9186; font-weight:600; text-transform:uppercase; letter-spacing:.04em; }
+    .mob-bar-num   { font-size:1.4rem; font-weight:900; color:#1a1f18; }
+    .mob-bar-btn {
+        flex-shrink:0; padding:.65rem 1.3rem;
+        background:#4F5D4E; color:#fff; border:none; border-radius:11px;
+        font-size:.88rem; font-weight:700; font-family:inherit; cursor:pointer;
+        display:flex; align-items:center; gap:.45rem; transition:opacity .15s;
+    }
+    .mob-bar-btn:active { opacity:.82; }
+
+    /* ── Right panel: padding for fixed bottom bar ── */
+    .off-right { padding-bottom:76px; }
+
+    /* ── Toolbar: 2-row layout (search full-width, filters below) ── */
+    .off-toolbar { flex-wrap:wrap; overflow:visible; gap:.5rem; padding:.7rem .9rem; }
+    .off-search { flex:0 0 100%; max-width:100%; }
+    .off-toolbar .pf-dd { flex:1; min-width:0; }
+    .off-toolbar .pf-dd-trigger { width:100%; justify-content:space-between; box-sizing:border-box; white-space:nowrap; min-width:0; }
+    .off-toolbar .pf-dd-menu { min-width:180px; }
+    .off-selall { flex-shrink:0; margin-left:auto; white-space:nowrap; }
+
+    /* ── Product rows: hide header, compact grid ── */
+    .off-tbl-head { display:none; }
+    .off-prod-row { grid-template-columns:28px 38px 1fr 65px; gap:.45rem; padding:.6rem .9rem; }
+    .off-prod-col-offer { display:none; }  /* hide separate offer column on mobile */
+    .off-offer-tag-inline { display:inline-flex; align-items:center; gap:3px; font-size:.65rem; font-weight:700; background:#f0fdf4; color:#4F5D4E; border:1px solid #c6d4c5; padding:1px 6px; border-radius:20px; white-space:nowrap; max-width:100%; overflow:hidden; text-overflow:ellipsis; margin-top:1px; }
+    .var-pills-row { grid-column:1 / -1; padding-left:70px; }
+    .off-prod-img { width:38px; height:38px; }
+    .off-prod-brand { display:none; }
+    .off-prod-list { max-height:none; }
+
+    /* ── Pagination ── */
+    .off-pager { grid-template-columns:auto 1fr; gap:.45rem; }
+    .pg-info { grid-column:1/-1; text-align:center; }
 }
 </style>
 
@@ -400,8 +492,14 @@ const PD = [{% for p in all_products %}{"id":"{{ p._id }}","n":{{ p.name|tojson 
 
 <div class="off-layout">
 
-    <!-- ────────── LEFT PANEL ────────── -->
-    <div class="off-left">
+    <!-- ────────── LEFT PANEL (bottom sheet on mobile) ────────── -->
+    <div class="off-left" id="offLeft">
+        <div class="off-left-handle"></div>
+        <div class="off-left-topbar">
+            <div class="off-left-topbar-title"><i class="fas fa-sliders-h" style="color:#4F5D4E;"></i> Konfiguro Ofertën</div>
+            <button type="button" class="off-left-close-btn" onclick="closeMobConfig()"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="off-left-inner">
 
         <!-- Active offers -->
         <div class="off-card">
@@ -567,8 +665,9 @@ const PD = [{% for p in all_products %}{"id":"{{ p._id }}","n":{{ p.name|tojson 
                     <i class="fas fa-ban"></i> Largo Ofertën nga Produktet
                 </button>
             </div>
-        </div>
-    </div>
+        </div><!-- /.off-card config -->
+        </div><!-- /.off-left-inner -->
+    </div><!-- /.off-left -->
 
     <!-- ────────── RIGHT PANEL ────────── -->
     <div class="off-right">
@@ -578,44 +677,42 @@ const PD = [{% for p in all_products %}{"id":"{{ p._id }}","n":{{ p.name|tojson 
                 <input type="text" id="offSearch" placeholder="Kërko produkt..." autocomplete="off">
             </div>
 
-            <!-- Category custom select -->
-            <div class="csel csel-sm" id="cselCat">
-                <div class="csel-trigger" onclick="toggleCsel('cselCat')">
-                    <span class="csel-label" id="cselCatLabel">Kategoria</span>
-                    <i class="fas fa-chevron-down csel-arrow"></i>
+            <!-- Category filter -->
+            <div class="pf-dd" id="tbDdCat">
+                <div class="pf-dd-trigger" id="tbDdCatTrigger" onclick="toggleTbDd('tbDdCat')">
+                    <span id="tbCatLabel">Kategoria</span>
+                    <i class="fas fa-chevron-down dd-arrow"></i>
                 </div>
-                <div class="csel-panel" id="cselCatPanel">
-                    <div class="csel-opt selected" data-value="" onclick="pickCat('')">
-                        Të gjitha kategorite <i class="fas fa-check csel-check"></i>
+                <div class="pf-dd-menu">
+                    <div class="pf-dd-list">
+                        <div class="pf-dd-opt selected" data-value="" onclick="pickTbCat('')">Të gjitha kategorite</div>
+                        {% for cat in categories.keys() %}
+                        <div class="pf-dd-opt" data-value="{{ cat }}" onclick="pickTbCat('{{ cat|e }}')">{{ cat }}</div>
+                        {% endfor %}
                     </div>
-                    {% for cat in categories.keys() %}
-                    <div class="csel-opt" data-value="{{ cat }}" onclick="pickCat('{{ cat|e }}')">
-                        {{ cat }} <i class="fas fa-check csel-check"></i>
-                    </div>
-                    {% endfor %}
                 </div>
             </div>
 
-            <!-- Brand multi-select -->
-            <div class="ms-wrap" id="msWrap">
-                <div class="ms-trigger" id="msTrigger" onclick="toggleBrandDD()">
-                    <i class="fas fa-building" style="font-size:.7rem;color:#9aa095;"></i>
+            <!-- Brand filter (multi-select) -->
+            <div class="pf-dd" id="tbDdBrand">
+                <div class="pf-dd-trigger" id="tbDdBrandTrigger" onclick="toggleTbDd('tbDdBrand')">
                     <span id="msLabel">Brendi</span>
-                    <i class="fas fa-chevron-down arrow"></i>
+                    <i class="fas fa-chevron-down dd-arrow"></i>
                 </div>
-                <div class="ms-panel" id="msPanel">
-                    <div class="ms-search-wrap">
-                        <input type="text" class="ms-search" id="msSearch" placeholder="Kërko brend..." oninput="filterBrandOpts(this.value)">
+                <div class="pf-dd-menu" style="min-width:210px;">
+                    <div class="pf-dd-search">
+                        <i class="fas fa-search"></i>
+                        <input type="text" placeholder="Kërko brend..." id="msSearch" oninput="filterBrandOpts(this.value)" onclick="event.stopPropagation()">
                     </div>
-                    <div class="ms-opts" id="msOpts">
+                    <div class="pf-dd-list" id="msOpts">
                         {% for brand in brands %}
-                        <label class="ms-opt">
+                        <label class="pf-dd-opt">
                             <input type="checkbox" value="{{ brand }}" onchange="onBrandChange()"> {{ brand }}
                         </label>
                         {% endfor %}
                     </div>
-                    <div class="ms-footer">
-                        <button type="button" class="ms-clear" onclick="clearBrands()">Hiq filtrat e brendeve</button>
+                    <div class="pf-dd-footer">
+                        <button type="button" class="ms-clear" onclick="clearBrands();event.stopPropagation();">Hiq filtrat e brendeve</button>
                     </div>
                 </div>
             </div>
@@ -643,7 +740,19 @@ const PD = [{% for p in all_products %}{"id":"{{ p._id }}","n":{{ p.name|tojson 
         <div class="off-pager" id="pager" style="display:none;"></div>
     </div>
 
+    <!-- Mobile action bar -->
+    <div class="mob-bar" id="mobBar">
+        <div class="mob-bar-info">
+            <div class="mob-bar-label">Zgjedhura</div>
+            <div class="mob-bar-num" id="mobBarNum">0</div>
+        </div>
+        <button type="button" class="mob-bar-btn" onclick="openMobConfig()">
+            <i class="fas fa-sliders-h"></i> Konfiguro Ofertën
+        </button>
+    </div>
 </div>
+<!-- Mobile overlay -->
+<div class="mob-overlay" id="mobOverlay" onclick="closeMobConfig()"></div>
 </form>
 
 <script>
@@ -677,16 +786,25 @@ function pickCsel(id, value, icon, label) {
     if (id === 'cselMB')   document.getElementById('multiBuyTypeVal').value = value;
 }
 
+/* Toolbar pf-dd toggle */
+function toggleTbDd(id) {
+    const dd = document.getElementById(id);
+    const isOpen = dd.classList.contains('open');
+    document.querySelectorAll('.off-toolbar .pf-dd.open').forEach(d => d.classList.remove('open'));
+    if (!isOpen) {
+        dd.classList.add('open');
+        if (id === 'tbDdBrand') setTimeout(() => { const s = document.getElementById('msSearch'); if(s) s.focus(); }, 50);
+    }
+}
+
 /* Category picker */
 let catFilter = '';
-function pickCat(val) {
+function pickTbCat(val) {
     catFilter = val;
-    const label = val || 'Kategoria';
-    document.getElementById('cselCatLabel').textContent = label;
-    document.querySelectorAll('#cselCatPanel .csel-opt').forEach(o => {
-        o.classList.toggle('selected', o.dataset.value === val);
-    });
-    closeCselById('cselCat');
+    document.getElementById('tbCatLabel').textContent = val || 'Kategoria';
+    document.getElementById('tbDdCatTrigger').classList.toggle('active', !!val);
+    document.querySelectorAll('#tbDdCat .pf-dd-opt').forEach(o => o.classList.toggle('selected', o.dataset.value === val));
+    document.getElementById('tbDdCat').classList.remove('open');
     currentPage = 1;
     applyFilters();
 }
@@ -697,7 +815,9 @@ document.addEventListener('click', e => {
         const el = document.getElementById(_openCsel);
         if (el && !el.contains(e.target)) closeCselById(_openCsel);
     }
-    if (!document.getElementById('msWrap').contains(e.target)) closeBrandDD();
+    document.querySelectorAll('.off-toolbar .pf-dd.open').forEach(d => {
+        if (!d.contains(e.target)) d.classList.remove('open');
+    });
     if (!document.getElementById('cdpWrap').contains(e.target)) closeCdp();
 });
 
@@ -976,10 +1096,11 @@ document.addEventListener('DOMContentLoaded', () => {
    FILTERING & RENDERING
 ════════════════════════════════════════ */
 function applyFilters() {
+    const brandFilterLower = brandFilter.size ? new Set([...brandFilter].map(b => b.trim().toLowerCase())) : null;
     filteredData = PD.filter(p => {
         const matchQ = !searchQ || (p.n+' '+p.b).toLowerCase().includes(searchQ);
-        const matchC = !catFilter || p.c === catFilter;
-        const matchB = brandFilter.size===0 || brandFilter.has(p.b);
+        const matchC = !catFilter || p.c.trim().toLowerCase() === catFilter.trim().toLowerCase();
+        const matchB = !brandFilterLower || brandFilterLower.has((p.b||'').trim().toLowerCase());
         return matchQ && matchC && matchB;
     });
     if (pinnedOffer) {
@@ -1032,9 +1153,10 @@ function renderPage() {
             <div class="off-prod-info">
                 <span class="off-prod-brand">${esc(p.b||'—')}</span>
                 <span class="off-prod-name">${esc(p.n)}</span>
+                ${tag ? `<span class="off-offer-tag-inline">${tag}</span>` : ''}
                 <span class="off-prod-cat">${esc(p.c)}${p.sc?' · '+esc(p.sc):''}</span>
             </div>
-            <div>${tag}</div>
+            <div class="off-prod-col-offer">${tag}</div>
             <span class="off-prod-price">€${p.p.toFixed(2)}</span>
             ${variantRow}
         </div>`;
@@ -1137,6 +1259,20 @@ function updateCount() {
     badge.textContent=n;
     badge.classList.add('pop');
     setTimeout(()=>badge.classList.remove('pop'),200);
+    const mobNum=document.getElementById('mobBarNum');
+    if(mobNum) mobNum.textContent=n;
+}
+
+/* ── Mobile sheet ── */
+function openMobConfig() {
+    document.getElementById('offLeft').classList.add('mob-open');
+    document.getElementById('mobOverlay').classList.add('open');
+    document.body.style.overflow='hidden';
+}
+function closeMobConfig() {
+    document.getElementById('offLeft').classList.remove('mob-open');
+    document.getElementById('mobOverlay').classList.remove('open');
+    document.body.style.overflow='';
 }
 
 /* ════════════════════════════════════════
@@ -1186,9 +1322,9 @@ function loadOffer(name, type, value, expiry, start) {
     // Clear all filters so all products are visible, pinned ones on top
     searchQ = ''; catFilter = ''; brandFilter.clear();
     document.getElementById('offSearch').value = '';
-    // Reset category selector label without triggering full pickCat (which would re-filter before we're ready)
-    document.getElementById('cselCatLabel').textContent = 'Kategoria';
-    document.querySelectorAll('#cselCatPanel .csel-opt').forEach(o => o.classList.toggle('selected', o.dataset.value === ''));
+    document.getElementById('tbCatLabel').textContent = 'Kategoria';
+    document.getElementById('tbDdCatTrigger').classList.remove('active');
+    document.querySelectorAll('#tbDdCat .pf-dd-opt').forEach(o => o.classList.toggle('selected', o.dataset.value === ''));
     clearBrandsState();
     currentPage = 1;
     applyFilters();
@@ -1226,8 +1362,9 @@ function resetToNew() {
     // Reset filters and re-render
     searchQ = ''; catFilter = ''; brandFilter.clear();
     document.getElementById('offSearch').value = '';
-    document.getElementById('cselCatLabel').textContent = 'Kategoria';
-    document.querySelectorAll('#cselCatPanel .csel-opt').forEach(o => o.classList.toggle('selected', o.dataset.value===''));
+    document.getElementById('tbCatLabel').textContent = 'Kategoria';
+    document.getElementById('tbDdCatTrigger').classList.remove('active');
+    document.querySelectorAll('#tbDdCat .pf-dd-opt').forEach(o => o.classList.toggle('selected', o.dataset.value===''));
     clearBrandsState();
     currentPage = 1;
     filteredData = [...PD];
@@ -1238,20 +1375,9 @@ function resetToNew() {
 /* ════════════════════════════════════════
    BRAND MULTI-SELECT
 ════════════════════════════════════════ */
-function toggleBrandDD() {
-    const panel=document.getElementById('msPanel');
-    const trigger=document.getElementById('msTrigger');
-    const isOpen=panel.classList.contains('open');
-    if(isOpen) closeBrandDD();
-    else { panel.classList.add('open'); trigger.classList.add('open'); document.getElementById('msSearch').focus(); }
-}
-function closeBrandDD() {
-    document.getElementById('msPanel').classList.remove('open');
-    document.getElementById('msTrigger').classList.remove('open');
-}
 function filterBrandOpts(q) {
     const ql=q.toLowerCase();
-    document.querySelectorAll('#msOpts .ms-opt').forEach(o => {
+    document.querySelectorAll('#msOpts .pf-dd-opt').forEach(o => {
         o.style.display=o.textContent.toLowerCase().includes(ql)?'':'none';
     });
 }
@@ -1268,9 +1394,10 @@ function clearBrandsState() {
 }
 function updateBrandLabel() {
     const lbl=document.getElementById('msLabel');
-    if(brandFilter.size===0) lbl.textContent='Brendi';
-    else if(brandFilter.size===1) lbl.textContent=[...brandFilter][0].substring(0,14);
-    else lbl.textContent=`Brendet (${brandFilter.size})`;
+    const trigger=document.getElementById('tbDdBrandTrigger');
+    if(brandFilter.size===0){ lbl.textContent='Brendi'; trigger.classList.remove('active'); }
+    else if(brandFilter.size===1){ lbl.textContent=[...brandFilter][0].substring(0,14); trigger.classList.add('active'); }
+    else{ lbl.textContent=`Brendet (${brandFilter.size})`; trigger.classList.add('active'); }
 }
 
 /* ════════════════════════════════════════
