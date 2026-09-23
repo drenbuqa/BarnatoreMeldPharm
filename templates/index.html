@@ -401,14 +401,11 @@
       {% endfor %}
     </div>
 
-    <div id="home-sentinel" style="height:1px;"></div>
-    <div id="home-load-more-wrap" class="text-center d-none" style="padding:2.5rem 0 1.5rem;">
-      <div class="scroll-loader">
-        <span></span><span></span><span></span>
-      </div>
+    <div id="home-load-more-wrap" class="load-more-container text-center {{ 'd-none' if total_pages_regular <= 1 else '' }}">
+      <button type="button" id="load-more-btn" class="btn-load-more" data-page="1" data-category="all" onclick="window.loadMoreHome()">
+        <span>Shfaq më shumë produkte</span><i class="fas fa-chevron-down"></i>
+      </button>
     </div>
-    <!-- hidden element keeps state -->
-    <span id="load-more-btn" data-page="1" data-category="all" style="display:none;"></span>
   </div>
 </section>
 

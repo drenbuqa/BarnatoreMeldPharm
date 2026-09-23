@@ -16,16 +16,18 @@
     <link rel="preconnect" href="https://cdnjs.cloudflare.com">
     <link rel="preconnect" href="https://res.cloudinary.com" crossorigin>
     <link rel="dns-prefetch" href="https://res.cloudinary.com">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css', v=9) }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css', v=13) }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/cart-recommendations.css', v=12) }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/mobile.css', v=9) }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/chatbot-new.css', v=2) }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/label-badges.css', v=2) }}">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&family=Cormorant+Garamond:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <!-- Font Awesome: load asynchronously to avoid render-blocking -->
     <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
     <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"></noscript>
     <!-- SweetAlert2: deferred so it never blocks first paint -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11" defer></script>
-    <script src="{{ url_for('static', filename='js/main.js', v=10) }}" defer></script>
+    <script src="{{ url_for('static', filename='js/main.js', v=17) }}" defer></script>
 
     {% if meta_pixel_id %}
     <!-- Meta Pixel bootstrap — gated on marketing consent (cookie_consent_v2) -->
@@ -106,7 +108,7 @@
             </a>
             <div class="mobile-header-top-right">
                 <a href="{{ url_for('main.wishlist') }}" class="mobile-wishlist-btn nav-icon-btn top-row-wishlist">
-                    <i class="far fa-heart"></i>
+                    <i class="fas fa-heart"></i>
                     <span
                         class="cart-badge-wish wishlist-count {{ 'd-none' if not wishlist_count or wishlist_count == 0 else '' }}">{{
                         wishlist_count if wishlist_count else 0 }}</span>
@@ -123,7 +125,7 @@
                 <div id="searchPreviewMobile" class="search-preview-dropdown"></div>
             </div>
             <a href="{{ url_for('main.wishlist') }}" class="mobile-wishlist-btn nav-icon-btn search-row-wishlist">
-                <i class="far fa-heart"></i>
+                <i class="fas fa-heart"></i>
                 <span
                     class="cart-badge-wish wishlist-count {{ 'd-none' if not wishlist_count or wishlist_count == 0 else '' }}">{{
                     wishlist_count if wishlist_count else 0 }}</span>
@@ -154,7 +156,7 @@
                 <!-- Wishlist -->
                 <a href="{{ url_for('main.wishlist') }}" class="nav-icon-btn wishlist-btn-desktop"
                     title="Lista e dëshirave">
-                    <i class="far fa-heart"></i>
+                    <i class="fas fa-heart"></i>
                     <span
                         class="cart-badge-wish wishlist-count {{ 'd-none' if not wishlist_count or wishlist_count == 0 else '' }}">{{
                         wishlist_count if wishlist_count else 0 }}</span>
@@ -259,7 +261,7 @@
                             <li><a href="{{ url_for('main.address') }}"><i class="fas fa-map-marker-alt"></i> Adresa</a>
                             </li>
                             <li><a href="{{ url_for('main.orders') }}"><i class="fas fa-box"></i> Porositë</a></li>
-                            <li><a href="{{ url_for('main.wishlist') }}"><i class="far fa-heart"></i> Lista e
+                            <li><a href="{{ url_for('main.wishlist') }}"><i class="fas fa-heart"></i> Lista e
                                     Dëshirave</a></li>
                             {% if current_user.is_admin %}
                             <li class="admin-link"><a href="{{ url_for('admin.dashboard') }}"><i
@@ -439,7 +441,7 @@
                 </li>
                 <li><a href="{{ url_for('main.address') }}"><i class="fas fa-map-marker-alt"></i> Adresa</a></li>
                 <li><a href="{{ url_for('main.orders') }}"><i class="fas fa-box"></i> Porositë e mia</a></li>
-                <li><a href="{{ url_for('main.wishlist') }}"><i class="far fa-heart"></i> Lista e Dëshirave</a></li>
+                <li><a href="{{ url_for('main.wishlist') }}"><i class="fas fa-heart"></i> Lista e Dëshirave</a></li>
                 {% if current_user.is_admin %}
                 <li class="admin-item"><a href="{{ url_for('admin.dashboard') }}"><i class="fas fa-shield-alt"></i>
                         Admin Panel</a></li>

@@ -447,9 +447,18 @@
 
     function selectAttr(attrType, val) {
         if (selections[attrType] === val) {
-            delete selections[attrType];
-        } else {
-            selections[attrType] = val;
+            return;
+        }
+        selections[attrType] = val;
+        if (!findVariant(selections)) {
+            const compatible = productVariants.find(v =>
+                (v.attributes || {})[attrType] === val && v.in_stock !== false
+            ) || productVariants.find(v => (v.attributes || {})[attrType] === val);
+            if (compatible) {
+                getAttrTypes().forEach(type => {
+                    selections[type] = (compatible.attributes || {})[type];
+                });
+            }
         }
         renderVariantUI();
     }

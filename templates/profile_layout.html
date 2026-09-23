@@ -29,7 +29,7 @@
                 </a>
                 <a href="{{ url_for('main.wishlist') }}"
                     class="profile-nav-item {{ 'active' if request.endpoint == 'main.wishlist' }}">
-                    <i class="far fa-heart"></i> Lista e dëshirave
+                    <i class="fas fa-heart"></i> Lista e dëshirave
                 </a>
                 {% if current_user.is_admin %}
                 <a href="{{ url_for('admin.dashboard') }}" class="profile-nav-item">

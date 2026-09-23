@@ -11,9 +11,6 @@
     </div>
     <div class="cart-page-header" style="justify-content: space-between; align-items: center; margin-top: 1rem;">
         <h1 class="section-title" style="margin: 0; text-align: left;">Shporta Juaj</h1>
-        <button onclick="clearCart(event)" class="btn-clear-all mobile-clear-btn">
-            <i class="far fa-trash-alt mr-1"></i> Fshij të gjitha
-        </button>
     </div>
 
     {% if cart_items %}
@@ -22,22 +19,9 @@
             <!-- DESKTOP TABLE VIEW -->
             <div class="table-responsive desktop-cart-view">
                 <table class="table cart-table">
-                    <thead>
-                        <tr>
-                            <th>Produkti</th>
-                            <th>Çmimi</th>
-                            <th>Sasia</th>
-                            <th>Nëntotali</th>
-                            <th style="text-align: right;">
-                                <button onclick="clearCart(event)" class="btn-clear-all">
-                                    <i class="far fa-trash-alt mr-1"></i> Fshij të gjitha
-                                </button>
-                            </th>
-                        </tr>
-                    </thead>
                     <tbody>
                         {% for item in cart_items %}
-                        <tr data-item-id="{{ item._id }}" class="cart-item-row clickable-row"
+                        <tr data-item-id="{{ item._id }}" data-cart-key="{{ item.cart_key|e }}" class="cart-item-row clickable-row"
                             data-href="{{ url_for('main.product_detail', product_id=item._id) }}">
                             <td>
                                 <div class="cart-product-info">
@@ -108,7 +92,7 @@
                             </td>
                             <td class="item-total-cell">€{{ "%.2f"|format(item.item_total) }}</td>
                             <td>
-                                <form action="{{ url_for('cart.remove_from_cart', cart_key=item.cart_key) }}" method="POST"
+                                <form action="{{ url_for('cart.remove_from_cart', cart_key=item.cart_key) }}" method="POST" data-cart-remove data-cart-key="{{ item.cart_key|e }}"
                                     onclick="event.stopPropagation()">
                                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                                     <button type="submit" class="btn-icon" title="Fshije">
@@ -135,13 +119,13 @@
 
                 <!-- Cart Items -->
                 {% for item in cart_items %}
-                <div class="cart-item-card clickable-row" data-item-id="{{ item._id }}"
+                <div class="cart-item-card clickable-row" data-item-id="{{ item._id }}" data-cart-key="{{ item.cart_key|e }}"
                     data-href="{{ url_for('main.product_detail', product_id=item._id) }}">
                     <!-- Top Row: Image + Info + Delete Button -->
                     <div class="cart-mobile-top">
                         <!-- Action (Delete) - Absolute Positioned -->
                         <div class="cart-col-action" onclick="event.stopPropagation()">
-                            <form action="{{ url_for('cart.remove_from_cart', cart_key=item.cart_key) }}" method="POST">
+                            <form action="{{ url_for('cart.remove_from_cart', cart_key=item.cart_key) }}" method="POST" data-cart-remove data-cart-key="{{ item.cart_key|e }}">
                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                                 <button type="submit" class="delete-btn" title="Fshije">
                                     <i class="fas fa-trash-alt"></i>
@@ -229,18 +213,15 @@
                 <h3 class="summary-title">Përmbledhja e Porosisë</h3>
 
                 <!-- Free Shipping Progress Bar -->
-                {% if total_price < 50 %}
-                <div class="free-shipping-bar cart-page-shipping-bar" style="margin-bottom: 1.25rem;">
-                    <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
-                        <span>Dërgim falas nga <strong>€50</strong></span>
-                        <span style="font-weight:700; color: var(--primary);">€{{ "%.2f"|format(50 - total_price) }} mungon</span>
-                    </div>
+                {% if is_kosovo and total_price < 50 %}
+                <div class="free-shipping-bar cart-page-shipping-bar" data-kosovo="true" style="margin-bottom: 1.25rem;">
+                    <div class="shipping-progress-single">Shto edhe&nbsp;<strong>€{{ "%.2f"|format(50 - total_price) }}</strong>&nbsp;për dërgim falas!</div>
                     <div class="bar-track">
                         <div class="bar-fill" style="width: {{ [((total_price / 50) * 100)|int, 100]|min }}%"></div>
                     </div>
                 </div>
-                {% else %}
-                <div class="free-shipping-bar cart-page-shipping-bar" style="margin-bottom: 1.25rem;">
+                {% elif is_kosovo %}
+                <div class="free-shipping-bar cart-page-shipping-bar" data-kosovo="true" style="margin-bottom: 1.25rem;">
                     <span style="color: #166534;"><i class="fas fa-check-circle" style="margin-right:0.4rem;"></i><strong>Keni fituar dërgim falas!</strong></span>
                     <div class="bar-track" style="margin-top:0.4rem;"><div class="bar-fill" style="width:100%"></div></div>
                 </div>
@@ -320,6 +301,136 @@
         </a>
     </div>
     {% endif %}
+
+    {% if recommended_products %}
+    <section class="cart-recommendations" aria-labelledby="cartRecommendationsTitle" data-kosovo="{{ 'true' if is_kosovo else 'false' }}">
+        <div class="cart-recommendations-head">
+            <div>
+                <span class="cart-recommendations-eyebrow">Zgjedhur për ju</span>
+                <h2 id="cartRecommendationsTitle">{% if is_kosovo and total_price < 50 and cart_items %}Plotësoni shportën dhe përfitoni dërgesë falas{% elif cart_items %}Mund t'ju pëlqejnë edhe këto{% else %}Produkte të rekomanduara{% endif %}</h2>
+                {% if is_kosovo and total_price < 50 and cart_items %}
+                <p id="cartRecommendationsDescription">Ju mungojnë vetëm <strong>€{{ "%.2f"|format(50 - total_price) }}</strong>. Zgjidhni produkte relevante për porosinë tuaj.</p>
+                {% else %}
+                <p id="cartRecommendationsDescription">Një përzgjedhje me produkte të ngjashme, oferta dhe zgjedhje të preferuara.</p>
+                {% endif %}
+            </div>
+            <div class="cart-carousel-controls" aria-label="Kontrollet e karuselit">
+                <button type="button" onclick="scrollCartRecommendations(-1)" aria-label="Produktet e mëparshme"><i class="fas fa-arrow-left"></i></button>
+                <button type="button" onclick="scrollCartRecommendations(1)" aria-label="Produktet e ardhshme"><i class="fas fa-arrow-right"></i></button>
+            </div>
+        </div>
+        <div class="cart-recommendations-track" id="cartRecommendationsTrack">
+            {% for product in recommended_products %}
+            <article class="product-card cart-recommendation-card">
+                <div class="product-image">
+                    <div class="badge-stack">
+                        {% if product.offer_type == 'multi_buy' %}<div class="special-offer-badge red-badge">{{ product.offer_badge_text or 'Ofertë' }}</div>
+                        {% elif product.discount_price %}<div class="special-offer-badge red-badge">Ofertë</div>{% endif %}
+                        {% if product.is_best_seller %}<div class="best-seller-badge">Më i shituri</div>{% endif %}
+                    </div>
+                    <img src="{{ product.image_url|cld(400) }}" alt="{{ product.name }}" loading="lazy">
+                    <button type="button" class="btn-favorite" onclick="toggleFavorite(this, '{{ product._id }}')" aria-label="Shto te të preferuarat"><i class="far fa-heart"></i></button>
+                    <a href="{{ url_for('main.product_detail', product_id=product._id) }}" class="product-card-link-overlay" aria-label="Shiko {{ product.name }}"></a>
+                </div>
+                <div class="product-info">
+                    <span class="product-category">{{ product.brand or product.category }}</span>
+                    <h3 class="product-title">{{ product.name }}</h3>
+                    {% if product.size %}<span class="product-size">{{ product.size }}</span>{% endif %}
+                    <div class="price-container">
+                        <span class="price{% if product.discount_price %} discounted{% endif %}">€{{ "%.2f"|format(product.display_price) }}</span>
+                        {% if product.discount_price %}<span class="price original">€{{ "%.2f"|format(product.display_original_price) }}</span>{% endif %}
+                    </div>
+                    <button type="button" class="cart-recommendation-add" onclick="addCartRecommendation('{{ product._id }}', this)"><i class="fas fa-plus"></i> Shto në shportë</button>
+                </div>
+            </article>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
 </div>
 
+<script src="{{ url_for('static', filename='js/cart-page.js', v=3) }}"></script>
+<script>
+window.scrollCartRecommendations = function(direction) {
+    const track = document.getElementById('cartRecommendationsTrack');
+    if (!track) return;
+    const card = track.querySelector('.cart-recommendation-card');
+    if (!card) return;
+    const styles = window.getComputedStyle(track);
+    const gap = parseFloat(styles.columnGap || styles.gap) || 16;
+    const step = card.getBoundingClientRect().width + gap;
+    const visibleCards = Math.max(1, Math.round((track.clientWidth + gap) / step));
+    const currentIndex = Math.round(track.scrollLeft / step);
+    const maxIndex = Math.max(0, track.children.length - visibleCards);
+    const targetIndex = Math.min(maxIndex, Math.max(0, currentIndex + (direction * visibleCards)));
+    track.scrollTo({ left: targetIndex * step, behavior: 'smooth' });
+};
+window.updateCartRecommendationCopy = function(totalPrice) {
+    const section = document.querySelector('.cart-recommendations');
+    const title = document.getElementById('cartRecommendationsTitle');
+    const description = document.getElementById('cartRecommendationsDescription');
+    if (!section || !title || !description) return;
+    const total = Number(totalPrice) || 0;
+    const isKosovo = section.dataset.kosovo === 'true';
+    if (isKosovo && total < 50 && total > 0) {
+        title.textContent = 'Plotësoni shportën dhe përfitoni dërgesë falas';
+        description.innerHTML = 'Ju mungojnë vetëm <strong>€' + (50 - total).toFixed(2) + '</strong>. Zgjidhni produkte relevante për porosinë tuaj.';
+    } else {
+        title.textContent = 'Mund t\'ju pëlqejnë edhe këto';
+        description.textContent = 'Një përzgjedhje me produkte të ngjashme, oferta dhe zgjedhje të preferuara.';
+    }
+};
+document.addEventListener('DOMContentLoaded', function() {
+    const totalElement = document.querySelector('.summary-total-price');
+    if (!totalElement) return;
+    window.updateCartPageShippingBar = function(totalPrice) {
+        const bar = document.querySelector('.cart-page-shipping-bar');
+        if (!bar) return;
+        const total = Number(totalPrice) || 0;
+        if (total < 50) {
+            const remaining = (50 - total).toFixed(2);
+            const percentage = Math.min(Math.round((total / 50) * 100), 100);
+            bar.innerHTML = '<div class="shipping-progress-single">Shto edhe&nbsp;<strong>€' + remaining + '</strong>&nbsp;për dërgim falas!</div><div class="bar-track"><div class="bar-fill" style="width:' + percentage + '%"></div></div>';
+        } else {
+            bar.innerHTML = '<span style="color:#166534"><i class="fas fa-check-circle" style="margin-right:.4rem"></i><strong>Keni fituar dërgim falas!</strong></span><div class="bar-track" style="margin-top:.4rem"><div class="bar-fill" style="width:100%"></div></div>';
+        }
+    };
+    const syncCopy = function() {
+        const total = totalElement.textContent.replace(/[^0-9.,-]/g, '').replace(',', '.');
+        window.updateCartRecommendationCopy(total);
+        window.updateCartPageShippingBar(total);
+    };
+    new MutationObserver(syncCopy).observe(totalElement, {childList: true, characterData: true, subtree: true});
+    syncCopy();
+});
+window.addCartRecommendation = function(productId, button) {
+    if (!productId || !button || button.disabled) return;
+    const original = button.innerHTML;
+    button.disabled = true;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Duke shtuar...';
+    const formData = new FormData();
+    const csrf = document.querySelector('meta[name="csrf-token"]');
+    if (csrf) formData.append('csrf_token', csrf.content);
+    formData.append('quantity', '1');
+    fetch('/cart/add/' + encodeURIComponent(productId), {
+        method: 'POST',
+        body: formData,
+        headers: {'X-Requested-With': 'XMLHttpRequest'}
+    }).then(async response => {
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data.message || 'Produkti nuk u shtua.');
+        return data;
+    }).then(data => {
+        if (!data.success) throw new Error(data.message || 'Produkti nuk u shtua.');
+        button.innerHTML = '<i class="fas fa-check"></i> U shtua';
+        button.classList.add('is-added');
+        window.updateGlobalBadges(data);
+        setTimeout(() => window.location.reload(), 450);
+    }).catch(error => {
+        button.disabled = false;
+        button.innerHTML = original;
+        window.showToast(error.message || 'Ndodhi një gabim.', 'error');
+    });
+};
+</script>
 {% endblock %}

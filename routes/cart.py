@@ -46,8 +46,8 @@ def calculate_shipping(total_price, country):
     country = country.lower() if country else 'kosova'
     
     if country in ['kosova', 'kosovë', 'kosovo']:
-        # Kosovo: delivery €2.50, free only when order is strictly over 50
-        if total_price > 50:
+        # Kosovo: delivery €2.50, free from €50.
+        if total_price >= 50:
             return 0
         return 2.5
     elif country in ['shqipëria', 'shqiperia', 'albania'] or country in ['maqedonia', 'north macedonia']:
@@ -55,7 +55,7 @@ def calculate_shipping(total_price, country):
         return 5.0
     
     # Default fallback: charge small fee unless over 50
-    return 2.5 if total_price <= 50 else 0
+    return 2.5 if total_price < 50 else 0
 
 def calculate_cart_totals(cart, country='Kosova'):
     total_price = 0
@@ -96,6 +96,53 @@ def get_wishlist_count():
     except:
         pass
     return count
+
+
+def _cart_recommendations(cart_items, limit=24):
+    """Rank useful cross-sells without recommending products already in the cart."""
+    cart_ids = {str(item.get('_id')) for item in cart_items}
+    categories = {str(item.get('category') or '').strip() for item in cart_items} - {''}
+    subcategories = {str(item.get('subcategory') or '').strip() for item in cart_items} - {''}
+    brands = {str(item.get('brand') or '').strip() for item in cart_items} - {''}
+    candidates = []
+    for product in Product.get_all_lean():
+        if str(product.get('_id')) in cart_ids or product.get('in_stock') is False:
+            continue
+        score = 0
+        if product.get('subcategory') in subcategories:
+            score += 70
+        if product.get('category') in categories:
+            score += 45
+        if product.get('brand') in brands:
+            score += 18
+        if Product._offer_is_active(product):
+            score += 22
+        if product.get('is_best_seller'):
+            score += 16
+        if product.get('is_pharmacist_choice'):
+            score += 10
+        score += min(len(product.get('favorites') or []), 10)
+        candidates.append((score, str(product.get('name') or ''), product))
+
+    candidates.sort(key=lambda row: (-row[0], row[1].lower()))
+    selected, selected_ids, seen_brands = [], set(), set()
+    for _, _, product in candidates:
+        brand = str(product.get('brand') or '').strip().lower()
+        if brand and brand in seen_brands:
+            continue
+        selected.append(Product.apply_offer_context(product))
+        selected_ids.add(str(product.get('_id')))
+        if brand:
+            seen_brands.add(brand)
+        if len(selected) >= limit:
+            return selected
+    for _, _, product in candidates:
+        if str(product.get('_id')) in selected_ids:
+            continue
+        selected.append(Product.apply_offer_context(product))
+        if len(selected) >= limit:
+            break
+    return selected
 
 @cart_bp.route('/')
 def view_cart():
@@ -142,15 +189,19 @@ def view_cart():
             cart_items.append(product)
 
     country = current_user.country if current_user.is_authenticated and current_user.country else 'Kosova'
+    is_kosovo = str(country).strip().lower() in ('kosova', 'kosovë', 'kosovo')
     delivery_fee = calculate_shipping(total_price, country)
     grand_total = total_price + delivery_fee
+    recommended_products = _cart_recommendations(cart_items)
 
     return render_template('cart.html',
                            cart_items=cart_items,
                            total_price=total_price,
                            total_savings=total_savings,
                            delivery_fee=delivery_fee,
-                           grand_total=grand_total)
+                           grand_total=grand_total,
+                           is_kosovo=is_kosovo,
+                           recommended_products=recommended_products)
 
 @cart_bp.route('/add/<product_id>', methods=['POST'])
 def add_to_cart(product_id):

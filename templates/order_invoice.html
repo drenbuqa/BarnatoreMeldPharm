@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="sq">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fatura #{{ order._id|string|truncate(8, True, '')|upper }}</title>
+    <style>
+        :root { --ink:#263027; --muted:#68736a; --brand:#4f5d4e; --line:#dfe5df; --soft:#f5f7f4; }
+        * { box-sizing:border-box; }
+        body { margin:0; background:#eef1ee; color:var(--ink); font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+        .invoice-actions { max-width:860px; margin:24px auto 12px; display:flex; justify-content:flex-end; gap:10px; padding:0 18px; }
+        .invoice-actions a,.invoice-actions button { border:1px solid #cfd8d1; border-radius:9px; padding:10px 16px; background:#fff; color:var(--ink); font:inherit; font-size:14px; font-weight:650; text-decoration:none; cursor:pointer; }
+        .invoice-actions button { background:var(--brand); border-color:var(--brand); color:#fff; }
+        .invoice { width:min(860px,calc(100% - 28px)); margin:0 auto 36px; background:#fff; border-radius:16px; box-shadow:0 12px 38px rgba(38,48,39,.09); padding:48px; }
+        .invoice-header { display:flex; justify-content:space-between; align-items:flex-start; gap:30px; padding-bottom:26px; border-bottom:3px solid var(--brand); }
+        .brand { font-size:24px; font-weight:800; color:var(--brand); }
+        .brand-details,.invoice-meta { color:var(--muted); font-size:13px; line-height:1.65; }
+        .invoice-title { text-align:right; font-size:28px; font-weight:800; letter-spacing:.08em; }
+        .invoice-meta { text-align:right; margin-top:6px; }
+        .summary { display:grid; grid-template-columns:1fr 1fr; gap:28px; padding:28px 0; }
+        .summary h2 { margin:0 0 10px; font-size:12px; color:var(--brand); text-transform:uppercase; letter-spacing:.09em; }
+        .summary p { margin:3px 0; font-size:14px; line-height:1.45; }
+        table { width:100%; border-collapse:collapse; font-size:14px; }
+        th { background:var(--brand); color:#fff; padding:12px; text-align:left; font-size:12px; letter-spacing:.04em; }
+        td { padding:13px 12px; border-bottom:1px solid var(--line); }
+        th:last-child,td:last-child { text-align:right; }
+        .totals { width:min(360px,100%); margin:22px 0 0 auto; }
+        .total-row { display:flex; justify-content:space-between; padding:8px 0; color:var(--muted); font-size:14px; }
+        .total-row.grand { margin-top:5px; padding-top:13px; border-top:2px solid var(--brand); color:var(--ink); font-size:18px; font-weight:800; }
+        .invoice-footer { margin-top:40px; padding-top:18px; border-top:1px solid var(--line); text-align:center; color:var(--muted); font-size:12px; }
+        @media(max-width:640px){ .invoice{padding:25px}.invoice-header,.summary{grid-template-columns:1fr;display:grid}.invoice-title,.invoice-meta{text-align:left}.summary{gap:18px}th,td{padding:10px 7px;font-size:12px}.invoice-actions{margin-top:12px} }
+        @media print { body{background:#fff}.invoice-actions{display:none}.invoice{width:100%;margin:0;box-shadow:none;border-radius:0;padding:0} }
+    </style>
+</head>
+<body>
+    <div class="invoice-actions">
+        <a href="{{ url_for('main.orders') }}">Kthehu te porositë</a>
+        <button type="button" onclick="window.print()">Printo / Ruaj PDF</button>
+    </div>
+    <main class="invoice">
+        <header class="invoice-header">
+            <div>
+                <div class="brand">Barnatore Meld Pharm</div>
+                <div class="brand-details">Rr. Eqrem Çabej 72, Prishtinë<br>+383 45 590 455 · info@meldpharm.com</div>
+            </div>
+            <div>
+                <div class="invoice-title">FATURË</div>
+                <div class="invoice-meta">#{{ order._id|string|truncate(8, True, '')|upper }}<br>{{ order.created_at.strftime('%d.%m.%Y, %H:%M') if order.created_at else '—' }}</div>
+            </div>
+        </header>
+        <section class="summary">
+            <div><h2>Klienti</h2><p><strong>{{ order.fullname }}</strong></p><p>{{ order.email or '—' }}</p><p>{{ order.phone }}</p></div>
+            <div><h2>Dërgesa dhe pagesa</h2><p>{{ order.address or '—' }}{% if order.city %}, {{ order.city }}{% endif %}</p><p>{{ 'Marrje në dyqan' if order.shipping_method == 'pickup' else 'Dërgesë' }}</p><p>{{ 'Pagim në dorëzim' if order.payment_method == 'cash' else order.payment_method }}</p></div>
+        </section>
+        <table>
+            <thead><tr><th>Produkti</th><th>Sasia</th><th>Çmimi</th><th>Gjithsej</th></tr></thead>
+            <tbody>{% for item in order['items'] %}<tr><td><strong>{{ item.name }}</strong>{% if item.variant %}<br><small>{{ item.variant }}</small>{% endif %}</td><td>{{ item.quantity }}</td><td>€{{ "%.2f"|format(item.price) }}</td><td>€{{ "%.2f"|format(item.item_total) }}</td></tr>{% endfor %}</tbody>
+        </table>
+        <div class="totals">
+            <div class="total-row"><span>Nëntotali</span><span>€{{ "%.2f"|format(order.total_price or order.grand_total) }}</span></div>
+            <div class="total-row"><span>Transporti</span><span>{{ 'Falas' if not order.shipping_cost else '€%.2f'|format(order.shipping_cost) }}</span></div>
+            <div class="total-row grand"><span>Gjithsej</span><span>€{{ "%.2f"|format(order.grand_total) }}</span></div>
+        </div>
+        <footer class="invoice-footer">Faleminderit për besimin tuaj në Barnatore Meld Pharm.</footer>
+    </main>
+</body>
+</html>

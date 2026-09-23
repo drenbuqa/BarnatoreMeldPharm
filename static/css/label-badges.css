@@ -1,0 +1,31 @@
+/* A restrained badge palette: promotion, popularity, trust, and information. */
+.special-offer-badge,
+.sale-label-badge,
+.limited-badge {
+    background: #b4534b !important;
+    box-shadow: 0 2px 7px rgba(180, 83, 75, 0.2) !important;
+}
+
+.best-seller-badge {
+    background: #9a6b24 !important;
+    box-shadow: 0 2px 7px rgba(154, 107, 36, 0.2) !important;
+}
+
+.pharmacist-badge {
+    background: #4f5d4e !important;
+    box-shadow: 0 2px 7px rgba(79, 93, 78, 0.2) !important;
+}
+
+.new-arrival-badge,
+.set-badge {
+    background: #68766c !important;
+    box-shadow: 0 2px 7px rgba(104, 118, 108, 0.18) !important;
+}
+
+/* Discount percentages use a quiet brand tint instead of alert red. */
+.discount-badge {
+    background: #e8eee8 !important;
+    color: #465548 !important;
+    border: 1px solid #cdd8ce !important;
+    box-shadow: none !important;
+}

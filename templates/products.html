@@ -14,37 +14,81 @@
                     <h3>Filtroni Produktet</h3>
                 </div>
                 <div class="sidebar-content-wrapper">
-                    <!-- Switch Filters (Now First) -->
-                    <div class="sidebar-block">
-                        <div
-                            style="display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 1.5rem;">
-                            <h3 class="sidebar-title no-line" style="margin: 0; font-size: 1.4rem;">Filtro</h3>
-                            <button onclick="resetFilters(event)" class="btn-reset-filters-v2"
-                                style="width: auto; padding: 12px 18px; margin: 0; background: #fee2e2; border: 1px solid #fee2e2; color: #ef4444; border-radius: 14px; font-size: 1.1rem;"
-                                title="Reseto të gjitha">
-                                <i class="fas fa-undo-alt" style="margin: 0;"></i>
-                            </button>
-                        </div>
-                        <div class="filter-switch-row mb-3">
-                            <span class="switch-label">Shfaq vetëm ofertat</span>
-                            <label class="switch">
-                                <input type="checkbox" id="discount-only-filter" {% if discount_only %}checked{% endif
-                                    %} onchange="window.updateShop()">
-                                <span class="slider round"></span>
-                            </label>
-                        </div>
-                        <div class="filter-switch-row">
-                            <span class="switch-label">Më të shiturit</span>
-                            <label class="switch">
-                                <input type="checkbox" id="best-seller-filter" {% if best_sellers %}checked{% endif %}
-                                    onchange="window.updateShop()">
-                                <span class="slider round"></span>
-                            </label>
+                    <div class="sidebar-filter-heading">
+                        <h3>Filtro produktet</h3>
+                    </div>
+
+                    <div class="sidebar-block filter-accordion {% if discount_only or best_sellers or pharmacist_choice or product_labels %}has-selection{% endif %}">
+                        <button class="filter-accordion-trigger" type="button" aria-expanded="false"
+                            aria-controls="offersFilterPanel" id="offersFilterTrigger">
+                            <span>Etiketat e produktit</span>
+                            <span class="filter-trigger-meta">
+                                <i class="fas fa-chevron-down" aria-hidden="true"></i>
+                            </span>
+                        </button>
+                        <div class="filter-accordion-content" id="offersFilterPanel" role="region"
+                            aria-labelledby="offersFilterTrigger">
+                            <div class="filter-accordion-inner">
+                                <div class="filter-switch-row mb-3">
+                                    <span class="switch-label">Ofertë</span>
+                                    <label class="switch">
+                                        <input type="checkbox" id="label-sale-filter" class="product-label-filter" value="sale" {% if discount_only or 'sale' in product_labels %}checked{% endif
+                                            %} onchange="window.updateProductLabelFilters()">
+                                        <span class="slider round"></span>
+                                    </label>
+                                </div>
+                                <div class="filter-switch-row">
+                                    <span class="switch-label">Më të shiturit</span>
+                                    <label class="switch">
+                                        <input type="checkbox" id="label-best-seller-filter" class="product-label-filter" value="best_seller" {% if best_sellers or 'best_seller' in product_labels %}checked{% endif %}
+                                            onchange="window.updateProductLabelFilters()">
+                                        <span class="slider round"></span>
+                                    </label>
+                                </div>
+                                <div class="filter-switch-row">
+                                    <span class="switch-label">Zgjedhja e farmacistit</span>
+                                    <label class="switch">
+                                        <input type="checkbox" id="label-pharmacist-choice-filter" class="product-label-filter" value="pharmacist_choice" {% if pharmacist_choice or 'pharmacist_choice' in product_labels %}checked{% endif %}
+                                            onchange="window.updateProductLabelFilters()">
+                                        <span class="slider round"></span>
+                                    </label>
+                                </div>
+                                <div class="filter-switch-row">
+                                    <span class="switch-label">Produkte të reja</span>
+                                    <label class="switch">
+                                        <input type="checkbox" class="product-label-filter" value="new_arrival" {% if 'new_arrival' in product_labels %}checked{% endif %}
+                                            onchange="window.updateProductLabelFilters()">
+                                        <span class="slider round"></span>
+                                    </label>
+                                </div>
+                                <div class="filter-switch-row">
+                                    <span class="switch-label">Të kufizuara</span>
+                                    <label class="switch">
+                                        <input type="checkbox" class="product-label-filter" value="limited" {% if 'limited' in product_labels %}checked{% endif %}
+                                            onchange="window.updateProductLabelFilters()">
+                                        <span class="slider round"></span>
+                                    </label>
+                                </div>
+                                <div class="filter-switch-row">
+                                    <span class="switch-label">Sete dhe paketa</span>
+                                    <label class="switch">
+                                        <input type="checkbox" class="product-label-filter" value="set" {% if 'set' in product_labels %}checked{% endif %}
+                                            onchange="window.updateProductLabelFilters()">
+                                        <span class="slider round"></span>
+                                    </label>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="sidebar-block" id="categoryBlock">
-                        <h3 class="sidebar-title">Kategoritë</h3>
+                    <div class="sidebar-block filter-accordion {% if current_category != 'all' %}has-selection{% endif %}" id="categoryBlock">
+                        <button class="filter-accordion-trigger" type="button" aria-expanded="false"
+                            aria-controls="categoryFilterPanel" id="categoryFilterTrigger">
+                            <span>Kategoritë</span>
+                            <span class="filter-trigger-meta"><i class="fas fa-chevron-down" aria-hidden="true"></i></span>
+                        </button>
+                        <div class="filter-accordion-content" id="categoryFilterPanel" role="region" aria-labelledby="categoryFilterTrigger">
+                        <div class="filter-accordion-inner">
                         <ul class="sidebar-cat-list">
                             <li>
                                 <a href="#" onclick="filterByCategory(event, 'all')"
@@ -89,12 +133,20 @@
                             </li>
                             {% endfor %}
                         </ul>
+                        </div>
+                        </div>
                     </div>
 
                     <!-- Brand Filter -->
-                    <div class="sidebar-block" id="brandBlock">
-                        <h3 class="sidebar-title">Brendet</h3>
-                                                <div class="brand-filter-search" style="margin-bottom: 10px; position: relative;">
+                    <div class="sidebar-block filter-accordion {% if current_brand != 'all' %}has-selection{% endif %}" id="brandBlock">
+                        <button class="filter-accordion-trigger" type="button" aria-expanded="false"
+                            aria-controls="brandFilterPanel" id="brandFilterTrigger">
+                            <span>Brendet</span>
+                            <span class="filter-trigger-meta"><i class="fas fa-chevron-down" aria-hidden="true"></i></span>
+                        </button>
+                        <div class="filter-accordion-content" id="brandFilterPanel" role="region" aria-labelledby="brandFilterTrigger">
+                        <div class="filter-accordion-inner">
+                        <div class="brand-filter-search" style="margin-bottom: 10px; position: relative;">
                             <input type="text" id="brandSearchInput" placeholder="Kërko brendin..." style="width: 100%; padding: 0.5rem 0.75rem 0.5rem 2rem; border-radius: 6px; border: 1px solid var(--border-light); font-size: 0.85rem;" onkeyup="filterBrandList()">
                             <i class="fas fa-search" style="position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 0.8rem;"></i>
                         </div>
@@ -116,10 +168,18 @@
                                 {% endfor %}
                             </ul>
                         </div>
+                        </div>
+                        </div>
                     </div>
 
-                    <div class="sidebar-block clickable-last-block">
-                        <h3 class="sidebar-title">Çmimi</h3>
+                    <div class="sidebar-block filter-accordion clickable-last-block {% if request.args.get('min_price') or request.args.get('max_price') %}has-selection{% endif %}">
+                        <button class="filter-accordion-trigger" type="button" aria-expanded="false"
+                            aria-controls="priceFilterPanel" id="priceFilterTrigger">
+                            <span>Çmimi</span>
+                            <span class="filter-trigger-meta"><i class="fas fa-chevron-down" aria-hidden="true"></i></span>
+                        </button>
+                        <div class="filter-accordion-content" id="priceFilterPanel" role="region" aria-labelledby="priceFilterTrigger">
+                        <div class="filter-accordion-inner">
                         <div class="filter-group-price">
                             <div class="prs-vals">
                                 <span class="prs-badge" id="price-min-display">0€</span>
@@ -135,6 +195,14 @@
                             <input type="hidden" id="min-price" value="{{ request.args.get('min_price', '') }}">
                             <input type="hidden" id="max-price" value="{{ request.args.get('max_price', '') }}">
                         </div>
+                        </div>
+                        </div>
+                    </div>
+                    <div class="filter-reset-footer">
+                        <button type="button" onclick="resetAllProductFilters(event)" class="btn-remove-all-filters">
+                            <i class="fas fa-xmark" aria-hidden="true"></i>
+                            <span>Hiq të gjithë filtrat</span>
+                        </button>
                     </div>
                 </div> <!-- End sidebar-content-wrapper -->
                 <div class="sidebar-mobile-footer d-md-none">
@@ -196,6 +264,12 @@
                             {% endif %}
                             {% if product.labels and 'limited' in product.labels %}
                             <div class="limited-badge"><i class="fas fa-clock"></i> I Kufizuar</div>
+                            {% endif %}
+                            {% if product.labels and 'new_arrival' in product.labels %}
+                            <div class="new-arrival-badge"><i class="fas fa-sparkles"></i> I Ri</div>
+                            {% endif %}
+                            {% if product.labels and 'sale' in product.labels and not product.discount_price %}
+                            <div class="sale-label-badge"><i class="fas fa-tag"></i> Ofertë</div>
                             {% endif %}
                             {% if product.is_best_seller %}
                             <div class="best-seller-badge">Më i Shituri</div>
@@ -270,11 +344,10 @@
                     {% endif %}
                 </div>
 
-                <div id="products-sentinel" style="height:1px;"></div>
-                <div id="load-more-products-wrap" class="text-center d-none" style="padding:2.5rem 0 1.5rem;">
-                    <div class="scroll-loader">
-                        <span></span><span></span><span></span>
-                    </div>
+                <div id="load-more-products-wrap" class="load-more-container text-center {{ 'd-none' if total_pages <= 1 else '' }}">
+                    <button type="button" id="load-more-products" class="btn-load-more" data-page="1" onclick="window.updateShop(true)">
+                        <span>Shfaq më shumë produkte</span><i class="fas fa-chevron-down"></i>
+                    </button>
                 </div>
                 <div id="products-end-msg" class="products-end-msg" style="{{ 'display:block' if total_pages <= 1 else 'display:none' }}">
                     <div class="products-end-inner">
@@ -283,26 +356,109 @@
                         <div class="products-end-line"></div>
                     </div>
                 </div>
-                <!-- hidden element keeps data-page state -->
-                <span id="load-more-products" data-page="1" style="display:none;"></span>
                 <script>window._shopTotalPages = {{ total_pages|default(1) }};</script>
             </main>
         </div>
     </div>
 </section>
 <style>
+.sidebar-filter-heading{display:flex;align-items:center;gap:1rem;margin-bottom:1rem;padding:0 .15rem}
+.sidebar-filter-heading h3{margin:0;color:var(--text-main);font-size:1.35rem;font-weight:700}
+.filter-reset-footer{margin-top:1rem;padding:1rem .25rem .15rem;border-top:1px solid #e2e8e3}
+.btn-remove-all-filters{display:inline-flex;align-items:center;justify-content:flex-start;gap:.55rem;width:auto;min-height:38px;padding:.45rem .65rem;border:0;border-radius:8px;background:transparent;color:#68736a;font:inherit;font-size:.86rem;font-weight:650;letter-spacing:.01em;cursor:pointer;box-shadow:none;transition:background .2s ease,color .2s ease}
+.btn-remove-all-filters i{font-size:1rem;color:#879188}
+.btn-remove-all-filters:hover{background:#edf1ed;color:#344237;box-shadow:none;transform:none}
+.btn-remove-all-filters:hover i{color:#4f5d4e}
+.btn-remove-all-filters:focus-visible{outline:3px solid rgba(79,93,78,.2);outline-offset:2px}
+.new-arrival-badge,.sale-label-badge{display:inline-flex;align-items:center;gap:4px;color:#fff;padding:3px 10px;font-size:.6rem;font-weight:800;border-radius:4px;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap}
+.new-arrival-badge{background:#0ea5e9;box-shadow:0 2px 8px rgba(14,165,233,.35)}
+.sale-label-badge{background:#ec4899;box-shadow:0 2px 8px rgba(236,72,153,.35)}
+.filter-accordion{margin-bottom:.75rem!important;padding:0!important;overflow:hidden;border:1px solid #e2e8f0!important;border-radius:14px!important;background:#fff;box-shadow:0 1px 3px rgba(15,23,42,.04);transition:border-color .2s ease,box-shadow .2s ease}
+.filter-accordion:hover{border-color:#cbd5e1!important}
+.filter-accordion.is-open{border-color:var(--primary)!important;box-shadow:0 5px 16px rgba(5,150,105,.08)}
+.filter-accordion-trigger{display:flex;align-items:center;justify-content:space-between;gap:1rem;width:100%;min-height:58px;padding:1rem 1.1rem;border:0;background:#fff;color:var(--text-main);font:inherit;font-size:.98rem;font-weight:600;text-align:left;cursor:pointer}
+.filter-accordion-trigger:focus-visible{outline:3px solid rgba(5,150,105,.22);outline-offset:-3px}
+.filter-trigger-meta{display:flex;align-items:center;gap:.7rem;color:var(--primary)}
+.filter-trigger-meta>i{font-size:.8rem;transition:transform .25s ease}
+.filter-accordion.is-open .filter-trigger-meta>i{transform:rotate(180deg)}
+.filter-accordion-content{display:grid;grid-template-rows:0fr;visibility:hidden;transition:grid-template-rows .28s ease,visibility .28s ease}
+.filter-accordion.is-open .filter-accordion-content{grid-template-rows:1fr;visibility:visible}
+.filter-accordion-inner{min-height:0;overflow:hidden;padding:0 1rem;opacity:0;transition:opacity .18s ease,padding .28s ease}
+.filter-accordion.is-open .filter-accordion-inner{padding:0 1rem 1rem;opacity:1}
+.filter-accordion .sidebar-cat-list{margin:0}
+.filter-accordion .brand-filter-container{margin-top:0}
+.filter-accordion .filter-group-price{padding-top:.35rem}
 .products-end-msg{padding:2rem 1rem 1.5rem;animation:fadeInUp .4s ease both}
 .products-end-inner{display:flex;align-items:center;gap:1rem}
 .products-end-line{flex:1;height:1px;background:#e2e8f0}
 .products-end-text{white-space:nowrap;font-size:.8rem;color:#94a3b8;font-weight:500;letter-spacing:.04em}
 @keyframes fadeInUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
 @media(max-width:992px){
+  .sidebar-filter-heading{padding:0}
+  .filter-accordion-trigger{min-height:62px;padding:1rem 1.15rem;font-size:1rem}
+  .filter-accordion.is-open .filter-accordion-inner{padding:0 1.15rem 1.15rem}
   .shop-section{padding-bottom:0!important;}
   .shop-main-content{padding-bottom:0!important;}
   .products-end-msg{padding:1rem 1rem 0!important;}
 }
 </style>
 <script>
+window.updateProductLabelFilters = function() {
+    var selectedValues = Array.prototype.map.call(
+        document.querySelectorAll('.product-label-filter:checked'),
+        function(input) { return input.value; }
+    );
+    var hasActiveOfferFilter = selectedValues.indexOf('sale') !== -1;
+    var selectedLabels = selectedValues.filter(function(value) { return value !== 'sale'; });
+    var params = new URLSearchParams(window.location.search);
+    params.delete('best_sellers');
+    params.delete('pharmacist_choice');
+    params.delete('page');
+    params.delete('ajax');
+    if (hasActiveOfferFilter) params.set('discount_only', 'true');
+    else params.delete('discount_only');
+    if (selectedLabels.length) params.set('labels', selectedLabels.join(','));
+    else params.delete('labels');
+    var destination = window.location.pathname + (params.toString() ? '?' + params.toString() : '');
+    window.history.pushState({}, '', destination);
+    var labelsAccordion = document.getElementById('offersFilterTrigger');
+    if (labelsAccordion) {
+        labelsAccordion.setAttribute('aria-expanded', 'true');
+        labelsAccordion.closest('.filter-accordion').classList.add('is-open');
+    }
+    window.updateShop();
+};
+
+window.resetAllProductFilters = function(event) {
+    if (event) event.preventDefault();
+    document.querySelectorAll('.product-label-filter').forEach(function(input) {
+        input.checked = false;
+    });
+    window.resetFilters(event);
+};
+
+// Keep the filter list compact: opening one group closes the others.
+(function(){
+    var accordions = Array.prototype.slice.call(document.querySelectorAll('.filter-accordion'));
+
+    function setAccordion(accordion, shouldOpen) {
+        var trigger = accordion.querySelector('.filter-accordion-trigger');
+        if (!trigger) return;
+        accordion.classList.toggle('is-open', shouldOpen);
+        trigger.setAttribute('aria-expanded', shouldOpen ? 'true' : 'false');
+    }
+
+    accordions.forEach(function(accordion){
+        var trigger = accordion.querySelector('.filter-accordion-trigger');
+        if (!trigger) return;
+        trigger.addEventListener('click', function(){
+            var shouldOpen = !accordion.classList.contains('is-open');
+            accordions.forEach(function(other){ setAccordion(other, false); });
+            setAccordion(accordion, shouldOpen);
+        });
+    });
+})();
+
 // ── Desktop: sidebar fixed-sticky ──────────────────────────────────
 (function(){
     var sidebar = document.getElementById('shopSidebar');

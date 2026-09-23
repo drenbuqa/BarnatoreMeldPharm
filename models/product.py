@@ -187,7 +187,7 @@ class Product:
 
 
     @staticmethod
-    def get_paginated(page=1, per_page=20, category=None, search_query=None, subcategory=None, sort=None, brand=None, min_price=None, max_price=None, discount_only=False, best_seller_only=False, no_discount=False, pharmacist_choice=False, offer_name=None):
+    def get_paginated(page=1, per_page=20, category=None, search_query=None, subcategory=None, sort=None, brand=None, min_price=None, max_price=None, discount_only=False, best_seller_only=False, no_discount=False, pharmacist_choice=False, offer_name=None, product_labels=None):
         Product.revert_expired_offers()
         query = {"is_deleted": {"$ne": True}}
         if category and category != 'all':
@@ -225,6 +225,20 @@ class Product:
 
         if pharmacist_choice:
             query["is_pharmacist_choice"] = True
+
+        # Label checkboxes are one filter family, so selecting multiple labels
+        # matches products carrying any selected label. Keep compatibility with
+        # older products that stored the three original labels as booleans.
+        if product_labels:
+            clean_labels = list(dict.fromkeys(label for label in product_labels if label))
+            label_conditions = [{"labels": {"$in": clean_labels}}]
+            if "best_seller" in clean_labels:
+                label_conditions.append({"is_best_seller": True})
+            if "pharmacist_choice" in clean_labels:
+                label_conditions.append({"is_pharmacist_choice": True})
+            if "featured" in clean_labels:
+                label_conditions.append({"featured": True})
+            query.setdefault("$and", []).append({"$or": label_conditions})
 
         if offer_name and offer_name != 'all':
             import re

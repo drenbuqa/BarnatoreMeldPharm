@@ -118,6 +118,10 @@
                         {% endif %}
                     </div>
                     <div class="order-card-actions">
+                        <button type="button" class="btn-order-invoice"
+                                onclick="openOrderInvoice('{{ order._id }}')">
+                            <i class="fas fa-file-invoice"></i> Fatura
+                        </button>
                         <button class="btn-toggle-details" onclick="toggleOrderDetails('{{ order._id }}', this)">
                             <i class="fas fa-chevron-down"></i> Detajet
                         </button>
@@ -337,6 +341,24 @@
 .order-delivery-info { font-size: 0.8rem; color: #64748b; display: flex; align-items: center; gap: 0.4rem; }
 .order-card-actions { display: flex; align-items: center; gap: 0.5rem; }
 
+.btn-order-invoice {
+    background: #fff;
+    border: 1px solid #cfd8d1;
+    border-radius: 8px;
+    padding: 0.4rem 0.9rem;
+    font-size: 0.8rem;
+    font-weight: 650;
+    font-family: inherit;
+    color: #4f5d4e;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
+}
+.btn-order-invoice:hover { background: #f5f7f4; border-color: #8e9d90; box-shadow: 0 2px 7px rgba(79,93,78,0.1); }
+
 .btn-toggle-details {
     background: #f1f5f9;
     border: none;
@@ -423,12 +445,42 @@
 }
 </style>
 
+<script src="{{ url_for('static', filename='js/invoice-print.js') }}?v=1"></script>
 <script>
 function toggleOrderDetails(id, btn) {
     const panel = document.getElementById('details-' + id);
     const isOpen = panel.style.display !== 'none';
     panel.style.display = isOpen ? 'none' : 'block';
     btn.classList.toggle('open', !isOpen);
+}
+
+function openOrderInvoice(orderId) {
+    const panel = document.getElementById('details-' + orderId);
+    const card = panel ? panel.closest('.order-card') : null;
+    if (!panel || !card) return;
+
+    const detailRows = Array.from(panel.querySelectorAll('.details-col:first-child p')).map(row => {
+        const clone = row.cloneNode(true);
+        clone.querySelectorAll('i').forEach(icon => icon.remove());
+        const label = clone.querySelector('strong');
+        const labelText = label ? label.textContent.replace(':', '').trim() : '';
+        if (label) label.remove();
+        return { label: labelText, value: clone.textContent.trim() };
+    });
+    const items = Array.from(panel.querySelectorAll('.details-product-list li')).map(row => {
+        const description = row.querySelector('span')?.textContent.trim() || '';
+        const price = row.querySelector('strong')?.textContent.trim() || '';
+        const match = description.match(/^(\d+)×\s*(.*)$/);
+        return { quantity: match ? match[1] : '1', name: match ? match[2] : description, price };
+    });
+    const totals = Array.from(panel.querySelectorAll('.details-total-row')).map(row => ({
+        label: row.querySelector('span:first-child')?.textContent.trim() || '',
+        value: (row.querySelector('strong') || row.querySelector('span:last-child'))?.textContent.trim() || '',
+        grand: row.classList.contains('grand')
+    }));
+    const orderDate = card.querySelector('.order-date')?.textContent.trim() || '';
+    const shortId = orderId.slice(0, 8).toUpperCase();
+    MeldInvoice.open({ orderId: shortId, date: orderDate, details: detailRows, items, totals });
 }
 </script>
 {% endblock %}

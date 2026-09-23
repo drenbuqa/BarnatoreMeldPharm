@@ -156,6 +156,8 @@ tr.parent-row:hover td:first-child { border-left-color:var(--adm-primary); }
 .ord-item-price { font-weight:700; color:#1a1f18; white-space:nowrap; }
 .ord-items-total { display:flex; justify-content:space-between; padding:0.65rem 0 0; border-top:2px solid #eef0ed; font-weight:800; font-size:1rem; margin-top:0.5rem; }
 .ord-items-total span:last-child { color:var(--adm-primary); }
+.ord-summary-row { display:flex; justify-content:space-between; padding:.35rem 0; color:#64748b; font-size:.82rem; }
+.ord-summary-row.first { border-top:1px solid #e2e8f0; margin-top:.65rem; padding-top:.65rem; }
 
 /* Admin note */
 .admin-note-textarea { width:100%; padding:0.6rem 0.75rem; border:1.5px solid #e2e8f0; border-radius:8px; font-size:0.83rem; font-family:inherit; resize:vertical; outline:none; box-sizing:border-box; color:#1a1f18; }
@@ -339,6 +341,72 @@ tr.parent-row:hover td:first-child { border-left-color:var(--adm-primary); }
     .ord-details .ord-item-price { font-size:0.82rem; }
     .ord-details .ord-items-total { padding:0.5rem 0 0; font-size:0.9rem; margin-top:0.25rem; }
 }
+
+/* ── Modern order cards ── */
+.admin-orders-list { display:flex; flex-direction:column; gap:1rem; }
+.admin-order-card {
+    position:relative; background:#fff; border:1px solid #e2e8f0; border-radius:16px;
+    overflow:visible; box-shadow:0 2px 8px rgba(15,23,42,.045);
+    transition:border-color .18s, box-shadow .18s;
+}
+.admin-order-card:hover { background:#fff; border-color:#d5ddd5; box-shadow:0 6px 20px rgba(15,23,42,.075); }
+.aoc-header {
+    display:grid; grid-template-columns:24px minmax(145px,.75fr) minmax(180px,1.2fr) auto auto;
+    align-items:center; gap:1rem; padding:1rem 1.2rem; cursor:pointer; border-bottom:1px solid #eef2f7;
+}
+.aoc-check { display:flex; align-items:center; }
+.aoc-check input { width:16px; height:16px; cursor:pointer; accent-color:var(--adm-primary); }
+.aoc-id-date { min-width:0; }
+.aoc-customer { min-width:0; }
+.aoc-customer .cust-name, .aoc-customer .cust-tel { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.aoc-total { font-size:1.08rem; font-weight:800; color:#1e293b; white-space:nowrap; }
+.aoc-cancelled { margin:1rem 1.2rem; padding:.75rem 1rem; border:1px solid #fecaca; background:#fff7f7; border-radius:10px; color:#b91c1c; font-size:.82rem; }
+.aoc-items { padding:.75rem 1.2rem; }
+.aoc-item { display:grid; grid-template-columns:auto minmax(0,1fr) auto; gap:.75rem; align-items:center; padding:.45rem 0; border-bottom:1px solid #f1f5f9; }
+.aoc-item:last-child { border-bottom:0; }
+.aoc-item-qty { font-weight:800; color:var(--adm-primary); }
+.aoc-item-name { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:#334155; }
+.aoc-item-price { font-weight:700; color:#1e293b; }
+.aoc-more-products { padding-top:.5rem; }
+.aoc-more-btn { border:0; background:transparent; padding:.25rem 0; color:var(--adm-primary); font:inherit; font-size:.78rem; font-weight:750; cursor:pointer; display:inline-flex; align-items:center; gap:.4rem; }
+.aoc-more-btn:hover { text-decoration:underline; }
+.aoc-more-btn i { font-size:.68rem; transition:transform .2s; }
+.aoc-more-btn.open i { transform:rotate(180deg); }
+.aoc-footer { display:flex; align-items:center; justify-content:space-between; gap:1rem; padding:.9rem 1.2rem; border-top:1px solid #eef2f7; }
+.aoc-location { min-width:0; color:#64748b; font-size:.83rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.aoc-location i { margin-right:.35rem; }
+.aoc-actions { display:flex; gap:.5rem; flex:0 0 auto; }
+.aoc-btn { border:1px solid #dbe3ec; border-radius:9px; padding:.5rem .85rem; background:#fff; color:#475569; font:inherit; font-size:.78rem; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:.4rem; }
+.aoc-btn:hover { border-color:#aab8ad; background:#f8faf9; color:var(--adm-primary); }
+.aoc-btn.details { background:#f1f5f9; border-color:#f1f5f9; }
+.aoc-btn.details i { transition:transform .2s; }
+.aoc-btn.details.open i { transform:rotate(180deg); }
+.aoc-btn.danger { color:#dc2626; border-color:#fecaca; background:#fffafa; }
+.aoc-btn.danger:hover { background:#fef2f2; border-color:#fca5a5; }
+.aoc-details { border-top:1px solid #e2e8f0; background:#f8fafc; border-radius:0 0 16px 16px; }
+.aoc-details .ord-details { padding:1.35rem 1.2rem; }
+.aoc-details .details-grid { grid-template-columns:minmax(0, 720px); }
+.aoc-details .details-item { padding:.22rem 0; font-size:.79rem; line-height:1.35; }
+.aoc-details .details-item span { min-width:68px; font-size:.72rem; }
+.aoc-details .details-item strong { font-size:.79rem; font-weight:600; }
+
+@media(max-width:760px) {
+    .admin-orders-list { gap:.75rem; }
+    .admin-order-card, .admin-order-card:hover { box-shadow:0 1px 4px rgba(15,23,42,.05); transform:none; background:#fff; }
+    .aoc-header { grid-template-columns:22px minmax(0,1fr) auto; gap:.65rem; padding:.85rem .9rem; }
+    .aoc-customer { grid-column:2; }
+    .aoc-total { grid-column:3; grid-row:1; font-size:.95rem; }
+    .aoc-status { grid-column:3; grid-row:2; justify-self:end; }
+    .aoc-items { padding:.65rem .9rem; }
+    .aoc-item { font-size:.8rem; gap:.5rem; }
+    .aoc-footer { align-items:stretch; flex-direction:column; padding:.8rem .9rem; }
+    .aoc-actions { width:100%; display:grid; grid-template-columns:1fr 1fr 42px; }
+    .aoc-btn { justify-content:center; padding:.55rem .45rem; }
+    .aoc-btn.danger { width:42px; }
+    .aoc-btn.danger span { display:none; }
+    .aoc-details .ord-details { padding:1rem .9rem; }
+    .status-drop-menu { top:calc(100% + 4px); bottom:auto; }
+}
 </style>
 
 <!-- KPI tiles -->
@@ -406,87 +474,89 @@ tr.parent-row:hover td:first-child { border-left-color:var(--adm-primary); }
     <button type="button" onclick="clearSelection()" class="bulk-clear-btn"><i class="fas fa-times"></i> Anulo</button>
 </div>
 
-<!-- Orders table -->
-<div class="ord-table-card">
-    <div class="table-responsive" style="overflow-x:auto;">
-        <table class="ord-table" id="ordTable">
-            <thead>
-                <tr>
-                    <th style="width:36px;">
-                        <input type="checkbox" id="selectAll" onclick="toggleAll(this)" style="width:15px;height:15px;cursor:pointer;accent-color:var(--adm-primary);">
-                    </th>
-                    <th>ID / Data</th>
-                    <th>Klienti</th>
-                    <th>Qyteti</th>
-                    <th>Pagesa</th>
-                    <th>Totali</th>
-                    <th>Statusi</th>
-                    <th style="text-align:right;">Veprime</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for order in orders %}
-                {% set st = order.status | lower %}
-                <tr class="parent-row"
-                    data-id="{{ order._id|string }}"
-                    data-fullname="{{ order.fullname|lower }}"
-                    data-city="{{ (order.city or '')|lower }}"
-                    data-status="{{ st }}">
-                    <td onclick="event.stopPropagation();">
-                        <input type="checkbox" name="order_ids" value="{{ order._id }}"
-                            class="order-checkbox" onchange="updateBulkBar()"
-                            style="width:15px;height:15px;cursor:pointer;accent-color:var(--adm-primary);">
-                    </td>
-                    <td>
-                        <span class="ord-id">#{{ order._id|string|truncate(8, True, '') }}</span>
-                        <span class="ord-date">{{ order.created_at.strftime('%d.%m.%Y %H:%M') }}</span>
-                    </td>
-                    <td>
-                        <span class="cust-name">{{ order.fullname }}</span>
-                        <span class="cust-tel"><i class="fas fa-phone" style="font-size:0.65rem;"></i> {{ order.phone }}</span>
-                    </td>
-                    <td style="font-weight:600;">{{ order.city or '—' }}</td>
-                    <td>
-                        <span style="font-size:0.8rem;font-weight:600;color:#475569;">{{ order.payment_method or '—' }}</span>
-                    </td>
-                    <td>
-                        <span style="font-weight:800;color:#1a1f18;">€{{ "%.2f"|format(order.grand_total) }}</span>
-                    </td>
-                    <td onclick="event.stopPropagation();">
-                        <div class="status-dropdown" data-order-id="{{ order._id }}" data-current="{{ st }}">
-                            <button class="status-trigger st-{{ st }}" type="button"
-                                    onclick="toggleStatusDrop(event,this,'{{ order._id }}')">
-                                {% if st in ['pending','në pritje'] %}<i class="fas fa-clock"></i><span>Në Pritje</span>
-                                {% elif st in ['konfirmuar','confirmed','pranuar'] %}<i class="fas fa-check-circle"></i><span>Konfirmuar</span>
-                                {% elif st in ['delivering','në dërgesë'] %}<i class="fas fa-truck"></i><span>Në Dërgesë</span>
-                                {% elif st in ['delivered','dorezuar'] %}<i class="fas fa-box-open"></i><span>Dorëzuar</span>
-                                {% elif st in ['anuluar','cancelled'] %}<i class="fas fa-times-circle"></i><span>Anuluar</span>
-                                {% elif st == 'refuzuar' %}<i class="fas fa-ban"></i><span>Refuzuar</span>
-                                {% else %}<i class="fas fa-circle"></i><span>{{ order.status }}</span>{% endif %}
-                                <i class="fas fa-chevron-down"></i>
-                            </button>
-                            <div class="status-drop-menu" id="sdd-{{ order._id }}" style="display:none;">
-                                <div class="sdd-item sdd-pending"    data-value="Pending"    onclick="event.stopPropagation();pickStatus(this,'{{ order._id }}')"><i class="fas fa-clock"></i>Në Pritje</div>
-                                <div class="sdd-item sdd-konfirmuar" data-value="Konfirmuar" onclick="event.stopPropagation();pickStatus(this,'{{ order._id }}')"><i class="fas fa-check-circle"></i>Konfirmuar</div>
-                                <div class="sdd-item sdd-delivering" data-value="Delivering" onclick="event.stopPropagation();pickStatus(this,'{{ order._id }}')"><i class="fas fa-truck"></i>Në Dërgesë</div>
-                                <div class="sdd-item sdd-delivered"  data-value="Delivered"  onclick="event.stopPropagation();pickStatus(this,'{{ order._id }}')"><i class="fas fa-box-open"></i>Dorëzuar</div>
-                                <div class="sdd-divider"></div>
-                                <div class="sdd-item sdd-anuluar"    data-value="Anuluar"    onclick="event.stopPropagation();pickStatus(this,'{{ order._id }}')"><i class="fas fa-times-circle"></i>Anuluar</div>
-                                <div class="sdd-item sdd-refuzuar"   data-value="Refuzuar"   onclick="event.stopPropagation();pickStatus(this,'{{ order._id }}')"><i class="fas fa-ban"></i>Refuzo (email klientit)</div>
-                            </div>
-                        </div>
-                    </td>
-                    <td onclick="event.stopPropagation();">
-                        <div class="tbl-actions">
-                            <button class="act-btn" onclick="deleteOrder('{{ order._id }}')" title="Fshi porosinë">
-                                <i class="fas fa-trash-alt"></i>
-                            </button>
-                        </div>
-                    </td>
-                </tr>
-                <tr id="details-{{ order._id }}" class="details-row" style="display:none;">
-                    <td colspan="8">
-                        <div class="ord-details">
+<!-- Orders cards -->
+<div class="admin-orders-list" id="ordTable">
+    {% for order in orders %}
+    {% set st = order.status | lower %}
+    {% set cancelled = st in ['anuluar', 'cancelled', 'refuzuar'] %}
+    <article class="admin-order-card parent-row"
+             data-id="{{ order._id|string }}"
+             data-fullname="{{ order.fullname|lower }}"
+             data-city="{{ (order.city or '')|lower }}"
+             data-status="{{ st }}">
+        <div class="aoc-header" onclick="toggleDetails('{{ order._id }}')">
+            <div class="aoc-check" onclick="event.stopPropagation();">
+                <input type="checkbox" name="order_ids" value="{{ order._id }}" class="order-checkbox" onchange="updateBulkBar()" aria-label="Zgjidh porosinë">
+            </div>
+            <div class="aoc-id-date">
+                <span class="ord-id">#{{ order._id|string|truncate(8, True, '') }}</span>
+                <span class="ord-date"><i class="far fa-calendar-alt"></i> {{ order.created_at.strftime('%d.%m.%Y %H:%M') }}</span>
+            </div>
+            <div class="aoc-customer">
+                <span class="cust-name">{{ order.fullname }}</span>
+                <span class="cust-tel"><i class="fas fa-phone" style="font-size:0.65rem;"></i> {{ order.phone }}</span>
+            </div>
+            <div class="aoc-total">€{{ "%.2f"|format(order.grand_total) }}</div>
+            <div class="aoc-status" onclick="event.stopPropagation();">
+                <div class="status-dropdown" data-order-id="{{ order._id }}" data-current="{{ st }}">
+                    <button class="status-trigger st-{{ st }}" type="button" onclick="toggleStatusDrop(event,this,'{{ order._id }}')">
+                        {% if st in ['pending','në pritje'] %}<i class="fas fa-clock"></i><span>Në Pritje</span>
+                        {% elif st in ['konfirmuar','confirmed','pranuar'] %}<i class="fas fa-check-circle"></i><span>Konfirmuar</span>
+                        {% elif st in ['delivering','në dërgesë'] %}<i class="fas fa-truck"></i><span>Në Dërgesë</span>
+                        {% elif st in ['delivered','dorezuar','received'] %}<i class="fas fa-box-open"></i><span>Dorëzuar</span>
+                        {% elif st in ['anuluar','cancelled'] %}<i class="fas fa-times-circle"></i><span>Anuluar</span>
+                        {% elif st == 'refuzuar' %}<i class="fas fa-ban"></i><span>Refuzuar</span>
+                        {% else %}<i class="fas fa-circle"></i><span>{{ order.status }}</span>{% endif %}
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <div class="status-drop-menu" id="sdd-{{ order._id }}" style="display:none;">
+                        <div class="sdd-item sdd-pending" data-value="Pending" onclick="event.stopPropagation();pickStatus(this,'{{ order._id }}')"><i class="fas fa-clock"></i>Në Pritje</div>
+                        <div class="sdd-item sdd-konfirmuar" data-value="Konfirmuar" onclick="event.stopPropagation();pickStatus(this,'{{ order._id }}')"><i class="fas fa-check-circle"></i>Konfirmuar</div>
+                        <div class="sdd-item sdd-delivering" data-value="Delivering" onclick="event.stopPropagation();pickStatus(this,'{{ order._id }}')"><i class="fas fa-truck"></i>Në Dërgesë</div>
+                        <div class="sdd-item sdd-delivered" data-value="Delivered" onclick="event.stopPropagation();pickStatus(this,'{{ order._id }}')"><i class="fas fa-box-open"></i>Dorëzuar</div>
+                        <div class="sdd-divider"></div>
+                        <div class="sdd-item sdd-anuluar" data-value="Anuluar" onclick="event.stopPropagation();pickStatus(this,'{{ order._id }}')"><i class="fas fa-times-circle"></i>Anuluar</div>
+                        <div class="sdd-item sdd-refuzuar" data-value="Refuzuar" onclick="event.stopPropagation();pickStatus(this,'{{ order._id }}')"><i class="fas fa-ban"></i>Refuzo (email klientit)</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% if cancelled %}
+        <div class="aoc-cancelled"><i class="fas fa-info-circle"></i> Kjo porosi është {{ 'refuzuar' if st == 'refuzuar' else 'anuluar' }}.</div>
+        {% endif %}
+
+        <div class="aoc-items">
+            {% for item in order['items'][:3] %}
+            <div class="aoc-item"><span class="aoc-item-qty">{{ item.quantity }}×</span><span class="aoc-item-name">{{ item.name }}</span><span class="aoc-item-price">€{{ "%.2f"|format(item.item_total) }}</span></div>
+            {% endfor %}
+            {% if order['items']|length > 3 %}
+            <div id="more-products-{{ order._id }}" style="display:none;">
+                {% for item in order['items'][3:] %}
+                <div class="aoc-item"><span class="aoc-item-qty">{{ item.quantity }}×</span><span class="aoc-item-name">{{ item.name }}</span><span class="aoc-item-price">€{{ "%.2f"|format(item.item_total) }}</span></div>
+                {% endfor %}
+            </div>
+            <div class="aoc-more-products">
+                <button type="button" class="aoc-more-btn" onclick="toggleMoreProducts('{{ order._id }}', this)"
+                        data-count="{{ order['items']|length - 3 }}">
+                    <i class="fas fa-chevron-down"></i>
+                    <span>+{{ order['items']|length - 3 }} produkte të tjera</span>
+                </button>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="aoc-footer">
+            <div class="aoc-location"><i class="fas fa-map-marker-alt"></i>{{ order.city or 'Pa qytet' }}{% if order.address %}, {{ order.address }}{% endif %}</div>
+            <div class="aoc-actions">
+                <button type="button" class="aoc-btn" onclick="printInvoice('{{ order._id }}')"><i class="fas fa-file-invoice"></i> Fatura</button>
+                <button type="button" class="aoc-btn details" data-details-button="{{ order._id }}" onclick="toggleDetails('{{ order._id }}')"><i class="fas fa-chevron-down"></i> Detajet</button>
+                <button type="button" class="aoc-btn danger" onclick="deleteOrder('{{ order._id }}')" title="Fshi porosinë"><i class="fas fa-trash-alt"></i><span>Fshi</span></button>
+            </div>
+        </div>
+
+        <div id="details-{{ order._id }}" class="details-row aoc-details" style="display:none;">
+            <div class="ord-details">
                             <div class="details-grid">
                                 <!-- Left col: Customer info + admin note -->
                                 <div>
@@ -497,12 +567,13 @@ tr.parent-row:hover td:first-child { border-left-color:var(--adm-primary); }
                                         </button>
                                     </div>
                                     <div class="det-info">
-                                        <div class="details-item"><span>Emri</span><strong>{{ order.fullname }}</strong></div>
-                                        <div class="details-item"><span>Email</span><strong>{{ order.email or 'Nuk ka' }}</strong></div>
-                                        <div class="details-item"><span>Tel</span><strong>{{ order.phone }}</strong></div>
-                                        <div class="details-item"><span>Qyteti</span><strong>{{ order.city or '—' }}</strong></div>
-                                        <div class="details-item"><span>Adresa</span><strong>{{ order.address or '—' }}</strong></div>
-                                        {% if order.shipping_method %}<div class="details-item"><span>Dërgesa</span><strong>{{ order.shipping_method }}</strong></div>{% endif %}
+                                        <div class="details-item invoice-detail"><span>Emri</span><strong>{{ order.fullname }}</strong></div>
+                                        <div class="details-item invoice-detail"><span>Email</span><strong>{{ order.email or 'Nuk ka' }}</strong></div>
+                                        <div class="details-item invoice-detail"><span>Telefoni</span><strong>{{ order.phone }}</strong></div>
+                                        <div class="details-item invoice-detail"><span>Qyteti</span><strong>{{ order.city or '—' }}</strong></div>
+                                        <div class="details-item invoice-detail"><span>Adresa</span><strong>{{ order.address or '—' }}</strong></div>
+                                        <div class="details-item invoice-detail"><span>Pagesa</span><strong>{{ 'Pagim në dorëzim' if order.payment_method == 'cash' else ('Kartë bankare' if order.payment_method == 'card' else (order.payment_method or '—')) }}</strong></div>
+                                        {% if order.shipping_method %}<div class="details-item invoice-detail"><span>Dërgesa</span><strong>{{ 'Marrje në dyqan' if order.shipping_method == 'pickup' else ('Dërgesë në adresë' if order.shipping_method == 'delivery' else order.shipping_method) }}</strong></div>{% endif %}
                                         {% if order.get('tracking_number') %}<div class="details-item"><span>Tracking</span><strong>{{ order.tracking_number }}</strong></div>{% endif %}
                                         {% if order.get('notes') %}<div class="details-item"><span>Shënim</span><strong>{{ order.notes }}</strong></div>{% endif %}
                                         {% if order.get('cancel_reason') %}<div class="details-item"><span>Arsyeja</span><strong style="color:#dc2626;">{{ order.cancel_reason }}</strong></div>{% endif %}
@@ -519,9 +590,8 @@ tr.parent-row:hover td:first-child { border-left-color:var(--adm-primary); }
                                         </div>
                                     </div>
                                 </div>
-                                <!-- Right col: Products -->
-                                <div>
-                                    <div class="details-subtitle"><i class="fas fa-box"></i> Produktet e Porositura</div>
+                                {# Hidden invoice source: products already appear on the card and should not be duplicated in details. #}
+                                <div hidden aria-hidden="true">
                                     {% for item in order['items'] %}
                                     <div class="ord-item-row">
                                         <span class="ord-item-qty">{{ item.quantity }}×</span>
@@ -529,19 +599,18 @@ tr.parent-row:hover td:first-child { border-left-color:var(--adm-primary); }
                                         <span class="ord-item-price">€{{ "%.2f"|format(item.item_total) }}</span>
                                     </div>
                                     {% endfor %}
+                                    <div class="ord-summary-row first"><span>Nëntotali</span><span>€{{ "%.2f"|format(order.get('total_price') or order.grand_total) }}</span></div>
+                                    <div class="ord-summary-row"><span>Transporti</span><span>{{ 'Falas' if not order.get('shipping_cost') else '€%.2f'|format(order.shipping_cost) }}</span></div>
                                     <div class="ord-items-total">
                                         <span>Totali</span>
                                         <span>€{{ "%.2f"|format(order.grand_total) }}</span>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
+            </div>
+        </div>
+    </article>
+    {% endfor %}
 </div>
 
 <!-- Pagination -->
@@ -622,6 +691,7 @@ tr.parent-row:hover td:first-child { border-left-color:var(--adm-primary); }
 
 <!-- Toast -->
 
+<script src="{{ url_for('static', filename='js/invoice-print.js') }}?v=1"></script>
 <script>
 
 function getCsrf() {
@@ -757,7 +827,7 @@ function execDelete(orderId) {
     .then(r => r.json())
     .then(data => {
         if (data.ok) {
-            const parentRow = document.querySelector(`tr.parent-row[data-id="${orderId}"]`);
+            const parentRow = document.querySelector(`.parent-row[data-id="${orderId}"]`);
             const detRow = document.getElementById('details-' + orderId);
             if (parentRow) parentRow.remove();
             if (detRow) detRow.remove();
@@ -776,8 +846,11 @@ function updateBulkBar() {
     const bar = document.getElementById('bulkBar');
     bar.style.display = checked.length > 0 ? 'flex' : 'none';
     document.getElementById('bulkCount').textContent = checked.length + ' të zgjedhura';
-    document.getElementById('selectAll').indeterminate = checked.length > 0 && checked.length < all.length;
-    document.getElementById('selectAll').checked = checked.length === all.length && all.length > 0;
+    const selectAll = document.getElementById('selectAll');
+    if (selectAll) {
+        selectAll.indeterminate = checked.length > 0 && checked.length < all.length;
+        selectAll.checked = checked.length === all.length && all.length > 0;
+    }
 }
 function toggleAll(cb) {
     document.querySelectorAll('.order-checkbox').forEach(c => c.checked = cb.checked);
@@ -785,7 +858,8 @@ function toggleAll(cb) {
 }
 function clearSelection() {
     document.querySelectorAll('.order-checkbox').forEach(c => c.checked = false);
-    document.getElementById('selectAll').checked = false;
+    const selectAll = document.getElementById('selectAll');
+    if (selectAll) selectAll.checked = false;
     updateBulkBar();
 }
 function submitBulk() {
@@ -823,7 +897,7 @@ function bulkDelete() {
         .then(r => r.json())
         .then(data => {
             if (data.ok) {
-                const parentRow = document.querySelector(`tr.parent-row[data-id="${orderId}"]`);
+                const parentRow = document.querySelector(`.parent-row[data-id="${orderId}"]`);
                 const detRow = document.getElementById('details-' + orderId);
                 if (parentRow) parentRow.remove();
                 if (detRow) detRow.remove();
@@ -865,7 +939,7 @@ function saveNote(btn) {
 /* ── Search ── */
 document.getElementById('ordSearch').addEventListener('input', function(e) {
     const term = e.target.value.toLowerCase().trim();
-    document.querySelectorAll('#ordTable tbody tr.parent-row').forEach(row => {
+    document.querySelectorAll('#ordTable .parent-row').forEach(row => {
         const match = !term
             || (row.dataset.id||'').includes(term)
             || (row.dataset.fullname||'').includes(term)
@@ -882,94 +956,51 @@ document.getElementById('ordSearch').addEventListener('input', function(e) {
 function toggleDetails(id) {
     const el = document.getElementById('details-' + id);
     if (!el) return;
-    el.style.display = el.style.display === 'none' ? 'table-row' : 'none';
+    const willOpen = el.style.display === 'none';
+    el.style.display = willOpen ? 'block' : 'none';
+    const button = document.querySelector(`[data-details-button="${id}"]`);
+    if (button) button.classList.toggle('open', willOpen);
 }
-document.querySelectorAll('tr.parent-row').forEach(row => {
-    row.addEventListener('click', function(e) {
-        if (!e.target.closest('[onclick*="event.stopPropagation"]') &&
-            !e.target.closest('.status-dropdown') &&
-            !e.target.closest('.tbl-actions') &&
-            !e.target.closest('input[type=checkbox]')) {
-            toggleDetails(this.dataset.id);
-        }
-    });
-});
+
+function toggleMoreProducts(id, button) {
+    const products = document.getElementById('more-products-' + id);
+    if (!products) return;
+    const willOpen = products.style.display === 'none';
+    products.style.display = willOpen ? 'block' : 'none';
+    button.classList.toggle('open', willOpen);
+    const count = button.dataset.count;
+    button.querySelector('span').textContent = willOpen
+        ? 'Shfaq më pak'
+        : `+${count} produkte të tjera`;
+}
 
 /* ── Print Invoice ── */
 function printInvoice(orderId) {
     const detRow = document.getElementById('details-' + orderId);
     if (!detRow) return;
-    const wasHidden = detRow.style.display === 'none';
-    if (wasHidden) detRow.style.display = 'table-row';
+    const card = detRow.closest('.admin-order-card');
+    const details = Array.from(detRow.querySelectorAll('.invoice-detail')).map(row => ({
+        label: row.querySelector('span')?.textContent.trim() || '',
+        value: row.querySelector('strong')?.textContent.trim() || ''
+    }));
+    const items = Array.from(detRow.querySelectorAll('.ord-item-row')).map(row => ({
+        quantity: (row.querySelector('.ord-item-qty')?.textContent || '').replace('×', '').trim(),
+        name: row.querySelector('.ord-item-name')?.textContent.trim() || '',
+        price: row.querySelector('.ord-item-price')?.textContent.trim() || ''
+    }));
+    const totals = Array.from(detRow.querySelectorAll('.ord-summary-row, .ord-items-total')).map(row => ({
+        label: row.querySelector('span:first-child')?.textContent.trim() || '',
+        value: row.querySelector('span:last-child')?.textContent.trim() || '',
+        grand: row.classList.contains('ord-items-total')
+    }));
 
-    const items = [];
-    detRow.querySelectorAll('.ord-item-row').forEach(el => {
-        const qty   = (el.querySelector('.ord-item-qty')   || {}).textContent?.trim() || '';
-        const name  = (el.querySelector('.ord-item-name')  || {}).textContent?.trim() || '';
-        const price = (el.querySelector('.ord-item-price') || {}).textContent?.trim() || '';
-        items.push(`<tr><td style="padding:6px 8px;">${qty}</td><td style="padding:6px 8px;">${name}</td><td style="padding:6px 8px;text-align:right;">${price}</td></tr>`);
+    MeldInvoice.open({
+        orderId: orderId.substring(0, 8).toUpperCase(),
+        date: card?.querySelector('.ord-date')?.textContent.trim() || '',
+        details,
+        items,
+        totals
     });
-
-    const details = {};
-    detRow.querySelectorAll('.details-item').forEach(d => {
-        const label = (d.querySelector('span')   || {}).textContent?.trim() || '';
-        const val   = (d.querySelector('strong') || {}).textContent?.trim() || '';
-        if (label) details[label] = val;
-    });
-
-    let total = '';
-    const totalEl = detRow.querySelector('.ord-items-total span:last-child');
-    if (totalEl) total = totalEl.textContent.trim();
-    if (wasHidden) detRow.style.display = 'none';
-
-    const orderId8 = orderId.substring(0,8).toUpperCase();
-    const today = new Date().toLocaleDateString('sq-AL', { year:'numeric', month:'long', day:'numeric' });
-
-    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Faturë #${orderId8}</title>
-    <style>
-        body { font-family:'Helvetica Neue',Arial,sans-serif; color:#111; margin:0; padding:2cm; }
-        * { box-sizing:border-box; }
-        .header { display:flex; justify-content:space-between; align-items:flex-start; border-bottom:3px solid #4F5D4E; padding-bottom:16px; margin-bottom:24px; }
-        .brand-name { font-size:22px; font-weight:800; color:#4F5D4E; }
-        .brand-sub { font-size:12px; color:#666; margin-top:4px; }
-        .inv-label { font-size:20px; font-weight:700; text-align:right; }
-        .inv-meta { font-size:12px; color:#666; text-align:right; margin-top:4px; }
-        .section-title { font-size:11px; font-weight:700; color:#4F5D4E; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px; }
-        .client-row { font-size:13px; margin-bottom:3px; }
-        .client-row .lbl { color:#666; }
-        table { width:100%; border-collapse:collapse; margin:20px 0; font-size:13px; }
-        thead tr { background:#4F5D4E; color:white; }
-        th, td { padding:8px 10px; text-align:left; }
-        th:last-child, td:last-child { text-align:right; }
-        tbody tr:nth-child(even) { background:#f5f5f5; }
-        .total-row { text-align:right; font-size:15px; font-weight:800; border-top:2px solid #4F5D4E; padding-top:10px; margin-top:4px; }
-        .footer { margin-top:36px; font-size:11px; color:#aaa; text-align:center; border-top:1px solid #eee; padding-top:12px; }
-    </style></head><body>
-    <div class="header">
-        <div>
-            <div class="brand-name">Barnatore Meld Pharm</div>
-            <div class="brand-sub">72 Eqrem Çabej, Prishtinë 10000</div>
-            <div class="brand-sub">Tel: +383 45 590 455</div>
-        </div>
-        <div>
-            <div class="inv-label">FATURË</div>
-            <div class="inv-meta">#${orderId8}</div>
-            <div class="inv-meta">${today}</div>
-        </div>
-    </div>
-    <div class="section-title">Klienti</div>
-    ${Object.entries(details).map(([k,v]) => `<div class="client-row"><span class="lbl">${k}:</span> <strong>${v}</strong></div>`).join('')}
-    <table>
-        <thead><tr><th>Sasia</th><th>Produkti</th><th>Çmimi</th></tr></thead>
-        <tbody>${items.join('')}</tbody>
-    </table>
-    <div class="total-row">Gjithsej: ${total}</div>
-    <div class="footer">Faleminderit për besimin tuaj! • barnatoremeldpharm.com</div>
-    <script>window.onload = function(){ window.print(); };<\/script>
-    </body></html>`;
-
-    const w = window.open('','_blank','width=750,height=900');
-    if (w) { w.document.write(html); w.document.close(); }
 }
 </script>
 {% endblock %}

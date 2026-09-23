@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, session, redirect, url_for, request, jsonify, flash
+from flask import Blueprint, render_template, session, redirect, url_for, request, jsonify, flash, abort
 from models.db import mongo
 from models.product import Product
 from models.order import Order
@@ -847,16 +847,21 @@ def products():
     discount_only = request.args.get('discount_only') == 'true'
     no_discount = request.args.get('no_discount') == 'true'
     best_sellers = request.args.get('best_sellers') == 'true'
-    per_page = 32
+    requested_per_page = request.args.get('per_page', 24, type=int)
+    per_page = min(max(requested_per_page, 4), 32)
     
     pharmacist_choice = request.args.get('pharmacist_choice') == 'true'
+    product_labels = [
+        label.strip() for label in request.args.get('labels', '').split(',')
+        if label.strip()
+    ]
     
     products, total_pages, total_count = Product.get_paginated(
         page, per_page, category, search_query, subcategory, 
         sort=sort, brand=brand, min_price=min_price, max_price=max_price,
         discount_only=discount_only, best_seller_only=best_sellers,
         no_discount=no_discount, pharmacist_choice=pharmacist_choice,
-        offer_name=offer_name or None
+        offer_name=offer_name or None, product_labels=product_labels
     )
     
     # Get all unique brands for the filter sidebar
@@ -898,6 +903,9 @@ def products():
                 'in_stock': p.get('in_stock', True),
                 'size': p.get('size', ''),
                 'is_best_seller': p.get('is_best_seller', False),
+                'is_pharmacist_choice': p.get('is_pharmacist_choice', False),
+                'featured': p.get('featured', False),
+                'labels': p.get('labels', []),
                 'is_favorite': (current_user.is_authenticated and p.get('favorites') and current_user.id in p.get('favorites')) or 
                                (not current_user.is_authenticated and str(p['_id']) in session.get('liked_products', []))
             })
@@ -912,6 +920,8 @@ def products():
             'current_brand': brand,
             'sort': sort,
             'best_sellers': best_sellers,
+            'pharmacist_choice': pharmacist_choice,
+            'product_labels': product_labels,
             'available_brands': available_brands
         })
 
@@ -937,6 +947,8 @@ def products():
                          brands=available_brands,
                          discount_only=discount_only,
                          best_sellers=best_sellers,
+                         pharmacist_choice=pharmacist_choice,
+                         product_labels=product_labels,
                          offer_name=offer_name,
                          price_slider_max=price_slider_max)
 
@@ -1039,6 +1051,16 @@ def orders():
     return render_template('orders.html', orders=user_orders, now=_dt.utcnow())
 
 
+@main.route('/order/<order_id>/invoice')
+@login_required
+def order_invoice(order_id):
+    """Printable customer invoice, accessible only by the order owner."""
+    order = Order.get_by_id(order_id)
+    if not order or str(order.get('user_id', '')) != str(current_user.id):
+        abort(404)
+    return render_template('order_invoice.html', order=order)
+
+
 @main.route('/order/<order_id>/cancel', methods=['POST'])
 @login_required
 def cancel_order(order_id):
@@ -1110,31 +1132,70 @@ def toggle_favorite(product_id):
 @main.route('/api/search')
 def search_api():
     query = request.args.get('q', '').strip()
-    limit = request.args.get('limit', 20, type=int)
-    if not query or len(query) < 2:
+    limit = min(max(request.args.get('limit', 20, type=int), 1), 30)
+
+    # An empty query powers the search discovery state. Prefer useful products,
+    # then select across brands/categories so the first view is not repetitive.
+    if not query:
+        projection = {
+            'name': 1, 'price': 1, 'discount_price': 1, 'image_url': 1,
+            'category': 1, 'subcategory': 1, 'brand': 1, 'size': 1,
+            'is_best_seller': 1, 'is_pharmacist_choice': 1, 'featured': 1,
+            'favorites': 1, 'created_at': 1,
+        }
+        candidates = list(mongo.db.products.find(
+            {'is_deleted': {'$ne': True}, 'in_stock': {'$ne': False}}, projection
+        ).sort([('created_at', -1), ('_id', -1)]).limit(80))
+
+        def discovery_score(product):
+            favorites = product.get('favorites') or []
+            return (
+                5 if Product._offer_is_active(product) else 0,
+                4 if product.get('is_best_seller') else 0,
+                3 if product.get('is_pharmacist_choice') else 0,
+                2 if product.get('featured') else 0,
+                min(len(favorites), 10),
+            )
+
+        candidates.sort(key=discovery_score, reverse=True)
+        products, seen_brands, seen_categories = [], set(), set()
+        remaining = list(candidates)
+        while remaining and len(products) < limit:
+            choice_index = next((
+                i for i, product in enumerate(remaining)
+                if (product.get('brand') or '').strip().lower() not in seen_brands
+                or (product.get('category') or '').strip().lower() not in seen_categories
+            ), 0)
+            product = remaining.pop(choice_index)
+            products.append(product)
+            if product.get('brand'):
+                seen_brands.add(product['brand'].strip().lower())
+            if product.get('category'):
+                seen_categories.add(product['category'].strip().lower())
+    elif len(query) < 2:
         return jsonify([])
-    
-    # Fuzzy search: require all terms in the query to be present
-    import re
-    terms = [t for t in query.split() if t]
-    search_query = {}
-    if terms:
-        and_parts = []
-        for t in terms:
-            escaped_term = re.escape(t)
-            and_parts.append({
-                "$or": [
-                    {"name": {"$regex": escaped_term, "$options": "i"}},
-                    {"brand": {"$regex": escaped_term, "$options": "i"}},
-                    {"category": {"$regex": escaped_term, "$options": "i"}},
-                    {"subcategory": {"$regex": escaped_term, "$options": "i"}}
-                ]
-            })
-        search_query = {"$and": and_parts, "is_deleted": {"$ne": True}}
     else:
-        return jsonify([])
-    
-    products = list(mongo.db.products.find(search_query).limit(limit))
+        # Fuzzy search: require all terms in the query to be present
+        import re
+        terms = [t for t in query.split() if t]
+        search_query = {}
+        if terms:
+            and_parts = []
+            for t in terms:
+                escaped_term = re.escape(t)
+                and_parts.append({
+                    "$or": [
+                        {"name": {"$regex": escaped_term, "$options": "i"}},
+                        {"brand": {"$regex": escaped_term, "$options": "i"}},
+                        {"category": {"$regex": escaped_term, "$options": "i"}},
+                        {"subcategory": {"$regex": escaped_term, "$options": "i"}}
+                    ]
+                })
+            search_query = {"$and": and_parts, "is_deleted": {"$ne": True}}
+        else:
+            return jsonify([])
+
+        products = list(mongo.db.products.find(search_query).limit(limit))
     
     results = []
     for p in products:
@@ -1142,7 +1203,7 @@ def search_api():
             'id': str(p['_id']),
             'name': p['name'],
             'price': p['price'],
-            'discount_price': p.get('discount_price'),
+            'discount_price': p.get('discount_price') if Product._offer_is_active(p) else None,
             'image_url': p.get('image_url'),
             'category': p.get('category'),
             'subcategory': p.get('subcategory'),
