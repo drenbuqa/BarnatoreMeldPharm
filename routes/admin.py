@@ -32,6 +32,15 @@ def admin_required(f):
     return decorated_function
 
 
+def _validate_object_id(oid):
+    """Return True only if oid is a valid 24-hex MongoDB ObjectId string."""
+    from bson import ObjectId
+    try:
+        return ObjectId.is_valid(str(oid))
+    except Exception:
+        return False
+
+
 def _form_float(field_name, default=0.0):
     raw_value = request.form.get(field_name)
     if raw_value is None or raw_value == '':
@@ -117,6 +126,8 @@ def orders():
 @login_required
 @admin_required
 def update_order_status(order_id):
+    if not _validate_object_id(order_id):
+        return jsonify({'ok': False, 'error': 'Invalid order ID'}), 400
     is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
     new_status = request.form.get('status')
     tracking_number = (request.form.get('tracking_number') or '').strip() or None
@@ -431,6 +442,8 @@ def products_page():
 @login_required
 @admin_required
 def order_note(order_id):
+    if not _validate_object_id(order_id):
+        return jsonify({'ok': False, 'error': 'Invalid order ID'}), 400
     note = request.form.get('note', '').strip()
     from bson import ObjectId
     mongo.db.orders.update_one(
@@ -447,6 +460,8 @@ def order_note(order_id):
 @login_required
 @admin_required
 def delete_order(order_id):
+    if not _validate_object_id(order_id):
+        return jsonify({'ok': False, 'error': 'Invalid order ID'}), 400
     from bson import ObjectId as _ObjId
     from flask import jsonify
     is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
@@ -655,6 +670,9 @@ def new_product():
 @login_required
 @admin_required
 def edit_product(product_id):
+    if not _validate_object_id(product_id):
+        flash('Produkti nuk ekziston.', 'danger')
+        return redirect(url_for('admin.dashboard'))
     product = Product.get_by_id(product_id)
     if not product:
         flash('Produkti nuk ekziston.', 'danger')
@@ -685,6 +703,9 @@ def edit_product(product_id):
 @login_required
 @admin_required
 def delete_product(product_id):
+    if not _validate_object_id(product_id):
+        flash('Produkt invalid.', 'danger')
+        return redirect(url_for('admin.dashboard'))
     Product.delete(product_id)
     flash('Produkti u fshi.', 'success')
     return redirect(url_for('admin.dashboard'))
@@ -991,6 +1012,9 @@ def manage_banners():
 @login_required
 @admin_required
 def edit_banner(banner_id):
+    if not _validate_object_id(banner_id):
+        flash('Baner invalid.', 'danger')
+        return redirect(url_for('admin.manage_banners'))
     link_type = request.form.get("link_type")
     link_value = _resolve_banner_link_value(link_type, request.form)
     data = {
@@ -1056,6 +1080,9 @@ def reorder_banners_bulk():
 @login_required
 @admin_required
 def delete_banner(banner_id):
+    if not _validate_object_id(banner_id):
+        flash('Baner invalid.', 'danger')
+        return redirect(url_for('admin.manage_banners'))
     Banner.delete(banner_id)
     flash("Baneri u fshi!", "info")
     return redirect(url_for("admin.manage_banners"))
@@ -1546,6 +1573,9 @@ def _products_list(products, base_url, accent_color='#4F5D4E'):
 @login_required
 @admin_required
 def toggle_stock(product_id):
+    if not _validate_object_id(product_id):
+        flash('Produkt invalid.', 'danger')
+        return redirect(url_for('admin.dashboard'))
     from bson import ObjectId
     product = mongo.db.products.find_one({'_id': ObjectId(product_id)}, {'in_stock': 1})
     if product:
@@ -1594,6 +1624,9 @@ def users():
 @login_required
 @admin_required
 def toggle_admin(user_id):
+    if not _validate_object_id(user_id):
+        flash('Përdorues invalid.', 'danger')
+        return redirect(url_for('admin.users'))
     from bson import ObjectId
     if str(current_user.get_id()) == str(user_id):
         flash('Nuk mund të ndryshoni rolin tuaj.', 'danger')

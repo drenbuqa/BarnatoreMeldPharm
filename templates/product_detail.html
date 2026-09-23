@@ -215,7 +215,7 @@
                         style="max-height: 0; overflow: hidden; transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);">
                         <div
                             style="padding: 0 1.5rem 1.5rem 1.5rem; font-size: 0.95rem; color: #475569; line-height: 1.7;">
-                            {{ product.how_to_use | replace('\n', '<br>') | safe }}
+                            {{ product.how_to_use | e | replace('\n', '<br>') | safe }}
                         </div>
                     </div>
                 </div>

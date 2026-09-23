@@ -43,7 +43,10 @@ if os.getenv('RENDER'):
     app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 
 # Security Configuration
-app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev_secret_key')
+_secret_key = os.getenv('SECRET_KEY')
+if not _secret_key:
+    raise RuntimeError("SECRET_KEY environment variable is not set. Set it before starting the app.")
+app.config['SECRET_KEY'] = _secret_key
 app.config['MONGO_URI'] = os.getenv('MONGO_URI', 'mongodb://localhost:27017/meldpharm')
 app.config['META_PIXEL_ID'] = os.getenv('META_PIXEL_ID', '')
 app.config['META_PIXEL_DEBUG'] = os.getenv('META_PIXEL_DEBUG', '').lower() in ('1', 'true', 'yes')
@@ -128,6 +131,8 @@ def set_security_headers(response):
     response.headers['X-Frame-Options'] = 'SAMEORIGIN'
     response.headers['X-XSS-Protection'] = '1; mode=block'
     response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+    if os.getenv('RENDER'):
+        response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
     # Block common scraper/bot user agents
     ua = request.headers.get('User-Agent', '')
     bot_keywords = ('scrapy', 'wget', 'curl', 'python-requests', 'go-http-client',
@@ -272,6 +277,6 @@ def internal_server_error(e):
 
 if __name__ == '__main__':
     port = int(os.getenv('PORT', '5001'))
-    debug = os.getenv('FLASK_DEBUG', '1').lower() not in ('0', 'false', 'no')
+    debug = os.getenv('FLASK_DEBUG', '0').lower() not in ('0', 'false', 'no')
     use_reloader = os.getenv('FLASK_USE_RELOADER', '0').lower() in ('1', 'true', 'yes')
     app.run(debug=debug, use_reloader=use_reloader, host='0.0.0.0', port=port)

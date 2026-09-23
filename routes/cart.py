@@ -544,6 +544,8 @@ def checkout():
 
 @cart_bp.route('/place_order', methods=['POST'])
 def place_order():
+    from app import limiter
+    limiter.limit("5 per minute")(lambda: None)()
     method = request.form.get('payment_method')
     shipping_method = request.form.get('shipping_method', 'delivery')
     fullname = request.form.get('fullname')
