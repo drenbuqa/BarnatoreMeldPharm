@@ -39,7 +39,7 @@
                                             <span style="background:#ecfeff; border:1px solid #99f6e4; padding: 0.2rem 0.55rem; border-radius: 999px;">{{ item.offer_badge_text or '1+1' }}</span>
                                             <span>{{ item.offer_progress_text or 'Bli më shumë për të fituar një produkt falas.' }}</span>
                                         </div>
-                                        {% elif item.discount_price %}
+                                        {% elif item.item_savings > 0 %}
                                         <div class="item-savings-label"
                                             style="color: var(--primary); font-size: 0.8rem; font-weight: 500; margin-top: 4px;">
                                             Kursyet: <span class="savings-amount">€{{ "%.2f"|format(item.item_savings)
@@ -53,8 +53,8 @@
                                 <div class="cart-item-prices">
                                     {% if item.offer_type == 'multi_buy' %}
                                     <span class="new-price">€{{ "%.2f"|format(item.display_price or item.price) }}</span>
-                                    {% elif item.discount_price %}
-                                    <span class="new-price">€{{ "%.2f"|format(item.discount_price) }}</span>
+                                    {% elif item.item_savings > 0 %}
+                                    <span class="new-price">€{{ "%.2f"|format(item.display_price) }}</span>
                                     <span class="old-price"
                                         style="text-decoration: line-through; color: #94a3b8; font-size: 0.85rem; margin-left: 5px;">€{{ "%.2f"|format(item.price) }}</span>
                                     {% else %}
@@ -147,7 +147,7 @@
                                 <span style="background:#ecfeff; border:1px solid #99f6e4; padding: 0.15rem 0.5rem; border-radius: 999px;">{{ item.offer_badge_text or '1+1' }}</span>
                                 <span>{{ item.offer_progress_text or 'Bli më shumë për të fituar një produkt falas.' }}</span>
                             </div>
-                            {% elif item.discount_price %}
+                            {% elif item.item_savings > 0 %}
                             <div class="item-savings-label"
                                 style="color: var(--primary); font-size: 0.75rem; font-weight: 500; margin-top: 2px;">
                                 Kursyet: <span class="savings-amount">€{{ "%.2f"|format(item.item_savings) }}</span>
@@ -161,8 +161,8 @@
                         <div class="mobile-price">
                             {% if item.offer_type == 'multi_buy' %}
                             <span class="new-price">€{{ "%.2f"|format(item.display_price or item.price) }}</span>
-                            {% elif item.discount_price %}
-                            <span class="new-price">€{{ "%.2f"|format(item.discount_price) }}</span>
+                            {% elif item.item_savings > 0 %}
+                            <span class="new-price">€{{ "%.2f"|format(item.display_price) }}</span>
                             <span class="old-price"
                                 style="text-decoration: line-through; color: #94a3b8; font-size: 0.75rem; margin-left: 5px;">€{{ "%.2f"|format(item.price) }}</span>
                             {% else %}
@@ -303,47 +303,79 @@
     {% endif %}
 
     {% if recommended_products %}
-    <section class="cart-recommendations" aria-labelledby="cartRecommendationsTitle" data-kosovo="{{ 'true' if is_kosovo else 'false' }}">
-        <div class="cart-recommendations-head">
+    <section class="cart-recommendations" aria-labelledby="cartRecommendationsTitle" data-kosovo="{{ 'true' if is_kosovo else 'false' }}" style="--hp-ivory:#F7F3EE;--hp-beige:#EFE7DE;--hp-sage:#6C7A61;--hp-olive:#4F5D4E;--hp-charcoal:#2B2B2B;--hp-muted:#7A7068;--hp-border:#E2D9CE;--hp-shadow:0 2px 16px rgba(43,43,43,0.07);--hp-radius:14px;">
+        <div class="hp-head" style="margin-bottom:1.25rem;">
             <div>
                 <span class="cart-recommendations-eyebrow">Zgjedhur për ju</span>
-                <h2 id="cartRecommendationsTitle">{% if is_kosovo and total_price < 50 and cart_items %}Plotësoni shportën dhe përfitoni dërgesë falas{% elif cart_items %}Mund t'ju pëlqejnë edhe këto{% else %}Produkte të rekomanduara{% endif %}</h2>
-                {% if is_kosovo and total_price < 50 and cart_items %}
-                <p id="cartRecommendationsDescription">Ju mungojnë vetëm <strong>€{{ "%.2f"|format(50 - total_price) }}</strong>. Zgjidhni produkte relevante për porosinë tuaj.</p>
-                {% else %}
-                <p id="cartRecommendationsDescription">Një përzgjedhje me produkte të ngjashme, oferta dhe zgjedhje të preferuara.</p>
-                {% endif %}
+                <h2 id="cartRecommendationsTitle" style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.65rem;font-weight:600;color:#2B2B2B;margin:0.2rem 0 0;">{% if is_kosovo and total_price < 50 and cart_items %}Plotësoni shportën dhe përfitoni dërgesë falas{% elif cart_items %}Mund t'ju pëlqejnë edhe këto{% else %}Produkte të rekomanduara{% endif %}</h2>
             </div>
-            <div class="cart-carousel-controls" aria-label="Kontrollet e karuselit">
-                <button type="button" onclick="scrollCartRecommendations(-1)" aria-label="Produktet e mëparshme"><i class="fas fa-arrow-left"></i></button>
-                <button type="button" onclick="scrollCartRecommendations(1)" aria-label="Produktet e ardhshme"><i class="fas fa-arrow-right"></i></button>
-            </div>
+            <a href="{{ url_for('main.products') }}" class="hp-see-all">Shiko të gjitha <i class="fas fa-arrow-right"></i></a>
         </div>
-        <div class="cart-recommendations-track" id="cartRecommendationsTrack">
-            {% for product in recommended_products %}
-            <article class="product-card cart-recommendation-card">
-                <div class="product-image">
-                    <div class="badge-stack">
-                        {% if product.offer_type == 'multi_buy' %}<div class="special-offer-badge red-badge">{{ product.offer_badge_text or 'Ofertë' }}</div>
-                        {% elif product.discount_price %}<div class="special-offer-badge red-badge">Ofertë</div>{% endif %}
-                        {% if product.is_best_seller %}<div class="best-seller-badge">Më i shituri</div>{% endif %}
+        <div class="hp-carousel-outer" style="position:relative;overflow:hidden;">
+            <button type="button" class="hp-carousel-arrow hp-prev" onclick="hpScrollCarousel(this,-1)"><i class="fas fa-chevron-left"></i></button>
+            <button type="button" class="hp-carousel-arrow hp-next" onclick="hpScrollCarousel(this,1)"><i class="fas fa-chevron-right"></i></button>
+            <div class="hp-carousel" id="cartRecommendationsTrack">
+                {% for product in recommended_products %}
+                <div class="hp-card{% if product.auto_oct_discount %} hp-card--oct{% endif %}" data-href="{{ url_for('main.product_detail', product_id=product._id) }}" onclick="window.location.href=this.dataset.href">
+                    <div class="hp-card-img">
+                        <div class="badge-stack">
+                            {% if product.offer_type == 'multi_buy' %}
+                                <span class="hp-card-badge">{{ product.offer_badge_text or '1+1' }}</span>
+                            {% elif product.auto_oct_discount %}
+                                <span class="hp-card-badge hp-card-badge--oct">-5%</span>
+                            {% elif product.discount_price %}
+                                <span class="hp-card-badge">Ofertë Speciale</span>
+                            {% endif %}
+                            {% if product.is_best_seller %}
+                                <div class="best-seller-badge">Më i Shituri</div>
+                            {% endif %}
+                        </div>
+                        <div class="img-shimmer"></div>
+                        <img src="{{ product.image_url|cld(400) }}" alt="{{ product.name }}" loading="lazy"
+                            onload="this.classList.add('loaded');var s=this.parentElement.querySelector('.img-shimmer');if(s)s.classList.add('hidden')"
+                            onerror="this.src='/static/img/placeholder.png';this.classList.add('error','loaded');var s=this.parentElement.querySelector('.img-shimmer');if(s)s.classList.add('hidden')">
+                        {% if product.in_stock == False %}
+                            <div class="hp-out-stock"><span>Jashtë Stokut</span></div>
+                        {% endif %}
+                        <button class="hp-card-fav {{ 'active' if (current_user.is_authenticated and product.favorites and current_user.id in product.favorites) or (not current_user.is_authenticated and product._id|string in session.get('liked_products', [])) else '' }}"
+                            onclick="event.stopPropagation(); toggleFavorite(this, '{{ product._id }}')">
+                            <i class="{{ 'fas' if (current_user.is_authenticated and product.favorites and current_user.id in product.favorites) or (not current_user.is_authenticated and product._id|string in session.get('liked_products', [])) else 'far' }} fa-heart"></i>
+                        </button>
                     </div>
-                    <img src="{{ product.image_url|cld(400) }}" alt="{{ product.name }}" loading="lazy">
-                    <button type="button" class="btn-favorite" onclick="toggleFavorite(this, '{{ product._id }}')" aria-label="Shto te të preferuarat"><i class="far fa-heart"></i></button>
-                    <a href="{{ url_for('main.product_detail', product_id=product._id) }}" class="product-card-link-overlay" aria-label="Shiko {{ product.name }}"></a>
-                </div>
-                <div class="product-info">
-                    <span class="product-category">{{ product.brand or product.category }}</span>
-                    <h3 class="product-title">{{ product.name }}</h3>
-                    {% if product.size %}<span class="product-size">{{ product.size }}</span>{% endif %}
-                    <div class="price-container">
-                        <span class="price{% if product.discount_price %} discounted{% endif %}">€{{ "%.2f"|format(product.display_price) }}</span>
-                        {% if product.discount_price %}<span class="price original">€{{ "%.2f"|format(product.display_original_price) }}</span>{% endif %}
+                    <div class="hp-card-body">
+                        <span class="hp-card-brand">{{ product.brand if product.brand else product.category }}</span>
+                        <span class="hp-card-name">{{ product.name }}</span>
+                        {% if product.size %}<span class="hp-card-size">{{ product.size }}</span>{% endif %}
+                        <div class="hp-price-row">
+                            {% if product.offer_type == 'multi_buy' %}
+                                <span class="hp-price-main">€{{ "%.2f"|format(product.display_price) }}</span>
+                            {% elif product.discount_price or product.auto_oct_discount %}
+                                <span class="hp-price-main">€{{ "%.2f"|format(product.display_price) }}</span>
+                                <span class="hp-price-orig">€{{ "%.2f"|format(product.display_original_price) }}</span>
+                                <span class="hp-price-pct{% if product.auto_oct_discount %} hp-price-pct--oct{% endif %}">
+                                    {% if product.auto_oct_discount %}-5%{% else %}-{{ ((product.display_original_price - product.discount_price) / product.display_original_price * 100)|round|int }}%{% endif %}
+                                </span>
+                            {% else %}
+                                <span class="hp-price-main">€{{ "%.2f"|format(product.display_price) }}</span>
+                            {% endif %}
+                        </div>
+                        {% if product.auto_oct_discount or product.discount_until %}
+                            <div class="hp-urgency" data-deadline="{% if product.auto_oct_discount %}2026-10-31T23:59:59{% else %}{{ product.discount_until.strftime('%Y-%m-%dT%H:%M:%S') if product.discount_until else '' }}{% endif %}">
+                                <i class="fas fa-clock"></i><span class="hp-urgency-text"></span>
+                            </div>
+                        {% else %}
+                            <div class="hp-urgency hp-urgency--placeholder" aria-hidden="true"></div>
+                        {% endif %}
                     </div>
-                    <button type="button" class="cart-recommendation-add" onclick="addCartRecommendation('{{ product._id }}', this)"><i class="fas fa-plus"></i> Shto në shportë</button>
+                    {% if product.in_stock != False %}
+                    <button class="hp-card-atc" onclick="event.stopPropagation(); addCartRecommendation('{{ product._id }}', this)">
+                        <span class="hp-atc-label"><i class="fas fa-plus"></i> Shto në shportë</span>
+                        <span class="hp-atc-done"><i class="fas fa-check"></i> U shtua</span>
+                    </button>
+                    {% endif %}
                 </div>
-            </article>
-            {% endfor %}
+                {% endfor %}
+            </div>
         </div>
     </section>
     {% endif %}

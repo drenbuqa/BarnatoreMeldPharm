@@ -1,27 +1,27 @@
 {% extends "base.html" %}
 
 {% block content %}
+<!-- Product Breadcrumbs -->
+<nav class="product-breadcrumbs" style="margin-bottom: 2rem; font-size: 0.9rem; color: #64748b;">
+    <a href="{{ url_for('main.index') }}" style="color: #64748b;">Ballina</a>
+    <span style="margin: 0 0.5rem;">/</span>
+    <a href="{{ url_for('main.products', category=product.category) }}" style="color: #64748b;">{{ product.category
+        }}</a>
+    {% if product.subcategory %}
+    <span style="margin: 0 0.5rem;">/</span>
+    <a href="{{ url_for('main.products', category=product.category, subcategory=product.subcategory) }}"
+        style="color: #64748b;">{{ product.subcategory }}</a>
+    {% endif %}
+    <span style="margin: 0 0.5rem;">/</span>
+    <span style="color: var(--text-main); font-weight: 500;">{{ product.name }}</span>
+</nav>
+
 <div class="container section product-detail-container" style="padding-top: 0.5rem;">
     <div style="margin-bottom: 1.5rem;">
         <a href="#" onclick="history.back(); return false;" class="btn-back-standard">
             <i class="fas fa-arrow-left"></i> Kthehu
         </a>
     </div>
-
-    <!-- Product Breadcrumbs -->
-    <nav class="product-breadcrumbs" style="margin-bottom: 2rem; font-size: 0.9rem; color: #64748b;">
-        <a href="{{ url_for('main.index') }}" style="color: #64748b;">Ballina</a>
-        <span style="margin: 0 0.5rem;">/</span>
-        <a href="{{ url_for('main.products', category=product.category) }}" style="color: #64748b;">{{ product.category
-            }}</a>
-        {% if product.subcategory %}
-        <span style="margin: 0 0.5rem;">/</span>
-        <a href="{{ url_for('main.products', category=product.category, subcategory=product.subcategory) }}"
-            style="color: #64748b;">{{ product.subcategory }}</a>
-        {% endif %}
-        <span style="margin: 0 0.5rem;">/</span>
-        <span style="color: var(--text-main); font-weight: 500;">{{ product.name }}</span>
-    </nav>
 
     <div class="product-detail-grid">
 
@@ -83,198 +83,119 @@
         </div>
 
         <!-- Info Section -->
-        <div class="product-info-column" style="animation: slideUp 0.6s ease-out;">
-            <div class="product-meta-row" style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; flex-wrap: wrap;">
-                <span class="product-category" style="font-size: 0.8rem; font-weight: 800; color: #64748b;">{{
-                    product.category }}</span>
-                {% if product.labels and 'set' in product.labels %}
-                <span style="background: linear-gradient(135deg,#0d9488,#0f766e); color: white; padding: 0.2rem 0.6rem; border-radius: 4px; font-size: 0.7rem; font-weight: 800; text-transform: uppercase; display:inline-flex; align-items:center; gap:4px;"><i class="fas fa-layer-group"></i> Set / Paketë</span>
+        <div class="product-info-column">
+            <div class="pinfo-card">
+
+                <!-- Favorite pinned to top-right of card -->
+                <button class="pinfo-fav {{ 'active' if (current_user.is_authenticated and product.favorites and current_user.id in product.favorites) or (not current_user.is_authenticated and product._id|string in session.get('liked_products', [])) else '' }}"
+                    onclick="toggleFavorite(this, '{{ product._id }}')" aria-label="Shto në të preferuarat">
+                    <i class="{{ 'fas' if (current_user.is_authenticated and product.favorites and current_user.id in product.favorites) or (not current_user.is_authenticated and product._id|string in session.get('liked_products', [])) else 'far' }} fa-heart"></i>
+                </button>
+
+                <!-- ① Category + stock on same row -->
+                <div class="pinfo-top-row">
+                    <span class="pinfo-category">{{ product.category }}</span>
+                    <span class="pinfo-stock-inline {{ 'stock-in' if product.in_stock != False else 'stock-out' }}">
+                        <span class="pinfo-stock-dot {{ 'dot-green' if product.in_stock != False else 'dot-red' }}"></span>
+                        {{ 'Në Stok' if product.in_stock != False else 'Jashtë Stokut' }}
+                    </span>
+                </div>
+
+                <!-- ② All labels on one row -->
+                {% set has_labels = (product.labels and ('set' in product.labels or 'limited' in product.labels or 'sale' in product.labels or 'new_arrival' in product.labels)) or product.is_best_seller or product.discount_price or product.auto_oct_discount or product.offer_badge_text %}
+                {% if has_labels %}
+                <div class="pinfo-labels-row">
+                    {% if product.offer_badge_text %}
+                    <span class="pinfo-badge pinfo-badge--red"><i class="fas fa-tag"></i> {{ product.offer_badge_text }}</span>
+                    {% elif product.auto_oct_discount %}
+                    <span class="pinfo-badge pinfo-badge--oct">-5%</span>
+                    {% elif product.discount_price %}
+                    <span class="pinfo-badge pinfo-badge--red"><i class="fas fa-tag"></i> Ofertë</span>
+                    {% endif %}
+                    {% if product.labels and 'sale' in product.labels %}
+                    <span class="pinfo-badge pinfo-badge--red"><i class="fas fa-tag"></i> Ofertë Speciale</span>
+                    {% endif %}
+                    {% if product.labels and 'new_arrival' in product.labels %}
+                    <span class="pinfo-badge pinfo-badge--sky"><i class="fas fa-sparkles"></i> I Ri</span>
+                    {% endif %}
+                    {% if product.labels and 'set' in product.labels %}
+                    <span class="pinfo-badge pinfo-badge--teal"><i class="fas fa-layer-group"></i> Set / Paketë</span>
+                    {% endif %}
+                    {% if product.labels and 'limited' in product.labels %}
+                    <span class="pinfo-badge pinfo-badge--red"><i class="fas fa-clock"></i> I Kufizuar</span>
+                    {% endif %}
+                    {% if product.is_best_seller %}
+                    <span class="pinfo-badge pinfo-badge--amber">Më i Shituri</span>
+                    {% endif %}
+                </div>
                 {% endif %}
-                {% if product.labels and 'limited' in product.labels %}
-                <span style="background: linear-gradient(135deg,#ef4444,#dc2626); color: white; padding: 0.2rem 0.6rem; border-radius: 4px; font-size: 0.7rem; font-weight: 800; text-transform: uppercase; display:inline-flex; align-items:center; gap:4px;"><i class="fas fa-clock"></i> I Kufizuar</span>
+
+                <!-- ③ Brand -->
+                {% if product.brand %}
+                <div class="pinfo-brand">{{ product.brand }}</div>
                 {% endif %}
-                {% if product.is_best_seller %}
-                <span
-                    style="background: #f59e0b; color: white; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.7rem; font-weight: 800; text-transform: uppercase;">Më
-                    i Shituri</span>
+
+                <!-- ④ Title -->
+                <h1 class="pinfo-title product-title-detail">{{ product.name }}</h1>
+
+                <!-- ⑥ Size / Variants -->
+                {% if product.variants and product.variants|length > 0 %}
+                <div id="product-variants-ui" style="margin-bottom: 1rem;"></div>
+                {% elif product.size %}
+                <div class="pinfo-size">Madhësia: <strong>{{ product.size }}</strong></div>
                 {% endif %}
-                <span style="width: 4px; height: 4px; background: #cbd5e1; border-radius: 50%;"></span>
-                <span class="stock-status {{ 'in-stock' if product.in_stock != False else 'out-of-stock' }}">
-                    {{ 'Në Stok' if product.in_stock != False else 'Jashtë Stokut' }}
-                </span>
-            </div>
 
-            {% if product.brand %}
-            <div class="product-brand"
-                style="font-size: 1rem; font-weight: 600; color: var(--primary); margin-bottom: 0.25rem;">{{
-                product.brand }}</div>
-            {% endif %}
-
-            {% if product.variants and product.variants|length > 0 %}
-            <div id="product-variants-ui" style="margin-bottom: 1.5rem;"></div>
-            {% elif product.size %}
-            <div class="product-size-detail"
-                style="font-size: 0.9rem; color: #64748b; margin-top: -0.25rem; margin-bottom: 0.5rem; font-weight: 500;">
-                Sasia: <span style="font-weight: 700;">{{ product.size }}</span>
-            </div>
-            {% endif %}
-
-            <h1 class="product-title-detail" style="margin-bottom: 0.5rem; line-height: 1.1; font-size: 1.5rem;">{{
-                product.name }}</h1>
-
-            <div class="price-container mobile-price-fix"
-                style="display: flex; align-items: flex-end; gap: 0.75rem; margin-bottom: 1.5rem;">
-                {% if product.offer_type == 'multi_buy' %}
-                <span class="price main-price"
-                    style="font-size: 1.8rem; color: var(--primary); font-weight: 800; line-height: 1;">€{{ "%.2f"|format(product.display_price) }}</span>
-                <span class="discount-badge"
-                    style="background: #0f766e; color: white; padding: 0.35rem 0.6rem; border-radius: 8px; font-weight: 700; font-size: 0.9rem; margin-bottom: 0.2rem; transform: translateY(-2px);">
-                    {{ product.offer_badge_text or '1+1' }}
-                </span>
-                {% elif product.discount_price %}
-                <span class="price original"
-                    style="font-size: 1rem; text-decoration: line-through; color: #94a3b8; font-weight: 500;">€{{ "%.2f"|format(product.display_original_price) }}</span>
-                <span class="price discounted"
-                    style="font-size: 1.8rem; color: var(--primary); font-weight: 800; line-height: 1;">€{{ "%.2f"|format(product.discount_price) }}</span>
-                <span class="discount-badge"
-                    style="background: #ef4444; color: white; padding: 0.35rem 0.6rem; border-radius: 8px; font-weight: 700; font-size: 0.9rem; margin-bottom: 0.2rem; transform: translateY(-2px);">
-                    {{ ((product.display_original_price - product.discount_price) / product.display_original_price * 100)|round|int }}%
-                </span>
-                {% else %}
-                <span class="price main-price"
-                    style="font-size: 1.8rem; color: var(--primary); font-weight: 800; line-height: 1;">€{{ "%.2f"|format(product.display_price) }}</span>
-                {% endif %}
-            </div>
-
-
-            <style>
-                @media (max-width: 768px) {
-
-                    .mobile-price-fix .price.discounted,
-                    .mobile-price-fix .price.main-price {
-                        font-size: 1.4rem !important;
-                    }
-
-                    .mobile-price-fix .price.original {
-                        font-size: 0.85rem !important;
-                        /* Smaller old price */
-                        margin-right: 0.25rem;
-                    }
-
-                    .mobile-price-fix .discount-badge {
-                        font-size: 0.7rem !important;
-                        padding: 0.2rem 0.35rem !important;
-                    }
-                }
-            </style>
-
-            <div class="product-accordion" style="margin-top: 2rem; margin-bottom: 2.5rem;">
-                <!-- Description -->
-                <div class="accordion-item"
-                    style="background: white; border-radius: 16px; margin-bottom: 1rem; border: 1px solid #f1f5f9; box-shadow: 0 2px 4px rgba(0,0,0,0.02); overflow: hidden;">
-                    <div class="accordion-header"
-                        style="padding: 1.25rem 1.5rem; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: background 0.2s;"
-                        onclick="toggleAccordion(this)">
-                        <h3
-                            style="font-size: 1rem; color: var(--text-main); font-weight: 700; margin: 0; display: flex; align-items: center; gap: 0.8rem;">
-                            <i class="fas fa-align-left"
-                                style="color: var(--primary); width: 22px; text-align: center;"></i> Përshkrimi i
-                            Produktit
-                        </h3>
-                        <i class="fas fa-chevron-down accordion-icon"
-                            style="transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); color: #94a3b8;"></i>
+                <!-- ⑦ Trust signals — below size -->
+                <div class="pinfo-trust-signals">
+                    <div class="pinfo-trust-item">
+                        <i class="fas fa-truck-fast"></i>
+                        <div>
+                            <strong>Dërgim falas mbi €50</strong>
+                            <span>Brenda Kosovës</span>
+                        </div>
                     </div>
-                    <div class="accordion-content"
-                        style="max-height: 0; overflow: hidden; transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);">
-                        <div
-                            style="padding: 0 1.5rem 1.5rem 1.5rem; font-size: 0.95rem; color: #475569; line-height: 1.7;">
-                            {% for line in product.description.split('\n') %}
-                            {% set cleaned_line = line.strip().lstrip('•*- ') %}
-                            {% if cleaned_line %}<p style="margin-bottom: 0.75rem;">{{ cleaned_line }}</p>{% endif %}
-                            {% endfor %}
+                    <div class="pinfo-trust-item">
+                        <i class="fas fa-bolt"></i>
+                        <div>
+                            <strong>Dërgim i menjëhershëm</strong>
+                            <span>E njëjta ditë pune</span>
                         </div>
                     </div>
                 </div>
 
-                <!-- How to Use -->
-                {% if product.how_to_use %}
-                <div class="accordion-item"
-                    style="background: white; border-radius: 16px; margin-bottom: 1rem; border: 1px solid #f1f5f9; box-shadow: 0 2px 4px rgba(0,0,0,0.02); overflow: hidden;">
-                    <div class="accordion-header"
-                        style="padding: 1.25rem 1.5rem; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: background 0.2s;"
-                        onclick="toggleAccordion(this)">
-                        <h3
-                            style="font-size: 1rem; color: var(--text-main); font-weight: 700; margin: 0; display: flex; align-items: center; gap: 0.8rem;">
-                            <i class="fas fa-hand-sparkles"
-                                style="color: var(--primary); width: 22px; text-align: center;"></i> Si të përdoret
-                        </h3>
-                        <i class="fas fa-chevron-down accordion-icon"
-                            style="transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); color: #94a3b8;"></i>
-                    </div>
-                    <div class="accordion-content"
-                        style="max-height: 0; overflow: hidden; transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);">
-                        <div
-                            style="padding: 0 1.5rem 1.5rem 1.5rem; font-size: 0.95rem; color: #475569; line-height: 1.7;">
-                            {{ product.how_to_use | e | replace('\n', '<br>') | safe }}
-                        </div>
-                    </div>
-                </div>
-                {% endif %}
+                <div class="pinfo-divider"></div>
 
-                <!-- Key Ingredients -->
-                {% if product.key_ingredients %}
-                <div class="accordion-item"
-                    style="background: white; border-radius: 16px; margin-bottom: 1rem; border: 1px solid #f1f5f9; box-shadow: 0 2px 4px rgba(0,0,0,0.02); overflow: hidden;">
-                    <div class="accordion-header"
-                        style="padding: 1.25rem 1.5rem; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: background 0.2s;"
-                        onclick="toggleAccordion(this)">
-                        <h3
-                            style="font-size: 1rem; color: var(--text-main); font-weight: 700; margin: 0; display: flex; align-items: center; gap: 0.8rem;">
-                            <i class="fas fa-vial" style="color: var(--primary); width: 22px; text-align: center;"></i>
-                            Përbërësit Kryesorë
-                        </h3>
-                        <i class="fas fa-chevron-down accordion-icon"
-                            style="transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); color: #94a3b8;"></i>
-                    </div>
-                    <div class="accordion-content"
-                        style="max-height: 0; overflow: hidden; transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);">
-                        <div
-                            style="padding: 0 1.5rem 1.5rem 1.5rem; font-size: 0.95rem; color: #475569; line-height: 1.7;">
-                            <div class="ingredients-pills"
-                                style="display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: 0.5rem;">
-                                {% for ing in product.key_ingredients.split(',') %}
-                                {% if ing.strip() %}
-                                <span class="ingredient-pill"
-                                    style="background: #f1f5f9; color: var(--primary); padding: 0.4rem 0.9rem; border-radius: 30px; font-weight: 600; font-size: 0.85rem; border: 1px solid #e2e8f0;">{{
-                                    ing.strip() }}</span>
-                                {% endif %}
-                                {% endfor %}
-                            </div>
-                        </div>
-                    </div>
+                <!-- ⑧ Price -->
+                <div class="pinfo-price-row mobile-price-fix price-container">
+                    {% if product.offer_type == 'multi_buy' %}
+                    <span class="price main-price pinfo-price-main">€{{ "%.2f"|format(product.display_price) }}</span>
+                    <span class="discount-badge pinfo-badge--teal" style="font-size:0.9rem; padding:0.35rem 0.7rem;">{{ product.offer_badge_text or '1+1' }}</span>
+                    {% elif product.auto_oct_discount %}
+                    <span class="price original pinfo-price-orig">€{{ "%.2f"|format(product.display_original_price) }}</span>
+                    <span class="price discounted pinfo-price-main">€{{ "%.2f"|format(product.display_price) }}</span>
+                    <span class="discount-badge" style="background:linear-gradient(110deg,#8B6914,#C49A1C);color:#fff;padding:0.35rem 0.7rem;border-radius:8px;font-weight:700;font-size:0.9rem;">-5%</span>
+                    {% elif product.discount_price %}
+                    <span class="price original pinfo-price-orig">€{{ "%.2f"|format(product.display_original_price) }}</span>
+                    <span class="price discounted pinfo-price-main">€{{ "%.2f"|format(product.discount_price) }}</span>
+                    <span class="discount-badge pinfo-badge--red" style="font-size:0.9rem; padding:0.35rem 0.7rem;">
+                        -{{ ((product.display_original_price - product.discount_price) / product.display_original_price * 100)|round|int }}%
+                    </span>
+                    {% else %}
+                    <span class="price main-price pinfo-price-main">€{{ "%.2f"|format(product.display_price) }}</span>
+                    {% endif %}
                 </div>
-                {% endif %}
-            </div>
 
-            <!-- Desktop Action Buttons -->
-            <div class="desktop-action-container" style="margin-bottom: 2rem;">
-                <div style="display: flex; gap: 1rem; align-items: stretch; flex-wrap: wrap;">
-                    <div class="quantity-selector qty-lg" style="height: 54px;">
+                <div class="pinfo-divider"></div>
+
+                <!-- ⑨ Action buttons — single row -->
+                <div id="main-action-container" class="desktop-action-container pinfo-actions">
+                    <div class="quantity-selector qty-lg pinfo-qty">
                         <button type="button" class="qty-btn minus"><i class="fas fa-minus"></i></button>
                         <input type="number" class="qty-input" value="1" min="1" readonly>
                         <button type="button" class="qty-btn plus"><i class="fas fa-plus"></i></button>
                     </div>
-
-                    <button type="button" onclick="buyNowWithQty('{{ product._id }}', this)"
-                        class="btn btn-primary btn-lg"
-                        style="flex: 1; min-width: 150px; padding: 0 1.5rem; height: 54px; font-size: 1rem; border-radius: 12px; font-weight: 700; background-color: #f15a24; border-color: #f15a24;"
-                        {% if product.in_stock==False %}disabled{% endif %}>
-                        Blej Tani
-                    </button>
-
                     <button type="button" onclick="addToCartWithQty('{{ product._id }}', this)"
-                        class="btn btn-add-to-cart-light btn-lg"
-                        style="flex: 1; min-width: 200px; padding: 0 1.5rem; height: 54px; font-size: 1rem; border-radius: 12px; font-weight: 700; color: var(--primary); border: none; background: #f1f5f9; display: flex; align-items: center; justify-content: center; gap: 0.5rem; transition: all 0.3s ease;"
+                        class="btn pinfo-btn-atc btn-add-to-cart-light"
                         {% if product.in_stock==False %}disabled{% endif %}>
                         {% if product.in_stock == False %}
                         Jashtë Stokut
@@ -282,16 +203,14 @@
                         <i class="fas fa-shopping-cart"></i> Shto në Shportë
                         {% endif %}
                     </button>
+                    <button type="button" onclick="buyNowWithQty('{{ product._id }}', this)"
+                        class="btn pinfo-btn-buy"
+                        {% if product.in_stock==False %}disabled{% endif %}>
+                        Blej Tani
+                    </button>
                 </div>
-            </div>
 
-            <!-- Trust Signals -->
-            <div class="trust-signals">
-                <span class="trust-chip"><i class="fas fa-shield-alt"></i> Pagesë e Sigurt</span>
-                <span class="trust-chip"><i class="fas fa-truck"></i> Dërgim i Shpejtë</span>
-                <span class="trust-chip"><i class="fas fa-undo"></i> Kthim Falas</span>
-                <span class="trust-chip"><i class="fas fa-phone"></i> Mbështetje 24/7</span>
-            </div>
+            </div><!-- /pinfo-card -->
 
             <form id="addToCartForm" action="{{ url_for('cart.add_to_cart', product_id=product._id) }}" method="POST"
                 style="display: none;">
@@ -299,29 +218,153 @@
                 <input type="hidden" name="quantity" value="1">
             </form>
         </div>
-    </div>
-</div>
+    </div><!-- /product-detail-grid -->
 
-<!-- Mobile Sticky Action Bar -->
-<div class="mobile-action-bar">
-    <div class="mobile-btns" style="display: flex; gap: 0.4rem; width: 100%; align-items: center;">
-        <div class="quantity-selector" style="height: 42px; min-width: 80px;">
-            <button type="button" class="qty-btn minus"><i class="fas fa-minus"></i></button>
-            <input type="number" class="qty-input" value="1" min="1" readonly>
-            <button type="button" class="qty-btn plus"><i class="fas fa-plus"></i></button>
+    <!-- ── Product info accordion — full width below hero ── -->
+    <div class="product-accordion-section">
+        <!-- Description -->
+        <div class="accordion-item" style="background:white;border-radius:16px;margin-bottom:1rem;border:1px solid #f1f5f9;box-shadow:0 2px 4px rgba(0,0,0,.02);overflow:hidden;">
+            <div class="accordion-header" style="padding:1.25rem 1.5rem;display:flex;justify-content:space-between;align-items:center;cursor:pointer;transition:background .2s;" onclick="toggleAccordion(this)">
+                <h3 style="font-size:1rem;color:var(--text-main);font-weight:700;margin:0;display:flex;align-items:center;gap:.8rem;">
+                    <i class="fas fa-align-left" style="color:var(--primary);width:22px;text-align:center;"></i> Përshkrimi i Produktit
+                </h3>
+                <i class="fas fa-chevron-down accordion-icon" style="transition:transform .3s cubic-bezier(.4,0,.2,1);color:#94a3b8;"></i>
+            </div>
+            <div class="accordion-content" style="max-height:0;overflow:hidden;transition:all .4s cubic-bezier(.4,0,.2,1);">
+                <div class="product-desc-body" style="padding:0 1.5rem 1.5rem;font-size:.95rem;color:#475569;line-height:1.8;">
+                    {% set lines = product.description.split('\n') %}
+                    {% set in_list = namespace(val=false) %}
+                    {% for line in lines %}
+                      {% set stripped = line.strip() %}
+                      {% if stripped %}
+                        {% if stripped[:1] in ['•', '-', '*'] or stripped[:2] == '- ' %}
+                          {% set item = stripped.lstrip('•*- ').strip() %}
+                          {% if not in_list.val %}
+                            <ul style="margin:.5rem 0 .75rem 1.1rem;padding:0;list-style:none;">
+                            {% set in_list.val = true %}
+                          {% endif %}
+                          <li style="position:relative;padding-left:1.2rem;margin-bottom:.45rem;">
+                            <span style="position:absolute;left:0;top:.55em;width:6px;height:6px;background:var(--primary);border-radius:50%;display:inline-block;"></span>
+                            {{ item }}
+                          </li>
+                        {% else %}
+                          {% if in_list.val %}</ul>{% set in_list.val = false %}{% endif %}
+                          <p style="margin-bottom:.75rem;">{{ stripped }}</p>
+                        {% endif %}
+                      {% endif %}
+                    {% endfor %}
+                    {% if in_list.val %}</ul>{% endif %}
+                </div>
+            </div>
         </div>
 
-        <button type="button" onclick="buyNowWithQty('{{ product._id }}', this)" class="btn btn-primary"
-            style="flex: 2.5; height: 42px; border-radius: 10px; font-weight: 700; font-size: 0.9rem; background-color: #f15a24; border: none; color: white;"
-            {% if product.in_stock==False %}disabled{% endif %}>
-            Blej Tani
-        </button>
+        {% if product.how_to_use %}
+        <div class="accordion-item" style="background:white;border-radius:16px;margin-bottom:1rem;border:1px solid #f1f5f9;box-shadow:0 2px 4px rgba(0,0,0,.02);overflow:hidden;">
+            <div class="accordion-header" style="padding:1.25rem 1.5rem;display:flex;justify-content:space-between;align-items:center;cursor:pointer;transition:background .2s;" onclick="toggleAccordion(this)">
+                <h3 style="font-size:1rem;color:var(--text-main);font-weight:700;margin:0;display:flex;align-items:center;gap:.8rem;">
+                    <i class="fas fa-hand-sparkles" style="color:var(--primary);width:22px;text-align:center;"></i> Si të përdoret
+                </h3>
+                <i class="fas fa-chevron-down accordion-icon" style="transition:transform .3s cubic-bezier(.4,0,.2,1);color:#94a3b8;"></i>
+            </div>
+            <div class="accordion-content" style="max-height:0;overflow:hidden;transition:all .4s cubic-bezier(.4,0,.2,1);">
+                <div style="padding:0 1.5rem 1.5rem;font-size:.95rem;color:#475569;line-height:1.7;">
+                    {{ product.how_to_use | e | replace('\n', '<br>') | safe }}
+                </div>
+            </div>
+        </div>
+        {% endif %}
 
-        <button type="button" onclick="addToCartWithQty('{{ product._id }}', this)" class="btn btn-add-to-cart-light"
-            style="flex: 1.5; height: 42px; border-radius: 10px; font-weight: 700; font-size: 0.8rem; color: var(--primary); border: none; background: #f1f5f9; display: flex; align-items: center; justify-content: center; gap: 0.4rem; transition: all 0.3s ease;"
-            {% if product.in_stock==False %}disabled{% endif %}>
-            <i class="fas fa-shopping-cart"></i> <span style="font-size: 0.75rem;">Shto</span>
-        </button>
+        {% if product.key_ingredients %}
+        <div class="accordion-item" style="background:white;border-radius:16px;margin-bottom:1rem;border:1px solid #f1f5f9;box-shadow:0 2px 4px rgba(0,0,0,.02);overflow:hidden;">
+            <div class="accordion-header" style="padding:1.25rem 1.5rem;display:flex;justify-content:space-between;align-items:center;cursor:pointer;transition:background .2s;" onclick="toggleAccordion(this)">
+                <h3 style="font-size:1rem;color:var(--text-main);font-weight:700;margin:0;display:flex;align-items:center;gap:.8rem;">
+                    <i class="fas fa-vial" style="color:var(--primary);width:22px;text-align:center;"></i> Përbërësit Kryesorë
+                </h3>
+                <i class="fas fa-chevron-down accordion-icon" style="transition:transform .3s cubic-bezier(.4,0,.2,1);color:#94a3b8;"></i>
+            </div>
+            <div class="accordion-content" style="max-height:0;overflow:hidden;transition:all .4s cubic-bezier(.4,0,.2,1);">
+                <div style="padding:0 1.5rem 1.5rem;font-size:.95rem;color:#475569;line-height:1.7;">
+                    <div class="ingredients-pills" style="display:flex;flex-wrap:wrap;gap:.6rem;margin-top:.5rem;">
+                        {% for ing in product.key_ingredients.split(',') %}
+                        {% if ing.strip() %}
+                        <span class="ingredient-pill" style="background:#f1f5f9;color:var(--primary);padding:.4rem .9rem;border-radius:30px;font-weight:600;font-size:.85rem;border:1px solid #e2e8f0;">{{ ing.strip() }}</span>
+                        {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+</div><!-- /product-detail-container -->
+
+<!-- Unified Sticky Product Bar (top on desktop, bottom on mobile) -->
+<div id="sticky-product-bar">
+    <div class="spb-inner">
+
+        <!-- Left: thumbnail + name + unit price -->
+        <div class="spb-product">
+            <img src="{% if product.images %}{{ product.images[0]|cld(120) }}{% else %}{{ product.image_url|cld(120) }}{% endif %}"
+                 alt="{{ product.name }}" class="spb-thumb">
+            <div class="spb-info">
+                <div class="spb-name">{{ product.name }}</div>
+                <div class="spb-unit-price">
+                    {% if product.auto_oct_discount or product.discount_price %}
+                    <span class="spb-unit-orig">€{{ "%.2f"|format(product.display_original_price) }}</span>
+                    {% endif %}
+                    <span>€{{ "%.2f"|format(product.display_price) }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Divider (desktop only) -->
+        <div class="spb-vdivider"></div>
+
+        <!-- Center: total price (updates with qty) — on mobile row 1 left -->
+        <div class="spb-total-block">
+            <div class="spb-total-row">
+                <div class="spb-total-label">Total</div>
+                <div class="spb-total-price" id="spbTotalPrice">€{{ "%.2f"|format(product.display_price) }}</div>
+            </div>
+        </div>
+
+        <!-- Mobile-only qty — on mobile row 1 right, hidden on desktop -->
+        <div class="spb-mobile-qty">
+            <div class="quantity-selector spb-qty">
+                <button type="button" class="qty-btn minus"><i class="fas fa-minus"></i></button>
+                <input type="number" class="qty-input" value="1" min="1" readonly>
+                <button type="button" class="qty-btn plus"><i class="fas fa-plus"></i></button>
+            </div>
+        </div>
+
+        <!-- Divider (desktop only) -->
+        <div class="spb-vdivider"></div>
+
+        <!-- Right: qty + buttons -->
+        <div class="spb-actions">
+            <div class="quantity-selector spb-qty">
+                <button type="button" class="qty-btn minus"><i class="fas fa-minus"></i></button>
+                <input type="number" class="qty-input" value="1" min="1" readonly>
+                <button type="button" class="qty-btn plus"><i class="fas fa-plus"></i></button>
+            </div>
+            <button type="button" onclick="addToCartWithQty('{{ product._id }}', this)"
+                class="btn spb-atc-btn"
+                {% if product.in_stock==False %}disabled{% endif %}>
+                {% if product.in_stock == False %}
+                Jashtë Stokut
+                {% else %}
+                <i class="fas fa-shopping-cart"></i>
+                <span class="spb-btn-label">Shto në Shportë</span>
+                {% endif %}
+            </button>
+            <button type="button" onclick="buyNowWithQty('{{ product._id }}', this)"
+                class="btn spb-buy-btn"
+                {% if product.in_stock==False %}disabled{% endif %}>
+                <span class="spb-btn-label">Blej Tani</span>
+            </button>
+        </div>
+
     </div>
 </div>
 
@@ -472,6 +515,9 @@
 
         updatePriceDisplay(price, discount);
 
+        // Sync sticky bar price
+        if (window._spbSyncPrice) window._spbSyncPrice(price, discount);
+
         // Update image if variant has one
         if (v && v.image_url) {
             swapMainImage(v.image_url);
@@ -550,8 +596,7 @@
             return;
         }
 
-        const container = btn.closest('.desktop-action-container') || btn.closest('.mobile-action-bar');
-        const qty = container.querySelector('.qty-input').value;
+        const qty = document.querySelector('.qty-input').value;
         window.addToCartAJAX(productId, qty, variantId, btn);
     }
 
@@ -569,8 +614,7 @@
             }
             return;
         }
-        const container = btn.closest('.desktop-action-container') || btn.closest('.mobile-action-bar');
-        const qty = container.querySelector('.qty-input').value;
+        const qty = document.querySelector('.qty-input').value;
         window.buyNow(productId, qty, variantId);
     }
 
@@ -612,11 +656,326 @@
     document.addEventListener('DOMContentLoaded', function () {
         document.body.classList.add('has-sticky-bar');
     });
+
+    // ── Sticky product bar ────────────────────────────────────────────────────────
+    (function() {
+        var bar = document.getElementById('sticky-product-bar');
+        // Observe the whole pinfo-card — bar appears when card scrolls out of view
+        var card = document.querySelector('.pinfo-card');
+        if (!bar || !card) return;
+
+        // On mobile the bar is always visible (CSS handles it); only use observer on desktop
+        if (window.innerWidth > 768) {
+            var obs = new IntersectionObserver(function(entries) {
+                bar.classList.toggle('spb-visible', !entries[0].isIntersecting);
+            }, {
+                threshold: 0,
+                rootMargin: '-80px 0px 0px 0px'
+            });
+            obs.observe(card);
+        }
+
+        // Unit price from Jinja2 — used for total price calculation
+        window._spbUnitPrice = {{ product.display_price | float }};
+        var totalEl = document.getElementById('spbTotalPrice');
+
+        function updateTotal(qty) {
+            if (!totalEl) return;
+            var total = (parseFloat(qty) || 1) * window._spbUnitPrice;
+            totalEl.textContent = '€' + total.toFixed(2);
+        }
+
+        // Called by applyVariant when user picks a different size
+        window._spbSyncPrice = function(price, discount) {
+            window._spbUnitPrice = parseFloat(discount && parseFloat(discount) > 0 ? discount : price);
+            // Update desktop unit price label
+            var unitEl = document.querySelector('.spb-unit-price');
+            if (unitEl) {
+                var ep = window._spbUnitPrice;
+                unitEl.innerHTML = discount && parseFloat(discount) > 0
+                    ? '<span class="spb-unit-orig">€' + parseFloat(price).toFixed(2) + '</span><span>€' + ep.toFixed(2) + '</span>'
+                    : '<span>€' + ep.toFixed(2) + '</span>';
+            }
+            // Update mobile unit line
+            var unitLineEl = document.getElementById('spbUnitLine');
+            var qty = document.querySelector('.qty-input');
+            updateTotal(qty ? (parseInt(qty.value) || 1) : 1);
+        };
+
+        // Sync qty across all .qty-input elements + update total on every change
+        document.addEventListener('change', function(e) {
+            if (!e.target.classList.contains('qty-input')) return;
+            var val = e.target.value;
+            document.querySelectorAll('.qty-input').forEach(function(inp) { inp.value = val; });
+            updateTotal(val);
+        });
+    })();
+
+    // Sticky gallery removed — layout is now full-width flow
 </script>
 
 {% block footer %}{% endblock %}
 
 <style>
+    /* ── Product Info Card ─────────────────────────────────────── */
+    .pinfo-card {
+        position: relative;
+        background: white;
+        border-radius: 20px;
+        border: 1px solid #e9eef4;
+        box-shadow: 0 4px 24px rgba(0,0,0,.06);
+        padding: 2rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+    }
+
+    /* Favorite — pinned to top-right of card */
+    .pinfo-fav {
+        position: absolute !important;
+        top: 1.25rem !important;
+        right: 1.25rem !important;
+        width: 40px !important;
+        height: 40px !important;
+        border-radius: 50% !important;
+        background: #f8fafc !important;
+        border: 1.5px solid #e2e8f0 !important;
+        color: #94a3b8 !important;
+        font-size: 1rem !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        box-shadow: none !important;
+        cursor: pointer;
+        transition: all 0.2s;
+        opacity: 1 !important;
+        visibility: visible !important;
+        z-index: 10 !important;
+    }
+    .pinfo-fav:hover { border-color: #fda4af !important; color: #f43f5e !important; background: #fff1f2 !important; }
+    .pinfo-fav.active { color: #f43f5e !important; border-color: #fda4af !important; background: #fff1f2 !important; }
+
+    /* Category + stock top row */
+    .pinfo-top-row {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 0.55rem;
+        padding-right: 3rem; /* room for fav button */
+    }
+    .pinfo-category {
+        font-size: 0.72rem;
+        font-weight: 800;
+        color: #94a3b8;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+    }
+    .pinfo-stock-inline {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    .stock-in  { color: #16a34a; }
+    .stock-out { color: #dc2626; }
+    .pinfo-stock-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+    .dot-green { background: #22c55e; }
+    .dot-red   { background: #ef4444; }
+
+    /* Labels row */
+    .pinfo-labels-row {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        flex-wrap: wrap;
+        margin-bottom: 0.8rem;
+    }
+    .pinfo-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 0.25rem 0.65rem;
+        border-radius: 6px;
+        font-size: 0.68rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        color: white;
+        letter-spacing: 0.02em;
+    }
+    .pinfo-badge--teal  { background: linear-gradient(135deg,#0d9488,#0f766e); }
+    .pinfo-badge--red   { background: #C0392B; }
+    .pinfo-badge--amber { background: #f59e0b; }
+    .pinfo-badge--pink  { background: #C0392B; }
+    .pinfo-badge--sky   { background: linear-gradient(135deg,#0ea5e9,#0284c7); }
+    .pinfo-badge--oct   { background: linear-gradient(110deg,#8B6914,#C49A1C); }
+
+    .pinfo-brand {
+        font-size: 0.82rem;
+        font-weight: 700;
+        color: var(--primary);
+        letter-spacing: 0.04em;
+        margin-bottom: 0.25rem;
+        text-transform: uppercase;
+    }
+    .pinfo-title {
+        font-size: 1.55rem !important;
+        font-weight: 800 !important;
+        line-height: 1.2 !important;
+        color: #1e293b !important;
+        margin-bottom: 0.65rem !important;
+        padding-right: 2.5rem; /* room for absolute fav */
+    }
+
+    .pinfo-size {
+        font-size: 0.88rem;
+        color: #64748b;
+        margin-bottom: 0.85rem;
+        font-weight: 500;
+    }
+
+    /* Trust signals */
+    .pinfo-trust-signals {
+        display: flex;
+        flex-direction: column;
+        gap: 0.55rem;
+        margin: 0.85rem 0 0.25rem;
+    }
+    .pinfo-trust-item {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.7rem 1rem;
+        background: #f8faf8;
+        border: 1px solid #e4ede4;
+        border-radius: 10px;
+    }
+    .pinfo-trust-item > i {
+        font-size: 1.05rem;
+        color: var(--primary);
+        width: 20px;
+        text-align: center;
+        flex-shrink: 0;
+    }
+    .pinfo-trust-item > div {
+        display: flex;
+        flex-direction: column;
+        line-height: 1.3;
+    }
+    .pinfo-trust-item strong {
+        font-size: 0.83rem;
+        font-weight: 700;
+        color: #1e293b;
+    }
+    .pinfo-trust-item span {
+        font-size: 0.75rem;
+        color: #64748b;
+    }
+
+    .pinfo-divider {
+        height: 1px;
+        background: #f1f5f9;
+        margin: 1.1rem 0;
+    }
+    .pinfo-price-row {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+    }
+    .pinfo-price-main {
+        font-size: 2rem !important;
+        font-weight: 800 !important;
+        color: var(--primary) !important;
+        line-height: 1 !important;
+    }
+    .pinfo-price-orig {
+        font-size: 1rem !important;
+        text-decoration: line-through !important;
+        color: #94a3b8 !important;
+        font-weight: 500 !important;
+        line-height: 1 !important;
+    }
+    .pinfo-actions {
+        display: flex !important;
+        flex-direction: row;
+        align-items: stretch;
+        gap: 0.65rem;
+        flex-wrap: wrap;
+    }
+    .pinfo-qty { flex-shrink: 0; height: 52px !important; }
+    .pinfo-btn-atc {
+        flex: 2;
+        min-width: 0;
+        height: 52px;
+        border-radius: 12px;
+        font-weight: 700;
+        font-size: 0.95rem;
+        background: var(--primary) !important;
+        color: white !important;
+        border: none !important;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        transition: background .2s;
+    }
+    .pinfo-btn-atc:hover:not(:disabled) { background: #2f4a2e !important; }
+    .pinfo-btn-buy {
+        flex: 1;
+        min-width: 0;
+        height: 52px;
+        border-radius: 12px;
+        font-weight: 700;
+        font-size: 0.95rem;
+        background: #f1f5f9 !important;
+        border: none !important;
+        color: var(--primary) !important;
+        transition: background .2s;
+        white-space: nowrap;
+    }
+    .pinfo-btn-buy:hover:not(:disabled) { background: #e2e8f0 !important; }
+    /* Favorite button inside card */
+    .pinfo-fav {
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        background: #f8fafc;
+        border: 1.5px solid #e2e8f0;
+        color: #94a3b8;
+        font-size: 1.1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+        cursor: pointer;
+        z-index: 5 !important;
+        flex-shrink: 0;
+    }
+    .pinfo-fav:hover { border-color: #fda4af; color: #f43f5e; background: #fff1f2; }
+    .pinfo-fav.active { color: #f43f5e; border-color: #fda4af; background: #fff1f2; }
+    /* stretch card to match gallery height on desktop */
+    @media (min-width: 769px) {
+        .product-info-column { display: flex; flex-direction: column; }
+        .pinfo-card { flex: 1; }
+    }
+    /* Full-width accordion section below the grid */
+    .product-accordion-section {
+        padding: 2rem 0 0.5rem;
+    }
+    @media (max-width: 768px) {
+        .pinfo-card { padding: 1.25rem; border-radius: 16px; }
+        .pinfo-title { font-size: 1.25rem !important; }
+        .pinfo-price-main { font-size: 1.5rem !important; }
+        .pinfo-actions { flex-wrap: wrap; }
+        .pinfo-btn-atc { flex: 3; }
+        .pinfo-btn-buy { flex: 2; }
+        .mobile-price-fix .price.discounted,
+        .mobile-price-fix .price.main-price { font-size: 1.5rem !important; }
+        .mobile-price-fix .price.original { font-size: 0.85rem !important; }
+        .mobile-price-fix .discount-badge { font-size: 0.7rem !important; padding: 0.2rem 0.35rem !important; }
+    }
+
     /* Variant pills */
     .vpill {
         padding: 0.55rem 1.1rem;
@@ -654,127 +1013,355 @@
     }
 
     @media (hover: hover) {
-        .btn-add-to-cart-light:hover:not(:disabled) {
-            background: #a7f3d0 !important;
-            /* Slightly darker Emerald 200 */
-            transform: translateY(-2px);
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        .btn-add-to-cart-light:not(.pinfo-btn-atc):hover:not(:disabled) {
+            background: #e2e8f0 !important;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.08);
+        }
+        .pinfo-btn-atc:hover:not(:disabled) {
+            background: #3a5538 !important;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(79,93,78,.25);
+        }
+        .pinfo-btn-buy:hover:not(:disabled) {
+            background: #e8f0e7 !important;
+            color: var(--primary) !important;
+            transform: translateY(-1px);
         }
     }
 
     .btn-add-to-cart-light:active:not(:disabled) {
         transform: translateY(0);
     }
+    /* Hide gallery favorite btn — shown in info card instead */
+    .product-gallery .btn-favorite { display: none !important; }
 
-    /* Responsive Action Bar */
-    .mobile-action-bar {
+    /* ── Sticky Product Bar ─────────────────────────────────────── */
+    #sticky-product-bar {
+        position: fixed;
+        top: 70px; /* sits just below the navbar (70px when scrolled) */
+        left: 0;
+        right: 0;
+        z-index: 9000; /* above content, below navbar (9999) */
+        background: rgba(255,255,255,0.98);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border-bottom: 1px solid #e2e8f0;
+        box-shadow: 0 4px 24px rgba(0,0,0,0.10);
+        transform: translateY(calc(-100% - 70px));
+        transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        will-change: transform;
+    }
+    #sticky-product-bar.spb-visible {
+        transform: translateY(0);
+    }
+    .spb-inner {
+        max-width: 1280px;
+        margin: 0 auto;
+        padding: 0.55rem 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0;
+    }
+    /* Left: product info */
+    .spb-product {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        flex: 1 1 0;
+        min-width: 0;
+        padding-right: 1.25rem;
+    }
+    .spb-thumb {
+        width: 50px;
+        height: 50px;
+        object-fit: contain;
+        border-radius: 10px;
+        background: #f8f9fa;
+        flex-shrink: 0;
+        padding: 4px;
+        border: 1px solid #eef0f3;
+    }
+    .spb-info {
+        min-width: 0;
+    }
+    .spb-name {
+        font-size: 0.875rem;
+        font-weight: 700;
+        color: #1e293b;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 280px;
+        line-height: 1.3;
+    }
+    .spb-unit-price {
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+        margin-top: 0.15rem;
+        font-size: 0.78rem;
+        color: #64748b;
+        font-weight: 500;
+    }
+    .spb-unit-orig {
+        text-decoration: line-through;
+        color: #94a3b8;
+    }
+    /* Vertical divider — hidden */
+    .spb-vdivider {
         display: none;
     }
+    /* Center: total price */
+    .spb-total-block {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 0 1.5rem;
+        flex-shrink: 0;
+    }
+    .spb-unit-line {
+        font-size: 0.72rem;
+        color: #94a3b8;
+        font-weight: 500;
+        line-height: 1;
+        margin-bottom: 0.2rem;
+    }
+    .spb-total-row {
+        display: flex;
+        align-items: baseline;
+        gap: 0.35rem;
+    }
+    .spb-total-label {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.07em;
+        color: #94a3b8;
+        font-weight: 600;
+    }
+    .spb-total-price {
+        font-size: 1.35rem;
+        font-weight: 800;
+        color: var(--primary);
+        line-height: 1.2;
+        letter-spacing: -0.01em;
+    }
+    /* Right: actions */
+    .spb-actions {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex-shrink: 0;
+        padding-left: 1.25rem;
+    }
+    /* Mobile-only qty: hidden on desktop */
+    .spb-mobile-qty {
+        display: none;
+    }
+    .spb-qty {
+        height: 42px !important;
+        min-width: 90px;
+    }
+    .spb-atc-btn {
+        height: 42px;
+        padding: 0 1.25rem;
+        border-radius: 10px;
+        font-weight: 700;
+        font-size: 0.875rem;
+        background: var(--primary);
+        border: none;
+        color: white;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        white-space: nowrap;
+        cursor: pointer;
+        transition: background 0.15s, transform 0.12s;
+    }
+    .spb-atc-btn:hover:not(:disabled) {
+        background: #3a5538 !important;
+        color: white;
+        transform: translateY(-1px);
+    }
+    .spb-atc-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+    .spb-buy-btn {
+        height: 42px;
+        padding: 0 1.25rem;
+        border-radius: 10px;
+        font-weight: 700;
+        font-size: 0.875rem;
+        background: #f1f5f9;
+        border: 1.5px solid #e2e8f0;
+        color: #1e293b;
+        white-space: nowrap;
+        cursor: pointer;
+        transition: background 0.15s, transform 0.12s;
+    }
+    .spb-buy-btn:hover:not(:disabled) {
+        background: #e8f0e7;
+        border-color: var(--primary);
+        color: var(--primary);
+        transform: translateY(-1px);
+    }
+    .spb-buy-btn:disabled { opacity: 0.55; cursor: not-allowed; }
 
+    /* ── Mobile: always-visible bar at bottom ── */
     @media (max-width: 768px) {
-        .mobile-action-bar {
-            display: flex;
-            position: fixed;
+        #sticky-product-bar {
+            top: auto;
             bottom: 70px;
-            /* Above bottom navigation */
-            left: 0;
-            width: 100%;
-            background: white;
-            padding: 0.6rem 1rem;
-            box-shadow: 0 -8px 20px rgba(0, 0, 0, 0.1);
-            z-index: 3000;
-            border-top: 1px solid #f1f5f9;
-            padding-bottom: calc(0.6rem + env(safe-area-inset-bottom));
+            z-index: 9500;
+            border-bottom: none;
+            border-top: 1px solid #e2e8f0;
+            box-shadow: 0 -4px 24px rgba(0,0,0,0.10);
+            transform: none !important;
+            transition: none !important;
+            background: #fff;
+        }
+        /* Single-row layout */
+        .spb-inner {
+            padding: 0.65rem 1rem;
+            flex-wrap: nowrap;
+            gap: 0.5rem;
             align-items: center;
-            justify-content: space-between;
         }
-
-        .desktop-action-container {
-            display: none !important;
+        /* Hide desktop-only elements + mobile qty */
+        .spb-product,
+        .spb-vdivider,
+        .spb-actions .spb-qty,
+        .spb-mobile-qty,
+        .spb-total-label {
+            display: none;
         }
-
-        /* Add padding to body to prevent content being hidden behind bar */
-        body {
-            padding-bottom: 80px !important;
+        /* Price block: shrink-to-fit on left */
+        .spb-total-block {
+            flex-shrink: 0;
+            flex-direction: column;
+            align-items: flex-start;
+            justify-content: center;
+            padding: 0;
+            gap: 0;
         }
+        .spb-total-row {
+            display: flex;
+            align-items: baseline;
+            gap: 0;
+        }
+        .spb-total-price {
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: #1e293b;
+            line-height: 1;
+        }
+        /* Buttons fill remaining space */
+        .spb-actions {
+            flex: 1;
+            flex-direction: row;
+            padding-left: 0;
+            gap: 0.45rem;
+        }
+        .spb-atc-btn {
+            flex: 2;
+            justify-content: center;
+            padding: 0 0.75rem;
+            height: 44px;
+            font-size: 0.85rem;
+            gap: 0.35rem;
+        }
+        .spb-atc-btn .spb-btn-label { display: inline; }
+        .spb-buy-btn {
+            flex: 1;
+            text-align: center;
+            padding: 0 0.5rem;
+            height: 44px;
+            font-size: 0.85rem;
+        }
+        .desktop-action-container { display: none !important; }
+        body { padding-bottom: 130px !important; }
     }
 </style>
 
 
 {% if related_products %}
-<div class="container container-wide">
-    <div class="related-products-section">
-        <h2 class="section-title" style="margin-bottom: 3rem;">Produkte të Ngjashme</h2>
-        <div class="product-grid">
-            {% for related in related_products %}
-            <div class="product-card">
-                <div class="product-image">
-                    <img src="{{ related.image_url|cld(300) }}" alt="{{ related.name }}">
-                    <div class="badge-stack">
-                      {% if related.discount_price %}
-                      <div class="special-offer-badge red-badge">Oferta Speciale</div>
-                      {% endif %}
-                      {% if related.is_best_seller %}
-                      <div class="best-seller-badge">Më i Shituri</div>
-                      {% endif %}
-                      {% if related.is_pharmacist_choice %}
-                      <div class="pharmacist-badge"><i class="fas fa-user-md"></i> Farmacisti</div>
-                      {% endif %}
-                    </div>
-
-                    {% if related.in_stock == False %}
-                    <div class="out-of-stock-overlay">
-                        <span>Jashtë Stokut</span>
-                    </div>
+<div id="relatedProductsSection" class="container container-wide" style="padding-top: 3rem; padding-bottom: 3rem; overflow: hidden;">
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1.5rem; flex-wrap:wrap; gap:1rem;">
+        <h2 style="font-family:'Cormorant Garamond',serif; font-size:1.75rem; font-weight:700; color:var(--hp-charcoal,#2B2B2B); margin:0;">Produkte të Ngjashme</h2>
+        <a href="{{ url_for('main.products') }}" style="font-size:0.85rem; font-weight:600; color:var(--primary); text-decoration:none;">Shiko të gjitha &rarr;</a>
+    </div>
+    <div class="hp-carousel-outer" style="position:relative; overflow:hidden;">
+    <button type="button" class="hp-carousel-arrow hp-prev" onclick="hpScrollCarousel(this,-1)"><i class="fas fa-chevron-left"></i></button>
+    <button type="button" class="hp-carousel-arrow hp-next" onclick="hpScrollCarousel(this,1)"><i class="fas fa-chevron-right"></i></button>
+    <div class="hp-carousel" style="display:flex; gap:1rem; overflow-x:auto; scroll-snap-type:x mandatory; scroll-behavior:smooth; scrollbar-width:none; padding-bottom:0.5rem;">
+        {% for related in related_products %}
+        {% set has_discount = related.discount_price or related.auto_oct_discount %}
+        <div class="hp-card" onclick="location.href='{{ url_for('main.product_detail', product_id=related._id) }}'"
+            style="flex:0 0 calc((100% - 5rem)/6); min-width:0; scroll-snap-align:start; background:white; border-radius:16px; box-shadow:0 2px 12px rgba(0,0,0,.06); overflow:hidden; cursor:pointer; display:flex; flex-direction:column; transition:transform .18s,box-shadow .18s;">
+            <div class="hp-card-img" style="position:relative; aspect-ratio:1/1; overflow:hidden; background:transparent;">
+                <img src="{{ related.image_url|cld(400) }}" alt="{{ related.name }}"
+                    style="width:100%; height:100%; object-fit:contain; object-position:center; padding:1rem; display:block; box-sizing:border-box; opacity:0; position:relative; z-index:1;"
+                    loading="lazy"
+                    onload="this.style.opacity='1';this.style.transition='opacity 0.25s';var s=this.parentElement.querySelector('.img-shimmer');if(s)s.classList.add('hidden')"
+                    onerror="this.style.opacity='0.35';this.src='/static/img/placeholder.png';var s=this.parentElement.querySelector('.img-shimmer');if(s)s.classList.add('hidden')">
+                <div style="position:absolute; top:0.5rem; left:0.5rem; display:flex; flex-direction:column; gap:0.3rem; z-index:5;">
+                    {% if related.auto_oct_discount %}
+                    <span class="hp-card-badge hp-card-badge--oct">-5%</span>
+                    {% elif related.discount_price %}
+                    <span class="hp-card-badge">Ofertë</span>
                     {% endif %}
-
-                    <button
-                        class="btn-favorite {{ 'active' if (current_user.is_authenticated and related.favorites and current_user.id in related.favorites) or (not current_user.is_authenticated and related._id|string in session.get('liked_products', [])) else '' }}"
-                        onclick="toggleFavorite(this, '{{ related._id }}')">
-                        <i
-                            class="{{ 'fas' if (current_user.is_authenticated and related.favorites and current_user.id in related.favorites) or (not current_user.is_authenticated and related._id|string in session.get('liked_products', [])) else 'far' }} fa-heart"></i>
-                    </button>
-                    <a href="{{ url_for('main.product_detail', product_id=related._id) }}"
-                        class="product-card-link-overlay"></a>
+                    {% if related.is_best_seller %}
+                    <span class="hp-card-badge best-seller-badge">Më i Shituri</span>
+                    {% endif %}
                 </div>
-                <div class="product-info">
-                    <span class="product-category">{{ related.category }}</span>
-                    <h3 class="product-title">{{ related.name }}</h3>
-                    {% if related.variants and related.variants|length > 0 %}
-                    {% set og = (related.option_groups[0]) if related.option_groups and related.option_groups|length > 0 else none %}
-                    {% if og %}{% set vals = og['values']|map(attribute='value')|list %}{% set label = og.name %}
-                    {% else %}{% set attr_types = [] %}{% for v in related.variants %}{% for k in v.get('attributes',{}).keys() %}{% if k not in attr_types %}{% set _ = attr_types.append(k) %}{% endif %}{% endfor %}{% endfor %}{% set vals = [] %}{% if attr_types %}{% set first_key = attr_types[0] %}{% for v in related.variants %}{% set vv = v.get('attributes',{}).get(first_key) %}{% if vv and vv not in vals %}{% set _ = vals.append(vv) %}{% endif %}{% endfor %}{% endif %}{% set label = attr_types[0] if attr_types else '' %}{% endif %}
-                    {% if vals %}<div class="variant-values-row">{% for val in vals[:3] %}<span class="vv-chip">{{ val }}</span>{% endfor %}{% if vals|length > 3 %}<span class="vv-more">+{{ vals|length - 3 }}</span>{% endif %}</div>{% endif %}
-                    {% elif related.size %}<span class="product-size">{{ related.size }}</span>{% endif %}
-                    <div class="price-container" style="margin-top: 0.75rem;">
-                        {% if related.discount_price %}
-                        <span class="price discounted">€{{ "%.2f"|format(related.discount_price) }}</span>
-                        <span class="price original">€{{ "%.2f"|format(related.price) }}</span>
-                        {% else %}
-                        <span class="price">€{{ "%.2f"|format(related.price) }}</span>
-                        {% endif %}
-                    </div>
+                {% if related.in_stock == False %}
+                <div style="position:absolute;inset:0;background:rgba(255,255,255,.7);display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;color:#64748b;">Jashtë Stokut</div>
+                {% endif %}
+                <button class="btn-favorite {{ 'active' if (current_user.is_authenticated and related.favorites and current_user.id in related.favorites) or (not current_user.is_authenticated and related._id|string in session.get('liked_products', [])) else '' }}"
+                    onclick="event.stopPropagation(); toggleFavorite(this, '{{ related._id }}')"
+                    style="position:absolute;top:0.4rem;right:0.4rem;width:30px;height:30px;font-size:0.8rem;z-index:5;">
+                    <i class="{{ 'fas' if (current_user.is_authenticated and related.favorites and current_user.id in related.favorites) or (not current_user.is_authenticated and related._id|string in session.get('liked_products', [])) else 'far' }} fa-heart"></i>
+                </button>
+                <div class="img-shimmer"></div>
+            </div>
+            <div class="hp-card-body" style="padding:0.8rem 0.9rem 0.5rem; flex:1; display:flex; flex-direction:column;">
+                <div style="font-size:0.65rem; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:0.2rem;">{{ related.category }}</div>
+                <div style="font-size:0.82rem; font-weight:600; color:var(--hp-charcoal,#2B2B2B); line-height:1.3; margin-bottom:0.5rem; flex:1; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">{{ related.name }}</div>
+                <div style="display:flex; align-items:center; gap:0.4rem; flex-wrap:wrap;">
+                    {% if related.auto_oct_discount %}
+                    <span style="font-size:0.7rem; text-decoration:line-through; color:#94a3b8;">€{{ "%.2f"|format(related.display_original_price) }}</span>
+                    <span style="font-size:1rem; font-weight:800; color:var(--primary);">€{{ "%.2f"|format(related.display_price) }}</span>
+                    {% elif related.discount_price %}
+                    <span style="font-size:0.7rem; text-decoration:line-through; color:#94a3b8;">€{{ "%.2f"|format(related.price) }}</span>
+                    <span style="font-size:1rem; font-weight:800; color:var(--primary);">€{{ "%.2f"|format(related.discount_price) }}</span>
+                    {% else %}
+                    <span style="font-size:1rem; font-weight:800; color:var(--primary);">€{{ "%.2f"|format(related.display_price) }}</span>
+                    {% endif %}
                 </div>
             </div>
-            {% endfor %}
+            {% if related.in_stock != False %}
+            <button class="hp-card-atc" onclick="event.stopPropagation(); hpAddToCart(this, '{{ related._id }}')">
+                <span class="hp-atc-label"><i class="fas fa-plus"></i> Shto në shportë</span>
+                <span class="hp-atc-done"><i class="fas fa-check"></i> U shtua</span>
+            </button>
+            {% endif %}
         </div>
-        <div style="text-align: center; margin-top: 2rem;">
-            <a href="{{ url_for('main.products') }}" class="btn btn-outline" style="border: 2px solid var(--primary-main); color: var(--primary-main); padding: 0.75rem 2rem; border-radius: 8px; font-weight: 600; text-decoration: none; display: inline-block; transition: all 0.3s ease;">
-                Shiko të Gjitha Produktet
-            </a>
-        </div>
+        {% endfor %}
+    </div>
     </div>
 </div>
 {% endif %}
 </div>
+<div style="padding-bottom: 4rem;"></div>
 
 <!-- Premium Product Lightbox -->
 <div id="imageModal" class="image-modal">
     <div class="modal-overlay" onclick="closeImageModal()"></div>
 
     <div class="modal-controls">
-        <button class="modal-btn zoom-btn" onclick="toggleZoom(event)" title="Zmadho">
-            <i class="fas fa-search-plus"></i>
+        <button class="modal-btn zoom-btn" id="zoomInBtn" onclick="adjustZoom(0.5)" title="Zmadho">
+            <i class="fas fa-plus"></i>
+        </button>
+        <button class="modal-btn zoom-btn" id="zoomOutBtn" onclick="adjustZoom(-0.5)" title="Zvogëlo">
+            <i class="fas fa-minus"></i>
         </button>
         <button class="modal-btn close-btn" onclick="closeImageModal()" title="Mbyll">
             <i class="fas fa-times"></i>
@@ -877,62 +1464,52 @@
         resetZoom();
     }
 
-    let zoomTimeout;
-    function toggleZoom(e) {
-        if (e) {
-            if (typeof e.preventDefault === 'function') e.preventDefault();
-            if (typeof e.stopPropagation === 'function') e.stopPropagation();
-        }
-        const wrapper = document.getElementById('modalImageWrapper');
-        const img = document.getElementById('modalImg');
-        const zoomBtn = document.querySelector('.zoom-btn i');
+    let currentZoom = 1;
+    const MIN_ZOOM = 1;
+    const MAX_ZOOM = 4;
 
-        isZoomed = !isZoomed;
-        wrapper.classList.toggle('zoomed', isZoomed);
-
-        if (isZoomed) {
-            wrapper.style.touchAction = 'none'; // Disable browser native zoom/pan to use our custom logic
-        } else {
-            wrapper.style.touchAction = 'auto';
-            img.style.transform = '';
-            img.style.transformOrigin = 'center center';
-        }
-
-        if (zoomBtn) {
-            zoomBtn.className = isZoomed ? 'fas fa-search-minus' : 'fas fa-search-plus';
-        }
+    function adjustZoom(delta) {
+        currentZoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, currentZoom + delta));
+        applyZoom();
     }
 
-    // Free Zoom: Throttled Mouse Tracking logic
+    function applyZoom() {
+        const img = document.getElementById('modalImg');
+        const wrapper = document.getElementById('modalImageWrapper');
+        img.style.transform = currentZoom > 1 ? `scale(${currentZoom})` : '';
+        img.style.transformOrigin = 'center center';
+        isZoomed = currentZoom > 1;
+        wrapper.classList.toggle('zoomed', isZoomed);
+        wrapper.style.touchAction = isZoomed ? 'none' : 'auto';
+        wrapper.style.cursor = isZoomed ? 'grab' : 'default';
+        document.getElementById('zoomOutBtn').disabled = currentZoom <= MIN_ZOOM;
+        document.getElementById('zoomInBtn').disabled = currentZoom >= MAX_ZOOM;
+    }
+
+    // Mouse pan when zoomed
     let ticking = false;
     document.getElementById('modalImageWrapper').addEventListener('mousemove', function (e) {
         if (!isZoomed || ticking) return;
-
         ticking = true;
         requestAnimationFrame(() => {
             const img = document.getElementById('modalImg');
             const r = this.getBoundingClientRect();
-
-            const x = e.clientX - r.left;
-            const y = e.clientY - r.top;
-
-            const xPercent = (x / r.width) * 100;
-            const yPercent = (y / r.height) * 100;
-
+            const xPercent = ((e.clientX - r.left) / r.width) * 100;
+            const yPercent = ((e.clientY - r.top) / r.height) * 100;
             img.style.transformOrigin = `${xPercent}% ${yPercent}%`;
             ticking = false;
         });
     });
 
-    // Add click-to-zoom on the image itself
-    document.getElementById('modalImg').addEventListener('click', toggleZoom);
-
     function resetZoom() {
+        currentZoom = 1;
         isZoomed = false;
+        const img = document.getElementById('modalImg');
         const wrapper = document.getElementById('modalImageWrapper');
-        const zoomBtn = document.querySelector('.zoom-btn i');
-        if (wrapper) wrapper.classList.remove('zoomed');
-        if (zoomBtn) zoomBtn.classList.replace('fa-search-minus', 'fa-search-plus');
+        if (img) { img.style.transform = ''; img.style.transformOrigin = 'center center'; }
+        if (wrapper) { wrapper.classList.remove('zoomed'); wrapper.style.cursor = 'default'; }
+        if (document.getElementById('zoomOutBtn')) document.getElementById('zoomOutBtn').disabled = true;
+        if (document.getElementById('zoomInBtn')) document.getElementById('zoomInBtn').disabled = false;
     }
 
     function closeImageModal() {
@@ -1076,13 +1653,14 @@
     }
 
     .modal-image-wrapper.zoomed {
-        cursor: zoom-out;
-        touch-action: pinch-zoom;
+        cursor: grab;
+        touch-action: none;
     }
 
-    .modal-image-wrapper.zoomed .modal-content {
-        transform: scale(2.5);
-        cursor: crosshair;
+    .modal-btn:disabled {
+        opacity: 0.35;
+        cursor: not-allowed;
+        pointer-events: none;
     }
 
     .modal-content {
@@ -1263,6 +1841,28 @@
             height: 60px !important;
         }
     }
+
+    /* Define hp-olive for cards on this page (set in .home-page scope elsewhere) */
+    :root { --hp-olive: #4F5D4E; --hp-beige: #EFE7DE; --hp-charcoal: #2B2B2B; }
+
+
+    /* Related products: fix hp-card-atc button & image bg */
+    #relatedProductsSection .hp-card-atc {
+        background: var(--hp-olive, #4F5D4E) !important;
+    }
+    #relatedProductsSection .hp-card-img {
+        background: #fff !important;
+    }
+
+
+    /* hp-carousel hide scrollbar in detail page */
+    #relatedProductsSection .hp-carousel::-webkit-scrollbar { display: none; }
+    #relatedProductsSection .hp-card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,.1); }
+    /* Last card snaps to right edge so it's always fully visible */
+    #relatedProductsSection .hp-carousel .hp-card:last-child { scroll-snap-align: end !important; }
+
+    /* Smooth transition on modal content */
+    .modal-content { transition: transform 0.25s cubic-bezier(0.16,1,0.3,1), transform-origin 0s; }
 </style>
 {% endblock %}
 

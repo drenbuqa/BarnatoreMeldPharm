@@ -1,35 +1,4 @@
-window.cldUrl=function(url,width){if(!url||url.indexOf('res.cloudinary.com')===-1||url.indexOf('/upload/')===-1)return url;if(/\/upload\/[^/]*f_auto/.test(url))return url;const transform=width?`f_auto,q_auto,w_${width}`:'f_auto,q_auto';return url.replace('/upload/',`/upload/${transform}/`);};window.updateResultsCount=function(count){const countEl=document.getElementById('current-count');if(countEl)countEl.textContent=count;};window.createProductCardHtml=function(p){const discountPercentage=p.discount_price?Math.round(((p.price-p.discount_price)/p.price)*100):0;const discountBadgeText=p.offer_badge_text&&!String(p.offer_badge_text).startsWith('-')?p.offer_badge_text:(p.discount_price?`-${discountPercentage}%`:'');const isFav=p.is_favorite?'active':'';const heartIconClass=p.is_favorite?'fas':'far';return`
-        <div class="product-card fade-in-section" data-id="${p.id}" data-category="${p.category}" data-name="${p.name}">
-            <div class="product-image">
-                <div class="badge-stack">
-                ${p.discount_price ? `<div class="special-offer-badge red-badge">Oferta Speciale</div>` : ''}
-                ${p.labels && p.labels.includes('set') ? `<div class="set-badge"><i class="fas fa-layer-group"></i>Set</div>` : ''}
-                ${p.labels && p.labels.includes('limited') ? `<div class="limited-badge"><i class="fas fa-clock"></i>I Kufizuar</div>` : ''}
-                ${p.labels && p.labels.includes('new_arrival') ? `<div class="new-arrival-badge"><i class="fas fa-sparkles"></i>I Ri</div>` : ''}
-                ${p.labels && p.labels.includes('sale') && !p.discount_price ? `<div class="sale-label-badge"><i class="fas fa-tag"></i>Ofertë</div>` : ''}
-                ${p.is_best_seller ? `<div class="best-seller-badge">Më i Shituri</div>` : ''}
-                ${p.is_pharmacist_choice ? `<div class="pharmacist-badge"><i class="fas fa-user-md"></i>Farmacisti</div>` : ''}
-                </div>
-                <div class="img-shimmer"></div>
-                <img src="${window.cldUrl(p.image_url, 400)}" alt="${p.name}"
-                     loading="lazy"
-                     onload="this.classList.add('loaded');var s=this.parentElement.querySelector('.img-shimmer');if(s)s.classList.add('hidden')"
-                     onerror="this.src='/static/img/placeholder.png';this.classList.add('error','loaded');var s=this.parentElement.querySelector('.img-shimmer');if(s)s.classList.add('hidden')">
-                <button class="btn-favorite ${isFav}" onclick="toggleFavorite(this, '${p.id}')">
-                    <i class="${heartIconClass} fa-heart"></i>
-                </button>
-                <a href="/product/${p.id}" class="product-card-link-overlay"></a>
-            </div>
-            <div class="product-info">
-                <span class="product-category" style="color: var(--primary); font-weight: 700;">${p.brand || p.category}</span>
-                <h3 class="product-title">${p.name}</h3>
-                ${p.size ? `<span class="product-size">${p.size}</span>` : ''}
-                <div class="price-container">
-                    ${p.discount_price ? `<span class="price discounted">€${parseFloat(p.discount_price).toFixed(2)}</span><span class="price original">€${parseFloat(p.price).toFixed(2)}</span><span class="discount-badge">${discountBadgeText}</span>` : `<span class="price">€${parseFloat(p.price).toFixed(2)}</span>`}
-                </div>
-            </div>
-        </div>
-    `;};window.renderProducts=function(products,grid){if(!grid)return;const _emr=document.getElementById('products-end-msg');if(_emr)_emr.style.display='none';grid.innerHTML=products.map(p=>window.createProductCardHtml(p)).join('');const cards=grid.querySelectorAll('.product-card');if(cards.length>0){setTimeout(()=>{cards.forEach(card=>card.classList.add('visible'));},50);}};window.appendProducts=function(products,grid){if(!grid)return;const tempDiv=document.createElement('div');tempDiv.innerHTML=products.map(p=>window.createProductCardHtml(p)).join('');while(tempDiv.firstChild){const child=tempDiv.firstChild;grid.appendChild(child);setTimeout(()=>child.classList.add('visible'),50);}};window.createSkeletonHtml=function(){return`
+window.cldUrl=function(url,width){if(!url||url.indexOf('res.cloudinary.com')===-1||url.indexOf('/upload/')===-1)return url;if(/\/upload\/[^/]*f_auto/.test(url))return url;const transform=width?`f_auto,q_auto,w_${width}`:'f_auto,q_auto';return url.replace('/upload/',`/upload/${transform}/`);};window.updateResultsCount=function(count){const countEl=document.getElementById('current-count');if(countEl)countEl.textContent=count;};window.createProductCardHtml=function(p){const discountPercentage=p.discount_price?Math.round(((p.display_original_price||p.price)-(p.display_price||p.discount_price))/(p.display_original_price||p.price)*100):0;const discountBadgeText=p.offer_badge_text&&!String(p.offer_badge_text).startsWith('-')?p.offer_badge_text:`-${discountPercentage}%`;const isFav=p.is_favorite?'active':'';const heartIconClass=p.is_favorite?'fas':'far';const isOct=!!p.auto_oct_discount;const displayPrice=parseFloat(p.display_price||p.price||0).toFixed(2);const origPrice=parseFloat(p.display_original_price||p.price||0).toFixed(2);const hasDiscount=p.discount_price||p.auto_oct_discount;let badgeHtml='';if(p.offer_type==='multi_buy'){badgeHtml=`<span class="hp-card-badge">${p.offer_badge_text||'1+1'}</span>`;}else if(isOct){badgeHtml=`<span class="hp-card-badge hp-card-badge--oct">-5%</span>`;}else if(p.discount_price){badgeHtml=`<span class="hp-card-badge">Ofertë Speciale</span>`;}if(p.labels&&p.labels.includes('set'))badgeHtml+=`<div class="set-badge"><i class="fas fa-layer-group"></i> Set</div>`;if(p.labels&&p.labels.includes('limited'))badgeHtml+=`<div class="limited-badge"><i class="fas fa-clock"></i> I Kufizuar</div>`;if(p.labels&&p.labels.includes('new_arrival'))badgeHtml+=`<div class="new-arrival-badge"><i class="fas fa-sparkles"></i> I Ri</div>`;if(p.labels&&p.labels.includes('sale')&&!p.discount_price)badgeHtml+=`<div class="sale-label-badge"><i class="fas fa-tag"></i> Ofertë</div>`;if(p.is_best_seller)badgeHtml+=`<div class="best-seller-badge">Më i Shituri</div>`;if(p.is_pharmacist_choice)badgeHtml+=`<div class="pharmacist-badge"><i class="fas fa-user-md"></i> Farmacisti</div>`;let priceHtml='';if(p.offer_type==='multi_buy'){priceHtml=`<span class="hp-price-main">€${displayPrice}</span>`;}else if(hasDiscount){priceHtml=`<span class="hp-price-main">€${displayPrice}</span><span class="hp-price-orig">€${origPrice}</span><span class="hp-price-pct${isOct?' hp-price-pct--oct':''}">${isOct?'-5%':discountBadgeText}</span>`;}else{priceHtml=`<span class="hp-price-main">€${displayPrice}</span>`;}const deadline=isOct?'2026-10-31T23:59:59':(p.discount_until||'');const urgencyHtml=deadline?`<div class="hp-urgency" data-deadline="${deadline}"><i class="fas fa-clock"></i><span class="hp-urgency-text"></span></div>`:`<div class="hp-urgency hp-urgency--placeholder" aria-hidden="true"></div>`;const atcHtml=p.in_stock!==false?`<button class="hp-card-atc" onclick="event.stopPropagation();hpAddToCart(this,'${p.id}')"><span class="hp-atc-label"><i class="fas fa-plus"></i> Shto në shportë</span><span class="hp-atc-done"><i class="fas fa-check"></i> U shtua</span></button>`:'';const octClass=isOct?' hp-card--oct':'';return`<div class="hp-card fade-in-section${octClass}" style="--hp-ivory:#F7F3EE;--hp-beige:#EFE7DE;--hp-sage:#6C7A61;--hp-olive:#4F5D4E;--hp-charcoal:#2B2B2B;--hp-muted:#7A7068;--hp-border:#E2D9CE;--hp-shadow:0 2px 16px rgba(43,43,43,0.07);--hp-radius:14px;" data-href="/product/${p.id}" onclick="window.location.href=this.dataset.href"><div class="hp-card-img"><div class="badge-stack">${badgeHtml}</div><div class="img-shimmer"></div><img src="${window.cldUrl(p.image_url,400)}" alt="${p.name}" loading="lazy" onload="this.classList.add('loaded');var s=this.parentElement.querySelector('.img-shimmer');if(s)s.classList.add('hidden')" onerror="this.src='/static/img/placeholder.png';this.classList.add('error','loaded');var s=this.parentElement.querySelector('.img-shimmer');if(s)s.classList.add('hidden')">${p.in_stock===false?'<div class="hp-out-stock"><span>Jashtë Stokut</span></div>':''}<button class="hp-card-fav ${isFav}" onclick="event.stopPropagation();toggleFavorite(this,'${p.id}')"><i class="${heartIconClass} fa-heart"></i></button></div><div class="hp-card-body"><span class="hp-card-brand">${p.brand||p.category||''}</span><span class="hp-card-name">${p.name}</span>${p.size?`<span class="hp-card-size">${p.size}</span>`:''}<div class="hp-price-row">${priceHtml}</div>${urgencyHtml}</div>${atcHtml}</div>`;};window.renderProducts=function(products,grid){if(!grid)return;const _emr=document.getElementById('products-end-msg');if(_emr)_emr.style.display='none';grid.innerHTML=products.map(p=>window.createProductCardHtml(p)).join('');const cards=grid.querySelectorAll('.hp-card');if(cards.length>0){setTimeout(()=>{cards.forEach(card=>card.classList.add('visible'));},50);}if(window.hpInitUrgency)window.hpInitUrgency();};window.appendProducts=function(products,grid){if(!grid)return;const tempDiv=document.createElement('div');tempDiv.innerHTML=products.map(p=>window.createProductCardHtml(p)).join('');while(tempDiv.firstChild){const child=tempDiv.firstChild;grid.appendChild(child);setTimeout(()=>child.classList.add('visible'),50);}if(window.hpInitUrgency)window.hpInitUrgency();};window.createSkeletonHtml=function(){return`
         <div class="skeleton-card">
             <div class="skeleton skeleton-img"></div>
             <div class="skeleton skeleton-text header"></div>
@@ -152,7 +121,7 @@ bar.innerHTML=`<span style="color:#166534"><i class="fas fa-check-circle"></i> <
                     <div class="empty-mini-cart">
                         <i class="fas fa-shopping-basket fa-3x mb-3"></i>
                         <p>Shporta juaj është boshe.</p>
-                    </div>`;}else{let html='';data.cart_items.forEach(item=>{const price=item.discount_price||item.price;const productUrl=`/product/${item._id}`;html+=`
+                    </div>`;}else{let html='';data.cart_items.forEach(item=>{const displayPrice=parseFloat(item.price||0).toFixed(2);const origPrice=parseFloat(item.original_price||item.price||0).toFixed(2);const hasSaving=item.item_savings>0;const priceHtml=hasSaving?`<span class="mini-item-price">€${displayPrice}</span><span style="text-decoration:line-through;color:#94a3b8;font-size:0.78rem;margin-left:4px;">€${origPrice}</span>`:`<span class="mini-item-price">€${displayPrice}</span>`;const productUrl=`/product/${item._id}`;html+=`
                     <div class="mini-cart-item" data-id="${item._id}" onclick="window.location.href='${productUrl}';">
                         <a href="${productUrl}" class="mini-cart-img-wrapper" onclick="event.stopPropagation()">
                             <img src="${window.cldUrl(item.image_url, 120)}" alt="${item.name}" class="mini-cart-img">
@@ -160,7 +129,7 @@ bar.innerHTML=`<span style="color:#166534"><i class="fas fa-check-circle"></i> <
                         <div class="mini-cart-info">
                             <a href="${productUrl}" class="mini-item-name" onclick="event.stopPropagation()">${item.name}</a>
                             <div class="mini-item-meta">
-                                <span class="mini-item-price">€${parseFloat(price).toFixed(2)}</span>
+                                ${priceHtml}
                                 <div class="mini-qty-control" onclick="event.stopPropagation()">
                                     <button class="qty-control-btn minus" onclick="updateMiniQty(event, '${item._id}', 'decrease')">
                                         <i class="fas fa-minus"></i>
@@ -191,14 +160,14 @@ const mobileContainer=document.querySelector('.mobile-cart-items-list');const mo
                         <a href="#" class="clear-cart-link-mobile" onclick="clearCart(event)">
                             <i class="fas fa-trash-alt"></i> Pastro Shportën
                         </a>`;}
-let html='';data.cart_items.forEach(item=>{const price=item.discount_price||item.price;const productUrl=`/product/${item._id}`;html+=`
+let html='';data.cart_items.forEach(item=>{const displayPrice=parseFloat(item.price||0).toFixed(2);const origPrice=parseFloat(item.original_price||item.price||0).toFixed(2);const hasSaving=item.item_savings>0;const mobilePriceHtml=hasSaving?`<p class="price">€${displayPrice} <span style="text-decoration:line-through;color:#94a3b8;font-size:0.78rem;margin-left:3px;">€${origPrice}</span></p>`:`<p class="price">€${displayPrice}</p>`;const productUrl=`/product/${item._id}`;html+=`
                     <div class="mobile-mini-cart-item" data-id="${item._id}" onclick="window.location.href='${productUrl}';">
                         <div class="mobile-mini-cart-img">
                             <img src="${window.cldUrl(item.image_url, 120)}" alt="${item.name}">
                         </div>
                         <div class="mobile-mini-cart-info">
                             <p class="name">${item.name}</p>
-                            <p class="price">€${parseFloat(price).toFixed(2)}</p>
+                            ${mobilePriceHtml}
                             ${item.offer_type === 'multi_buy' ? `<p class="offer-hint"style="margin: 0.2rem 0 0; color: #0f766e; font-size: 0.72rem; font-weight: 600; line-height: 1.3;"><span style="background:#ecfeff; border:1px solid #99f6e4; padding:0.12rem 0.45rem; border-radius:999px; margin-right:0.35rem; display:inline-block;">${item.offer_badge_text||'1+1'}</span>${item.offer_detail_text||'Merr 1 produkt falas kur blen këtë ofertë.'}</p>` : ''}
                             <div class="qty-control-mobile" onclick="event.stopPropagation()">
                                 <button class="qty-btn" onclick="updateMiniQty(event, '${item._id}', 'decrease')">-</button>

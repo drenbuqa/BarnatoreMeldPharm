@@ -45,7 +45,7 @@ def login():
             mongo.db.users.update_one({'_id': user._data['_id']},
                 {'$set': {'failed_logins': 0, 'locked_until': None}})
 
-            login_user(user)
+            login_user(user, remember=True)
             try:
                 db_cart = User.get_cart(user.id)
                 session_cart = session.get('cart', {})
@@ -94,7 +94,7 @@ def register():
 
         hashed_pw = bcrypt.generate_password_hash(password).decode('utf-8')
         user = User.create(username, email, hashed_pw)
-        login_user(user)
+        login_user(user, remember=True)
 
         session_cart = session.get('cart', {})
         if session_cart:
@@ -186,7 +186,7 @@ def google_callback():
         # Update google_id if missing
         User.link_google(user.id, google_id, avatar)
 
-    login_user(user)
+    login_user(user, remember=True)
 
     # Merge guest cart
     try:

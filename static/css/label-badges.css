@@ -7,8 +7,8 @@
 }
 
 .best-seller-badge {
-    background: #9a6b24 !important;
-    box-shadow: 0 2px 7px rgba(154, 107, 36, 0.2) !important;
+    background: #f59e0b !important;
+    box-shadow: 0 2px 7px rgba(245, 158, 11, 0.2) !important;
 }
 
 .pharmacist-badge {
@@ -20,6 +20,13 @@
 .set-badge {
     background: #68766c !important;
     box-shadow: 0 2px 7px rgba(104, 118, 108, 0.18) !important;
+}
+
+/* October promo discount badge — golden gradient */
+.oct-badge {
+    background: linear-gradient(110deg, #8B6914, #C49A1C) !important;
+    color: #fff !important;
+    box-shadow: 0 2px 7px rgba(139, 105, 20, 0.25) !important;
 }
 
 /* Discount percentages use a quiet brand tint instead of alert red. */

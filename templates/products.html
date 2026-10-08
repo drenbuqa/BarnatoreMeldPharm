@@ -251,86 +251,70 @@
 
                 <div id="productGrid" class="product-grid">
                     {% for product in products %}
-                    <div class="product-card fade-in-section">
-                        <div class="product-image">
+                    <div class="hp-card fade-in-section{% if product.auto_oct_discount %} hp-card--oct{% endif %}" data-href="{{ url_for('main.product_detail', product_id=product._id) }}" onclick="window.location.href=this.dataset.href">
+                        <div class="hp-card-img">
                             <div class="badge-stack">
-                            {% if product.offer_type == 'multi_buy' %}
-                            <div class="special-offer-badge red-badge">{{ product.offer_badge_text or '1+1' }}</div>
-                            {% elif product.discount_price %}
-                            <div class="special-offer-badge red-badge">Oferta Speciale</div>
-                            {% endif %}
-                            {% if product.labels and 'set' in product.labels %}
-                            <div class="set-badge"><i class="fas fa-layer-group"></i> Set</div>
-                            {% endif %}
-                            {% if product.labels and 'limited' in product.labels %}
-                            <div class="limited-badge"><i class="fas fa-clock"></i> I Kufizuar</div>
-                            {% endif %}
-                            {% if product.labels and 'new_arrival' in product.labels %}
-                            <div class="new-arrival-badge"><i class="fas fa-sparkles"></i> I Ri</div>
-                            {% endif %}
-                            {% if product.labels and 'sale' in product.labels and not product.discount_price %}
-                            <div class="sale-label-badge"><i class="fas fa-tag"></i> Ofertë</div>
-                            {% endif %}
-                            {% if product.is_best_seller %}
-                            <div class="best-seller-badge">Më i Shituri</div>
-                            {% endif %}
-                            {% if product.is_pharmacist_choice %}
-                            <div class="pharmacist-badge"><i class="fas fa-user-md"></i> Farmacisti</div>
-                            {% endif %}
+                                {% if product.offer_type == 'multi_buy' %}
+                                    <span class="hp-card-badge">{{ product.offer_badge_text or '1+1' }}</span>
+                                {% elif product.auto_oct_discount %}
+                                    <span class="hp-card-badge hp-card-badge--oct">-5%</span>
+                                {% elif product.discount_price %}
+                                    <span class="hp-card-badge">Ofertë Speciale</span>
+                                {% endif %}
+                                {% if product.labels and 'set' in product.labels %}<div class="set-badge"><i class="fas fa-layer-group"></i> Set</div>{% endif %}
+                                {% if product.labels and 'limited' in product.labels %}<div class="limited-badge"><i class="fas fa-clock"></i> I Kufizuar</div>{% endif %}
+                                {% if product.labels and 'new_arrival' in product.labels %}<div class="new-arrival-badge"><i class="fas fa-sparkles"></i> I Ri</div>{% endif %}
+                                {% if product.labels and 'sale' in product.labels and not product.discount_price %}<div class="sale-label-badge"><i class="fas fa-tag"></i> Ofertë</div>{% endif %}
+                                {% if product.is_best_seller %}<div class="best-seller-badge">Më i Shituri</div>{% endif %}
+                                {% if product.is_pharmacist_choice %}<div class="pharmacist-badge"><i class="fas fa-user-md"></i> Farmacisti</div>{% endif %}
                             </div>
                             <div class="img-shimmer"></div>
                             <img src="{{ product.image_url|cld(400) }}" alt="{{ product.name }}" loading="lazy"
-                                 onload="this.classList.add('loaded');var s=this.parentElement.querySelector('.img-shimmer');if(s)s.classList.add('hidden')"
-                                 onerror="this.src='/static/img/placeholder.png';this.classList.add('error','loaded');var s=this.parentElement.querySelector('.img-shimmer');if(s)s.classList.add('hidden')">
-                            <button
-                                class="btn-favorite {{ 'active' if (current_user.is_authenticated and product.favorites and current_user.id in product.favorites) or (not current_user.is_authenticated and product._id|string in session.get('liked_products', [])) else '' }}"
-                                onclick="toggleFavorite(this, '{{ product._id }}')">
-                                <i
-                                    class="{{ 'fas' if (current_user.is_authenticated and product.favorites and current_user.id in product.favorites) or (not current_user.is_authenticated and product._id|string in session.get('liked_products', [])) else 'far' }} fa-heart"></i>
+                                onload="this.classList.add('loaded');var s=this.parentElement.querySelector('.img-shimmer');if(s)s.classList.add('hidden')"
+                                onerror="this.src='/static/img/placeholder.png';this.classList.add('error','loaded');var s=this.parentElement.querySelector('.img-shimmer');if(s)s.classList.add('hidden')">
+                            {% if product.in_stock == False %}<div class="hp-out-stock"><span>Jashtë Stokut</span></div>{% endif %}
+                            <button class="hp-card-fav {{ 'active' if (current_user.is_authenticated and product.favorites and current_user.id in product.favorites) or (not current_user.is_authenticated and product._id|string in session.get('liked_products', [])) else '' }}"
+                                onclick="event.stopPropagation(); toggleFavorite(this, '{{ product._id }}')">
+                                <i class="{{ 'fas' if (current_user.is_authenticated and product.favorites and current_user.id in product.favorites) or (not current_user.is_authenticated and product._id|string in session.get('liked_products', [])) else 'far' }} fa-heart"></i>
                             </button>
-                            <a href="{{ url_for('main.product_detail', product_id=product._id) }}"
-                                class="product-card-link-overlay"></a>
                         </div>
-                        <div class="product-info">
-                            <span class="product-category" style="color: var(--primary); font-weight: 700;">{{
-                                product.brand if product.brand else product.category }}</span>
-                            <h3 class="product-title">{{ product.name }}</h3>
+                        <div class="hp-card-body">
+                            <span class="hp-card-brand">{{ product.brand if product.brand else product.category }}</span>
+                            <span class="hp-card-name">{{ product.name }}</span>
                             {% if product.variants and product.variants|length > 0 %}
-                            {% set og = (product.option_groups[0]) if product.option_groups and product.option_groups|length > 0 else none %}
-                            {% if og %}
-                              {% set vals = og['values'] | map(attribute='value') | list %}
-                              {% set label = og.name %}
-                            {% else %}
-                              {% set attr_types = [] %}
-                              {% for v in product.variants %}{% for k in v.get('attributes',{}).keys() %}{% if k not in attr_types %}{% set _ = attr_types.append(k) %}{% endif %}{% endfor %}{% endfor %}
-                              {% set vals = [] %}
-                              {% if attr_types %}{% set first_key = attr_types[0] %}{% for v in product.variants %}{% set vv = v.get('attributes',{}).get(first_key) %}{% if vv and vv not in vals %}{% set _ = vals.append(vv) %}{% endif %}{% endfor %}{% endif %}
-                              {% set label = attr_types[0] if attr_types else '' %}
-                            {% endif %}
-                            {% if vals %}
-                            <div class="variant-values-row">
-                              {% for val in vals[:3] %}<span class="vv-chip">{{ val }}</span>{% endfor %}
-                              {% if vals|length > 3 %}<span class="vv-more">+{{ vals|length - 3 }}</span>{% endif %}
-                            </div>
-                            {% endif %}
-                            {% elif product.size %}<span class="product-size">{{ product.size }}</span>{% endif %}
-                            <div class="price-container">
+                                {% set og = (product.option_groups[0]) if product.option_groups and product.option_groups|length > 0 else none %}
+                                {% if og %}{% set vals = og['values'] | map(attribute='value') | list %}{% else %}
+                                {% set attr_types = [] %}{% for v in product.variants %}{% for k in v.get('attributes',{}).keys() %}{% if k not in attr_types %}{% set _ = attr_types.append(k) %}{% endif %}{% endfor %}{% endfor %}
+                                {% set vals = [] %}{% if attr_types %}{% set first_key = attr_types[0] %}{% for v in product.variants %}{% set vv = v.get('attributes',{}).get(first_key) %}{% if vv and vv not in vals %}{% set _ = vals.append(vv) %}{% endif %}{% endfor %}{% endif %}{% endif %}
+                                {% if vals %}<div class="variant-values-row">{% for val in vals[:3] %}<span class="vv-chip">{{ val }}</span>{% endfor %}{% if vals|length > 3 %}<span class="vv-more">+{{ vals|length - 3 }}</span>{% endif %}</div>{% endif %}
+                            {% elif product.size %}<span class="hp-card-size">{{ product.size }}</span>{% endif %}
+                            <div class="hp-price-row">
                                 {% if product.offer_type == 'multi_buy' %}
-                                <span class="price">€{{ "%.2f"|format(product.display_price) }}</span>
-                                {% elif product.discount_price %}
-                                <span class="price discounted">€{{ "%.2f"|format(product.discount_price) }}</span>
-                                <span class="price original">€{{ "%.2f"|format(product.display_original_price) }}</span>
-                                {% if product.offer_badge_text and not product.offer_badge_text.startswith('-') %}
-                                <span class="discount-badge">{{ product.offer_badge_text }}</span>
+                                    <span class="hp-price-main">€{{ "%.2f"|format(product.display_price) }}</span>
+                                {% elif product.discount_price or product.auto_oct_discount %}
+                                    <span class="hp-price-main">€{{ "%.2f"|format(product.display_price) }}</span>
+                                    <span class="hp-price-orig">€{{ "%.2f"|format(product.display_original_price) }}</span>
+                                    <span class="hp-price-pct{% if product.auto_oct_discount %} hp-price-pct--oct{% endif %}">
+                                        {% if product.auto_oct_discount %}-5%{% elif product.offer_badge_text and not product.offer_badge_text.startswith('-') %}{{ product.offer_badge_text }}{% else %}-{{ ((product.display_original_price - product.discount_price) / product.display_original_price * 100)|round|int }}%{% endif %}
+                                    </span>
                                 {% else %}
-                                <span class="discount-badge">-{{ ((product.display_original_price - product.discount_price) /
-                                    product.display_original_price * 100)|round|int }}%</span>
-                                {% endif %}
-                                {% else %}
-                                <span class="price">€{{ "%.2f"|format(product.display_price) }}</span>
+                                    <span class="hp-price-main">€{{ "%.2f"|format(product.display_price) }}</span>
                                 {% endif %}
                             </div>
+                            {% if product.auto_oct_discount or product.discount_until %}
+                                <div class="hp-urgency" data-deadline="{% if product.auto_oct_discount %}2026-10-31T23:59:59{% else %}{{ product.discount_until.strftime('%Y-%m-%dT%H:%M:%S') if product.discount_until else '' }}{% endif %}">
+                                    <i class="fas fa-clock"></i><span class="hp-urgency-text"></span>
+                                </div>
+                            {% else %}
+                                <div class="hp-urgency hp-urgency--placeholder" aria-hidden="true"></div>
+                            {% endif %}
                         </div>
+                        {% if product.in_stock != False %}
+                        <button class="hp-card-atc" onclick="event.stopPropagation(); hpAddToCart(this, '{{ product._id }}')">
+                            <span class="hp-atc-label"><i class="fas fa-plus"></i> Shto në shportë</span>
+                            <span class="hp-atc-done"><i class="fas fa-check"></i> U shtua</span>
+                        </button>
+                        {% endif %}
                     </div>
                     {% endfor %}
 

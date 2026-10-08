@@ -52,6 +52,15 @@
         color: var(--primary);
     }
 
+    .order-summary {
+        align-self: start;
+    }
+
+    .order-summary.is-sticky {
+        position: fixed !important;
+        z-index: 10;
+    }
+
     .sticky-checkout-bar {
         display: none;
     }
@@ -136,7 +145,7 @@
 
         <h1 class="section-title" style="margin-bottom: 3rem;">Përfundo Porosinë</h1>
 
-        <div class="checkout-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 3rem;">
+        <div class="checkout-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; align-items: start;">
             <!-- Checkout Form -->
             <div class="checkout-form">
                 <form action="{{ url_for('cart.place_order') }}" method="POST" id="checkout-form">
@@ -260,7 +269,7 @@
 
             <!-- Order Summary -->
             <div class="order-summary"
-                style="background: var(--bg-card); padding: 2rem; border-radius: var(--radius-lg); height: fit-content; box-shadow: var(--shadow-sm);">
+                style="background: var(--bg-card); padding: 2rem; border-radius: var(--radius-lg); box-shadow: var(--shadow-sm);">
                 <h3 style="margin-bottom: 1.5rem;">Përmbledhja</h3>
 
                 <div style="margin-bottom: 2rem;">
@@ -511,6 +520,69 @@
             });
         });
     })();
+
+    // Sticky order summary — JS implementation (CSS sticky blocked by ancestor overflow context)
+    (function () {
+        if (window.innerWidth < 769) return;
+
+        var summary = document.querySelector('.order-summary');
+        var grid    = document.querySelector('.checkout-grid');
+        if (!summary || !grid) return;
+
+        var TOP = 90;
+        var naturalLeft = 0;
+        var naturalWidth = 0;
+        var ph = null;
+
+        function measure() {
+            if (summary.classList.contains('is-sticky')) {
+                summary.classList.remove('is-sticky');
+                summary.style.top = summary.style.left = summary.style.width = '';
+                if (ph) ph.style.display = 'none';
+            }
+            var r = summary.getBoundingClientRect();
+            naturalLeft  = r.left;
+            naturalWidth = r.width;
+        }
+
+        function update() {
+            var gridRect = grid.getBoundingClientRect();
+            var summaryH = summary.offsetHeight;
+
+            if (gridRect.top <= TOP) {
+                if (!ph) {
+                    ph = document.createElement('div');
+                    summary.parentNode.insertBefore(ph, summary);
+                }
+                ph.style.cssText = 'display:block;width:' + naturalWidth + 'px;height:' + summaryH + 'px;';
+
+                summary.classList.add('is-sticky');
+                var clampedTop = TOP;
+                var spaceLeft = gridRect.bottom - summaryH - TOP;
+                if (spaceLeft < 0) clampedTop = TOP + spaceLeft;
+                summary.style.top   = clampedTop + 'px';
+                summary.style.left  = naturalLeft + 'px';
+                summary.style.width = naturalWidth + 'px';
+            } else {
+                summary.classList.remove('is-sticky');
+                summary.style.top = summary.style.left = summary.style.width = '';
+                if (ph) ph.style.display = 'none';
+            }
+        }
+
+        setTimeout(function () { measure(); update(); }, 150);
+        window.addEventListener('scroll', update, { passive: true });
+        window.addEventListener('resize', function () {
+            if (window.innerWidth < 769) {
+                summary.classList.remove('is-sticky');
+                summary.style.cssText = '';
+                if (ph) ph.style.display = 'none';
+                return;
+            }
+            measure(); update();
+        });
+    })();
+
 </script>
 {% endblock %}
 
