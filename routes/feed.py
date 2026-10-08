@@ -79,5 +79,10 @@ def meta_product_feed():
         if p.get('is_best_seller'):
             SubElement(item, 'g:custom_label_1').text = 'Best Seller'
 
+        # custom_label_2: main category
+        category = _esc(p.get('category', ''))
+        if category:
+            SubElement(item, 'g:custom_label_2').text = category
+
     xml_str = parseString(tostring(rss, encoding='unicode')).toprettyxml(indent='  ', encoding='UTF-8')
     return Response(xml_str, mimetype='application/xml; charset=UTF-8')
