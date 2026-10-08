@@ -4,6 +4,7 @@ from models.order import Order
 from models.user import User
 from models.analytics import log_event
 from flask_login import current_user
+from routes.promo import effective_price_with_promo, apply_oct_5pct_discount
 cart_bp = Blueprint('cart', __name__, url_prefix='/cart')
 
 
@@ -22,11 +23,23 @@ def make_cart_key(product_id, variant_id=None):
 
 
 def _effective_price(product, variant_id):
-    """Return (price, discount_price) respecting variant selection."""
+    """Return (price, discount_price) respecting variant selection and active promos."""
     if variant_id:
-        return Product.get_variant_price(product, variant_id)
-    return float(product.get('price') or 0), \
-           (float(product['discount_price']) if product.get('discount_price') else None)
+        base_price, base_disc = Product.get_variant_price(product, variant_id)
+    else:
+        base_price = float(product.get('price') or 0)
+        base_disc = float(product['discount_price']) if product.get('discount_price') else None
+    return effective_price_with_promo(product, base_price, base_disc)
+
+
+def _make_pricing_tmp(product, price, discount_price):
+    """Build a tmp dict for get_offer_pricing with promo discount marked active."""
+    tmp = dict(product)
+    tmp['price'] = price
+    tmp['discount_price'] = discount_price
+    if discount_price is not None:
+        tmp['offer_status'] = 'active'
+    return tmp
 
 
 def _variant_display_name(product, variant_id):
@@ -67,9 +80,7 @@ def calculate_cart_totals(cart, country='Kosova'):
         if product:
             qty_int = int(quantity)
             price, discount_price = _effective_price(product, variant_id)
-            tmp = dict(product)
-            tmp['price'] = price
-            tmp['discount_price'] = discount_price
+            tmp = _make_pricing_tmp(product, price, discount_price)
             pricing = Product.get_offer_pricing(tmp, qty_int)
             total_price += pricing['item_total']
             total_items += qty_int
@@ -158,9 +169,7 @@ def view_cart():
         if product:
             qty_int = int(quantity)
             price, discount_price = _effective_price(product, variant_id)
-            tmp = dict(product)
-            tmp['price'] = price
-            tmp['discount_price'] = discount_price
+            tmp = _make_pricing_tmp(product, price, discount_price)
             pricing = Product.get_offer_pricing(tmp, qty_int)
             item_total = pricing['item_total']
             item_savings = pricing['item_savings']
@@ -244,11 +253,17 @@ def add_to_cart(product_id):
             p = Product.get_by_id(product_id)
             if p:
                 price, disc = _effective_price(p, variant_id)
+                _pval = float(disc if disc else price or 0)
                 pixel_data = {
                     'product_id': product_id,
                     'product_name': p.get('name', ''),
-                    'product_price': float(disc if disc else price or 0),
+                    'product_price': _pval,
                 }
+                try:
+                    from routes.capi import send_add_to_cart
+                    send_add_to_cart(request, product_id, _pval)
+                except Exception:
+                    pass
         except Exception:
             pass
         return jsonify({
@@ -287,9 +302,7 @@ def get_mini_cart_data():
             if product:
                 qty = int(quantity)
                 price, discount_price = _effective_price(product, variant_id)
-                tmp = dict(product)
-                tmp['price'] = price
-                tmp['discount_price'] = discount_price
+                tmp = _make_pricing_tmp(product, price, discount_price)
                 pricing = Product.get_offer_pricing(tmp, qty)
                 item_total = float(pricing['item_total'])
                 item_savings = float(pricing['item_savings'])
@@ -383,9 +396,7 @@ def update_quantity(cart_key, action):
         if product and cart_key in cart:
             new_item_qty = cart[cart_key]
             price, discount_price = _effective_price(product, variant_id)
-            tmp = dict(product)
-            tmp['price'] = price
-            tmp['discount_price'] = discount_price
+            tmp = _make_pricing_tmp(product, price, discount_price)
             pricing = Product.get_offer_pricing(tmp, new_item_qty)
             item_total = pricing['item_total']
             item_savings = pricing['item_savings']
@@ -438,9 +449,7 @@ def set_quantity(cart_key):
         item_savings = 0
         if product:
             price, discount_price = _effective_price(product, variant_id)
-            tmp = dict(product)
-            tmp['price'] = price
-            tmp['discount_price'] = discount_price
+            tmp = _make_pricing_tmp(product, price, discount_price)
             pricing = Product.get_offer_pricing(tmp, new_qty)
             item_total = pricing['item_total']
             item_savings = pricing['item_savings']
@@ -509,9 +518,7 @@ def checkout():
         if product:
             qty_int = int(quantity)
             price, discount_price = _effective_price(product, vid)
-            tmp = dict(product)
-            tmp['price'] = price
-            tmp['discount_price'] = discount_price
+            tmp = _make_pricing_tmp(product, price, discount_price)
             pricing = Product.get_offer_pricing(tmp, qty_int)
             item_total = pricing['item_total']
             item_savings = pricing['item_savings']
@@ -539,6 +546,14 @@ def checkout():
     grand_total = total_price + shipping_cost
 
     log_event('bc', user_id=current_user.id if current_user.is_authenticated else None)
+
+    # CAPI: InitiateCheckout
+    try:
+        from routes.capi import send_initiate_checkout
+        _pids = [str(item.get('_id')) for item in cart_items if item.get('_id')]
+        send_initiate_checkout(request, _pids, float(total_price))
+    except Exception:
+        pass
 
     return render_template('checkout.html', cart_items=cart_items, total_price=total_price, shipping_cost=shipping_cost, grand_total=grand_total)
 
@@ -605,9 +620,7 @@ def place_order():
         product = Product.get_by_id(pid)
         if product:
             price, discount_price = _effective_price(product, vid)
-            tmp = dict(product)
-            tmp['price'] = price
-            tmp['discount_price'] = discount_price
+            tmp = _make_pricing_tmp(product, price, discount_price)
             pricing = Product.get_offer_pricing(tmp, int(quantity))
             item_total = pricing['item_total']
             total_price += item_total
@@ -698,6 +711,14 @@ def order_success(order_id):
 
     if fire_pixel:
         log_event('pu', user_id=current_user.id if current_user.is_authenticated else None)
+        # CAPI: Purchase (event_id matches browser Pixel for deduplication)
+        try:
+            from routes.capi import send_purchase
+            _pids = [str(i.get('product_id')) for i in order.get('items', []) if i.get('product_id')]
+            _val = float(order.get('total_price') or order.get('grand_total') or 0)
+            send_purchase(request, order_id, _pids, _val)
+        except Exception:
+            pass
         # Persist to DB after response is sent so a render error can't permanently
         # block Purchase from ever firing again on this order.
         from flask import after_this_request

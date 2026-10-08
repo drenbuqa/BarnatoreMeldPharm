@@ -180,6 +180,8 @@ def _rank_best_random(rows, limit):
 
 REGULAR_PRODUCTS_HOME_COUNT = 24  # multiple of 6/4/3/2 so the grid never ends with a partial row
 
+from routes.promo import apply_oct_5pct_discount as _apply_oct_5pct_discount, is_oct_promo_active as _is_oct_promo_active
+
 
 def _get_home_payload():
     now = time.time()
@@ -224,6 +226,25 @@ def _get_home_payload():
     regular_products = Product._decorate_products(_rank_best_random(_regular_rows, REGULAR_PRODUCTS_HOME_COUNT))
     total_pages_regular = 2 if has_more_regular else 1
 
+    # Category spotlight carousels
+    _suplemente_rows = list(mongo.db.products.find({
+        "category": "Suplemente & Vitamina",
+        "is_deleted": {"$ne": True},
+    }).limit(100))
+    suplemente_products = Product._decorate_products(_rank_best_random(_suplemente_rows, 16))
+    suplemente_products = _apply_oct_5pct_discount(suplemente_products)
+
+    _kujdes_rows = list(mongo.db.products.find({
+        "category": "Kujdes Personal & Higjienë",
+        "is_deleted": {"$ne": True},
+    }).limit(100))
+    kujdes_products = Product._decorate_products(_rank_best_random(_kujdes_rows, 16))
+    kujdes_products = _apply_oct_5pct_discount(kujdes_products)
+
+    # Apply virtual Oct 5% discount to non-discounted products in all homepage sections
+    regular_products   = _apply_oct_5pct_discount(regular_products)
+    best_sellers       = _apply_oct_5pct_discount(best_sellers)
+
     offer_banners = Banner.get_active()
 
     from models.categories import CATEGORIES
@@ -254,6 +275,9 @@ def _get_home_payload():
         'total_pages_regular': total_pages_regular,
         'offer_banners': offer_banners,
         'category_images': category_images,
+        'suplemente_products': suplemente_products,
+        'kujdes_products': kujdes_products,
+        'show_oct_promo': _is_oct_promo_active(),
     }
     _HOME_CACHE['payload'] = payload
     # Cache expires at the next full minute, so offer start times take effect within 60s
@@ -817,7 +841,10 @@ def index():
                             total_pages_regular=payload['total_pages_regular'],
                             categories=CATEGORIES,
                             offer_banners=payload['offer_banners'],
-                            category_images=payload.get('category_images', {}))
+                            category_images=payload.get('category_images', {}),
+                            suplemente_products=payload.get('suplemente_products', []),
+                            kujdes_products=payload.get('kujdes_products', []),
+                            show_oct_promo=payload.get('show_oct_promo', False))
 
 @main.route('/guest_login')
 def guest_login():
@@ -882,6 +909,10 @@ def products():
                 brand_map[normalized] = rb.strip()
     available_brands = sorted(brand_map.values(), key=lambda x: x.lower())
     
+    # Apply oct promo before serializing (AJAX or HTML)
+    if _is_oct_promo_active():
+        products = _apply_oct_5pct_discount(list(products))
+
     # If it's an AJAX request (from our new filter system)
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.args.get('ajax') == '1':
         results = []
@@ -906,8 +937,12 @@ def products():
                 'is_pharmacist_choice': p.get('is_pharmacist_choice', False),
                 'featured': p.get('featured', False),
                 'labels': p.get('labels', []),
-                'is_favorite': (current_user.is_authenticated and p.get('favorites') and current_user.id in p.get('favorites')) or 
-                               (not current_user.is_authenticated and str(p['_id']) in session.get('liked_products', []))
+                'is_favorite': (current_user.is_authenticated and p.get('favorites') and current_user.id in p.get('favorites')) or
+                               (not current_user.is_authenticated and str(p['_id']) in session.get('liked_products', [])),
+                'auto_oct_discount': p.get('auto_oct_discount', False),
+                'display_price': p.get('display_price', p.get('price')),
+                'display_original_price': p.get('display_original_price'),
+                'discount_until': p.get('discount_until'),
             })
         
         return jsonify({
@@ -979,8 +1014,18 @@ def product_detail(product_id):
     from models.analytics import log_event
     log_event('vp', product_id=product_id,
               user_id=current_user.id if current_user.is_authenticated else None)
-    
-    
+
+    # CAPI: ViewContent
+    try:
+        from routes.capi import send_view_content
+        from routes.promo import effective_price_with_promo
+        _bp = float(product.get('price') or 0)
+        _bd = float(product['discount_price']) if product.get('discount_price') else None
+        _, _sp = effective_price_with_promo(product, _bp, _bd)
+        send_view_content(request, product_id, float(_sp if _sp is not None else _bp))
+    except Exception:
+        pass
+
     favorite_usernames = []
     if product.get('favorites'):
         for uid in product.get('favorites'):
@@ -989,7 +1034,12 @@ def product_detail(product_id):
                 favorite_usernames.append(u.username)
 
     related_products = Product.get_related(product.get('category'), product.get('_id'), limit=12)
-    # The limit is set to 12 directly inside get_related
+
+    # Apply in-memory October discount if active and product has no existing discount
+    if _is_oct_promo_active():
+        applied = _apply_oct_5pct_discount([product])
+        product = applied[0] if applied else product
+        related_products = _apply_oct_5pct_discount(list(related_products))
 
     return render_template('product_detail.html',
                             product=product,

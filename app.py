@@ -24,6 +24,7 @@ from routes.main import main
 from routes.auth import auth
 from routes.cart import cart_bp
 from routes.admin import admin
+from routes.feed import feed_bp
 from models.image_utils import cld
 
 csrf = CSRFProtect()
@@ -36,6 +37,7 @@ oauth = OAuth()
 load_dotenv(override=True)
 
 app = Flask(__name__)
+app.config['TEMPLATES_AUTO_RELOAD'] = True
 app.jinja_env.filters['cld'] = cld
 
 # Trust headers from Render's proxy (Crucial for HTTPS)
@@ -188,7 +190,7 @@ def inject_cart_count():
 
         try:
             cart = session.get('cart', {})
-            if cart and mongo and mongo.db:
+            if cart and mongo is not None and mongo.db is not None:
                 from bson import ObjectId
                 product_ids = []
                 for pid in cart.keys():
@@ -204,17 +206,21 @@ def inject_cart_count():
                         if product:
                             try:
                                 product['_id'] = str(product['_id'])
-                                p_price = float(product.get('discount_price') or product.get('price') or 0.0)
+                                from routes.promo import effective_price_with_promo
                                 original_price = float(product.get('price') or 0.0)
+                                base_disc = float(product['discount_price']) if product.get('discount_price') else None
+                                _, disc_price = effective_price_with_promo(product, original_price, base_disc)
+                                p_price = float(disc_price if disc_price is not None else original_price)
                                 qty_int = int(qty)
                                 item_total = p_price * qty_int
-                                item_savings = (original_price - p_price) * qty_int if product.get('discount_price') else 0.0
+                                item_savings = (original_price - p_price) * qty_int if disc_price is not None else 0.0
                                 cart_total += item_total
                                 cart_savings += item_savings
                                 cart_count += qty_int
                                 product['quantity'] = qty_int
                                 product['item_total'] = item_total
                                 product['item_savings'] = item_savings
+                                product['display_price'] = p_price
                                 cart_items.append(product)
                             except:
                                 continue
@@ -265,6 +271,7 @@ app.register_blueprint(main)
 app.register_blueprint(auth)
 app.register_blueprint(cart_bp)
 app.register_blueprint(admin)
+app.register_blueprint(feed_bp)
 
 # Error Handlers
 @app.errorhandler(404)

@@ -16,11 +16,11 @@
     <link rel="preconnect" href="https://cdnjs.cloudflare.com">
     <link rel="preconnect" href="https://res.cloudinary.com" crossorigin>
     <link rel="dns-prefetch" href="https://res.cloudinary.com">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css', v=13) }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css', v=17) }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/cart-recommendations.css', v=12) }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/mobile.css', v=9) }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/chatbot-new.css', v=2) }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/label-badges.css', v=2) }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/label-badges.css', v=3) }}">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&family=Cormorant+Garamond:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <!-- Font Awesome: load asynchronously to avoid render-blocking -->
     <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
@@ -74,9 +74,8 @@
              * no-op'd because the pixel wasn't loaded yet at that point.
              */
             if (window._metaPixelPendingEvent) {
-                fbq('track',
-                    window._metaPixelPendingEvent.event,
-                    window._metaPixelPendingEvent.params);
+                var _pe = window._metaPixelPendingEvent;
+                fbq('track', _pe.event, _pe.params, _pe.options || {});
                 window._metaPixelPendingEvent = null;
             }
         }
@@ -108,7 +107,7 @@
             </a>
             <div class="mobile-header-top-right">
                 <a href="{{ url_for('main.wishlist') }}" class="mobile-wishlist-btn nav-icon-btn top-row-wishlist">
-                    <i class="fas fa-heart"></i>
+                    <i class="far fa-heart"></i>
                     <span
                         class="cart-badge-wish wishlist-count {{ 'd-none' if not wishlist_count or wishlist_count == 0 else '' }}">{{
                         wishlist_count if wishlist_count else 0 }}</span>
@@ -125,7 +124,7 @@
                 <div id="searchPreviewMobile" class="search-preview-dropdown"></div>
             </div>
             <a href="{{ url_for('main.wishlist') }}" class="mobile-wishlist-btn nav-icon-btn search-row-wishlist">
-                <i class="fas fa-heart"></i>
+                <i class="far fa-heart"></i>
                 <span
                     class="cart-badge-wish wishlist-count {{ 'd-none' if not wishlist_count or wishlist_count == 0 else '' }}">{{
                     wishlist_count if wishlist_count else 0 }}</span>
@@ -195,8 +194,12 @@
                                     <a href="{{ url_for('main.product_detail', product_id=item._id) }}"
                                         class="mini-item-name" onclick="event.stopPropagation()">{{ item.name }}</a>
                                     <div class="mini-item-meta">
-                                        <span class="mini-item-price">€{{ "%.2f"|format(item.discount_price or
-                                            item.price) }}</span>
+                                        {% if item.item_savings > 0 %}
+                                        <span class="mini-item-price">€{{ "%.2f"|format(item.display_price) }}</span>
+                                        <span style="text-decoration:line-through;color:#94a3b8;font-size:0.78rem;margin-left:4px;">€{{ "%.2f"|format(item.price) }}</span>
+                                        {% else %}
+                                        <span class="mini-item-price">€{{ "%.2f"|format(item.price) }}</span>
+                                        {% endif %}
                                         <div class="mini-qty-control" onclick="event.stopPropagation()">
                                             <button class="qty-control-btn minus"
                                                 onclick="updateMiniQty(event, '{{ item._id }}', 'decrease')">
@@ -364,8 +367,8 @@
                             </div>
                             <div class="item-price-row">
                                 <div class="price-stack">
-                                    {% if item.discount_price %}
-                                    <span class="price-curr">€{{ "%.2f"|format(item.discount_price) }}</span>
+                                    {% if item.item_savings > 0 %}
+                                    <span class="price-curr">€{{ "%.2f"|format(item.display_price) }}</span>
                                     <span class="price-old">€{{ "%.2f"|format(item.price) }}</span>
                                     {% else %}
                                     <span class="price-curr">€{{ "%.2f"|format(item.price) }}</span>
@@ -470,82 +473,135 @@
 
 
     {% block footer %}
-
     <footer class="footer">
-        <!-- Map strip at top of footer -->
-        <div class="footer-map-strip">
-            <div class="footer-map-strip-info">
-                <i class="fas fa-map-marker-alt"></i>
-                <div>
-                    <strong>Barnatore Meld Pharm</strong>
-                    <span>72 Eqrem Çabej, Prishtinë 10000</span>
+
+        <!-- Top trust bar -->
+        <div class="footer-trust-bar">
+            <div class="footer-trust-inner">
+                <div class="footer-trust-item">
+                    <i class="fas fa-shield-alt"></i>
+                    <span>Farmaci e Licencuar</span>
                 </div>
-                <a href="https://maps.google.com/?q=72+Eqrem+%C3%87abej+Prishtina" target="_blank" class="footer-map-btn">
-                    <i class="fas fa-map-marker-alt"></i> Shiko lokacionin
-                </a>
-            </div>
-            <div class="footer-map-embed">
-                <iframe src="https://maps.google.com/maps?q=72%20Eqrem%20%C3%87abej,%20Prishtina&t=&z=15&ie=UTF8&iwloc=&output=embed"
-                    width="100%" height="100%" style="border:0;display:block;" allowfullscreen="" loading="lazy"
-                    referrerpolicy="no-referrer-when-downgrade"></iframe>
+                <div class="footer-trust-divider"></div>
+                <div class="footer-trust-item">
+                    <i class="fas fa-truck"></i>
+                    <span>Dërgesa në Kosovë, Shqipëri & Maqedoni</span>
+                </div>
+                <div class="footer-trust-divider"></div>
+                <div class="footer-trust-item">
+                    <i class="fas fa-clock"></i>
+                    <span>E Hënë–E Shtunë 08:00–22:00</span>
+                </div>
+                <div class="footer-trust-divider"></div>
+                <div class="footer-trust-item">
+                    <i class="fas fa-headset"></i>
+                    <span>Mbështetje +383 45 590 455</span>
+                </div>
             </div>
         </div>
 
-        <div class="footer-main">
-            <div class="footer-content">
+        <!-- Main footer body -->
+        <div class="footer-body">
+            <div class="footer-grid">
 
-                <!-- Brand -->
-                <div class="footer-section">
-                    <div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:1rem;">
-                        <img src="{{ url_for('static', filename='favicon.png') }}" width="34" style="border-radius:8px;background:rgba(255,255,255,0.1);padding:3px;">
-                        <span style="font-weight:700;font-size:1rem;color:#f8fafc;">Barnatore Meld Pharm</span>
+                <!-- Col 1: Brand -->
+                <div class="footer-col footer-col-brand">
+                    <a href="{{ url_for('main.index') }}" class="footer-logo">
+                        <img src="https://res.cloudinary.com/drljgepgy/image/upload/v1788272701/ChatGPT_Image_Sep_1_2026_at_04_24_43_PM_h5kdm9.png" alt="Barnatore Meld Pharm" height="40">
+                    </a>
+                    <p class="footer-tagline">Barnatorja juaj e besuar në Prishtinë — produkte cilësore për shëndet, bukuri dhe mirëqenie të familjes.</p>
+
+                    <div class="footer-hours">
+                        <div class="footer-hours-row">
+                            <span>E Hënë – E Shtunë</span>
+                            <strong>08:00 – 22:00</strong>
+                        </div>
+                        <div class="footer-hours-row">
+                            <span>E Diel</span>
+                            <strong>08:00 – 21:00</strong>
+                        </div>
                     </div>
-                    <p style="font-size:0.85rem;color:#94a3b8;line-height:1.7;">Barnatorja juaj e besuar në Prishtinë. Produkte cilësore për shëndet dhe bukuri.</p>
-                    <div style="margin-top:1.25rem;">
-                        <p style="font-size:0.78rem;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:0.6rem;">Orari i Punës</p>
-                        <p style="font-size:0.85rem;color:#94a3b8;margin-bottom:0.25rem;">E Hënë – E Shtunë: <strong style="color:#cbd5e1;">08:00 – 22:00</strong></p>
-                        <p style="font-size:0.85rem;color:#94a3b8;">E Diel: <strong style="color:#cbd5e1;">08:00 – 21:00</strong></p>
-                    </div>
-                </div>
 
-                <!-- Links -->
-                <div class="footer-section">
-                    <h3>Navigim</h3>
-                    <ul class="footer-links">
-                        <li><a href="{{ url_for('main.index') }}"><i class="fas fa-chevron-right"></i> Ballina</a></li>
-                        <li><a href="{{ url_for('main.products') }}"><i class="fas fa-chevron-right"></i> Produktet</a></li>
-                        <li><a href="{{ url_for('main.index') }}#offers"><i class="fas fa-chevron-right"></i> Ofertat</a></li>
-                        <li><a href="{{ url_for('main.privacy') }}"><i class="fas fa-chevron-right"></i> Privatësia</a></li>
-                        <li><a href="{{ url_for('main.terms') }}"><i class="fas fa-chevron-right"></i> Kushtet</a></li>
-                    </ul>
-                </div>
-
-                <!-- Contact -->
-                <div class="footer-section">
-                    <h3>Kontakt</h3>
-                    <ul class="footer-contact-list">
-                        <li><i class="fas fa-map-marker-alt"></i><span>72 Eqrem Çabej, Prishtinë 10000</span></li>
-                        <li><i class="fas fa-phone"></i><a href="tel:+38345590455">+383 45 590 455</a></li>
-                        <li><i class="fas fa-envelope"></i><a href="mailto:meldpharm@hotmail.com">meldpharm@hotmail.com</a></li>
-                    </ul>
                     <div class="footer-socials">
-                        <a href="https://www.instagram.com/barnatoremeld/" target="_blank" title="Instagram" class="social-icon instagram"><i class="fab fa-instagram"></i></a>
-                        <a href="https://www.facebook.com/profile.php?id=100067645081992" target="_blank" title="Facebook" class="social-icon facebook"><i class="fab fa-facebook"></i></a>
-                        <a href="https://www.tiktok.com/@barnatore.meld.ph" target="_blank" title="TikTok" class="social-icon tiktok"><i class="fab fa-tiktok"></i></a>
+                        <a href="https://www.instagram.com/barnatoremeld/" target="_blank" rel="noopener" class="footer-social-btn" title="Instagram">
+                            <i class="fab fa-instagram"></i>
+                        </a>
+                        <a href="https://www.facebook.com/profile.php?id=100067645081992" target="_blank" rel="noopener" class="footer-social-btn" title="Facebook">
+                            <i class="fab fa-facebook-f"></i>
+                        </a>
+                        <a href="https://www.tiktok.com/@barnatore.meld.ph" target="_blank" rel="noopener" class="footer-social-btn" title="TikTok">
+                            <i class="fab fa-tiktok"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Col 2: Navigation -->
+                <div class="footer-col">
+                    <h4 class="footer-col-title">Navigim</h4>
+                    <ul class="footer-nav-list">
+                        <li><a href="{{ url_for('main.index') }}">Ballina</a></li>
+                        <li><a href="{{ url_for('main.products') }}">Të gjitha produktet</a></li>
+                        <li><a href="{{ url_for('main.index') }}#ofertat">Ofertat e muajit</a></li>
+                        <li><a href="{{ url_for('main.wishlist') }}">Lista e dëshirave</a></li>
+                        <li><a href="{{ url_for('cart.view_cart') }}">Shporta</a></li>
+                        <li><a href="{{ url_for('main.profile') }}">Llogaria ime</a></li>
+                        <li><a href="{{ url_for('main.privacy') }}">Politika e Privatësisë</a></li>
+                        <li><a href="{{ url_for('main.terms') }}">Kushtet e Shërbimit</a></li>
+                    </ul>
+                </div>
+
+                <!-- Col 3: Categories -->
+                <div class="footer-col">
+                    <h4 class="footer-col-title">Kategoritë</h4>
+                    <ul class="footer-nav-list">
+                        {% for cat in global_categories.keys() %}
+                        <li><a href="{{ url_for('main.products') }}?category={{ cat|urlencode }}">{{ cat }}</a></li>
+                        {% endfor %}
+                    </ul>
+                </div>
+
+                <!-- Col 4: Contact + Map -->
+                <div class="footer-col footer-col-contact">
+                    <h4 class="footer-col-title">Na Kontaktoni</h4>
+                    <ul class="footer-contact-list">
+                        <li>
+                            <span class="footer-contact-icon"><i class="fas fa-map-marker-alt"></i></span>
+                            <a href="https://maps.google.com/?q=72+Eqrem+%C3%87abej+Prishtina" target="_blank" rel="noopener">72 Eqrem Çabej, Prishtinë 10000</a>
+                        </li>
+                        <li>
+                            <span class="footer-contact-icon"><i class="fas fa-phone-alt"></i></span>
+                            <a href="tel:+38345590455">+383 45 590 455</a>
+                        </li>
+                        <li>
+                            <span class="footer-contact-icon"><i class="fas fa-envelope"></i></span>
+                            <a href="mailto:meldpharm@hotmail.com">meldpharm@hotmail.com</a>
+                        </li>
+                    </ul>
+
+                    <div class="footer-map">
+                        <iframe
+                            src="https://maps.google.com/maps?q=72%20Eqrem%20%C3%87abej,%20Prishtina&t=&z=15&ie=UTF8&iwloc=&output=embed"
+                            width="100%" height="100%" style="border:0;display:block;" allowfullscreen="" loading="lazy"
+                            referrerpolicy="no-referrer-when-downgrade" title="Lokacioni i barnatorisë">
+                        </iframe>
                     </div>
                 </div>
 
             </div>
-            <div class="footer-bottom">
-                <p style="color:#475569;">&copy; 2025 Barnatore Meld Pharm. Të gjitha të drejtat e rezervuara.</p>
-                <div style="display:flex;gap:1.5rem;flex-wrap:wrap;">
-                    <a href="{{ url_for('main.privacy') }}" style="color:#475569;">Privatësia</a>
-                    <a href="{{ url_for('main.terms') }}" style="color:#475569;">Kushtet</a>
-                    <a href="#" onclick="openCookiePreferences();return false;" style="color:#475569;">🍪 Preferencat e Cookies</a>
+        </div>
+
+        <!-- Bottom bar -->
+        <div class="footer-bottom">
+            <div class="footer-bottom-inner">
+                <p class="footer-copyright">&copy; 2026 Barnatore Meld Pharm. Të gjitha të drejtat e rezervuara.</p>
+                <div class="footer-bottom-links">
+                    <a href="{{ url_for('main.privacy') }}">Privatësia</a>
+                    <a href="{{ url_for('main.terms') }}">Kushtet</a>
+                    <a href="#" onclick="openCookiePreferences();return false;">Cookies</a>
                 </div>
             </div>
         </div>
-        </div>
+
     </footer>
     {% endblock %}
 
@@ -1275,6 +1331,67 @@
     </script>
 
     {% block pixel_events %}{% endblock %}
+<script>
+/* ── Urgency countdown (runs on all pages) ── */
+(function() {
+  var FOURTEEN_DAYS = 14 * 86400000;
+  function renderUrgency(el, deadlineMs) {
+    var diff = deadlineMs - Date.now();
+    var txt = el.querySelector('.hp-urgency-text');
+    if (diff <= 0 || diff > FOURTEEN_DAYS) { el.classList.remove('hp-urgency--visible'); return; }
+    el.classList.add('hp-urgency--visible');
+    if (!txt) return;
+    var days = Math.floor(diff / 86400000);
+    var hours = Math.floor((diff % 86400000) / 3600000);
+    txt.textContent = days >= 1 ? (days === 1 ? 'Skadon nesër' : 'Skadon pas ' + days + ' ditësh') : 'Skadon brenda ' + (hours || 1) + 'h';
+  }
+  window.hpInitUrgency = function() {
+    document.querySelectorAll('.hp-urgency[data-deadline]').forEach(function(el) {
+      if (el._urgencyInited) return;
+      el._urgencyInited = true;
+      var dl = new Date(el.dataset.deadline).getTime();
+      if (!dl || isNaN(dl)) return;
+      renderUrgency(el, dl);
+      setInterval(function() { renderUrgency(el, dl); }, 60000);
+    });
+  };
+  document.addEventListener('DOMContentLoaded', window.hpInitUrgency);
+})();
+function hpAddToCart(btn, productId) {
+  if (btn.classList.contains('hp-atc--added') || btn.disabled) return;
+  btn.disabled = true;
+  var fd = new FormData();
+  fd.append('quantity', '1');
+  var csrfMeta = document.querySelector('meta[name="csrf-token"]');
+  if (csrfMeta) fd.append('csrf_token', csrfMeta.content);
+  fetch('/cart/add/' + productId, {
+    method: 'POST',
+    headers: {'X-Requested-With': 'XMLHttpRequest'},
+    body: fd
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(d) {
+    if (d.success) {
+      btn.classList.add('hp-atc--added');
+      if (window.updateGlobalBadges) window.updateGlobalBadges(d);
+      if (window.animateCartBadges) window.animateCartBadges();
+      if (window.showToast) window.showToast('Produkti u shtua në shportë!', 'success');
+      if (window.refreshMiniCart) window.refreshMiniCart();
+      if (window.showMiniCart) window.showMiniCart();
+      setTimeout(function() { btn.classList.remove('hp-atc--added'); btn.disabled = false; }, 1800);
+    } else { btn.disabled = false; }
+  })
+  .catch(function() { btn.disabled = false; });
+}
+function hpScrollCarousel(btn, dir) {
+  var c = btn.closest('.hp-carousel-outer').querySelector('.hp-carousel');
+  var card = c.querySelector('.hp-card');
+  var gap = parseFloat(getComputedStyle(c).gap) || 16;
+  var step = card ? card.offsetWidth + gap : 220;
+  var target = Math.round(c.scrollLeft / step) * step + dir * step;
+  c.scrollTo({left: target, behavior: 'smooth'});
+}
+</script>
 </body>
 
 </html>
