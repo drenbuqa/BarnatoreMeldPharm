@@ -3,7 +3,7 @@
 {% block title %}{{ 'Ndrysho Produktin' if product else 'Shto Produkt Të Ri' }} - Meld Pharm Admin{% endblock %}
 {% block page_title %}{{ 'Ndrysho Produktin' if product else 'Shto Produkt Të Ri' }}{% endblock %}
 {% block page_action %}
-<a href="{{ url_for('admin.dashboard') }}" class="topbar-btn" style="background:#334155; color:#fff;">
+<a href="{{ request.args.get('next') or url_for('admin.products_page') }}" class="topbar-btn" style="background:#334155; color:#fff;">
     <i class="fas fa-arrow-left"></i> Kthehu
 </a>
 {% endblock %}
@@ -13,6 +13,7 @@
 
     <form method="POST" class="premium-product-form">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+        <input type="hidden" name="next" value="{{ request.args.get('next', '') }}" />
 
         <div class="form-grid">
             <!-- Left Column: Basic Info & Pricing -->

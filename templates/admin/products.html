@@ -183,7 +183,19 @@
     .prod-name { max-width:110px; }
     .pp-info { display:none; }
 }
+@keyframes row-saved { 0%{background:#d1fae5} 60%{background:#d1fae5} 100%{background:transparent} }
+tr.row-saved-flash { animation: row-saved 2.2s ease forwards; }
 </style>
+<script>
+(function(){
+    const h = location.hash;
+    if(!h || !h.startsWith('#prod-')) return;
+    const row = document.getElementById(h.slice(1));
+    if(!row) return;
+    row.scrollIntoView({block:'center', behavior:'smooth'});
+    row.classList.add('row-saved-flash');
+})();
+</script>
 
 {# ── Build current filter params (without page) for pagination links ── #}
 {% set fp = {} %}
@@ -314,7 +326,7 @@
             </thead>
             <tbody>
                 {% for product in products %}
-                <tr data-url="{{ url_for('main.product_detail', product_id=product._id) }}">
+                <tr id="prod-{{ product._id }}" data-url="{{ url_for('main.product_detail', product_id=product._id) }}">
                     <td>
                         <div class="prod-img-wrap">
                             <img src="{{ product.image_url }}" alt="{{ product.name }}"
@@ -354,7 +366,7 @@
                     </td>
                     <td onclick="event.stopPropagation();">
                         <div class="prod-actions">
-                            <a href="{{ url_for('admin.edit_product', product_id=product._id) }}"
+                            <a href="{{ url_for('admin.edit_product', product_id=product._id, next=request.url) }}"
                                class="prod-act-btn" title="Ndrysho">
                                 <i class="fas fa-pen"></i>
                             </a>

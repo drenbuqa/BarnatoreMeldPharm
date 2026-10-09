@@ -701,8 +701,13 @@ def edit_product(product_id):
         )
         product_data = _build_product_data(main_img, images, option_groups, variants, base_price, base_discount)
         Product.update(product_id, product_data)
-        flash('Produkti u përditësua me sukses!', 'success')
-        return redirect(url_for('admin.dashboard'))
+        next_url = request.form.get('next') or request.args.get('next')
+        if next_url and next_url.startswith('/'):
+            from urllib.parse import urlparse, urlunparse, urlencode, parse_qs
+            parsed = urlparse(next_url)
+            # strip any existing fragment, append the product anchor
+            return redirect(urlunparse(parsed._replace(fragment=f'prod-{product_id}')))
+        return redirect(url_for('admin.products_page'))
 
     return render_template('admin/product_form.html', product=product, categories=CATEGORIES)
 
