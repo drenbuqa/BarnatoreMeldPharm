@@ -25,7 +25,7 @@
                     <span class="best-seller-badge" style="font-size:0.58rem;background:#4F5D4E;color:#fff;padding:3px 8px;border-radius:5px;font-weight:700;letter-spacing:0.04em;">Më i Shituri</span>
                     {% endif %}
                 </div>
-                <img src="{{ product.image_url }}" alt="{{ product.name }}" loading="lazy" onload="this.classList.add('loaded');this.previousElementSibling&&this.previousElementSibling.classList.add('hidden')" onerror="this.classList.add('error')">
+                <img src="{{ product.image_url }}" alt="{{ product.name }}" loading="lazy" onload="this.classList.add('loaded');var s=this.parentElement.querySelector('.img-shimmer');if(s)s.classList.add('hidden')" onerror="this.classList.add('error')">
                 <button class="hp-card-fav active" onclick="event.stopPropagation(); toggleFavorite(this, '{{ product._id }}')">
                     <i class="fas fa-heart"></i>
                 </button>
