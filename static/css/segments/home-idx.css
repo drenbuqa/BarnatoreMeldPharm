@@ -29,5 +29,5 @@
   .home-page .hp-section .container{padding:0 1rem!important}
   .hp-carousel{gap:.65rem;padding:.25rem 0 1rem}
   .hp-card{width:calc(47vw - .5rem)}
-  .hp-carousel-arrow{display:none}
+  .hp-carousel-arrow{width:36px;height:36px;font-size:0.78rem;opacity:.82}
 }
