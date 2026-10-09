@@ -193,6 +193,7 @@ tr.row-saved-flash { animation: row-saved 2.2s ease forwards; }
 (function(){
     const h = location.hash;
     if(!h || !h.startsWith('#prod-')) return;
+    history.replaceState(null, '', location.pathname + location.search);
     const row = document.getElementById(h.slice(1));
     if(!row) return;
     row.scrollIntoView({block:'center', behavior:'smooth'});
