@@ -59,16 +59,16 @@ def calculate_shipping(total_price, country):
     country = country.lower() if country else 'kosova'
     
     if country in ['kosova', 'kosovë', 'kosovo']:
-        # Kosovo: delivery €2.50, free from €70.
-        if total_price >= 70:
+        # Kosovo: delivery €2.50, free from €50.
+        if total_price >= 50:
             return 0
         return 2.5
     elif country in ['shqipëria', 'shqiperia', 'albania'] or country in ['maqedonia', 'north macedonia']:
         # Albania and North Macedonia: flat €5.00 delivery, never free based on order total
         return 5.0
 
-    # Default fallback: charge small fee unless over 70
-    return 2.5 if total_price < 70 else 0
+    # Default fallback: charge small fee unless over 50
+    return 2.5 if total_price < 50 else 0
 
 def calculate_cart_totals(cart, country='Kosova'):
     total_price = 0

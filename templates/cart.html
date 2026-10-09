@@ -213,11 +213,11 @@
                 <h3 class="summary-title">Përmbledhja e Porosisë</h3>
 
                 <!-- Free Shipping Progress Bar -->
-                {% if is_kosovo and total_price < 70 %}
+                {% if is_kosovo and total_price < 50 %}
                 <div class="free-shipping-bar cart-page-shipping-bar" data-kosovo="true" style="margin-bottom: 1.25rem;">
-                    <div class="shipping-progress-single">Shto edhe&nbsp;<strong>€{{ "%.2f"|format(70 - total_price) }}</strong>&nbsp;për dërgim falas!</div>
+                    <div class="shipping-progress-single">Shto edhe&nbsp;<strong>€{{ "%.2f"|format(50 - total_price) }}</strong>&nbsp;për dërgim falas!</div>
                     <div class="bar-track">
-                        <div class="bar-fill" style="width: {{ [((total_price / 70) * 100)|int, 100]|min }}%"></div>
+                        <div class="bar-fill" style="width: {{ [((total_price / 50) * 100)|int, 100]|min }}%"></div>
                     </div>
                 </div>
                 {% elif is_kosovo %}
@@ -284,7 +284,7 @@
         <div style="display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 2rem; text-align: left; background: #f8fafc; border-radius: 12px; padding: 1rem 1.25rem;">
             <div style="display: flex; align-items: center; gap: 0.75rem; font-size: 0.88rem; color: #475569;">
                 <i class="fas fa-truck" style="color: #10b981; width: 18px;"></i>
-                <span>Dërgim falas për porosi mbi <strong>€70</strong></span>
+                <span>Dërgim falas për porosi mbi <strong>€50</strong></span>
             </div>
             <div style="display: flex; align-items: center; gap: 0.75rem; font-size: 0.88rem; color: #475569;">
                 <i class="fas fa-shield-alt" style="color: #10b981; width: 18px;"></i>
@@ -307,7 +307,7 @@
         <div class="hp-head" style="margin-bottom:1.25rem;">
             <div>
                 <span class="cart-recommendations-eyebrow">Zgjedhur për ju</span>
-                <h2 id="cartRecommendationsTitle" style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.65rem;font-weight:600;color:#2B2B2B;margin:0.2rem 0 0;">{% if is_kosovo and total_price < 70 and cart_items %}Plotësoni shportën dhe përfitoni dërgesë falas{% elif cart_items %}Mund t'ju pëlqejnë edhe këto{% else %}Produkte të rekomanduara{% endif %}</h2>
+                <h2 id="cartRecommendationsTitle" style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.65rem;font-weight:600;color:#2B2B2B;margin:0.2rem 0 0;">{% if is_kosovo and total_price < 50 and cart_items %}Plotësoni shportën dhe përfitoni dërgesë falas{% elif cart_items %}Mund t'ju pëlqejnë edhe këto{% else %}Produkte të rekomanduara{% endif %}</h2>
             </div>
             <a href="{{ url_for('main.products') }}" class="hp-see-all">Shiko të gjitha <i class="fas fa-arrow-right"></i></a>
         </div>
@@ -404,9 +404,9 @@ window.updateCartRecommendationCopy = function(totalPrice) {
     if (!section || !title || !description) return;
     const total = Number(totalPrice) || 0;
     const isKosovo = section.dataset.kosovo === 'true';
-    if (isKosovo && total < 70 && total > 0) {
+    if (isKosovo && total < 50 && total > 0) {
         title.textContent = 'Plotësoni shportën dhe përfitoni dërgesë falas';
-        description.innerHTML = 'Ju mungojnë vetëm <strong>€' + (70 - total).toFixed(2) + '</strong>. Zgjidhni produkte relevante për porosinë tuaj.';
+        description.innerHTML = 'Ju mungojnë vetëm <strong>€' + (50 - total).toFixed(2) + '</strong>. Zgjidhni produkte relevante për porosinë tuaj.';
     } else {
         title.textContent = 'Mund t\'ju pëlqejnë edhe këto';
         description.textContent = 'Një përzgjedhje me produkte të ngjashme, oferta dhe zgjedhje të preferuara.';
@@ -419,9 +419,9 @@ document.addEventListener('DOMContentLoaded', function() {
         const bar = document.querySelector('.cart-page-shipping-bar');
         if (!bar) return;
         const total = Number(totalPrice) || 0;
-        if (total < 70) {
-            const remaining = (70 - total).toFixed(2);
-            const percentage = Math.min(Math.round((total / 70) * 100), 100);
+        if (total < 50) {
+            const remaining = (50 - total).toFixed(2);
+            const percentage = Math.min(Math.round((total / 50) * 100), 100);
             bar.innerHTML = '<div class="shipping-progress-single">Shto edhe&nbsp;<strong>€' + remaining + '</strong>&nbsp;për dërgim falas!</div><div class="bar-track"><div class="bar-fill" style="width:' + percentage + '%"></div></div>';
         } else {
             bar.innerHTML = '<span style="color:#166534"><i class="fas fa-check-circle" style="margin-right:.4rem"></i><strong>Keni fituar dërgim falas!</strong></span><div class="bar-track" style="margin-top:.4rem"><div class="bar-fill" style="width:100%"></div></div>';

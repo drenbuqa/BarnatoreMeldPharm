@@ -398,8 +398,8 @@
         if (isAlbaniaMacedonia) {
             fee = 5; // flat, never free
         } else {
-            // Kosovo and default: €2.50, free above €70
-            fee = subtotal > 70 ? 0 : 2.5;
+            // Kosovo and default: €2.50, free above €50
+            fee = subtotal > 50 ? 0 : 2.5;
         }
 
         if (fee === 0) {
