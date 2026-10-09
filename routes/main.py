@@ -1081,6 +1081,10 @@ def address():
 
 @main.route('/wishlist')
 def wishlist():
+    return redirect(url_for('main.profile_wishlist'))
+
+@main.route('/profile/wishlist')
+def profile_wishlist():
     favorites = []
     if current_user.is_authenticated:
         favorites = Product.get_favorites_by_user(current_user.id)
@@ -1088,7 +1092,7 @@ def wishlist():
         liked_ids = session.get('liked_products', [])
         if liked_ids:
             favorites = Product.get_by_ids(liked_ids)
-    return render_template('wishlist.html', favorites=favorites)
+    return render_template('wishlist_tab.html', favorites=favorites)
 
 @main.route('/orders')
 def orders():

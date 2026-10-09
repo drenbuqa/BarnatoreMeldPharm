@@ -1,0 +1,101 @@
+{% extends "profile_layout.html" %}
+
+{% block profile_content %}
+<div class="profile-card-main">
+    <div class="content-header">
+        <h2 class="section-title">
+            <i class="fas fa-heart"></i> Lista e dëshirave
+        </h2>
+        <p class="section-subtitle">Produktet që keni ruajtur për më vonë</p>
+    </div>
+
+    {% if favorites %}
+    <div class="wishlist-grid">
+        {% for product in favorites %}
+        <div class="hp-card{% if product.auto_oct_discount %} hp-card--oct{% endif %}" data-href="{{ url_for('main.product_detail', product_id=product._id) }}" onclick="window.location.href=this.dataset.href" style="--hp-ivory:#F7F3EE;--hp-beige:#EFE7DE;--hp-sage:#6C7A61;--hp-olive:#4F5D4E;--hp-charcoal:#2B2B2B;--hp-muted:#7A7068;--hp-border:#E2D9CE;--hp-shadow:0 2px 16px rgba(43,43,43,0.07);--hp-radius:14px;">
+            <div class="hp-card-img">
+                <div class="img-shimmer"></div>
+                <div class="badge-stack" style="position:absolute;top:9px;left:9px;z-index:2;display:flex;flex-direction:column;gap:4px;">
+                    {% if product.offer_type == 'multi_buy' %}
+                    <span class="hp-card-badge">{{ product.offer_badge_text or '1+1' }}</span>
+                    {% elif product.discount_price or product.auto_oct_discount %}
+                    <span class="hp-card-badge">Ofertë Speciale</span>
+                    {% endif %}
+                    {% if product.is_best_seller %}
+                    <span class="best-seller-badge" style="font-size:0.58rem;background:#4F5D4E;color:#fff;padding:3px 8px;border-radius:5px;font-weight:700;letter-spacing:0.04em;">Më i Shituri</span>
+                    {% endif %}
+                </div>
+                <img src="{{ product.image_url }}" alt="{{ product.name }}" loading="lazy" onload="this.classList.add('loaded');this.previousElementSibling&&this.previousElementSibling.classList.add('hidden')" onerror="this.classList.add('error')">
+                <button class="hp-card-fav active" onclick="event.stopPropagation(); toggleFavorite(this, '{{ product._id }}')">
+                    <i class="fas fa-heart"></i>
+                </button>
+            </div>
+            <div class="hp-card-body">
+                <span class="hp-card-brand">{{ product.brand or product.category }}</span>
+                <span class="hp-card-name">{{ product.name }}</span>
+                {% if product.size %}<span class="hp-card-size">{{ product.size }}</span>{% endif %}
+                <div class="hp-price-row">
+                    {% if product.offer_type == 'multi_buy' %}
+                    <span class="hp-price-main">€{{ "%.2f"|format(product.display_price) }}</span>
+                    {% elif product.auto_oct_discount and product.auto_oct_price %}
+                    <span class="hp-price-main">€{{ "%.2f"|format(product.auto_oct_price) }}</span>
+                    <span class="hp-price-orig">€{{ "%.2f"|format(product.price) }}</span>
+                    <span class="hp-price-pct">-5%</span>
+                    {% elif product.discount_price %}
+                    <span class="hp-price-main">€{{ "%.2f"|format(product.discount_price) }}</span>
+                    <span class="hp-price-orig">€{{ "%.2f"|format(product.price) }}</span>
+                    <span class="hp-price-pct">-{{ ((product.price - product.discount_price) / product.price * 100)|round|int }}%</span>
+                    {% else %}
+                    <span class="hp-price-main">€{{ "%.2f"|format(product.price) }}</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="wishlist-empty">
+        <div class="wishlist-empty-icon">
+            <i class="far fa-heart"></i>
+        </div>
+        <h3>Nuk keni asnjë produkt të preferuar</h3>
+        <p>Eksploroni produktet tona dhe shtoni ato që ju pëlqejnë duke klikuar <i class="far fa-heart" style="color:#6C7A61;"></i> në çdo produkt.</p>
+        <a href="{{ url_for('main.products') }}" class="btn btn-primary">
+            <i class="fas fa-shopping-bag"></i> Eksploro Dyqanin
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.wishlist-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1.25rem;
+}
+.wishlist-empty {
+    text-align: center;
+    padding: 4rem 2rem;
+    background: #F7F3EE;
+    border-radius: 16px;
+    border: 1px solid #E2D9CE;
+}
+.wishlist-empty-icon {
+    width: 72px; height: 72px;
+    background: #EFE7DE;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.75rem; color: #6C7A61;
+    margin: 0 auto 1.5rem;
+}
+.wishlist-empty h3 { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 1.5rem; color: #2B2B2B; margin-bottom: 0.5rem; }
+.wishlist-empty p { color: #7A7068; font-size: 0.9rem; margin-bottom: 1.75rem; }
+.content-header { margin-bottom: 2rem; }
+.section-title { font-size: 1.5rem; color: var(--text-main); display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem; }
+.section-title i { color: var(--primary); }
+.section-subtitle { color: var(--text-muted); font-size: 0.95rem; }
+@media (max-width: 640px) {
+    .wishlist-grid { grid-template-columns: repeat(2, 1fr); gap: 0.75rem; }
+}
+</style>
+{% endblock %}

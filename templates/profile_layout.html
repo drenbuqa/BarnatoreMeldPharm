@@ -5,41 +5,46 @@
     <div class="profile-layout">
         <!-- Desktop Sidebar -->
         <aside class="profile-sidebar-desktop">
-            <div class="sidebar-user-header">
-                <div class="avatar-circle-sm">
-                    <i class="fas fa-user-circle"></i>
-                </div>
-                <div class="user-meta">
-                    <h4>{{ current_user.fullname or 'Përdorues' }} <i class="fas fa-user"></i></h4>
-                    <p>{{ current_user.email }}</p>
+            <div class="psd-user-header">
+                <div class="psd-avatar">{{ (current_user.first_name or current_user.email)[0]|upper }}</div>
+                <div class="psd-user-meta">
+                    <strong>{{ current_user.fullname or 'Përdorues' }}</strong>
+                    <span>{{ current_user.email }}</span>
                 </div>
             </div>
-            <nav class="profile-nav">
+            <nav class="psd-nav">
                 <a href="{{ url_for('main.profile') }}"
-                    class="profile-nav-item {{ 'active' if request.endpoint == 'main.profile' }}">
-                    <i class="fas fa-user-circle"></i> Të dhënat personale
+                    class="psd-nav-item {{ 'active' if request.endpoint == 'main.profile' }}">
+                    <span class="psd-nav-icon"><i class="fas fa-user"></i></span>
+                    <span>Të dhënat personale</span>
                 </a>
                 <a href="{{ url_for('main.address') }}"
-                    class="profile-nav-item {{ 'active' if request.endpoint == 'main.address' }}">
-                    <i class="fas fa-map-marker-alt"></i> Adresa
+                    class="psd-nav-item {{ 'active' if request.endpoint == 'main.address' }}">
+                    <span class="psd-nav-icon"><i class="fas fa-map-marker-alt"></i></span>
+                    <span>Adresa</span>
                 </a>
                 <a href="{{ url_for('main.orders') }}"
-                    class="profile-nav-item {{ 'active' if request.path.startswith('/orders') or request.endpoint == 'main.orders' }}">
-                    <i class="fas fa-box"></i> Porositë
+                    class="psd-nav-item {{ 'active' if request.path.startswith('/orders') or request.endpoint == 'main.orders' }}">
+                    <span class="psd-nav-icon"><i class="fas fa-box"></i></span>
+                    <span>Porositë</span>
                 </a>
-                <a href="{{ url_for('main.wishlist') }}"
-                    class="profile-nav-item {{ 'active' if request.endpoint == 'main.wishlist' }}">
-                    <i class="fas fa-heart"></i> Lista e dëshirave
+                <a href="{{ url_for('main.profile_wishlist') }}"
+                    class="psd-nav-item {{ 'active' if request.endpoint == 'main.profile_wishlist' }}">
+                    <span class="psd-nav-icon"><i class="fas fa-heart"></i></span>
+                    <span>Lista e dëshirave</span>
                 </a>
                 {% if current_user.is_admin %}
-                <a href="{{ url_for('admin.dashboard') }}" class="profile-nav-item">
-                    <i class="fas fa-shield-alt"></i> Admin Panel
+                <a href="{{ url_for('admin.dashboard') }}" class="psd-nav-item psd-nav-admin">
+                    <span class="psd-nav-icon"><i class="fas fa-shield-alt"></i></span>
+                    <span>Admin Panel</span>
                 </a>
                 {% endif %}
-                <a href="{{ url_for('auth.logout') }}" class="profile-nav-item logout-nav-item">
-                    <i class="fas fa-sign-out-alt"></i> Dil
-                </a>
             </nav>
+            <div class="psd-logout-wrap">
+                <a href="{{ url_for('auth.logout') }}" class="psd-logout-btn">
+                    <i class="fas fa-sign-out-alt"></i> Dil nga llogaria
+                </a>
+            </div>
         </aside>
 
         <!-- Main Content Area -->
