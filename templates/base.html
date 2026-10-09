@@ -229,10 +229,10 @@
                         </div>
 
                         <div class="mini-cart-footer">
-                            {% if cart_total < 50 %}
+                            {% if cart_total < 70 %}
                             <div class="free-shipping-bar" id="mini-cart-shipping-bar">
-                                <span>Shto edhe <strong>€{{ "%.2f"|format(50 - cart_total) }}</strong> për dërgim falas!</span>
-                                <div class="bar-track"><div class="bar-fill" style="width: {{ [((cart_total / 50) * 100)|int, 100]|min }}%"></div></div>
+                                <span>Shto edhe <strong>€{{ "%.2f"|format(70 - cart_total) }}</strong> për dërgim falas!</span>
+                                <div class="bar-track"><div class="bar-fill" style="width: {{ [((cart_total / 70) * 100)|int, 100]|min }}%"></div></div>
                             </div>
                             {% endif %}
                             <a href="{{ url_for('cart.view_cart') }}" class="btn-go-to-cart">
