@@ -29,7 +29,8 @@
   .home-page .hp-section .container{padding:0 1rem!important}
   .hp-carousel{gap:.65rem;padding:.25rem 0 1rem}
   .hp-card{width:calc(47vw - .5rem)}
-  .hp-carousel-arrow{width:36px;height:36px;font-size:0.78rem;opacity:.82}
-  .hp-carousel-arrow.hp-prev{left:2px}
-  .hp-carousel-arrow.hp-next{right:2px}
+  .hp-carousel-outer{overflow:visible}
+  .hp-carousel-arrow{width:34px;height:34px;font-size:0.75rem;opacity:.88}
+  .hp-carousel-arrow.hp-prev{left:-14px}
+  .hp-carousel-arrow.hp-next{right:-14px}
 }
