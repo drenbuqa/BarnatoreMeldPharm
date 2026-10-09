@@ -54,8 +54,13 @@ app.config['META_PIXEL_ID'] = os.getenv('META_PIXEL_ID', '')
 app.config['META_PIXEL_DEBUG'] = os.getenv('META_PIXEL_DEBUG', '').lower() in ('1', 'true', 'yes')
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
-app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=31)
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=30)
 app.config['SESSION_COOKIE_SECURE'] = os.getenv('RENDER') is not None
+# Flask-Login remember-me cookie — must be set explicitly or the cookie has no expiry
+app.config['REMEMBER_COOKIE_DURATION'] = timedelta(days=30)
+app.config['REMEMBER_COOKIE_HTTPONLY'] = True
+app.config['REMEMBER_COOKIE_SECURE'] = os.getenv('RENDER') is not None
+app.config['REMEMBER_COOKIE_SAMESITE'] = 'Lax'
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16 MB upload limit
 
 # Gzip compression for text-based responses
