@@ -335,10 +335,10 @@
                         {% if product.subcategory %}<div style="font-size:0.73rem;color:#9aa095;margin-top:2px;">{{ product.subcategory }}</div>{% endif %}
                     </td>
                     <td>
-                        {% if product.discount_price %}
+                        {% if product.effective_discount %}
                         <span class="price-old">€{{ "%.2f"|format(product.price) }}</span>
-                        <span class="price-new">€{{ "%.2f"|format(product.discount_price) }}</span>
-                        <span class="price-disc">-{{ ((product.price - product.discount_price) / product.price * 100)|round|int }}%</span>
+                        <span class="price-new">€{{ "%.2f"|format(product.effective_discount) }}</span>
+                        <span class="price-disc">-{{ ((product.price - product.effective_discount) / product.price * 100)|round|int }}%</span>
                         {% else %}
                         <span class="price-norm">€{{ "%.2f"|format(product.price) }}</span>
                         {% endif %}

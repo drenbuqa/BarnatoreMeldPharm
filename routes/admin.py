@@ -95,7 +95,7 @@ def orders():
             'pending':    ['Pending', 'Në Pritje'],
             'konfirmuar': ['Konfirmuar', 'Confirmed', 'Pranuar'],
             'dergese':    ['Delivering', 'Në Dërgesë'],
-            'dorezuar':   ['Delivered', 'Dorezuar'],
+            'dorezuar':   ['Delivered', 'Dorezuar', 'Received'],
             'anuluar':    ['Cancelled', 'Anuluar'],
             'refuzuar':   ['Refuzuar'],
         }
@@ -113,7 +113,7 @@ def orders():
         'pending': mongo.db.orders.count_documents({'status': {'$in': ['Pending', 'Në Pritje']}}),
         'konfirmuar': mongo.db.orders.count_documents({'status': {'$in': ['Konfirmuar', 'Confirmed', 'Pranuar']}}),
         'dergese': mongo.db.orders.count_documents({'status': {'$in': ['Delivering', 'Në Dërgesë']}}),
-        'dorezuar': mongo.db.orders.count_documents({'status': {'$in': ['Delivered', 'Dorezuar']}}),
+        'dorezuar': mongo.db.orders.count_documents({'status': {'$in': ['Delivered', 'Dorezuar', 'Received']}}),
         'anuluar': mongo.db.orders.count_documents({'status': {'$in': ['Cancelled', 'Anuluar', 'Refuzuar']}}),
     }
     pending_orders_count = counts['pending']
@@ -418,6 +418,13 @@ def products_page():
         .skip((page - 1) * per_page)
         .limit(per_page)
     )
+
+    from routes.promo import effective_price_with_promo
+    for p in products:
+        bp = float(p.get('price') or 0)
+        bd = float(p['discount_price']) if p.get('discount_price') else None
+        _, eff = effective_price_with_promo(p, bp, bd)
+        p['effective_discount'] = eff
 
     pending_orders_count = mongo.db.orders.count_documents(
         {'status': {'$in': ['Pending', 'Në Pritje']}})
