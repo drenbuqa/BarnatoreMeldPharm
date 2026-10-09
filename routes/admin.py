@@ -1593,8 +1593,12 @@ def toggle_stock(product_id):
     if product:
         new_val = not bool(product.get('in_stock', True))
         mongo.db.products.update_one({'_id': ObjectId(product_id)}, {'$set': {'in_stock': new_val}})
-        flash(f'Stoku u ndryshua në {"Në Stok" if new_val else "Jo Stok"}.', 'success')
-    return redirect(url_for('admin.dashboard'))
+    from urllib.parse import urlparse, urlunparse
+    referer = request.referrer or ''
+    parsed = urlparse(referer)
+    if parsed.path and parsed.path.startswith('/admin'):
+        return redirect(urlunparse(parsed._replace(fragment=f'prod-{product_id}')))
+    return redirect(url_for('admin.products_page') + f'#prod-{product_id}')
 
 
 @admin.route('/users')
