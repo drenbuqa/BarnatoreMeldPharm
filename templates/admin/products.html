@@ -185,6 +185,9 @@
 }
 @keyframes row-saved { 0%{background:#d1fae5} 60%{background:#d1fae5} 100%{background:transparent} }
 tr.row-saved-flash { animation: row-saved 2.2s ease forwards; }
+#stock-toast{position:fixed;bottom:1.5rem;right:1.5rem;background:#1e2d1e;color:#fff;font-size:0.85rem;font-weight:500;padding:0.65rem 1.1rem;border-radius:10px;box-shadow:0 4px 20px rgba(0,0,0,0.22);display:flex;align-items:center;gap:0.55rem;z-index:9999;opacity:0;transform:translateY(10px);transition:opacity 0.22s,transform 0.22s;pointer-events:none}
+#stock-toast.show{opacity:1;transform:translateY(0)}
+#stock-toast i{font-size:0.9rem}
 </style>
 <script>
 (function(){
@@ -356,13 +359,15 @@ tr.row-saved-flash { animation: row-saved 2.2s ease forwards; }
                         {% endif %}
                     </td>
                     <td style="text-align:center;" onclick="event.stopPropagation();">
-                        <form action="{{ url_for('admin.toggle_stock', product_id=product._id) }}" method="POST" style="display:inline;">
-                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-                            <button type="submit" class="stock-btn {{ 'on' if product.in_stock else 'off' }}"
-                                    title="{{ 'Në stok — kliko për heqje' if product.in_stock else 'Pa stok — kliko për shtim' }}">
-                                <i class="fas {{ 'fa-toggle-on' if product.in_stock else 'fa-toggle-off' }}"></i>
-                            </button>
-                        </form>
+                        <button type="button"
+                                class="stock-btn {{ 'on' if product.in_stock else 'off' }}"
+                                data-product-id="{{ product._id }}"
+                                data-toggle-url="{{ url_for('admin.toggle_stock', product_id=product._id) }}"
+                                data-csrf="{{ csrf_token() }}"
+                                title="{{ 'Në stok — kliko për heqje' if product.in_stock else 'Pa stok — kliko për shtim' }}"
+                                onclick="ajaxToggleStock(this)">
+                            <i class="fas {{ 'fa-toggle-on' if product.in_stock else 'fa-toggle-off' }}"></i>
+                        </button>
                     </td>
                     <td onclick="event.stopPropagation();">
                         <div class="prod-actions">
@@ -524,9 +529,44 @@ document.getElementById('pSearchInput').addEventListener('keydown', function(e) 
 /* Row click → open product page */
 document.querySelectorAll('#productTable tbody tr[data-url]').forEach(row => {
     row.addEventListener('click', function(e) {
-        if (e.target.closest('[onclick]') || e.target.closest('form') || e.target.closest('a')) return;
+        if (e.target.closest('[onclick]') || e.target.closest('form') || e.target.closest('a') || e.target.closest('button')) return;
         window.open(this.dataset.url, '_blank');
     });
 });
+
+/* ── Stock toggle AJAX ── */
+let _toastTimer;
+function _showToast(msg, ok) {
+    let t = document.getElementById('stock-toast');
+    t.innerHTML = `<i class="fas ${ok ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i> ${msg}`;
+    t.style.background = ok ? '#1a3a1a' : '#3a1a1a';
+    t.classList.add('show');
+    clearTimeout(_toastTimer);
+    _toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+async function ajaxToggleStock(btn) {
+    btn.disabled = true;
+    const url = btn.dataset.toggleUrl;
+    const csrf = btn.dataset.csrf;
+    try {
+        const res = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest' },
+            body: `csrf_token=${encodeURIComponent(csrf)}`
+        });
+        if (!res.ok) throw new Error('Server error');
+        const nowOn = btn.classList.contains('off');
+        btn.classList.toggle('on', nowOn);
+        btn.classList.toggle('off', !nowOn);
+        btn.querySelector('i').className = `fas ${nowOn ? 'fa-toggle-on' : 'fa-toggle-off'}`;
+        btn.title = nowOn ? 'Në stok — kliko për heqje' : 'Pa stok — kliko për shtim';
+        _showToast(nowOn ? 'Vendosur në stok' : 'Hequr nga stoku', true);
+    } catch(e) {
+        _showToast('Gabim — provo sërish', false);
+    }
+    btn.disabled = false;
+}
 </script>
+<div id="stock-toast"><i class="fas fa-check-circle"></i></div>
 {% endblock %}

@@ -1590,9 +1590,13 @@ def toggle_stock(product_id):
         return redirect(url_for('admin.dashboard'))
     from bson import ObjectId
     product = mongo.db.products.find_one({'_id': ObjectId(product_id)}, {'in_stock': 1})
+    new_val = False
     if product:
         new_val = not bool(product.get('in_stock', True))
         mongo.db.products.update_one({'_id': ObjectId(product_id)}, {'$set': {'in_stock': new_val}})
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        from flask import jsonify
+        return jsonify({'ok': True, 'in_stock': new_val})
     from urllib.parse import urlparse, urlunparse
     referer = request.referrer or ''
     parsed = urlparse(referer)
