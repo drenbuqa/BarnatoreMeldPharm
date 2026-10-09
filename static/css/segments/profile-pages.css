@@ -1,0 +1,17 @@
+.profile-card-main{width:100%}
+.content-header{margin-bottom:2rem}
+.section-title{font-family:'Cormorant Garamond',Georgia,serif;font-size:1.75rem;font-weight:600;color:#2B2B2B;display:flex;align-items:center;gap:0.7rem;margin-bottom:0.35rem;line-height:1.2}
+.section-title i{color:#6C7A61;font-size:1.35rem;flex-shrink:0}
+.section-subtitle{color:#7A7068;font-size:0.875rem;font-family:'Inter',sans-serif}
+
+.profile-form-card{background:#fff;border-radius:16px;padding:2rem;border:1px solid #E2D9CE;box-shadow:0 1px 10px rgba(43,43,43,0.06);width:100%!important;max-width:100%!important;margin-bottom:1.25rem}
+.form-vertical-layout{display:flex;flex-direction:column;gap:0.5rem}
+.form-group label{display:block;font-size:0.85rem;font-weight:600;color:#2B2B2B;margin-bottom:0.5rem;font-family:'Inter',sans-serif;letter-spacing:0.01em}
+.form-control{width:100%!important;border-radius:10px;border:1px solid #E2D9CE;padding:0.72rem 1rem;transition:border-color 0.2s,box-shadow 0.2s;font-family:'Inter',sans-serif;font-size:0.9rem;color:#2B2B2B;background:#fff}
+.form-control:focus{border-color:#6C7A61;outline:none;box-shadow:0 0 0 3px rgba(108,122,97,0.12)}
+select.form-control{cursor:pointer}
+textarea.form-control{resize:vertical;min-height:100px}
+
+.form-footer{display:flex;align-items:center;gap:1rem;padding-top:0.25rem}
+.btn-save{padding:0.68rem 1.75rem;border-radius:10px;font-weight:600;display:inline-flex;align-items:center;gap:0.5rem;background:#4F5D4E;color:#fff;border:none;cursor:pointer;font-family:'Inter',sans-serif;font-size:0.88rem;transition:background 0.2s;text-decoration:none}
+.btn-save:hover{background:#2B2B2B;color:#fff}

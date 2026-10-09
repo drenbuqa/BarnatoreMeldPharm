@@ -1,5 +1,9 @@
 {% extends "base.html" %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/segments/profile-pages.css') }}">
+{% endblock %}
+
 {% block content %}
 <div class="container profile-page-container">
     <div class="profile-layout">

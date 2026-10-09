@@ -94,6 +94,7 @@
         src="https://www.facebook.com/tr?id={{ meta_pixel_id }}&ev=PageView&noscript=1"/></noscript>
     {% endif %}
     {% endif %}
+    {% block extra_css %}{% endblock %}
 </head>
 
 <body data-user-logged-in="{{ 'true' if current_user.is_authenticated else 'false' }}">
