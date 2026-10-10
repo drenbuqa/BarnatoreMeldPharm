@@ -5,6 +5,7 @@ from models.db import mongo
 from models.banner import Banner
 from models.order import Order
 from models.user import User
+from models.cloudinary_import import import_product_image, is_cloudinary_url
 from models.email_utils import (
     send_order_confirmation_email,
     send_order_shipped_email,
@@ -650,19 +651,49 @@ def _build_product_data(main_img, images, option_groups, variants, base_price, b
     }
 
 
+def _try_import(url: str) -> tuple[str | None, str | None]:
+    """
+    Attempt to import one URL.  Returns (cloudinary_url, None) on success,
+    or (None, error_message) on failure.  Cloudinary URLs are passed through.
+    """
+    import logging as _log
+    if not url:
+        return url, None
+    if is_cloudinary_url(url):
+        return url, None
+    try:
+        cld_url, _pid = import_product_image(url)
+        return cld_url, None
+    except Exception as e:
+        _log.error("Gabim gjatë importimit të imazhit '%s': %s", url, e)
+        short = url[:70] + ('…' if len(url) > 70 else '')
+        return None, f"Imazhi nuk u importua ({short}): {e}"
+
+
 @admin.route('/product/new', methods=['GET', 'POST'])
 @login_required
 @admin_required
 def new_product():
     if request.method == 'POST':
-        main_img = request.form.get('image_url')
+        main_img_raw = request.form.get('image_url', '').strip()
         additional_str = request.form.get('additional_images', '')
+        extra_raws = [x.strip() for x in additional_str.replace(',', '\n').split('\n')
+                      if x.strip() and x.strip() != main_img_raw]
+
+        # ── Main image: import required; block save on failure ──────────────
+        main_img, main_err = _try_import(main_img_raw)
+        if main_err:
+            flash(f'Gabim: {main_err}  Produkti NUK u ruajt. Provoni një URL tjetër ose ngarkoni imazhin manualisht.', 'danger')
+            return render_template('admin/product_form.html', product=None, categories=CATEGORIES)
+
+        # ── Additional images: skip failed ones, show warnings ──────────────
         images = [main_img]
-        if additional_str:
-            extras = [x.strip() for x in additional_str.replace(',', '\n').split('\n') if x.strip()]
-            for img in extras:
-                if img != main_img:
-                    images.append(img)
+        for url in extra_raws:
+            imported_url, err = _try_import(url)
+            if err:
+                flash(f'Paralajmërim: {err}  Ky imazh u anashkalua.', 'warning')
+            else:
+                images.append(imported_url)
 
         option_groups, variants, base_price, base_discount = _parse_option_groups(
             request.form.get('option_groups_json', '')
@@ -672,6 +703,7 @@ def new_product():
         flash('Produkti u krijua me sukses!', 'success')
         return redirect(url_for('admin.dashboard'))
     return render_template('admin/product_form.html', product=None, categories=CATEGORIES)
+
 
 @admin.route('/product/edit/<product_id>', methods=['GET', 'POST'])
 @login_required
@@ -686,14 +718,38 @@ def edit_product(product_id):
         return redirect(url_for('admin.dashboard'))
 
     if request.method == 'POST':
-        main_img = request.form.get('image_url')
+        main_img_raw = request.form.get('image_url', '').strip()
         additional_str = request.form.get('additional_images', '')
+        extra_raws = [x.strip() for x in additional_str.replace(',', '\n').split('\n')
+                      if x.strip() and x.strip() != main_img_raw]
+
+        saved_main = product.get('image_url', '')
+
+        # ── Main image ───────────────────────────────────────────────────────
+        # If the URL hasn't changed and it's already on Cloudinary: keep it.
+        # If it's a new URL: import it; on failure fall back to the existing saved image.
+        if main_img_raw == saved_main and is_cloudinary_url(saved_main):
+            main_img = saved_main
+        else:
+            main_img, main_err = _try_import(main_img_raw)
+            if main_err:
+                # Fall back to the previously saved image rather than blocking
+                main_img = saved_main
+                flash(
+                    f'Gabim: {main_err}  '
+                    'Imazhi kryesor mbeti i pandryshuar (u ruajt imazhi i mëparshëm).',
+                    'danger'
+                )
+
+        # ── Additional images: skip failed ones, show warnings ──────────────
+        saved_extras = [u for u in (product.get('images') or []) if u and u != saved_main]
         images = [main_img]
-        if additional_str:
-            extras = [x.strip() for x in additional_str.replace(',', '\n').split('\n') if x.strip()]
-            for img in extras:
-                if img != main_img:
-                    images.append(img)
+        for url in extra_raws:
+            imported_url, err = _try_import(url)
+            if err:
+                flash(f'Paralajmërim: {err}  Ky imazh u anashkalua.', 'warning')
+            else:
+                images.append(imported_url)
 
         option_groups, variants, base_price, base_discount = _parse_option_groups(
             request.form.get('option_groups_json', ''),
@@ -701,11 +757,11 @@ def edit_product(product_id):
         )
         product_data = _build_product_data(main_img, images, option_groups, variants, base_price, base_discount)
         Product.update(product_id, product_data)
+        flash('Produkti u përditësua me sukses!', 'success')
         next_url = request.form.get('next') or request.args.get('next')
         if next_url and next_url.startswith('/'):
-            from urllib.parse import urlparse, urlunparse, urlencode, parse_qs
+            from urllib.parse import urlparse, urlunparse
             parsed = urlparse(next_url)
-            # strip any existing fragment, append the product anchor
             return redirect(urlunparse(parsed._replace(fragment=f'prod-{product_id}')))
         return redirect(url_for('admin.products_page'))
 

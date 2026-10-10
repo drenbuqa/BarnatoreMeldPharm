@@ -211,6 +211,17 @@
                             <input type="url" id="image_url" name="image_url" class="form-control premium-input"
                                 value="{{ product.image_url if product else '' }}" required
                                 placeholder="https://example.com/image.jpg">
+                            <small class="form-text text-muted" style="margin-top:4px;display:block;">
+                                <i class="fas fa-cloud-upload-alt"></i>
+                                Nëse URL-ja nuk është tashmë në Cloudinary, imazhi do të importohet automatikisht kur të ruani.
+                            </small>
+                        </div>
+
+                        <div id="img-import-status" style="display:none;margin-bottom:0.75rem;">
+                            <div style="display:flex;align-items:center;gap:0.5rem;padding:0.5rem 0.75rem;background:#f0f4ff;border:1px solid #c7d2fe;border-radius:6px;font-size:0.85rem;color:#3730a3;">
+                                <span style="display:inline-block;width:16px;height:16px;border:2px solid #3730a3;border-top-color:transparent;border-radius:50%;animation:spin 0.7s linear infinite;flex-shrink:0;"></span>
+                                Duke importuar imazhin te Cloudinary… mund të zgjasë disa sekonda.
+                            </div>
                         </div>
 
                         <div class="image-preview-container" id="main-image-preview">
@@ -885,6 +896,9 @@
         content: ' ✓';
         font-size: 0.75rem;
     }
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
 </style>
 
 <script id="product-form-config" type="application/json">
@@ -1280,7 +1294,17 @@ function optGroupsFromVariants(variants) {
     renderAllGroups();
 })();
 
-document.querySelector('form.premium-product-form').addEventListener('submit', syncHidden);
+const _pf = document.querySelector('form.premium-product-form');
+_pf.addEventListener('submit', syncHidden);
+
+// Show import-loading indicator when the form is submitted with a non-Cloudinary image URL
+_pf.addEventListener('submit', function() {
+    const imgUrl = (document.getElementById('image_url').value || '').trim();
+    const isCloudinary = imgUrl.includes('res.cloudinary.com');
+    if (imgUrl && !isCloudinary) {
+        document.getElementById('img-import-status').style.display = 'block';
+    }
+});
 
 // ── Label Badges ─────────────────────────────────────────────────────────────
 const activeLabels = new Set(
