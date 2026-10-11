@@ -1033,7 +1033,7 @@ def product_detail(product_id):
             if u:
                 favorite_usernames.append(u.username)
 
-    related_products = Product.get_related(product.get('category'), product.get('_id'), limit=12)
+    related_products = Product.get_related(product, product.get('_id'), limit=12)
 
     # Apply in-memory October discount if active and product has no existing discount
     if _is_oct_promo_active():
@@ -1229,27 +1229,140 @@ def search_api():
     elif len(query) < 2:
         return jsonify([])
     else:
-        # Fuzzy search: require all terms in the query to be present
-        import re
-        terms = [t for t in query.split() if t]
-        search_query = {}
-        if terms:
-            and_parts = []
-            for t in terms:
-                escaped_term = re.escape(t)
-                and_parts.append({
-                    "$or": [
-                        {"name": {"$regex": escaped_term, "$options": "i"}},
-                        {"brand": {"$regex": escaped_term, "$options": "i"}},
-                        {"category": {"$regex": escaped_term, "$options": "i"}},
-                        {"subcategory": {"$regex": escaped_term, "$options": "i"}}
-                    ]
-                })
-            search_query = {"$and": and_parts, "is_deleted": {"$ne": True}}
-        else:
+        import re as _re2
+
+        # ── Normalise query ──────────────────────────────────────────────────
+        # Albanian users often omit diacritics (ë→e, ç→c). Build patterns
+        # that accept both forms so "Suplemente" is found when typing "suplemente"
+        # and vice-versa.
+        def _diacritic_pattern(term):
+            out = []
+            for c in term.lower():
+                if c == 'e':   out.append('[eë]')
+                elif c == 'c': out.append('[cç]')
+                elif c == 'a': out.append('[aä]')
+                else:          out.append(_re2.escape(c))
+            return ''.join(out)
+
+        tokens = [t for t in _re2.split(r'\s+', query.strip()) if len(t) >= 2]
+        if not tokens:
             return jsonify([])
 
-        products = list(mongo.db.products.find(search_query).limit(limit))
+        # ── Broad fetch: any token hits any searchable field ─────────────────
+        # We fetch a wide pool and rank in Python — this is more flexible than
+        # requiring every token to be present (AND), which misses partial matches.
+        or_clauses = []
+        for t in tokens:
+            pat = _diacritic_pattern(t)
+            or_clauses.append({"name":        {"$regex": pat, "$options": "i"}})
+            or_clauses.append({"brand":       {"$regex": pat, "$options": "i"}})
+            or_clauses.append({"category":    {"$regex": pat, "$options": "i"}})
+            or_clauses.append({"subcategory": {"$regex": pat, "$options": "i"}})
+            or_clauses.append({"description": {"$regex": pat, "$options": "i"}})
+
+        raw = list(mongo.db.products.find(
+            {"$or": or_clauses, "is_deleted": {"$ne": True}},
+            {"name": 1, "brand": 1, "category": 1, "subcategory": 1,
+             "description": 1, "price": 1, "discount_price": 1,
+             "image_url": 1, "size": 1, "is_best_seller": 1,
+             "is_pharmacist_choice": 1, "offer_status": 1,
+             "discount_from": 1, "in_stock": 1, "favorites": 1}
+        ).limit(limit * 6))
+
+        # ── Score in Python ──────────────────────────────────────────────────
+        # Field weights: name > brand > category/subcategory > description
+        # Bonus: all tokens matched (+20), exact full-name match (+30),
+        #        best-seller/pharmacist-choice (+3/+2), in-stock (+5)
+        def _score(p):
+            sc = 0
+            full_q = query.lower()
+            fields = {
+                'name':        (p.get('name')        or '', 10),
+                'brand':       (p.get('brand')       or '',  6),
+                'category':    (p.get('category')    or '',  3),
+                'subcategory': (p.get('subcategory') or '',  3),
+                'description': (p.get('description') or '',  1),
+            }
+            matched_tokens = 0
+            for tok in tokens:
+                pat = _re2.compile(_diacritic_pattern(tok), _re2.I)
+                tok_hit = False
+                for field_val, weight in fields.values():
+                    if pat.search(field_val):
+                        sc += weight
+                        tok_hit = True
+                if tok_hit:
+                    matched_tokens += 1
+            # Bonus: every token matched (high-precision result)
+            if matched_tokens == len(tokens):
+                sc += 20
+            # Bonus: exact full query appears in name
+            name_lower = (p.get('name') or '').lower()
+            if full_q in name_lower:
+                sc += 30
+            # Bonus: name starts with query (prefix match)
+            elif name_lower.startswith(full_q):
+                sc += 15
+            if p.get('is_best_seller'):       sc += 3
+            if p.get('is_pharmacist_choice'): sc += 2
+            if p.get('in_stock') is not False: sc += 5
+            return sc
+
+        scored = sorted(raw, key=_score, reverse=True)
+        products = scored[:limit]
+
+        # ── Fuzzy fallback ───────────────────────────────────────────────────
+        # If exact/regex search returned too few results, do a similarity pass
+        # over all product names using difflib. This catches typos like
+        # "blemishi" → "blemish", "calcuim" → "calcium", etc.
+        if len(products) < 4 and len(query) >= 4:
+            from difflib import SequenceMatcher
+
+            def _tok_sim(query_tok, text):
+                """Best similarity of query_tok against any word in text."""
+                if not text:
+                    return 0.0
+                words = _re2.split(r'\s+', text.lower())
+                candidates = [w for w in words + [text.lower()] if w]
+                if not candidates:
+                    return 0.0
+                return max(
+                    SequenceMatcher(None, query_tok.lower(), w).ratio()
+                    for w in candidates
+                )
+
+            def _fuzzy_score(p):
+                name  = (p.get('name')  or '').lower()
+                brand = (p.get('brand') or '').lower()
+                total = 0.0
+                for tok in tokens:
+                    best = max(_tok_sim(tok, name), _tok_sim(tok, brand) * 0.6)
+                    total += best
+                return total / len(tokens)
+
+            already_ids = {str(p['_id']) for p in products}
+            # Light projection — fetch names/brands only for fast comparison
+            all_light = list(mongo.db.products.find(
+                {'is_deleted': {'$ne': True}},
+                {'name': 1, 'brand': 1}
+            ))
+            fuzzy_hits = [
+                p for p in all_light
+                if str(p['_id']) not in already_ids
+                and _fuzzy_score(p) >= 0.75
+            ]
+            if fuzzy_hits:
+                fuzzy_hits.sort(key=_fuzzy_score, reverse=True)
+                fuzzy_ids = [p['_id'] for p in fuzzy_hits[:limit - len(products)]]
+                fuzzy_full = list(mongo.db.products.find(
+                    {'_id': {'$in': fuzzy_ids}, 'is_deleted': {'$ne': True}},
+                    {"name": 1, "brand": 1, "category": 1, "subcategory": 1,
+                     "description": 1, "price": 1, "discount_price": 1,
+                     "image_url": 1, "size": 1, "is_best_seller": 1,
+                     "is_pharmacist_choice": 1, "offer_status": 1,
+                     "discount_from": 1, "in_stock": 1, "favorites": 1}
+                ))
+                products = products + fuzzy_full
     
     results = []
     for p in products:

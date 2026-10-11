@@ -53,10 +53,10 @@
                 </div>
 
                 {% if product.images and product.images|length > 1 %}
-                <button class="carousel-arrow prev" onclick="moveCarousel(event, this, -1)" style="opacity: 1;">
+                <button class="carousel-arrow prev" onclick="moveCarousel(event, this, -1)">
                     <i class="fas fa-chevron-left"></i>
                 </button>
-                <button class="carousel-arrow next" onclick="moveCarousel(event, this, 1)" style="opacity: 1;">
+                <button class="carousel-arrow next" onclick="moveCarousel(event, this, 1)">
                     <i class="fas fa-chevron-right"></i>
                 </button>
                 {% endif %}
@@ -1077,7 +1077,7 @@
         height: 50px;
         object-fit: contain;
         border-radius: 10px;
-        background: #f8f9fa;
+        background: #ffffff;
         flex-shrink: 0;
         padding: 4px;
         border: 1px solid #eef0f3;
@@ -1282,6 +1282,96 @@
 </style>
 
 
+<div class="pd-contact-section">
+    <div class="pd-contact-inner">
+        <div class="pd-contact-text">
+            <span class="pd-contact-eyebrow">Keni pyetje?</span>
+            <h3 class="pd-contact-title">Keni nevojë për më shumë informacion?</h3>
+            <p class="pd-contact-sub">Ekipi ynë është gati t'ju ndihmojë — na kontaktoni direkt në rrjetet sociale.</p>
+        </div>
+        <div class="pd-contact-btns">
+            <a href="https://www.instagram.com/barnatoremeld/" target="_blank" rel="noopener" class="pd-contact-btn pd-contact-btn--ig">
+                <i class="fab fa-instagram"></i>
+                <span>Instagram</span>
+            </a>
+            <a href="https://www.facebook.com/profile.php?id=100067645081992" target="_blank" rel="noopener" class="pd-contact-btn pd-contact-btn--fb">
+                <i class="fab fa-facebook-f"></i>
+                <span>Facebook</span>
+            </a>
+        </div>
+    </div>
+</div>
+
+<style>
+.pd-contact-section {
+    background: transparent;
+    padding: 3.5rem 0;
+    margin: 2rem 0 5rem;
+}
+.pd-contact-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 3rem;
+    flex-wrap: wrap;
+}
+.pd-contact-eyebrow {
+    display: block;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #6C7A61;
+    margin-bottom: 0.45rem;
+}
+.pd-contact-title {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-size: 2rem;
+    font-weight: 600;
+    color: #2B2B2B;
+    margin: 0 0 0.6rem;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+}
+.pd-contact-sub {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.9rem;
+    color: #7A7068;
+    margin: 0;
+    line-height: 1.6;
+}
+.pd-contact-btns {
+    display: flex;
+    gap: 0.75rem;
+    flex-shrink: 0;
+}
+.pd-contact-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.7rem;
+    padding: 1rem 2rem;
+    border-radius: 50px;
+    font-family: 'Inter', sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+    white-space: nowrap;
+}
+.pd-contact-btn i { font-size: 1.15rem; }
+.pd-contact-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.15); filter: brightness(1.06); text-decoration: none; }
+.pd-contact-btn--ig { background: linear-gradient(135deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888); color: #fff; }
+.pd-contact-btn--fb { background: #1877F2; color: #fff; }
+@media (max-width: 640px) {
+    .pd-contact-inner { flex-direction: column; align-items: flex-start; gap: 1.5rem; }
+    .pd-contact-title { font-size: 1.35rem; }
+}
+</style>
+
 {% if related_products %}
 <div id="relatedProductsSection" class="container container-wide" style="padding-top: 3rem; padding-bottom: 3rem; overflow: hidden;">
     <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1.5rem; flex-wrap:wrap; gap:1rem;">
@@ -1300,7 +1390,7 @@
                 <img src="{{ related.image_url|cld(400) }}" alt="{{ related.name }}"
                     style="width:100%; height:100%; object-fit:contain; object-position:center; padding:1rem; display:block; box-sizing:border-box; opacity:0; position:relative; z-index:1;"
                     loading="lazy"
-                    onload="this.style.opacity='1';this.style.transition='opacity 0.25s';var s=this.parentElement.querySelector('.img-shimmer');if(s)s.classList.add('hidden')"
+                    onload="this.style.opacity='1';this.style.transition='opacity 0.25s, transform 0.35s ease';var s=this.parentElement.querySelector('.img-shimmer');if(s)s.classList.add('hidden')"
                     onerror="this.style.opacity='0.35';this.src='/static/img/placeholder.png';var s=this.parentElement.querySelector('.img-shimmer');if(s)s.classList.add('hidden')">
                 <div style="position:absolute; top:0.5rem; left:0.5rem; display:flex; flex-direction:column; gap:0.3rem; z-index:5;">
                     {% if related.auto_oct_discount %}
@@ -1313,7 +1403,7 @@
                     {% endif %}
                 </div>
                 {% if related.in_stock == False %}
-                <div style="position:absolute;inset:0;background:rgba(255,255,255,.7);display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;color:#64748b;">Jashtë Stokut</div>
+                <div class="hp-out-stock"><span>Jashtë Stokut</span></div>
                 {% endif %}
                 <button class="btn-favorite {{ 'active' if (current_user.is_authenticated and related.favorites and current_user.id in related.favorites) or (not current_user.is_authenticated and related._id|string in session.get('liked_products', [])) else '' }}"
                     onclick="event.stopPropagation(); toggleFavorite(this, '{{ related._id }}')"

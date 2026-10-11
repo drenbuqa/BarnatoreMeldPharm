@@ -539,24 +539,155 @@ class Product:
 
     @staticmethod
 
-    def get_related(category, exclude_id, limit=4):
+    def get_related(product_doc, exclude_id, limit=12):
+        """
+        Scored related-products algorithm.
+
+        Signals (additive score):
+          +50  same base product name, different size/variant
+          +40  per shared brand-line token (e.g. "Jointace", "Wellwoman")
+          +30  same subcategory
+          +20  same brand
+          +10  same category
+          +5   per shared ordinary name token
+          +5   similar price range (within 50 % of each other)
+          +3   best-seller boost
+          +0–2 small random jitter so results vary on refresh
+
+        Brand-line tokens are words that appear in 2–70 % of a brand's products
+        (exclusive), meaning they identify a product line rather than being the
+        brand name (in every product) or a one-off word (in only one product).
+        """
+        import re, random
+        from collections import Counter
 
         try:
-
             Product.revert_expired_offers()
 
-            products = list(mongo.db.products.find({
+            category    = product_doc.get('category', '')
+            subcategory = product_doc.get('subcategory', '')
+            brand       = product_doc.get('brand', '')
+            name        = product_doc.get('name', '') or ''
+            price       = float(product_doc.get('price') or 0)
 
-                "category": category,
-                "is_deleted": {"$ne": True},
-                "_id": {"$ne": ObjectId(exclude_id)}
+            # ── Shared helpers ───────────────────────────────────────────────
+            _SW = {
+                'dhe', 'me', 'për', 'per', 'mg', 'ml', 'gr', 'g', 'x',
+                'tab', 'caps', 'the', 'and', 'with', 'for', 'de', 'of',
+                'një', 'nje', 'i', 'e', 'të', 'te',
+                # very generic product words that appear in most products
+                'formula', 'original', 'plus', 'max', 'advanced', 'extra',
+                'ultra', 'pro', 'new', 'complex', 'complete', 'active',
+                'forte', 'gold', 'premium', 'natural', 'organic', 'pure',
+            }
 
-            }).limit(limit))
+            def _tokens(text):
+                return {t.lower() for t in re.split(r'[\s\-/,\.()&]+', text or '')
+                        if len(t) > 2 and t.lower() not in _SW
+                        and not re.fullmatch(r'\d+[\.,]?\d*', t)}
 
-            return Product._decorate_products(products)
+            _size_re = re.compile(
+                r'\s*\d+[\.,]?\d*\s*'
+                r'(mg|mcg|iu|g|gr|ml|l|caps?|tab(let)?s?|softgels?|sachets?|'
+                r'comprimate|capsule|fiole)\b.*$', re.I)
 
-        except:
+            def _base_name(n):
+                return _size_re.sub('', n or '').strip().lower()
 
+            src_tokens = _tokens(name)
+            src_base   = _base_name(name)
+
+            # ── Discover brand-line tokens ───────────────────────────────────
+            # Fetch all brand products (names only — cheap projection).
+            # A token is a "line word" when it appears in ≥2 products but in
+            # ≤70 % of the brand's catalogue, so it identifies a line, not the
+            # brand itself or a generic filler word.
+            src_line_tokens = set()
+            if brand:
+                brand_names = list(mongo.db.products.find(
+                    {'brand': brand, 'is_deleted': {'$ne': True}},
+                    {'name': 1, '_id': 0},
+                ))
+                n_brand = len(brand_names)
+                if n_brand >= 2:
+                    brand_name_tokens = _tokens(brand)
+                    freq = Counter()
+                    for bp in brand_names:
+                        for t in _tokens(bp.get('name', '')):
+                            freq[t] += 1
+                    upper = max(2, int(n_brand * 0.70))
+                    line_tokens = {
+                        t for t, c in freq.items()
+                        if 2 <= c <= upper
+                        and t not in brand_name_tokens
+                    }
+                    # Only keep line tokens that appear in the source product
+                    src_line_tokens = src_tokens & line_tokens
+
+            # ── Broad candidate pool ─────────────────────────────────────────
+            or_clauses = [{'category': category}]
+            if brand:
+                or_clauses.append({'brand': brand})
+            if subcategory:
+                or_clauses.append({'subcategory': subcategory})
+
+            candidates = list(mongo.db.products.find({
+                'is_deleted': {'$ne': True},
+                'in_stock':   {'$ne': False},
+                '_id':        {'$ne': ObjectId(exclude_id)},
+                '$or':        or_clauses,
+            }).limit(limit * 8))
+
+            # ── Score every candidate ────────────────────────────────────────
+            scored = []
+            for p in candidates:
+                sc = 0
+
+                if p.get('category') == category:
+                    sc += 10
+                if subcategory and p.get('subcategory') == subcategory:
+                    sc += 30
+                if brand and (p.get('brand') or '').lower() == brand.lower():
+                    sc += 20
+
+                p_tokens = _tokens(p.get('name') or '')
+                p_base   = _base_name(p.get('name') or '')
+
+                # Same product, different size/variant
+                if src_base and p_base and src_base == p_base:
+                    sc += 50
+
+                # Brand-line token match (e.g. both contain "Jointace")
+                if src_line_tokens:
+                    shared_line = len(src_line_tokens & p_tokens)
+                    sc += shared_line * 40
+
+                # Ordinary name token overlap
+                shared = len(src_tokens & p_tokens)
+                sc += shared * 5
+
+                # Best-seller
+                if p.get('is_best_seller'):
+                    sc += 3
+
+                # Price proximity
+                p_price = float(p.get('price') or 0)
+                if price > 0 and p_price > 0:
+                    ratio = min(price, p_price) / max(price, p_price)
+                    if ratio >= 0.5:
+                        sc += 5
+
+                # Small jitter so tied results rotate on each page load
+                sc += random.uniform(0, 2)
+
+                scored.append((sc, p))
+
+            scored.sort(key=lambda x: x[0], reverse=True)
+            top = [p for _, p in scored[:limit]]
+
+            return Product._decorate_products(top)
+
+        except Exception:
             return []
 
 

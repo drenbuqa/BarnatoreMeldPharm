@@ -5,36 +5,47 @@
 <div class="auth-page">
     <div class="auth-card">
         <div class="auth-logo">
-            <img src="{{ url_for('static', filename='favicon.png') }}" alt="Meld Pharm" width="48">
+            <img src="{{ url_for('static', filename='favicon.png') }}" alt="Meld Pharm" width="40">
             <span>Barnatore Meld Pharm</span>
         </div>
 
-        <h2 class="auth-title">Krijoni llogarinë tuaj</h2>
+        <h2 class="auth-title">Krijoni llogarinë</h2>
+        <p class="auth-sub">Filloni menjëherë — është falas</p>
 
-        <form method="POST">
+        <div id="auth-flash-zone"></div>
+
+        <form method="POST" id="register-form" novalidate>
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
             <input type="hidden" name="next" value="{{ request.args.get('next', '') }}">
             <div class="aform-group">
-                <label>Emri i përdoruesit</label>
-                <div class="ainput-wrap"><i class="fas fa-user"></i>
-                    <input type="text" name="username" class="form-control" required placeholder="p.sh. ardian92">
+                <label for="username">Emri i përdoruesit</label>
+                <div class="ainput-wrap">
+                    <i class="fas fa-user"></i>
+                    <input type="text" id="username" name="username" class="form-control" placeholder="p.sh. ardian92" autocomplete="username">
                 </div>
+                <div class="field-error" id="username-error"></div>
             </div>
             <div class="aform-group">
-                <label>Email</label>
-                <div class="ainput-wrap"><i class="fas fa-envelope"></i>
-                    <input type="email" name="email" class="form-control" required placeholder="emaili@juaj.com" value="{{ request.args.get('email', '') }}">
+                <label for="email">Email</label>
+                <div class="ainput-wrap">
+                    <i class="fas fa-envelope"></i>
+                    <input type="email" id="email" name="email" class="form-control" placeholder="emaili@juaj.com" value="{{ request.args.get('email', '') }}" autocomplete="email">
                 </div>
+                <div class="field-error" id="email-error"></div>
             </div>
             <div class="aform-group">
-                <label>Fjalëkalimi</label>
-                <div class="ainput-wrap"><i class="fas fa-lock"></i>
-                    <input type="password" name="password" class="form-control" required minlength="8" placeholder="Të paktën 8 karaktere dhe 1 numër">
+                <label for="password">Fjalëkalimi</label>
+                <div class="ainput-wrap">
+                    <i class="fas fa-lock"></i>
+                    <input type="password" id="password" name="password" class="form-control" placeholder="Minimumi 8 karaktere dhe 1 numër" autocomplete="new-password">
+                    <button type="button" class="pw-toggle" aria-label="Trego fjalëkalimin" tabindex="-1"><i class="fas fa-eye"></i></button>
                 </div>
-                <small style="color:#94a3b8;font-size:0.78rem;display:block;margin-top:0.3rem;">Minimumi 8 karaktere dhe të paktën 1 numër.</small>
+<div class="field-error" id="password-error"></div>
             </div>
-
-            <button type="submit" class="auth-btn"><i class="fas fa-user-plus"></i> Krijo llogarinë</button>
+            <button type="submit" class="auth-btn" id="register-btn">
+                <span class="btn-label"><i class="fas fa-user-plus"></i> Krijo llogarinë</span>
+                <span class="btn-loading" style="display:none;"><i class="fas fa-spinner fa-spin"></i> Duke u regjistruar…</span>
+            </button>
         </form>
 
         <div class="auth-divider"><span>ose</span></div>
@@ -44,48 +55,74 @@
             Regjistrohu me Google
         </a>
 
-        <div class="auth-guest">
-            <p style="margin:0 0 0.5rem;font-size:0.85rem;color:#64748b;">Keni llogari? <a href="{{ url_for('auth.login') }}" style="color:#4F5D4E;font-weight:600;text-decoration:none;">Kyçuni këtu</a></p>
-            <a href="{{ url_for('main.products') }}"><i class="fas fa-arrow-right"></i> Vazhdo si vizitor — nuk kërkohet llogari</a>
+        <div class="auth-footer-links">
+            <p>Keni llogari? <a href="{{ url_for('auth.login') }}" class="auth-link-strong">Kyçuni këtu</a></p>
+            <a href="{{ url_for('main.products') }}" class="auth-visitor-link"><i class="fas fa-arrow-right"></i> Vazhdo si vizitor</a>
         </div>
     </div>
 </div>
 <style>
-.main-content { margin-top:0 !important; }
-.auth-page { min-height:100vh; display:flex; align-items:center; justify-content:center; padding:1.5rem 1rem; background:linear-gradient(135deg,#F7F3EE,#EFE7DE); font-family:'Inter','Poppins',sans-serif; }
-.auth-card { background:#fff; border-radius:20px; box-shadow:0 16px 48px rgba(43,43,43,0.10); padding:2rem 1.75rem; width:100%; max-width:420px; }
-@media(max-width:480px){
-  .auth-card { padding:1.5rem 1.25rem; border-radius:16px; }
-  .auth-logo { margin-bottom:1.25rem; }
-  .auth-title { font-size:1.3rem; }
-  .auth-sub { margin-bottom:1.1rem; }
-  .aform-group { margin-bottom:0.75rem; }
-  .auth-btn { padding:0.75rem; margin-top:0.75rem; }
-  .auth-divider { margin:0.9rem 0; }
-  .auth-guest { margin-top:1rem; padding-top:1rem; }
-}
-.auth-logo { display:flex; align-items:center; gap:0.75rem; margin-bottom:1.75rem; font-weight:700; font-size:0.95rem; color:#4F5D4E; }
-.auth-logo img { border-radius:10px; background:rgba(79,93,78,0.08); padding:5px; }
-.auth-title { font-family:'Cormorant Garamond',Georgia,serif; font-size:1.7rem; font-weight:600; color:#2B2B2B; margin-bottom:1.5rem; letter-spacing:-0.01em; }
-.auth-sub { color:#7A7068; font-size:0.87rem; margin-bottom:1.6rem; }
-.auth-sub a { color:#4F5D4E; font-weight:600; text-decoration:none; }
-.aform-group { margin-bottom:1rem; }
-.aform-group label { display:block; font-size:0.83rem; font-weight:600; color:#2B2B2B; margin-bottom:0.3rem; }
-.ainput-wrap { position:relative; }
-.ainput-wrap i { position:absolute; left:0.9rem; top:50%; transform:translateY(-50%); color:#94a3b8; font-size:0.8rem; pointer-events:none; }
-.ainput-wrap .form-control { padding-left:2.4rem !important; border-radius:10px !important; border:1.5px solid #E2D9CE !important; height:44px; font-size:0.9rem; width:100%; font-family:'Inter','Poppins',sans-serif; }
-.ainput-wrap .form-control:focus { border-color:#6C7A61 !important; box-shadow:0 0 0 3px rgba(108,122,97,0.12) !important; outline:none; }
-.auth-btn { width:100%; padding:0.85rem; margin-top:1rem; background:#4F5D4E; color:#fff; border:none; border-radius:12px; font-family:'Inter','Poppins',sans-serif; font-size:0.95rem; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:0.5rem; transition:background 0.2s,transform 0.2s; }
-.auth-btn:hover { background:#2B2B2B; transform:translateY(-1px); }
-.auth-divider { display:flex; align-items:center; gap:12px; margin:1.2rem 0; }
-.auth-divider::before,.auth-divider::after { content:''; flex:1; height:1px; background:#E2D9CE; }
-.auth-divider span { font-size:0.8rem; color:#7A7068; }
-.google-btn { display:flex; align-items:center; justify-content:center; gap:10px; width:100%; padding:11px 16px; border:1.5px solid #E2D9CE; border-radius:10px; background:#fff; color:#2B2B2B; font-size:0.9rem; font-weight:600; text-decoration:none; transition:border-color 0.2s; box-sizing:border-box; }
-.google-btn:hover { border-color:#6C7A61; }
-.auth-guest { text-align:center; margin-top:1.25rem; padding-top:1.25rem; border-top:1px solid #EFE7DE; }
-.auth-guest a { color:#7A7068; font-size:0.85rem; text-decoration:none; display:inline-flex; align-items:center; gap:6px; }
-.auth-guest a:hover { color:#4F5D4E; text-decoration:underline; }
-.auth-guest p a:hover { text-decoration:underline; }
-.auth-guest i { font-size:0.72rem; }
+.main-content{margin-top:0!important}
+.auth-page{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1.5rem 1rem;background:linear-gradient(135deg,#F7F3EE 0%,#EFE7DE 100%);font-family:'Inter','Poppins',sans-serif}
+.auth-card{background:#fff;border-radius:20px;box-shadow:0 8px 40px rgba(43,43,43,.10),0 2px 8px rgba(43,43,43,.06);padding:2rem 2rem;width:100%;max-width:420px}
+.auth-logo{display:flex;align-items:center;gap:.6rem;margin-bottom:1.25rem;font-weight:700;font-size:.88rem;color:#4F5D4E}
+.auth-logo img{border-radius:9px;background:rgba(79,93,78,.08);padding:5px}
+.auth-title{font-family:'Cormorant Garamond',Georgia,serif;font-size:1.85rem;font-weight:700;color:#2B2B2B;margin-bottom:.2rem;letter-spacing:-.02em}
+.auth-sub{color:#7A7068;font-size:.86rem;margin-bottom:1.1rem}
+.auth-flash{display:flex;align-items:flex-start;gap:.55rem;padding:.65rem .9rem;border-radius:10px;font-size:.86rem;margin-bottom:.85rem;animation:fadeInDown .25s ease}
+.auth-flash.danger{background:#FEF2F2;border:1px solid #FECACA;color:#B91C1C}
+.auth-flash.warning{background:#FFFBEB;border:1px solid #FDE68A;color:#92400E}
+.auth-flash.success{background:#F0FDF4;border:1px solid #BBF7D0;color:#166534}
+.auth-flash i{flex-shrink:0;margin-top:2px}
+@keyframes fadeInDown{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:translateY(0)}}
+.aform-group{margin-bottom:.45rem}
+.aform-group label{display:block;font-size:.8rem;font-weight:600;color:#2B2B2B;margin-bottom:.28rem}
+.ainput-wrap{position:relative}
+.ainput-wrap>i:first-child{position:absolute;left:.9rem;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:.78rem;pointer-events:none;z-index:1}
+.ainput-wrap .form-control{padding-left:2.4rem!important;padding-right:2.5rem!important;border-radius:10px!important;border:1.5px solid #E2D9CE!important;height:44px;font-size:.9rem;width:100%;font-family:'Inter','Poppins',sans-serif;box-sizing:border-box;transition:border-color .2s,box-shadow .2s;background:#fff;color:#2B2B2B}
+.ainput-wrap .form-control:focus{border-color:#6C7A61!important;box-shadow:0 0 0 3px rgba(108,122,97,.12)!important;outline:none}
+.ainput-wrap .form-control.is-invalid{border-color:#E53E3E!important;box-shadow:0 0 0 3px rgba(229,62,62,.10)!important}
+.ainput-wrap .form-control.is-valid{border-color:#38A169!important}
+.field-error{font-size:.76rem;color:#E53E3E;margin-top:.2rem;min-height:.9rem;display:flex;align-items:center;gap:.3rem}
+.field-error:not(:empty)::before{content:'\f06a';font-family:'Font Awesome 6 Free';font-weight:900;font-size:.7rem}
+.pw-toggle{position:absolute;right:.7rem;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#94a3b8;padding:4px;font-size:.8rem;line-height:1;display:flex;align-items:center}
+.pw-toggle:hover{color:#4F5D4E}
+.auth-btn{width:100%;padding:.85rem;margin-top:.3rem;background:#4F5D4E;color:#fff;border:none;border-radius:12px;font-family:'Inter','Poppins',sans-serif;font-size:.93rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:.5rem;transition:background .2s,transform .15s,box-shadow .2s}
+.auth-btn:hover{background:#3a4539;transform:translateY(-1px);box-shadow:0 6px 20px rgba(79,93,78,.28)}
+.auth-btn:active{transform:translateY(0)}
+.auth-btn:disabled{opacity:.7;cursor:not-allowed;transform:none;box-shadow:none}
+.auth-divider{display:flex;align-items:center;gap:12px;margin:.75rem 0}
+.auth-divider::before,.auth-divider::after{content:'';flex:1;height:1px;background:#E2D9CE}
+.auth-divider span{font-size:.78rem;color:#7A7068}
+.google-btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:11px 16px;border:1.5px solid #E2D9CE;border-radius:10px;background:#fff;color:#2B2B2B;font-size:.88rem;font-weight:600;text-decoration:none;transition:border-color .2s,box-shadow .2s;box-sizing:border-box}
+.google-btn:hover{border-color:#6C7A61;box-shadow:0 2px 12px rgba(108,122,97,.15)}
+.auth-footer-links{text-align:center;margin-top:1.1rem;padding-top:1.1rem;border-top:1px solid #EFE7DE;display:flex;flex-direction:column;align-items:center;gap:.45rem}
+.auth-footer-links p{margin:0;font-size:.84rem;color:#64748b}
+.auth-link-strong{color:#4F5D4E;font-weight:600;text-decoration:none}
+.auth-link-strong:hover{text-decoration:underline}
+.auth-visitor-link{color:#7A7068;font-size:.81rem;text-decoration:none;display:inline-flex;align-items:center;gap:5px}
+.auth-visitor-link:hover{color:#4F5D4E;text-decoration:underline}
+.auth-visitor-link i{font-size:.68rem}
+@media(max-width:480px){.auth-card{padding:1.75rem 1.4rem;border-radius:16px}}
 </style>
+<script>
+(function(){
+    var flashEl=document.getElementById('flash-messages'),zone=document.getElementById('auth-flash-zone');
+    if(flashEl&&zone){try{var msgs=JSON.parse(flashEl.dataset.messages||'[]');msgs.forEach(function(m){var iconMap={danger:'fa-circle-exclamation',warning:'fa-triangle-exclamation',success:'fa-circle-check',info:'fa-circle-info'},el=document.createElement('div');el.className='auth-flash '+m[0];el.innerHTML='<i class="fas '+(iconMap[m[0]]||'fa-circle-info')+'"></i><span>'+m[1]+'</span>';zone.appendChild(el)});if(flashEl.parentNode)flashEl.parentNode.removeChild(flashEl)}catch(e){}}
+    document.querySelectorAll('.pw-toggle').forEach(function(btn){btn.addEventListener('click',function(){var inp=this.closest('.ainput-wrap').querySelector('input'),icon=this.querySelector('i');if(inp.type==='password'){inp.type='text';icon.className='fas fa-eye-slash';this.setAttribute('aria-label','Fshih fjalëkalimin')}else{inp.type='password';icon.className='fas fa-eye';this.setAttribute('aria-label','Trego fjalëkalimin')}})});
+    var usernameEl=document.getElementById('username'),emailEl=document.getElementById('email'),passEl=document.getElementById('password');
+    var usernameErr=document.getElementById('username-error'),emailErr=document.getElementById('email-error'),passErr=document.getElementById('password-error');
+    function validateUsername(v){if(!v)return'Emri i përdoruesit është i detyrueshëm.';if(v.length<3)return'Minimumi 3 karaktere.';return''}
+    function validateEmail(v){if(!v)return'Email-i është i detyrueshëm.';if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v))return'Adresa email nuk është e vlefshme.';return''}
+    function validatePassword(v){if(!v)return'Fjalëkalimi është i detyrueshëm.';if(v.length<8)return'Minimumi 8 karaktere.';if(!/\d/.test(v))return'Duhet të përmbajë të paktën 1 numër.';return''}
+    function setField(inp,err,msg){if(msg){inp.classList.add('is-invalid');inp.classList.remove('is-valid');err.textContent=msg}else if(inp.value){inp.classList.remove('is-invalid');inp.classList.add('is-valid');err.textContent=''}else{inp.classList.remove('is-invalid','is-valid');err.textContent=''}}
+    usernameEl.addEventListener('blur',function(){setField(usernameEl,usernameErr,validateUsername(usernameEl.value.trim()))});
+    usernameEl.addEventListener('input',function(){if(usernameEl.classList.contains('is-invalid'))setField(usernameEl,usernameErr,validateUsername(usernameEl.value.trim()))});
+    emailEl.addEventListener('blur',function(){setField(emailEl,emailErr,validateEmail(emailEl.value.trim()))});
+    emailEl.addEventListener('input',function(){if(emailEl.classList.contains('is-invalid'))setField(emailEl,emailErr,validateEmail(emailEl.value.trim()))});
+    passEl.addEventListener('input',function(){if(this.classList.contains('is-invalid'))setField(this,passErr,validatePassword(this.value))});
+    passEl.addEventListener('blur',function(){setField(this,passErr,validatePassword(this.value))});
+    document.getElementById('register-form').addEventListener('submit',function(e){var uErr=validateUsername(usernameEl.value.trim()),eErr=validateEmail(emailEl.value.trim()),pErr=validatePassword(passEl.value);setField(usernameEl,usernameErr,uErr);setField(emailEl,emailErr,eErr);setField(passEl,passErr,pErr);if(uErr||eErr||pErr){e.preventDefault();return}var btn=document.getElementById('register-btn');btn.querySelector('.btn-label').style.display='none';btn.querySelector('.btn-loading').style.display='flex';btn.disabled=true});
+})();
+</script>
 {% endblock %}

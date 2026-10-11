@@ -138,7 +138,7 @@
         <div class="container desktop-nav-container">
             <!-- Left: Logo -->
             <a href="{{ url_for('main.index') }}" class="desktop-logo" style="display:flex;align-items:center;">
-                <img src="https://res.cloudinary.com/drljgepgy/image/upload/v1788272701/ChatGPT_Image_Sep_1_2026_at_04_24_43_PM_h5kdm9.png" alt="Barnatore Meld Pharm" style="height:38px;width:auto;">
+                <img src="https://res.cloudinary.com/drljgepgy/image/upload/v1788272701/ChatGPT_Image_Sep_1_2026_at_04_24_43_PM_h5kdm9.png" alt="Barnatore Meld Pharm" style="height:48px;width:auto;">
             </a>
 
             <!-- Center: Search Bar -->
@@ -486,7 +486,7 @@
                 <div class="footer-trust-divider"></div>
                 <div class="footer-trust-item">
                     <i class="fas fa-clock"></i>
-                    <span>E Hënë–E Shtunë 08:00–22:00</span>
+                    <span>E Hënë–E Diel 08:00–22:00</span>
                 </div>
                 <div class="footer-trust-divider"></div>
                 <div class="footer-trust-item">
@@ -1379,14 +1379,33 @@ function hpAddToCart(btn, productId) {
   })
   .catch(function() { btn.disabled = false; });
 }
+function hpUpdateArrows(outer) {
+  var c = outer.querySelector('.hp-carousel');
+  if (!c) return;
+  var prev = outer.querySelector('.hp-prev');
+  var next = outer.querySelector('.hp-next');
+  var max  = c.scrollWidth - c.clientWidth;
+  if (prev) prev.style.visibility = c.scrollLeft <= 2 ? 'hidden' : 'visible';
+  if (next) next.style.visibility = c.scrollLeft >= max - 2 ? 'hidden' : 'visible';
+}
 function hpScrollCarousel(btn, dir) {
-  var c = btn.closest('.hp-carousel-outer').querySelector('.hp-carousel');
+  var outer = btn.closest('.hp-carousel-outer');
+  var c = outer.querySelector('.hp-carousel');
   var card = c.querySelector('.hp-card');
   var gap = parseFloat(getComputedStyle(c).gap) || 16;
   var step = card ? card.offsetWidth + gap : 220;
   var target = Math.round(c.scrollLeft / step) * step + dir * step;
   c.scrollTo({left: target, behavior: 'smooth'});
 }
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('.hp-carousel-outer').forEach(function(outer) {
+    var c = outer.querySelector('.hp-carousel');
+    if (!c) return;
+    hpUpdateArrows(outer);
+    c.addEventListener('scroll', function() { hpUpdateArrows(outer); }, {passive: true});
+    window.addEventListener('resize', function() { hpUpdateArrows(outer); });
+  });
+});
 </script>
 </body>
 

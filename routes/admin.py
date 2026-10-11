@@ -403,11 +403,28 @@ def products_page():
     elif filter_stock == 'in':
         query["in_stock"] = True
     if search_q:
-        escaped = _re.escape(search_q)
-        query["$or"] = [
-            {"name":  {"$regex": escaped, "$options": "i"}},
-            {"brand": {"$regex": escaped, "$options": "i"}},
-        ]
+        # Split into tokens — each token must appear in at least one searchable
+        # field (name, brand, category, subcategory). This means "omega swanson"
+        # finds products where "omega" is in any field AND "swanson" is in any field.
+        def _dp(term):
+            out = []
+            for c in term.lower():
+                if c == 'e':   out.append('[eë]')
+                elif c == 'c': out.append('[cç]')
+                else:          out.append(_re.escape(c))
+            return ''.join(out)
+
+        tokens = [t for t in search_q.split() if len(t) >= 2]
+        if tokens:
+            query["$and"] = [
+                {"$or": [
+                    {"name":        {"$regex": _dp(t), "$options": "i"}},
+                    {"brand":       {"$regex": _dp(t), "$options": "i"}},
+                    {"category":    {"$regex": _dp(t), "$options": "i"}},
+                    {"subcategory": {"$regex": _dp(t), "$options": "i"}},
+                ]}
+                for t in tokens
+            ]
 
     filtered_total = mongo.db.products.count_documents(query)
     total_pages    = max(1, (filtered_total + per_page - 1) // per_page)
