@@ -1364,20 +1364,25 @@ def search_api():
                 ))
                 products = products + fuzzy_full
     
+    products = _apply_oct_5pct_discount(products)
+
     results = []
     for p in products:
         results.append({
             'id': str(p['_id']),
             'name': p['name'],
             'price': p['price'],
-            'discount_price': p.get('discount_price') if Product._offer_is_active(p) else None,
+            'discount_price': p.get('discount_price') if (p.get('auto_oct_discount') or Product._offer_is_active(p)) else None,
             'image_url': p.get('image_url'),
             'category': p.get('category'),
             'subcategory': p.get('subcategory'),
             'brand': p.get('brand', ''),
-            'size': p.get('size', '')
+            'size': p.get('size', ''),
+            'is_best_seller': p.get('is_best_seller', False),
+            'is_pharmacist_choice': p.get('is_pharmacist_choice', False),
+            'auto_oct_discount': p.get('auto_oct_discount', False),
         })
-    
+
     return jsonify(results)
 
 

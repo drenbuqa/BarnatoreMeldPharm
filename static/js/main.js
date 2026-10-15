@@ -143,7 +143,7 @@ bar.innerHTML=`<span style="color:#166534"><i class="fas fa-check-circle"></i> <
                             ${item.offer_type === 'multi_buy' ? `<div class="mini-item-offer-hint"style="margin-top: 0.35rem; color: #0f766e; font-size: 0.78rem; font-weight: 600; display: flex; gap: 0.4rem; align-items: center; flex-wrap: wrap;"><span style="background:#ecfeff; border:1px solid #99f6e4; padding:0.15rem 0.5rem; border-radius:999px; white-space:nowrap;">${item.offer_badge_text||'1+1'}</span><span>${item.offer_detail_text||'Merr 1 produkt falas kur blen këtë ofertë.'}</span></div>` : ''}
                         </div>
                         <button class="remove-item-btn" onclick="updateMiniQty(event, '${item._id}', 'remove')" title="Hiqe">
-                            <i class="far fa-trash-alt"></i>
+                            &times;
                         </button>
                     </div>`;});desktopContainer.innerHTML=html;}}
 const shippingBar=document.getElementById('mini-cart-shipping-bar');const FREE_THRESHOLD=50;if(data.total_price!==undefined){const total=parseFloat(data.total_price);const footer=document.querySelector('.mini-cart-footer');if(footer){let bar=document.getElementById('mini-cart-shipping-bar');if(total<FREE_THRESHOLD){const remaining=(FREE_THRESHOLD-total).toFixed(2);const pct=Math.min(Math.round((total/FREE_THRESHOLD)*100),100);if(!bar){bar=document.createElement('div');bar.id='mini-cart-shipping-bar';bar.className='free-shipping-bar';footer.insertBefore(bar,footer.firstChild);}
@@ -157,9 +157,7 @@ const mobileContainer=document.querySelector('.mobile-cart-items-list');const mo
                         <p>Ju nuk keni shtuar asnjë produkt në shportë akoma.</p>
                         <button class="btn-primary-mobile" onclick="closeCartModal()">Fillo Blerjen</button>
                     </div>`;}else{if(mobileHeader){mobileHeader.innerHTML=`
-                        <a href="#" class="clear-cart-link-mobile" onclick="clearCart(event)">
-                            <i class="fas fa-trash-alt"></i> Pastro Shportën
-                        </a>`;}
+                        <button class="btn-clear-mini" onclick="clearCart(event)">Pastro shportën</button>`;}
 let html='';data.cart_items.forEach(item=>{const displayPrice=parseFloat(item.price||0).toFixed(2);const origPrice=parseFloat(item.original_price||item.price||0).toFixed(2);const hasSaving=item.item_savings>0;const mobilePriceHtml=hasSaving?`<p class="price">€${displayPrice} <span style="text-decoration:line-through;color:#94a3b8;font-size:0.78rem;margin-left:3px;">€${origPrice}</span></p>`:`<p class="price">€${displayPrice}</p>`;const productUrl=`/product/${item._id}`;html+=`
                     <div class="mobile-mini-cart-item" data-id="${item._id}" onclick="window.location.href='${productUrl}';">
                         <div class="mobile-mini-cart-img">
@@ -175,9 +173,7 @@ let html='';data.cart_items.forEach(item=>{const displayPrice=parseFloat(item.pr
                                 <button class="qty-btn" onclick="updateMiniQty(event, '${item._id}', 'increase')">+</button>
                             </div>
                         </div>
-                        <button class="remove-btn" onclick="updateMiniQty(event, '${item._id}', 'remove')">
-                            <i class="far fa-trash-alt"></i>
-                        </button>
+                        <button class="item-remove-btn" onclick="updateMiniQty(event, '${item._id}', 'remove')">&times;</button>
                     </div>`;});mobileContainer.innerHTML=html;}}});};window.updateMiniQty=function(event,productId,action){if(event){event.preventDefault();event.stopPropagation();}
 const itemRows=document.querySelectorAll(`.mini-cart-item[data-id="${productId}"], .mobile-mini-cart-item[data-id="${productId}"]`);const formData=new FormData();const csrfToken=document.querySelector('meta[name="csrf-token"]').content;formData.append('csrf_token',csrfToken);fetch(`/cart/update/${productId}/${action}`,{method:'POST',body:formData,headers:{'X-Requested-With':'XMLHttpRequest'}}).then(res=>res.json()).then(data=>{if(data.success){window.updateGlobalBadges(data);itemRows.forEach(row=>{if(action==='remove'){row.remove();}else{const qtySpan=row.querySelector('.qty-val');if(qtySpan)qtySpan.textContent=data.quantity;}});if(data.cart_count===0){window.refreshMiniCart();}
 const footers=document.querySelectorAll('.mini-cart-footer, .modal-footer-cart');footers.forEach(footer=>{const totalSpan=footer.querySelector('.btn-go-to-cart, .total-price, .grand-total');if(totalSpan){if(totalSpan.classList.contains('btn-go-to-cart')){totalSpan.textContent=`SHKO NË SHPORTË (${data.cart_total.toFixed(2)} €)`;}else if(totalSpan.classList.contains('total-price')&&!totalSpan.closest('.modal-footer-cart')){totalSpan.textContent=`€${data.cart_total.toFixed(2)}`;}else if(footer.classList.contains('modal-footer-cart')){const subtotalEl=footer.querySelector('div:first-child > div:first-child span:last-child');const deliveryEl=footer.querySelector('div:first-child > div:nth-child(2) span:last-child');const savingsEl=footer.querySelector('div:first-child > div:nth-child(3) span:last-child');const grandTotalEl=footer.querySelector('.grand-total')||footer.querySelector('div:first-child > div:last-child span:last-child');if(subtotalEl)subtotalEl.textContent=`€${data.cart_total.toFixed(2)}`;if(deliveryEl)deliveryEl.textContent=data.delivery_fee>0?`€${data.delivery_fee.toFixed(2)}`:'Falas';if(grandTotalEl)grandTotalEl.textContent=`€${data.grand_total.toFixed(2)}`;}}});if(data.cart_count===0){const desktopContainer=document.querySelector('.mini-cart-items');if(desktopContainer){desktopContainer.innerHTML=`

@@ -302,7 +302,7 @@
                                 {% endif %}
                             </div>
                             {% if product.auto_oct_discount or product.discount_until %}
-                                <div class="hp-urgency" data-deadline="{% if product.auto_oct_discount %}2026-10-31T23:59:59{% else %}{{ product.discount_until.strftime('%Y-%m-%dT%H:%M:%S') if product.discount_until else '' }}{% endif %}">
+                                <div class="hp-urgency" data-deadline="{% if product.auto_oct_discount %}2026-10-31T23:59:59{% else %}{{ product.discount_until.strftime('%Y-%m-%d') + 'T23:59:59' if product.discount_until else '' }}{% endif %}">
                                     <i class="fas fa-clock"></i><span class="hp-urgency-text"></span>
                                 </div>
                             {% else %}

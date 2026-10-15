@@ -95,8 +95,8 @@
                                 <form action="{{ url_for('cart.remove_from_cart', cart_key=item.cart_key) }}" method="POST" data-cart-remove data-cart-key="{{ item.cart_key|e }}"
                                     onclick="event.stopPropagation()">
                                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-                                    <button type="submit" class="btn-icon" title="Fshije">
-                                        <i class="fas fa-trash-alt"></i>
+                                    <button type="submit" class="btn-remove-row" title="Hiqe">
+                                        &times;
                                     </button>
                                 </form>
                             </td>
@@ -127,8 +127,8 @@
                         <div class="cart-col-action" onclick="event.stopPropagation()">
                             <form action="{{ url_for('cart.remove_from_cart', cart_key=item.cart_key) }}" method="POST" data-cart-remove data-cart-key="{{ item.cart_key|e }}">
                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-                                <button type="submit" class="delete-btn" title="Fshije">
-                                    <i class="fas fa-trash-alt"></i>
+                                <button type="submit" class="delete-btn" title="Hiqe">
+                                    &times;
                                 </button>
                             </form>
                         </div>
@@ -360,7 +360,7 @@
                             {% endif %}
                         </div>
                         {% if product.auto_oct_discount or product.discount_until %}
-                            <div class="hp-urgency" data-deadline="{% if product.auto_oct_discount %}2026-10-31T23:59:59{% else %}{{ product.discount_until.strftime('%Y-%m-%dT%H:%M:%S') if product.discount_until else '' }}{% endif %}">
+                            <div class="hp-urgency" data-deadline="{% if product.auto_oct_discount %}2026-10-31T23:59:59{% else %}{{ product.discount_until.strftime('%Y-%m-%d') + 'T23:59:59' if product.discount_until else '' }}{% endif %}">
                                 <i class="fas fa-clock"></i><span class="hp-urgency-text"></span>
                             </div>
                         {% else %}

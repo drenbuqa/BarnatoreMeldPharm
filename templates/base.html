@@ -16,9 +16,9 @@
     <link rel="preconnect" href="https://cdnjs.cloudflare.com">
     <link rel="preconnect" href="https://res.cloudinary.com" crossorigin>
     <link rel="dns-prefetch" href="https://res.cloudinary.com">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css', v=17) }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css', v=29) }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/cart-recommendations.css', v=12) }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/mobile.css', v=9) }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/mobile.css', v=29) }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/chatbot-new.css', v=2) }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/label-badges.css', v=3) }}">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&family=Cormorant+Garamond:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -176,7 +176,7 @@
                             <span class="items-count-text">{{ cart_count }} produkt(e)</span>
                             <div style="display: flex; align-items: center; gap: 0.8rem;">
                                 <button class="clear-cart-btn-mini" onclick="clearCart(event)">
-                                    <i class="far fa-trash-alt"></i> Fshij të gjitha
+                                    Pastro shportën
                                 </button>
                                 <button class="btn-close-mini" onclick="toggleMiniCart(event)"><i
                                         class="fas fa-times"></i></button>
@@ -216,7 +216,7 @@
                                 </div>
                                 <button class="remove-item-btn"
                                     onclick="updateMiniQty(event, '{{ item._id }}', 'remove')" title="Hiqe">
-                                    <i class="far fa-trash-alt"></i>
+                                    &times;
                                 </button>
                             </div>
                             {% endfor %}
@@ -284,25 +284,29 @@
     <!-- --- MOBILE BOTTOM NAVIGATION --- -->
     <nav class="mobile-bottom-nav">
         <a href="{{ url_for('main.index') }}" class="bottom-nav-item {{ 'active' if request.endpoint == 'main.index' }}"
-            onclick="closeCategoriesModal(); closeCartModal(); closeProfileModal();">
+            onclick="closeExploreOverlay(); closeCartModal(); closeProfileModal();">
             <i class="fas fa-home"></i>
             <span>Ballina</span>
         </a>
-        <button class="bottom-nav-item" onclick="openCategoriesModal()">
-            <i class="fas fa-th-large"></i>
-            <span>Kategoritë</span>
+        <a href="{{ url_for('main.products', discount_only='true') }}" class="bottom-nav-item {{ 'active' if request.endpoint == 'main.products' and request.args.get('discount_only') == 'true' }}"
+            onclick="closeExploreOverlay(); closeCartModal(); closeProfileModal();">
+            <i class="fas fa-tags"></i>
+            <span>Ofertat</span>
+        </a>
+        <button class="bottom-nav-item" id="exploreNavBtn" onclick="toggleExploreOverlay()">
+            <i class="fas fa-compass"></i>
+            <span>Eksploro</span>
         </button>
-        <a href="{{ url_for('cart.view_cart') }}" class="bottom-nav-item">
+        <a href="{{ url_for('cart.view_cart') }}" class="bottom-nav-item {{ 'active' if request.endpoint == 'cart.view_cart' }}"
+            onclick="closeExploreOverlay();">
             <div class="icon-wrapper">
                 <i class="fas fa-shopping-cart"></i>
-                <span
-                    class="mobile-cart-badge cart-count-badge {{ 'd-none' if not cart_count or cart_count == 0 else '' }}">{{
-                    cart_count if cart_count else 0 }}</span>
+                <span class="mobile-cart-badge cart-count-badge {{ 'd-none' if not cart_count or cart_count == 0 else '' }}">{{ cart_count if cart_count else 0 }}</span>
             </div>
             <span>Shporta</span>
         </a>
-        <button class="bottom-nav-item" onclick="openProfileModal()">
-            <i class="fas fa-user"></i>
+        <button class="bottom-nav-item" onclick="closeExploreOverlay(); openProfileModal()">
+            <i class="fas fa-user-circle"></i>
             <span>Profili</span>
         </button>
     </nav>
@@ -338,6 +342,128 @@
         </div>
     </div>
 
+    <!-- --- EXPLORE OVERLAY --- -->
+    <div id="explore-overlay" class="explore-overlay" aria-hidden="true">
+        <div class="explore-backdrop" onclick="closeExploreOverlay()"></div>
+        <div class="explore-sheet" id="exploreSheet">
+            <div class="explore-handle-bar"></div>
+
+            <div class="explore-search-row">
+                <div class="explore-search-box">
+                    <i class="fas fa-search explore-search-icon"></i>
+                    <input type="search" id="exploreSearchInput" placeholder="Kërko produkte, brende..." autocomplete="off" autocorrect="off" spellcheck="false">
+                    <button class="explore-clear" id="exploreClear" aria-label="Fshi"><i class="fas fa-times-circle"></i></button>
+                </div>
+                <button class="explore-cancel" onclick="closeExploreOverlay()">Anulo</button>
+            </div>
+
+            <div class="explore-chips-row">
+                <button class="explore-chip active" data-filter="">Të gjitha</button>
+                <button class="explore-chip" data-filter="discount"><i class="fas fa-tag"></i> Ofertë</button>
+                <button class="explore-chip" data-filter="best_seller"><i class="fas fa-star"></i> Bestseller</button>
+            </div>
+
+            <!-- slide wrapper: holds main view + subcat view side by side -->
+            <div class="explore-slide-wrapper" id="exploreSlideWrapper">
+              <!-- MAIN VIEW -->
+              <div class="explore-slide-panel explore-main-panel" id="exploreMainPanel">
+              <div class="explore-body" id="exploreBody">
+                <div id="exploreCatsView">
+                    <p class="explore-heading">Kategoritë</p>
+                    <div class="explore-cats-grid">
+                        <button class="explore-cat-card" data-cat="Dermokozmetikë" data-icon="fas fa-spa">
+                            <span class="explore-cat-icon"><i class="fas fa-spa"></i></span>
+                            <span class="explore-cat-name">Dermokozmetikë</span>
+                        </button>
+                        <button class="explore-cat-card" data-cat="Suplemente & Vitamina" data-icon="fas fa-capsules">
+                            <span class="explore-cat-icon"><i class="fas fa-capsules"></i></span>
+                            <span class="explore-cat-name">Suplemente & Vitamina</span>
+                        </button>
+                        <button class="explore-cat-card" data-cat="Kujdes Personal & Higjienë" data-icon="fas fa-soap">
+                            <span class="explore-cat-icon"><i class="fas fa-soap"></i></span>
+                            <span class="explore-cat-name">Kujdes Personal</span>
+                        </button>
+                        <button class="explore-cat-card" data-cat="Pajisje Mjekësore" data-icon="fas fa-stethoscope">
+                            <span class="explore-cat-icon"><i class="fas fa-stethoscope"></i></span>
+                            <span class="explore-cat-name">Pajisje Mjekësore</span>
+                        </button>
+                        <button class="explore-cat-card" data-cat="Nënë & Fëmijë" data-icon="fas fa-baby">
+                            <span class="explore-cat-icon"><i class="fas fa-baby"></i></span>
+                            <span class="explore-cat-name">Nënë & Fëmijë</span>
+                        </button>
+                        <button class="explore-cat-card" data-cat="Pajisje Ortopedike" data-icon="fas fa-bone">
+                            <span class="explore-cat-icon"><i class="fas fa-bone"></i></span>
+                            <span class="explore-cat-name">Ortopedike</span>
+                        </button>
+                        <button class="explore-cat-card" data-cat="Produkte Natyrale & Bimore" data-icon="fas fa-leaf">
+                            <span class="explore-cat-icon"><i class="fas fa-leaf"></i></span>
+                            <span class="explore-cat-name">Natyrale & Bimore</span>
+                        </button>
+                        <a href="{{ url_for('main.products') }}" class="explore-cat-card" onclick="closeExploreOverlay()">
+                            <span class="explore-cat-icon"><i class="fas fa-border-all"></i></span>
+                            <span class="explore-cat-name">Të gjitha</span>
+                        </a>
+                    </div>
+                    <p class="explore-heading" style="margin-top:1.4rem">Brendet</p>
+                    <div class="explore-brands-row">
+                        <a href="{{ url_for('main.products', brand='Swanson') }}" class="explore-brand-card" onclick="closeExploreOverlay()">
+                            <img src="{{ url_for('static', filename='img/brands/swanson.png') }}" alt="Swanson" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"><span class="eb-fallback" style="display:none">Swanson</span>
+                        </a>
+                        <a href="{{ url_for('main.products', brand='Vitabiotics') }}" class="explore-brand-card" onclick="closeExploreOverlay()">
+                            <img src="{{ url_for('static', filename='img/brands/vitabiotics.png') }}" alt="Vitabiotics" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"><span class="eb-fallback" style="display:none">Vitabiotics</span>
+                        </a>
+                        <a href="{{ url_for('main.products', brand='La Roche-Posay') }}" class="explore-brand-card" onclick="closeExploreOverlay()">
+                            <img src="{{ url_for('static', filename='img/brands/laroche-posay.png') }}" alt="La Roche-Posay" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"><span class="eb-fallback" style="display:none">La Roche-Posay</span>
+                        </a>
+                        <a href="{{ url_for('main.products', brand='Eucerin') }}" class="explore-brand-card" onclick="closeExploreOverlay()">
+                            <img src="{{ url_for('static', filename='img/brands/eucerin.png') }}" alt="Eucerin" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"><span class="eb-fallback" style="display:none">Eucerin</span>
+                        </a>
+                        <a href="{{ url_for('main.products', brand='Vichy') }}" class="explore-brand-card" onclick="closeExploreOverlay()">
+                            <img src="{{ url_for('static', filename='img/brands/vichy.png') }}" alt="Vichy" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"><span class="eb-fallback" style="display:none">Vichy</span>
+                        </a>
+                        <a href="{{ url_for('main.products', brand='CeraVe') }}" class="explore-brand-card" onclick="closeExploreOverlay()">
+                            <img src="{{ url_for('static', filename='img/brands/CeraVe.png') }}" alt="CeraVe" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"><span class="eb-fallback" style="display:none">CeraVe</span>
+                        </a>
+                        <a href="{{ url_for('main.products', brand='Pediakid') }}" class="explore-brand-card" onclick="closeExploreOverlay()">
+                            <img src="{{ url_for('static', filename='img/brands/pediakid.png') }}" alt="Pediakid" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"><span class="eb-fallback" style="display:none">Pediakid</span>
+                        </a>
+                        <a href="{{ url_for('main.products', brand='Pharmaceris') }}" class="explore-brand-card" onclick="closeExploreOverlay()">
+                            <img src="{{ url_for('static', filename='img/brands/pharmaceris.png') }}" alt="Pharmaceris" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"><span class="eb-fallback" style="display:none">Pharmaceris</span>
+                        </a>
+                        <a href="{{ url_for('main.products', brand='Restorex') }}" class="explore-brand-card" onclick="closeExploreOverlay()">
+                            <img src="{{ url_for('static', filename='img/brands/restorex.png') }}" alt="Restorex" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"><span class="eb-fallback" style="display:none">Restorex</span>
+                        </a>
+                        <a href="{{ url_for('main.products', brand='Bioblas') }}" class="explore-brand-card" onclick="closeExploreOverlay()">
+                            <img src="{{ url_for('static', filename='img/brands/bioblas.png') }}" alt="Bioblas" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"><span class="eb-fallback" style="display:none">Bioblas</span>
+                        </a>
+                        <a href="{{ url_for('main.products', brand='Curaprox') }}" class="explore-brand-card" onclick="closeExploreOverlay()">
+                            <img src="{{ url_for('static', filename='img/brands/curaprox.png') }}" alt="Curaprox" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"><span class="eb-fallback" style="display:none">Curaprox</span>
+                        </a>
+                    </div>
+                    <p class="explore-heading" style="margin-top:1.5rem">Produkte të zgjedhura</p>
+                    <div class="explore-products-grid" id="exploreDiscoveryGrid"></div>
+                </div>
+                <div id="exploreResultsView" style="display:none">
+                    <p class="explore-results-count" id="exploreResultsCount"></p>
+                    <div class="explore-products-grid" id="exploreResultsGrid"></div>
+                </div>
+            </div>
+            </div><!-- /explore-main-panel -->
+
+              <!-- SUBCAT VIEW (slides in from the right) -->
+              <div class="explore-slide-panel explore-subcat-panel" id="exploreSubcatPanel">
+                <div class="explore-subcat-header" id="exploreSubcatHeader">
+                  <button class="explore-back-btn" id="exploreBackBtn" aria-label="Kthehu">
+                    <i class="fas fa-arrow-left"></i>
+                  </button>
+                  <span class="explore-subcat-title" id="exploreSubcatTitle"></span>
+                </div>
+                <div class="explore-subcat-body" id="exploreSubcatBody"></div>
+              </div>
+            </div><!-- /explore-slide-wrapper -->
+        </div>
+    </div>
+
     <!-- --- MOBILE CART MODAL --- -->
     <div id="mobile-cart-modal" class="full-screen-modal">
         <div class="modal-header">
@@ -350,7 +476,7 @@
                 <div class="modal-items-header">
                     <span class="items-count-badge-mobile">{{ cart_count }} produkt(e)</span>
                     <button onclick="clearCart(event)" class="btn-clear-mini">
-                        <i class="far fa-trash-alt"></i> Pastro
+                        Pastro të gjitha
                     </button>
                 </div>
 
@@ -1406,6 +1532,244 @@ document.addEventListener('DOMContentLoaded', function() {
     window.addEventListener('resize', function() { hpUpdateArrows(outer); });
   });
 });
+</script>
+
+<script>
+// ── EXPLORE OVERLAY ──────────────────────────────────────────────────────────
+(function(){
+  let open = false, searchTimer = null, activeFilter = '', discoveryLoaded = false;
+  let _prevActiveNavItem = null;
+
+  const SUBCATS = {
+    'Dermokozmetikë': ['Pastrues për fytyrë','Hidratues','Serume & Trajtime','Kremra Dielli (SPF)','Kundër Akneve','Anti-aging & Rrudhat','Kujdesi i Syve','Lëkurë Sensitive','Pigmentim & Njolla','Riparues & Balma','Kujdesi i Trupit','Mirëmbajtje për duar dhe këmbë','Kujdes për Buzët','Kujdes për flokët','Kujdes për Meshkuj','Make-up farmaceutik'],
+    'Suplemente & Vitamina': ['Suplemente','Vitamina (A, B, C, D, E)','Minerale (magnez, hekur, zink)','Imunitet','Energji & lodhje','Për fëmijë','Për gra shtatzëna','Omega 3 & produkte natyrale'],
+    'Kujdes Personal & Higjienë': ['Sapunë & Xhele dushi','Lotion & Kremra trupi','Shampo & Kujdes flokësh','Deodorantë & Antiperspirantë','Higjienë Intime','Kujdes Oral','Dezinfektues & Mbrojtje'],
+    'Pajisje Mjekësore': ['Matës tensioni','Matës sheqeri','Termometra','Maskat & dorezat','Nebulizatorë','Banda, fasha, shiringa'],
+    'Nënë & Fëmijë': ['Qumësht formule','Ushqime për bebe','Vitamina për fëmijë','Shishe, biberona','Pelena','Produkte për lëkurë sensitive'],
+    'Pajisje Ortopedike': ['Mbajtëse trupi (gju, shpinë, qafë, dorë)','Produkte për këmbë (sholla, korrektora, çorape)','Kompresion mjekësor','Rehabilitim & ushtrime','Ndihmë lëvizjeje (shkop, walker, karrocë)','Post-operativ & lëndime'],
+    'Produkte Natyrale & Bimore': ['Çajra shërues','Kapsula bimore','Vajra esencialë','Produkte bio'],
+  };
+
+  function openSubcats(catName, iconClass){
+    const panel = document.getElementById('exploreSubcatPanel');
+    const wrapper = document.getElementById('exploreSlideWrapper');
+    const title = document.getElementById('exploreSubcatTitle');
+    const body = document.getElementById('exploreSubcatBody');
+    const subcats = SUBCATS[catName] || [];
+
+    title.textContent = catName;
+    const catUrl = '/products?category=' + encodeURIComponent(catName);
+    body.innerHTML =
+      `<a href="${catUrl}" class="explore-subcat-seeall" onclick="window.closeExploreOverlay()">Të gjitha në ${catName} <i class="fas fa-arrow-right" style="margin-left:auto;font-size:.75rem;opacity:.5"></i></a>` +
+      subcats.map(s =>
+        `<a href="/products?category=${encodeURIComponent(catName)}&subcategory=${encodeURIComponent(s)}" class="explore-subcat-item" onclick="window.closeExploreOverlay()">${s}<i class="fas fa-chevron-right"></i></a>`
+      ).join('');
+
+    wrapper.classList.add('slid');
+    document.getElementById('exploreSubcatBody').scrollTop = 0;
+  }
+
+  function closeSubcats(){
+    document.getElementById('exploreSlideWrapper').classList.remove('slid');
+  }
+
+  window.toggleExploreOverlay = function(){ open ? closeExploreOverlay() : openExploreOverlay(); };
+
+  window.openExploreOverlay = function(){
+    if(open) return;
+    open = true;
+    if(window.closeCartModal) window.closeCartModal();
+    if(window.closeProfileModal) window.closeProfileModal();
+    const ov = document.getElementById('explore-overlay');
+    document.body.style.overflow = 'hidden';
+    document.body.classList.add('modal-open');
+    ov.classList.add('open');
+    ov.removeAttribute('aria-hidden');
+    _prevActiveNavItem = document.querySelector('.mobile-bottom-nav .bottom-nav-item.active');
+    if(_prevActiveNavItem) _prevActiveNavItem.classList.remove('active');
+    document.getElementById('exploreNavBtn')?.classList.add('active');
+    loadDiscovery();
+  };
+
+  window.closeExploreOverlay = function(){
+    if(!open) return;
+    open = false;
+    const ov = document.getElementById('explore-overlay');
+    document.body.style.overflow = '';
+    document.body.classList.remove('modal-open');
+    ov.classList.remove('open');
+    ov.setAttribute('aria-hidden','true');
+    document.getElementById('exploreNavBtn')?.classList.remove('active');
+    if(_prevActiveNavItem){ _prevActiveNavItem.classList.add('active'); _prevActiveNavItem = null; }
+    const input = document.getElementById('exploreSearchInput');
+    if(input) input.value = '';
+    document.getElementById('exploreClear').style.display = 'none';
+    closeSubcats();
+    showCats();
+  };
+
+  function showCats(){
+    document.getElementById('exploreCatsView').style.display = 'block';
+    document.getElementById('exploreResultsView').style.display = 'none';
+  }
+  function showResults(){
+    document.getElementById('exploreCatsView').style.display = 'none';
+    document.getElementById('exploreResultsView').style.display = 'block';
+  }
+
+  function skeleton(n){
+    return Array(n).fill(0).map(()=>`<div class="ep-skeleton"><div class="skel skel-img"></div><div class="skel skel-t1"></div><div class="skel skel-t2"></div></div>`).join('');
+  }
+
+  function productCard(p){
+    const hasDisc = p.discount_price != null && p.discount_price > 0;
+    const origPrice = (+p.price).toFixed(2);
+    const discPrice = hasDisc ? (+p.discount_price).toFixed(2) : null;
+    const pct = hasDisc ? Math.round((p.price - p.discount_price) / p.price * 100) : 0;
+    const priceHtml = hasDisc
+      ? `<span class="ep-new">${discPrice}€</span><span class="ep-old">${origPrice}€</span><span class="ep-pct">-${pct}%</span>`
+      : `<span class="ep-new">${origPrice}€</span>`;
+    let badge = '';
+    if(p.auto_oct_discount) badge = '<span class="ep-badge ep-badge-oct">-5%</span>';
+    else if(hasDisc) badge = '<span class="ep-badge">Ofertë</span>';
+    else if(p.is_pharmacist_choice) badge = '<span class="ep-badge ep-badge-pharm">Farmacisti</span>';
+    else if(p.is_best_seller) badge = '<span class="ep-badge ep-badge-bs">Bestseller</span>';
+    const img = p.image_url || '';
+    const brand = p.brand ? `<span class="ep-brand">${p.brand}</span>` : `<span class="ep-brand">${p.category||''}</span>`;
+    const size = p.size ? `<span class="ep-size">${p.size}</span>` : '';
+    return `<a href="/product/${p.id}" class="ep-card" onclick="window.closeExploreOverlay()">
+      <div class="ep-img">${img?`<img src="${img}" alt="" loading="lazy">`:'<div class="ep-no-img"><i class="fas fa-image"></i></div>'}${badge}</div>
+      <div class="ep-info">${brand}<p class="ep-name">${p.name}</p>${size}<div class="ep-prices">${priceHtml}</div></div>
+    </a>`;
+  }
+
+  function curate(pool, n){
+    // Score each product: discount % + bestseller boost + image presence
+    const scored = pool.map(p => {
+      let score = 0;
+      if(p.image_url) score += 30;
+      if(p.discount_price && p.price){ score += Math.min(Math.round((p.price - p.discount_price) / p.price * 100), 40); }
+      if(p.is_best_seller) score += 20;
+      return { p, score };
+    }).sort((a,b) => b.score - a.score);
+
+    // Pick top items: max 1 per brand, max 2 per category
+    const brandSeen = new Set();
+    const catCount = {};
+    const picked = [];
+    for(const { p } of scored){
+      if(picked.length >= n) break;
+      const brand = (p.brand || '').toLowerCase();
+      const cat = p.category || 'other';
+      if(brand && brandSeen.has(brand)) continue;
+      if((catCount[cat] || 0) >= 2) continue;
+      if(brand) brandSeen.add(brand);
+      catCount[cat] = (catCount[cat] || 0) + 1;
+      picked.push(p);
+    }
+    // If we still need more (all cats capped), fill without restriction
+    if(picked.length < n){
+      for(const { p } of scored){
+        if(picked.length >= n) break;
+        if(!picked.includes(p)) picked.push(p);
+      }
+    }
+    return picked;
+  }
+
+  async function loadDiscovery(){
+    if(discoveryLoaded) return;
+    const grid = document.getElementById('exploreDiscoveryGrid');
+    if(!grid) return;
+    grid.innerHTML = skeleton(10);
+    try{
+      const r = await fetch('/api/search?limit=30');
+      const all = await r.json();
+      const data = curate(all, 10);
+      grid.innerHTML = data.map(productCard).join('') +
+        `<div class="ep-see-all-wrap"><a href="/products" onclick="window.closeExploreOverlay()" class="ep-see-all-btn">Shiko të gjitha produktet <i class="fas fa-arrow-right"></i></a></div>`;
+      discoveryLoaded = true;
+    } catch(e){ grid.innerHTML = ''; }
+  }
+
+  async function doSearch(q){
+    showResults();
+    const grid = document.getElementById('exploreResultsGrid');
+    const cnt = document.getElementById('exploreResultsCount');
+    grid.innerHTML = skeleton(6);
+    try{
+      const r = await fetch(`/api/search?q=${encodeURIComponent(q)}&limit=24`);
+      let data = await r.json();
+      if(activeFilter === 'discount') data = data.filter(p => p.discount_price);
+      if(activeFilter === 'best_seller') data = data.filter(p => p.is_best_seller);
+      cnt.textContent = data.length ? `${data.length} rezultate` : '';
+      if(!data.length){
+        grid.innerHTML = `<div class="ep-empty"><i class="fas fa-search"></i><p>Nuk u gjet asgjë për <strong>"${q}"</strong></p><a href="/products?q=${encodeURIComponent(q)}" onclick="window.closeExploreOverlay()" class="ep-see-all-btn">Kërko në të gjitha produktet <i class="fas fa-arrow-right"></i></a></div>`;
+        return;
+      }
+      grid.innerHTML = data.map(productCard).join('') +
+        `<div class="ep-see-all-wrap"><a href="/products?q=${encodeURIComponent(q)}" onclick="window.closeExploreOverlay()" class="ep-see-all-btn">Shiko të gjitha rezultatet <i class="fas fa-arrow-right"></i></a></div>`;
+    } catch(e){ grid.innerHTML = `<div class="ep-empty"><p>Gabim gjatë kërkimit.</p></div>`; }
+  }
+
+  document.addEventListener('DOMContentLoaded', function(){
+    const input = document.getElementById('exploreSearchInput');
+    const clr = document.getElementById('exploreClear');
+    if(!input) return;
+
+    input.addEventListener('input', function(){
+      const q = this.value.trim();
+      clr.style.display = q ? 'flex' : 'none';
+      clearTimeout(searchTimer);
+      if(!q){ showCats(); return; }
+      searchTimer = setTimeout(() => doSearch(q), 300);
+    });
+
+    clr.addEventListener('click', function(){
+      input.value = ''; this.style.display = 'none'; input.focus(); showCats();
+    });
+
+    document.querySelectorAll('.explore-chip').forEach(chip => {
+      chip.addEventListener('click', function(){
+        document.querySelectorAll('.explore-chip').forEach(c => c.classList.remove('active'));
+        this.classList.add('active');
+        activeFilter = this.dataset.filter;
+        const q = input.value.trim();
+        if(q){
+          doSearch(q);
+        } else if(activeFilter === 'discount'){
+          window.closeExploreOverlay();
+          window.location.href = '/products?discount_only=true';
+        } else if(activeFilter === 'best_seller'){
+          window.closeExploreOverlay();
+          window.location.href = '/products?best_sellers=true';
+        }
+      });
+    });
+
+    // Category card drill-down
+    document.querySelectorAll('.explore-cat-card[data-cat]').forEach(card => {
+      card.addEventListener('click', function(e){
+        e.preventDefault();
+        openSubcats(this.dataset.cat, this.dataset.icon);
+      });
+    });
+
+    // Back button
+    document.getElementById('exploreBackBtn')?.addEventListener('click', closeSubcats);
+
+    // Close on Escape
+    document.addEventListener('keydown', e => {
+      if(e.key === 'Escape' && open){
+        if(document.getElementById('exploreSlideWrapper')?.classList.contains('slid')){
+          closeSubcats();
+        } else {
+          window.closeExploreOverlay();
+        }
+      }
+    });
+  });
+})();
 </script>
 </body>
 
