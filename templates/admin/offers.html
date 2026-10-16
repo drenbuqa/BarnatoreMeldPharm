@@ -1,0 +1,447 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Ofertat — Meld Pharm Admin{% endblock %}
+{% block page_title %}Ofertat{% endblock %}
+
+{% block page_action %}
+<a href="{{ url_for('admin.bulk_offers') }}" class="topbar-btn of-create-topbar-btn show-on-mobile-only">
+    <i class="fas fa-plus"></i> Krijo Ofertë
+</a>
+{% endblock %}
+
+{% block admin_content %}
+<style>
+/* ─── Header row ─── */
+.of-header {
+    display:flex; align-items:center; justify-content:space-between;
+    margin-bottom:1.25rem; flex-wrap:wrap; gap:.75rem;
+}
+.of-title { font-size:1.35rem; font-weight:900; color:#1a1f18; }
+
+/* ─── KPI row ─── */
+.of-kpi-row { display:grid; grid-template-columns:repeat(4,1fr); gap:.85rem; margin-bottom:1.25rem; }
+.of-kpi {
+    background:#fff; border:1px solid #eef0ed; border-radius:14px;
+    padding:1rem 1.1rem; display:flex; align-items:center; gap:.85rem;
+    box-shadow:0 1px 3px rgba(0,0,0,.04);
+}
+.of-kpi-icon {
+    width:42px; height:42px; border-radius:11px; display:flex;
+    align-items:center; justify-content:center; font-size:1rem; flex-shrink:0;
+}
+.of-kpi-icon.green  { background:#f0fdf4; color:#4F5D4E; }
+.of-kpi-icon.amber  { background:#fffbeb; color:#d97706; }
+.of-kpi-icon.red    { background:#fef2f2; color:#dc2626; }
+.of-kpi-icon.blue   { background:#eff6ff; color:#2563eb; }
+.of-kpi-val { font-size:1.7rem; font-weight:900; color:#1a1f18; line-height:1; }
+.of-kpi-lbl { font-size:.71rem; font-weight:700; color:#8a9186; text-transform:uppercase; letter-spacing:.05em; margin-top:2px; }
+
+/* ─── Toolbar ─── */
+.of-toolbar {
+    background:#fff; border:1px solid #eef0ed; border-radius:14px;
+    padding:.75rem 1rem; display:flex; align-items:center; gap:.75rem;
+    flex-wrap:wrap; margin-bottom:.85rem; box-shadow:0 1px 3px rgba(0,0,0,.04);
+}
+.of-search { position:relative; flex:1; min-width:180px; max-width:280px; }
+.of-search i { position:absolute; left:.7rem; top:50%; transform:translateY(-50%); color:#9aa095; font-size:.78rem; pointer-events:none; }
+.of-search input {
+    width:100%; padding:.52rem .75rem .52rem 2.1rem;
+    border:1.5px solid #e2e8f0; border-radius:8px; font-size:.84rem;
+    background:#fafafa; color:#1a1f18; outline:none; box-sizing:border-box;
+    transition:border-color .15s;
+}
+.of-search input:focus { border-color:var(--adm-accent); background:#fff; }
+.of-tabs { display:flex; gap:.35rem; align-items:center; }
+.of-tab {
+    padding:.4rem .9rem; border-radius:8px; border:1.5px solid #e2e8f0;
+    font-size:.8rem; font-weight:700; color:#6b7280; cursor:pointer;
+    background:#fafafa; transition:all .15s; user-select:none;
+}
+.of-tab:hover { border-color:#4F5D4E; color:#4F5D4E; }
+.of-tab.active { background:#4F5D4E; border-color:#4F5D4E; color:#fff; }
+.of-tab .of-tab-cnt { display:inline-flex; align-items:center; justify-content:center; width:18px; height:18px; border-radius:50%; font-size:.68rem; margin-left:.3rem; }
+.of-tab.active .of-tab-cnt { background:rgba(255,255,255,.25); }
+.of-tab:not(.active) .of-tab-cnt { background:#e5e7eb; color:#374151; }
+
+/* ─── Table card ─── */
+.of-card {
+    background:#fff; border:1px solid #eef0ed; border-radius:14px;
+    overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,.04);
+}
+.of-tbl { width:100%; border-collapse:collapse; }
+.of-tbl-head th {
+    padding:.7rem 1rem; text-align:left;
+    font-size:.67rem; font-weight:800; color:#8a9186;
+    text-transform:uppercase; letter-spacing:.06em;
+    background:#fafafa; border-bottom:2px solid #eef0ed;
+    white-space:nowrap;
+}
+.of-tbl-head th:last-child { text-align:right; }
+.of-row { border-bottom:1px solid #f3f4f2; transition:background .1s; cursor:default; }
+.of-row:last-child { border-bottom:none; }
+.of-row:hover { background:#f8faf7; }
+.of-row td { padding:.75rem 1rem; vertical-align:middle; }
+
+/* ─── Name cell ─── */
+.of-name-cell { display:flex; flex-direction:column; gap:2px; }
+.of-name { font-size:.88rem; font-weight:800; color:#1a1f18; }
+.of-id   { font-size:.7rem; color:#9aa095; }
+/* Mobile-only cells hidden on desktop */
+.of-td-main, .of-td-date-mobile, .of-td-status-mobile { display:none; }
+
+/* ─── Type badge ─── */
+.of-type-badge {
+    display:inline-flex; align-items:center; gap:.3rem;
+    padding:.22rem .65rem; border-radius:20px;
+    font-size:.71rem; font-weight:800; white-space:nowrap;
+}
+.of-type-badge.discount   { background:#f0fdf4; color:#15803d; border:1px solid #bbf7d0; }
+.of-type-badge.multi_buy  { background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; }
+.of-type-badge.fixed_amount { background:#faf5ff; color:#7c3aed; border:1px solid #ddd6fe; }
+
+/* ─── Value ─── */
+.of-value { font-size:.88rem; font-weight:800; color:#1a1f18; }
+
+/* ─── Period ─── */
+.of-period { font-size:.78rem; color:#6b7280; white-space:nowrap; }
+
+/* ─── Status ─── */
+.of-status {
+    display:inline-flex; align-items:center; gap:.4rem;
+    font-size:.76rem; font-weight:700; white-space:nowrap;
+}
+.of-status::before { content:''; width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+.of-status.active    { color:#15803d; } .of-status.active::before    { background:#22c55e; }
+.of-status.expiring  { color:#d97706; } .of-status.expiring::before  { background:#f59e0b; }
+.of-status.expired   { color:#6b7280; } .of-status.expired::before   { background:#d1d5db; }
+
+/* ─── Count ─── */
+.of-count { font-size:.84rem; font-weight:700; color:#374151; }
+
+/* ─── Actions ─── */
+.of-actions { display:flex; align-items:center; justify-content:flex-end; gap:.4rem; }
+.of-btn-icon {
+    width:32px; height:32px; border-radius:8px; border:1.5px solid #e2e8f0;
+    background:#fff; cursor:pointer; display:flex; align-items:center;
+    justify-content:center; font-size:.78rem; color:#6b7280;
+    transition:all .15s; text-decoration:none;
+}
+.of-btn-icon:hover.edit  { border-color:var(--adm-accent); color:var(--adm-accent); background:#f0fdf4; }
+.of-btn-icon:hover.del   { border-color:#fca5a5; color:#dc2626; background:#fef2f2; }
+
+/* ─── Empty state ─── */
+.of-empty { padding:3.5rem 1rem; text-align:center; color:#9aa095; }
+.of-empty i { font-size:2.5rem; opacity:.18; display:block; margin-bottom:.75rem; }
+.of-empty p { font-size:.9rem; font-weight:600; margin:0 0 .3rem; color:#6b7280; }
+.of-empty span { font-size:.81rem; }
+
+/* ─── Create button ─── */
+.of-create-btn {
+    display:inline-flex; align-items:center; gap:.45rem;
+    padding:.6rem 1.15rem; background:var(--adm-accent); color:#fff;
+    border:none; border-radius:10px; font-size:.85rem; font-weight:700;
+    cursor:pointer; text-decoration:none; transition:opacity .15s;
+    white-space:nowrap;
+}
+.of-create-btn:hover { opacity:.88; color:#fff; }
+
+/* ─── Delete modal ─── */
+.of-del-modal {
+    display:none; position:fixed; inset:0; z-index:9000;
+    background:rgba(0,0,0,.45); align-items:center; justify-content:center;
+}
+.of-del-modal.open { display:flex; }
+.of-del-box {
+    background:#fff; border-radius:16px; padding:1.75rem;
+    max-width:380px; width:90%; box-shadow:0 20px 60px rgba(0,0,0,.2);
+}
+
+/* Desktop: hide mobile-only topbar button */
+.show-on-mobile-only { display:none !important; }
+/* Mobile: hide the in-toolbar button, show topbar one */
+@media(max-width:768px) {
+    .hide-on-mobile { display:none !important; }
+    .show-on-mobile-only { display:inline-flex !important; }
+}
+
+/* ─── Responsive ─── */
+@media(max-width:900px) {
+    .of-kpi-row { grid-template-columns:repeat(2,1fr); }
+    .of-tbl-head th.hide-sm, .of-row td.hide-sm { display:none; }
+}
+@media(max-width:640px) {
+    .of-kpi-row { grid-template-columns:repeat(2,1fr); gap:.6rem; }
+    .of-kpi { padding:.75rem; gap:.6rem; }
+    .of-kpi-val { font-size:1.3rem; }
+    .of-toolbar { flex-direction:column; align-items:stretch; overflow:hidden; }
+    .of-search { max-width:100%; }
+    .of-tabs { overflow-x:auto; flex-wrap:nowrap; scrollbar-width:none; min-width:0; max-width:100%; padding-bottom:2px; }
+    .of-tabs::-webkit-scrollbar { display:none; }
+    .of-tab { flex-shrink:0; }
+    .of-header { flex-direction:row; align-items:center; justify-content:space-between; }
+    .of-title { font-size:1.1rem; }
+    .of-create-btn { padding:.5rem .9rem; font-size:.78rem; }
+
+    /* ── Card-style rows on mobile: fixed 4-col grid ── */
+    .of-tbl { display:block; width:100%; }
+    .of-tbl tbody { display:block; width:100%; }
+    .of-tbl-head { display:none; }
+    .of-row {
+        display:grid !important;
+        grid-template-columns: 1fr 72px 58px 62px;
+        align-items:center;
+        gap:0; padding:.52rem .75rem; border-bottom:1px solid #f0f2f0;
+    }
+    .of-row:hover { background:#f8faf7; }
+    .of-row td { display:none !important; padding:0; border:none; }
+    /* hide-mobile, hide-sm, hide-xs are all desktop-only — already none */
+    .hide-mobile, .hide-sm, .hide-xs { display:none !important; }
+
+    /* Col 1 — name + type + value on one line */
+    .of-row td.of-td-main { display:flex !important; flex-direction:row; align-items:center; gap:.3rem; min-width:0; overflow:hidden; }
+    .of-row-top { display:contents; }
+    .of-name { font-size:.74rem; font-weight:800; color:#1a1f18; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex-shrink:1; min-width:0; }
+    .of-row-meta { display:contents; }
+    .of-type-badge { padding:.09rem .32rem; font-size:.57rem; flex-shrink:0; gap:.18rem; }
+    .of-badge-text { display:inline; }
+    .of-meta-val { font-size:.7rem; font-weight:800; color:#1a1f18; flex-shrink:0; }
+    .of-status-mobile { display:none !important; }
+
+    /* Col 2 — date */
+    .of-row td.of-td-date-mobile { display:flex !important; flex-direction:column; align-items:center; justify-content:center; text-align:center; }
+    .of-row td.of-td-date-mobile .of-period { font-size:.59rem; color:#6b7280; line-height:1.45; white-space:nowrap; }
+
+    /* Col 3 — status */
+    .of-row td.of-td-status-mobile { display:flex !important; align-items:center; justify-content:center; }
+    .of-status { font-size:.6rem; gap:.2rem; white-space:nowrap; }
+    .of-status::before { width:5px; height:5px; }
+
+    /* Col 4 — actions */
+    .of-row td:last-child { display:flex !important; align-items:center; justify-content:flex-end; gap:.25rem; }
+    .of-actions { gap:.25rem; }
+    .of-btn-icon { width:26px; height:26px; font-size:.65rem; border-radius:7px; }
+}
+</style>
+
+<!-- Delete modal -->
+<div class="of-del-modal" id="delModal">
+    <div class="of-del-box" onclick="event.stopPropagation()">
+        <div style="width:46px;height:46px;border-radius:11px;background:#fef2f2;display:flex;align-items:center;justify-content:center;margin-bottom:1rem;">
+            <i class="fas fa-trash" style="color:#dc2626;"></i>
+        </div>
+        <div style="font-size:1rem;font-weight:800;color:#1a1f18;margin-bottom:.4rem;">Fshi Ofertën?</div>
+        <div style="font-size:.84rem;color:#6b7280;margin-bottom:1.25rem;" id="delModalMsg"></div>
+        <form method="POST" action="{{ url_for('admin.bulk_offers') }}" id="delForm">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="action" value="delete_named_offer">
+            <input type="hidden" name="target_name" id="delTargetName">
+            <div style="display:flex;gap:.6rem;justify-content:flex-end;">
+                <button type="button" onclick="closeDelModal()"
+                    style="padding:.55rem 1.1rem;border:1.5px solid #e2e8f0;border-radius:9px;background:#fff;color:#374151;font-size:.84rem;font-weight:700;cursor:pointer;font-family:inherit;">
+                    Anulo
+                </button>
+                <button type="submit"
+                    style="padding:.55rem 1.1rem;border:none;border-radius:9px;background:#dc2626;color:#fff;font-size:.84rem;font-weight:700;cursor:pointer;font-family:inherit;">
+                    <i class="fas fa-trash"></i> Po, Fshi
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- KPI cards -->
+<div class="of-kpi-row">
+    <div class="of-kpi">
+        <div class="of-kpi-icon green"><i class="fas fa-tag"></i></div>
+        <div>
+            <div class="of-kpi-val">{{ active_count }}</div>
+            <div class="of-kpi-lbl">Aktive</div>
+        </div>
+    </div>
+    <div class="of-kpi">
+        <div class="of-kpi-icon amber"><i class="fas fa-clock"></i></div>
+        <div>
+            <div class="of-kpi-val">{{ expiring_soon_count }}</div>
+            <div class="of-kpi-lbl">Skadon Së Shpejti</div>
+        </div>
+    </div>
+    <div class="of-kpi">
+        <div class="of-kpi-icon red"><i class="fas fa-ban"></i></div>
+        <div>
+            <div class="of-kpi-val">{{ expired_count }}</div>
+            <div class="of-kpi-lbl">Joaktive</div>
+        </div>
+    </div>
+    <div class="of-kpi">
+        <div class="of-kpi-icon blue"><i class="fas fa-layer-group"></i></div>
+        <div>
+            <div class="of-kpi-val">{{ total_count }}</div>
+            <div class="of-kpi-lbl">Gjithsej</div>
+        </div>
+    </div>
+</div>
+
+<!-- Toolbar -->
+<div class="of-toolbar">
+    <div class="of-search">
+        <i class="fas fa-search"></i>
+        <input type="text" id="ofSearch" placeholder="Kërko ofertë..." autocomplete="off">
+    </div>
+    <div class="of-tabs">
+        <div class="of-tab active" data-filter="all">Të gjitha <span class="of-tab-cnt" id="cntAll">{{ total_count }}</span></div>
+        <div class="of-tab" data-filter="active">Aktive <span class="of-tab-cnt" id="cntActive">{{ active_count }}</span></div>
+        <div class="of-tab" data-filter="expiring">Skadon <span class="of-tab-cnt" id="cntExpiring">{{ expiring_soon_count }}</span></div>
+        <div class="of-tab" data-filter="expired">Joaktive <span class="of-tab-cnt" id="cntExpired">{{ expired_count }}</span></div>
+    </div>
+    <a href="{{ url_for('admin.bulk_offers') }}" class="of-create-btn hide-on-mobile" style="margin-left:auto;flex-shrink:0;">
+        <i class="fas fa-plus"></i> Krijo Ofertë
+    </a>
+</div>
+
+<!-- Table -->
+<div class="of-card">
+    <table class="of-tbl">
+        <thead class="of-tbl-head">
+            <tr>
+                <th>Oferta</th>
+                <th>Lloji</th>
+                <th class="hide-sm">Vlera</th>
+                <th class="hide-xs">Produktet</th>
+                <th class="hide-sm">Periudha</th>
+                <th>Statusi</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody id="ofTbody">
+        {% if offers %}
+            {% for o in offers %}
+            <tr class="of-row" data-status="{{ o.status }}" data-name="{{ o.name|lower }}">
+                <!-- Desktop: name column -->
+                <td class="hide-mobile">
+                    <div class="of-name-cell">
+                        <span class="of-name">{{ o.name }}</span>
+                    </div>
+                </td>
+                <!-- Desktop: type column -->
+                <td class="hide-mobile">
+                    <span class="of-type-badge {{ o.type }}">
+                        {% if o.type == 'discount' %}<i class="fas fa-percent" style="font-size:.65rem;"></i><span class="of-badge-text"> Zbritje %</span>
+                        {% elif o.type == 'multi_buy' %}<i class="fas fa-layer-group" style="font-size:.65rem;"></i><span class="of-badge-text"> Multi Buy</span>
+                        {% elif o.type == 'fixed_amount' %}<i class="fas fa-euro-sign" style="font-size:.65rem;"></i><span class="of-badge-text"> Çmim Fiks</span>
+                        {% else %}{{ o.type }}{% endif %}
+                    </span>
+                </td>
+                <td class="hide-sm"><span class="of-value">{{ o.value }}</span></td>
+                <td class="hide-xs"><span class="of-count">{{ o.count }} produkte</span></td>
+                <td class="hide-sm">
+                    <div class="of-period">
+                        {% if o.start %}{{ o.start }}{% else %}—{% endif %}
+                        {% if o.expiry %} → {{ o.expiry }}{% endif %}
+                    </div>
+                </td>
+                <td class="hide-mobile">
+                    <span class="of-status {{ o.status }}">
+                        {% if o.status == 'active' %}Aktive
+                        {% elif o.status == 'expiring' %}Skadon
+                        {% else %}Joaktive{% endif %}
+                    </span>
+                </td>
+                <!-- Mobile-only cells (hidden on desktop, shown as grid cols on mobile) -->
+                <td class="of-td-main">
+                    <div class="of-row-top">
+                        <span class="of-name">{{ o.name }}</span>
+                    </div>
+                    <div class="of-row-meta">
+                        <span class="of-type-badge {{ o.type }}">
+                            {% if o.type == 'discount' %}<i class="fas fa-percent" style="font-size:.6rem;"></i><span class="of-badge-text"> Zbritje %</span>
+                            {% elif o.type == 'multi_buy' %}<i class="fas fa-layer-group" style="font-size:.6rem;"></i><span class="of-badge-text"> Multi Buy</span>
+                            {% elif o.type == 'fixed_amount' %}<i class="fas fa-euro-sign" style="font-size:.6rem;"></i><span class="of-badge-text"> Çmim Fiks</span>
+                            {% else %}{{ o.type }}{% endif %}
+                        </span>
+                        <span class="of-value of-meta-val">{{ o.value }}</span>
+                    </div>
+                </td>
+                <td class="of-td-date-mobile">
+                    <div class="of-period">
+                        {% if o.start %}{{ o.start }}{% else %}—{% endif %}
+                        {% if o.expiry %}<br>→ {{ o.expiry }}{% endif %}
+                    </div>
+                </td>
+                <td class="of-td-status-mobile">
+                    <span class="of-status {{ o.status }}">
+                        {% if o.status == 'active' %}Aktive
+                        {% elif o.status == 'expiring' %}Skadon
+                        {% else %}Joaktive{% endif %}
+                    </span>
+                </td>
+                <td>
+                    <div class="of-actions">
+                        <a href="{{ url_for('admin.bulk_offers') }}?edit={{ o.name|urlencode }}"
+                           class="of-btn-icon edit" title="Edito">
+                            <i class="fas fa-pen"></i>
+                        </a>
+                        <button type="button" class="of-btn-icon del" title="Fshi"
+                                onclick="openDelModal('{{ o.name|e }}', {{ o.count }})">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        {% else %}
+            <tr>
+                <td colspan="7">
+                    <div class="of-empty">
+                        <i class="fas fa-tag"></i>
+                        <p>Nuk ka oferta</p>
+                        <span>Krijoni ofertën tuaj të parë duke klikuar butonin "Krijo Ofertë".</span>
+                    </div>
+                </td>
+            </tr>
+        {% endif %}
+        </tbody>
+    </table>
+</div>
+
+<script>
+/* ── Filter tabs ── */
+let activeFilter = 'all';
+let searchQ = '';
+
+document.querySelectorAll('.of-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+        document.querySelectorAll('.of-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        activeFilter = tab.dataset.filter;
+        applyFilter();
+    });
+});
+
+let searchT;
+document.getElementById('ofSearch').addEventListener('input', e => {
+    clearTimeout(searchT);
+    searchT = setTimeout(() => { searchQ = e.target.value.toLowerCase().trim(); applyFilter(); }, 200);
+});
+
+function applyFilter() {
+    const rows = document.querySelectorAll('#ofTbody .of-row');
+    rows.forEach(row => {
+        const statusMatch = activeFilter === 'all' || row.dataset.status === activeFilter;
+        const nameMatch   = !searchQ || row.dataset.name.includes(searchQ);
+        row.style.display = (statusMatch && nameMatch) ? '' : 'none';
+    });
+}
+
+/* ── Delete modal ── */
+function openDelModal(name, count) {
+    document.getElementById('delTargetName').value = name;
+    document.getElementById('delModalMsg').textContent =
+        `Kjo do të heqë ofertën "${name}" nga ${count} produkte.`;
+    document.getElementById('delModal').classList.add('open');
+}
+function closeDelModal() {
+    document.getElementById('delModal').classList.remove('open');
+}
+document.getElementById('delModal').addEventListener('click', closeDelModal);
+</script>
+{% endblock %}

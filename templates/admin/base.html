@@ -18,6 +18,7 @@
   .main-content,.admin-shell,.admin-main{min-height:0!important;height:auto!important}
   .admin-content-body{flex:none!important}
 }
+.admin-topbar{min-height:64px;}
 </style>
 
 <div class="admin-shell">
@@ -55,8 +56,8 @@
                 <i class="fas fa-box"></i>
                 <span>Produktet</span>
             </a>
-            <a href="{{ url_for('admin.bulk_offers') }}"
-               class="sidebar-nav-item {% if request.endpoint == 'admin.bulk_offers' %}active{% endif %}">
+            <a href="{{ url_for('admin.offers_list') }}"
+               class="sidebar-nav-item {% if request.endpoint in ('admin.offers_list', 'admin.bulk_offers') %}active{% endif %}">
                 <i class="fas fa-tags"></i>
                 <span>Ofertat</span>
             </a>

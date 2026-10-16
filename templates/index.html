@@ -88,7 +88,7 @@
   </div>
   {% if product.in_stock != False %}
   <button class="hp-card-atc" onclick="event.stopPropagation(); hpAddToCart(this, '{{ product._id }}')">
-    <span class="hp-atc-label"><i class="fas fa-plus"></i> Shto në shportë</span>
+    <span class="hp-atc-label"><span class="iconify" data-icon="lucide:shopping-cart" data-width="15" data-height="15"></span> Shto në shportë</span>
     <span class="hp-atc-done"><i class="fas fa-check"></i> U shtua</span>
   </button>
   {% endif %}
@@ -154,12 +154,8 @@
   </aside>
 
   <div class="hero-carousel-col">
-    <div class="hero-above-text">
-      <i class="fas fa-tag"></i>
-      Mos i humbisni ofertat tona!
-    </div>
     <header class="hero-carousel-container">
-      <div class="hero-inner-wrapper">
+      <div class="hero-inner-wrapper" style="border-radius:14px;overflow:hidden;">
         <div class="hero-carousel">
           {% for offer in offer_banners %}
           {%- if offer.link_type == 'category' and offer.link_value %}
@@ -217,6 +213,59 @@
   window.addEventListener('scroll', hideHint, { passive: true });
 })();
 </script>
+
+
+<!-- ══════════════════════════════════════════
+     SIPAS NEVOJËS
+══════════════════════════════════════════ -->
+<section class="hp-needs-section">
+  <div class="hp-needs-header">
+    <div>
+      <h2 class="hp-needs-title">Sipas nevojës</h2>
+      <p class="hp-needs-sub">Zgjidh kujdesin sipas asaj që të shqetëson</p>
+    </div>
+    <a href="{{ url_for('main.products', category='Dermokozmetikë') }}" class="hp-needs-all">Të gjitha <i class="fas fa-chevron-right"></i></a>
+  </div>
+  <div class="hp-needs-grid">
+
+    <a href="{{ url_for('main.products', category='Dermokozmetikë', subcategory='Kundër Akneve') }}" class="hp-need-card">
+      <img src="https://res.cloudinary.com/drljgepgy/image/upload/q_auto,f_auto/v1792095613/Gentle_care_for_acne-prone_skin_zrehe7.png" alt="Akne" class="hp-need-img">
+      <span class="hp-need-badge"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"><g stroke="#315F4A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.7c4.3 0 7.2 3.4 7.2 8.6 0 5.7-3.1 10-7.2 10s-7.2-4.3-7.2-10c0-5.2 2.9-8.6 7.2-8.6Z"/><path d="M6.5 7.7c1.9-.3 3.7-1.3 5-3 1.2 1.5 3 2.5 5.6 2.9"/><path d="M7.9 10.7h2.2M13.9 10.7h2.2M11.3 14.1h1.2M10.1 17.2h3.8"/></g><g fill="#315F4A"><circle cx="15.7" cy="12.9" r="0.52"/><circle cx="16.2" cy="15" r="0.52"/><circle cx="14.3" cy="15.2" r="0.52"/></g></svg></span>
+      <div class="hp-need-foot">
+        <span class="hp-need-label">Akne &amp; papastërti</span>
+        <span class="hp-need-arrow">→</span>
+      </div>
+    </a>
+
+    <a href="{{ url_for('main.products', category='Dermokozmetikë', subcategory='Hidratues') }}" class="hp-need-card">
+      <img src="https://res.cloudinary.com/drljgepgy/image/upload/q_auto,f_auto/v1792095614/Hydrating_Cream_Swipe_on_Icy_Blue-1_kz7qvc.png" alt="Lëkurë e thatë" class="hp-need-img">
+      <span class="hp-need-badge"><span class="iconify" data-icon="lucide:droplet" data-width="20" data-height="20" style="color:#315F4A"></span></span>
+      <div class="hp-need-foot">
+        <span class="hp-need-label">Lëkurë e thatë</span>
+        <span class="hp-need-arrow">→</span>
+      </div>
+    </a>
+
+    <a href="{{ url_for('main.products', category='Dermokozmetikë', subcategory='Anti-Age') }}" class="hp-need-card">
+      <img src="https://res.cloudinary.com/drljgepgy/image/upload/q_auto,f_auto/v1792095617/Warm_studio_portrait_with_natural_freckles-2_iknny0.png" alt="Pigmentim" class="hp-need-img">
+      <span class="hp-need-badge"><span class="iconify" data-icon="lucide:sparkles" data-width="20" data-height="20" style="color:#315F4A"></span></span>
+      <div class="hp-need-foot">
+        <span class="hp-need-label">Pigmentim &amp; njolla</span>
+        <span class="hp-need-arrow">→</span>
+      </div>
+    </a>
+
+    <a href="{{ url_for('main.products', category='Dermokozmetikë', subcategory='Kremra Dielli (SPF)') }}" class="hp-need-card">
+      <img src="https://res.cloudinary.com/drljgepgy/image/upload/q_auto,f_auto/v1792095616/Straw_hat_in_golden_sunlight-3_nl4jhv.png" alt="Mbrojtje nga dielli" class="hp-need-img">
+      <span class="hp-need-badge"><span class="iconify" data-icon="lucide:sun" data-width="20" data-height="20" style="color:#315F4A"></span></span>
+      <div class="hp-need-foot">
+        <span class="hp-need-label">Mbrojtje nga dielli</span>
+        <span class="hp-need-arrow">→</span>
+      </div>
+    </a>
+
+  </div>
+</section>
 
 
 <!-- ══════════════════════════════════════════
@@ -321,7 +370,7 @@
           </div>
           {% if product.in_stock != False %}
           <button class="hp-card-atc" onclick="event.stopPropagation(); hpAddToCart(this, '{{ product._id }}')">
-            <span class="hp-atc-label"><i class="fas fa-plus"></i> Shto në shportë</span>
+            <span class="hp-atc-label"><span class="iconify" data-icon="lucide:shopping-cart" data-width="15" data-height="15"></span> Shto në shportë</span>
             <span class="hp-atc-done"><i class="fas fa-check"></i> U shtua</span>
           </button>
           {% endif %}
@@ -336,40 +385,6 @@
     </div>
   </div>
 </section>
-
-
-<!-- ══════════════════════════════════════════
-     MË TË SHITUR (BEST SELLERS)
-══════════════════════════════════════════ -->
-{% if best_sellers %}
-<section id="bestsellers" class="hp-section hp-section-beige">
-  <div class="container">
-    <div class="hp-head">
-      <div class="hp-head-group">
-        <div class="hp-section-eyebrow"><i class="fas fa-fire"></i> Tendencë</div>
-        <h2 class="hp-title">Më të shitur</h2>
-      </div>
-      <a href="{{ url_for('main.products', best_sellers='true') }}" class="hp-see-all">
-        Shiko të gjitha <i class="fas fa-arrow-right"></i>
-      </a>
-    </div>
-
-    <div class="hp-carousel-outer">
-      <button type="button" class="hp-carousel-arrow hp-prev" onclick="hpScrollCarousel(this,-1)">
-        <i class="fas fa-chevron-left"></i>
-      </button>
-      <div class="hp-carousel">
-        {% for product in best_sellers %}
-          {{ hp_card(product, loop.index) }}
-        {% endfor %}
-      </div>
-      <button type="button" class="hp-carousel-arrow hp-next" onclick="hpScrollCarousel(this,1)">
-        <i class="fas fa-chevron-right"></i>
-      </button>
-    </div>
-  </div>
-</section>
-{% endif %}
 
 
 <!-- ══════════════════════════════════════════
@@ -440,6 +455,39 @@
 
 
 <!-- ══════════════════════════════════════════
+     MË TË SHITUR (BEST SELLERS)
+══════════════════════════════════════════ -->
+{% if best_sellers %}
+<section id="bestsellers" class="hp-section hp-section-beige">
+  <div class="container">
+    <div class="hp-head">
+      <div class="hp-head-group">
+        <h2 class="hp-title">Më të shituara</h2>
+      </div>
+      <a href="{{ url_for('main.products', best_sellers='true') }}" class="hp-see-all">
+        Shiko të gjitha <i class="fas fa-arrow-right"></i>
+      </a>
+    </div>
+
+    <div class="hp-carousel-outer">
+      <button type="button" class="hp-carousel-arrow hp-prev" onclick="hpScrollCarousel(this,-1)">
+        <i class="fas fa-chevron-left"></i>
+      </button>
+      <div class="hp-carousel">
+        {% for product in best_sellers %}
+          {{ hp_card(product, loop.index) }}
+        {% endfor %}
+      </div>
+      <button type="button" class="hp-carousel-arrow hp-next" onclick="hpScrollCarousel(this,1)">
+        <i class="fas fa-chevron-right"></i>
+      </button>
+    </div>
+  </div>
+</section>
+{% endif %}
+
+
+<!-- ══════════════════════════════════════════
      KATEGORITE
 ══════════════════════════════════════════ -->
 <section class="hp-section hp-cat-section">
@@ -478,26 +526,6 @@
 </section>
 
 
-<!-- ══════════════════════════════════════════
-     PROMO BANNER
-══════════════════════════════════════════ -->
-<div class="hp-promo">
-  <div class="container">
-    <div class="hp-promo-card">
-      <div class="hp-promo-text">
-        <h2>Zbulo rutinën tuaj<br>të kujdesit për lëkurën</h2>
-        <p>Plotësoni konsultën tonë të shpejtë dhe merrni rekomandime të personalizuara nga farmacistët tanë të çertifikuar.</p>
-        <a href="{{ url_for('main.quiz') }}" class="hp-promo-btn">
-          Fillo konsultën <i class="fas fa-arrow-right"></i>
-        </a>
-      </div>
-      <div class="hp-promo-img">
-        <img src="https://res.cloudinary.com/drljgepgy/image/upload/v1782412867/ChatGPT_Image_Jun_25_2026_at_08_40_31_PM_jvpy9i.png"
-             alt="Skincare">
-      </div>
-    </div>
-  </div>
-</div>
 
 
 <!-- ══════════════════════════════════════════
@@ -508,7 +536,6 @@
   <div class="container">
     <div class="hp-head">
       <div class="hp-head-group">
-        <div class="hp-section-eyebrow"><i class="fas fa-pills"></i> Kategoria</div>
         <h2 class="hp-title">Suplemente &amp; Vitamina</h2>
       </div>
       <a href="{{ url_for('main.products', category='Suplemente & Vitamina') }}" class="hp-see-all">
@@ -536,34 +563,6 @@
 <!-- ══════════════════════════════════════════
      SPOTLIGHT: KUJDES PERSONAL & HIGJIENË
 ══════════════════════════════════════════ -->
-{% if kujdes_products %}
-<section id="kujdes" class="hp-section hp-section-beige hp-spotlight">
-  <div class="container">
-    <div class="hp-head">
-      <div class="hp-head-group">
-        <div class="hp-section-eyebrow"><i class="fas fa-shower"></i> Kategoria</div>
-        <h2 class="hp-title">Kujdes Personal &amp; Higjienë</h2>
-      </div>
-      <a href="{{ url_for('main.products', category='Kujdes Personal & Higjienë') }}" class="hp-see-all">
-        Shiko të gjitha <i class="fas fa-arrow-right"></i>
-      </a>
-    </div>
-    <div class="hp-carousel-outer">
-      <button type="button" class="hp-carousel-arrow hp-prev" onclick="hpScrollCarousel(this,-1)">
-        <i class="fas fa-chevron-left"></i>
-      </button>
-      <div class="hp-carousel">
-        {% for product in kujdes_products %}
-          {{ hp_card(product, loop.index) }}
-        {% endfor %}
-      </div>
-      <button type="button" class="hp-carousel-arrow hp-next" onclick="hpScrollCarousel(this,1)">
-        <i class="fas fa-chevron-right"></i>
-      </button>
-    </div>
-  </div>
-</section>
-{% endif %}
 
 
 <!-- ══════════════════════════════════════════

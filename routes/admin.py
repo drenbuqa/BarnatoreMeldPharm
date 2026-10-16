@@ -794,13 +794,84 @@ def delete_product(product_id):
     Product.delete(product_id)
     flash('Produkti u fshi.', 'success')
     return redirect(url_for('admin.dashboard'))
+@admin.route('/offers', methods=['GET'])
+@login_required
+@admin_required
+def offers_list():
+    from models.db import mongo
+    now = datetime.now()
+    soon = now + timedelta(days=7)
+
+    pipeline = [
+        {"$match": {"offer_name": {"$ne": None}, "is_deleted": {"$ne": True}}},
+        {"$group": {
+            "_id": "$offer_name",
+            "count": {"$sum": 1},
+            "start": {"$first": "$discount_from"},
+            "expiry": {"$first": "$discount_until"},
+            "type": {"$first": "$offer_type"},
+            "multi_buy_type": {"$first": "$multi_buy_type"},
+            "status": {"$first": "$offer_status"},
+            "fixed_amount": {"$first": "$fixed_amount"},
+            "max_updated": {"$max": "$updated_at"},
+            "discount_percent": {"$first": {"$ifNull": ["$offer_discount_percent", {"$cond": {"if": {"$and": [{"$gt": ["$discount_price", 0]}, {"$gt": ["$price", 0]}]}, "then": {"$round": [{"$multiply": [{"$subtract": [1, {"$divide": ["$discount_price", "$price"]}]}, 100]}, 0]}, "else": None}}]}}
+        }},
+        {"$sort": {"max_updated": -1}}
+    ]
+    raw = list(mongo.db.products.aggregate(pipeline))
+
+    offers = []
+    active_count = expiring_soon_count = expired_count = 0
+    for r in raw:
+        ot = r.get("type", "discount")
+        st = r.get("status", "expired")
+        expiry = r.get("expiry")
+        start  = r.get("start")
+        if ot == "discount":
+            pct = r.get("discount_percent")
+            value = (str(int(pct)) + "%") if pct else "—"
+        elif ot == "multi_buy":
+            value = r.get("multi_buy_type", "1+1")
+        elif ot == "fixed_amount":
+            fa = r.get("fixed_amount") or 0
+            value = f"€{float(fa):.2f} zbritje"
+        else:
+            value = "—"
+
+        if st == "active" and expiry and expiry < now:
+            actual = "expired"; expired_count += 1
+        elif st == "active" and expiry and expiry <= soon:
+            actual = "expiring"; expiring_soon_count += 1; active_count += 1
+        elif st == "active":
+            actual = "active"; active_count += 1
+        else:
+            actual = "expired"; expired_count += 1
+
+        offers.append({
+            "name":    r["_id"],
+            "count":   r["count"],
+            "start":   start.strftime('%d %b %Y') if start else None,
+            "expiry":  expiry.strftime('%d %b %Y') if expiry else None,
+            "type":    ot,
+            "value":   value,
+            "status":  actual,
+        })
+
+    return render_template('admin/offers.html',
+                           offers=offers,
+                           active_count=active_count,
+                           expired_count=expired_count,
+                           expiring_soon_count=expiring_soon_count,
+                           total_count=len(offers))
+
+
 @admin.route('/bulk-offers', methods=['GET', 'POST'])
 @login_required
 @admin_required
 def bulk_offers():
     from models.db import mongo
     from bson import ObjectId
-    
+
     if request.method == 'POST':
         action = request.form.get('action', 'apply')
         offer_name = request.form.get('offer_name', '').strip()
@@ -812,10 +883,13 @@ def bulk_offers():
             if target_name:
                 mongo.db.products.update_many(
                     {"offer_name": target_name},
-                    {"$set": {"discount_price": None, "discount_until": None, "offer_status": "expired", "offer_ended_at": datetime.now(), "updated_at": datetime.now()}}
+                    {"$set": {"discount_price": None, "discount_until": None, "discount_from": None,
+                              "offer_name": None, "offer_type": None, "offer_status": "expired",
+                              "multi_buy_type": None, "fixed_amount": None, "offer_discount_percent": None,
+                              "offer_ended_at": datetime.now(), "updated_at": datetime.now()}}
                 )
                 flash(f'Oferta "{target_name}" u fshi me sukses.', 'success')
-            return redirect(url_for('admin.bulk_offers'))
+            return redirect(url_for('admin.offers_list'))
 
         # Check if products are selected for apply/remove
         if not selected_ids:
@@ -835,6 +909,7 @@ def bulk_offers():
 
             discount_percent = float(request.form.get('discount_percent', 0)) if offer_type == 'discount' else 0
             multi_buy_type = request.form.get('multi_buy_type', '1+1') if offer_type == 'multi_buy' else None
+            fixed_amount = float(request.form.get('fixed_amount', 0)) if offer_type == 'fixed_amount' else 0
 
             for p in products:
                 pid_str = str(p['_id'])
@@ -850,6 +925,8 @@ def bulk_offers():
                             return round(base_price * (1 - discount_percent / 100), 2)
                         elif offer_type == 'multi_buy':
                             return round(calculate_multi_buy_price(base_price, multi_buy_type), 2)
+                        elif offer_type == 'fixed_amount':
+                            return max(0.0, round(base_price - fixed_amount, 2))
                         return None
 
                     variants = p.get('variants') or []
@@ -880,6 +957,8 @@ def bulk_offers():
                             "offer_status": "active",
                             "offer_ended_at": None,
                             "multi_buy_type": multi_buy_type,
+                            "fixed_amount": fixed_amount if offer_type == 'fixed_amount' else None,
+                            "offer_discount_percent": discount_percent if offer_type == 'discount' else None,
                             "updated_at": datetime.now(),
                         }
                     else:
@@ -892,6 +971,8 @@ def bulk_offers():
                             "offer_status": "active",
                             "offer_ended_at": None,
                             "multi_buy_type": multi_buy_type,
+                            "fixed_amount": fixed_amount if offer_type == 'fixed_amount' else None,
+                            "offer_discount_percent": discount_percent if offer_type == 'discount' else None,
                             "updated_at": datetime.now(),
                         }
 
@@ -917,7 +998,7 @@ def bulk_offers():
             
             msg = f'Sukses! Oferta u aplikua për {count} produkte.' if action == 'apply' else f'Sukses! Ofertat u hoqën nga {count} produkte.'
             flash(msg, 'success')
-            return redirect(url_for('admin.bulk_offers'))
+            return redirect(url_for('admin.offers_list'))
         except Exception as e:
             flash(f'Gabim: {str(e)}', 'danger')
             return redirect(url_for('admin.bulk_offers'))
@@ -962,33 +1043,80 @@ def bulk_offers():
             "expiry": {"$first": "$discount_until"},
             "type": {"$first": "$offer_type"},
             "multi_buy_type": {"$first": "$multi_buy_type"},
-            "discount_percent": {"$first": {"$round": [{"$multiply": [{"$subtract": [1, {"$divide": ["$discount_price", "$price"]}]}, 100]}, 0]}}
+            "fixed_amount": {"$first": "$fixed_amount"},
+            "max_updated": {"$max": "$updated_at"},
+            "discount_percent": {"$first": {"$ifNull": ["$offer_discount_percent", {"$cond": {"if": {"$and": [{"$gt": ["$discount_price", 0]}, {"$gt": ["$price", 0]}]}, "then": {"$round": [{"$multiply": [{"$subtract": [1, {"$divide": ["$discount_price", "$price"]}]}, 100]}, 0]}, "else": None}}]}}
         }},
-        {"$sort": {"_id": 1}}
+        {"$sort": {"max_updated": -1}}
     ]
     raw_active = list(mongo.db.products.aggregate(pipeline))
     active_offers_info = []
     for r in raw_active:
         offer_type = r.get("type", "discount")
         if offer_type == "discount":
-            value = r.get("discount_percent", 0) or 0
+            value = r.get("discount_percent") or 0
+        elif offer_type == "fixed_amount":
+            value = r.get("fixed_amount", 0) or 0
         else:
             value = r.get("multi_buy_type", "1+1")
-        
+
         active_offers_info.append({
             "name": r["_id"],
             "count": r["count"],
             "start": r["start"].strftime('%Y-%m-%d') if r.get("start") else None,
             "expiry": r["expiry"].strftime('%Y-%m-%d') if r.get("expiry") else None,
             "type": offer_type,
+            "multi_buy_type": r.get("multi_buy_type"),
+            "discount_percent": r.get("discount_percent"),
+            "fixed_amount": r.get("fixed_amount"),
             "value": value
         })
 
-    return render_template('admin/bulk_offers.html', 
-                         categories=all_categories, 
-                         brands=brands, 
+    # Handle edit mode: pre-fill form with existing offer data (any status)
+    edit_offer = None
+    edit_name = request.args.get('edit', '').strip()
+    if edit_name:
+        matched = next((o for o in active_offers_info if o['name'].lower() == edit_name.lower()), None)
+        if not matched:
+            # Offer may be inactive/expired — query without status filter
+            edit_pipeline = [
+                {"$match": {"offer_name": {"$ne": None}, "is_deleted": {"$ne": True},
+                            "offer_name": {"$regex": f"^{edit_name}$", "$options": "i"}}},
+                {"$group": {
+                    "_id": "$offer_name",
+                    "count": {"$sum": 1},
+                    "start": {"$first": "$discount_from"},
+                    "expiry": {"$first": "$discount_until"},
+                    "type": {"$first": "$offer_type"},
+                    "multi_buy_type": {"$first": "$multi_buy_type"},
+                    "fixed_amount": {"$first": "$fixed_amount"},
+                    "discount_percent": {"$first": {"$ifNull": ["$offer_discount_percent", None]}}
+                }}
+            ]
+            edit_raw = list(mongo.db.products.aggregate(edit_pipeline))
+            if edit_raw:
+                r = edit_raw[0]
+                ot = r.get("type", "discount")
+                matched = {
+                    "name": r["_id"],
+                    "count": r["count"],
+                    "start": r["start"].strftime('%Y-%m-%d') if r.get("start") else None,
+                    "expiry": r["expiry"].strftime('%Y-%m-%d') if r.get("expiry") else None,
+                    "type": ot,
+                    "multi_buy_type": r.get("multi_buy_type"),
+                    "discount_percent": r.get("discount_percent"),
+                    "fixed_amount": r.get("fixed_amount"),
+                    "value": r.get("discount_percent") or r.get("fixed_amount") or r.get("multi_buy_type")
+                }
+        if matched:
+            edit_offer = matched
+
+    return render_template('admin/bulk_offers.html',
+                         categories=all_categories,
+                         brands=brands,
                          all_products=all_products,
-                         active_offers_info=active_offers_info)
+                         active_offers_info=active_offers_info,
+                         edit_offer=edit_offer)
 
 
 def _resolve_banner_link_value(link_type, form):
@@ -1687,28 +1815,54 @@ def users():
         {"username": 1, "email": 1, "is_admin": 1, "created_at": 1, "newsletter_subscribed": 1}
     ).sort("created_at", -1))
 
-    # Count orders per user by email
-    pipeline = [
+    order_counts = {r['_id']: r['count'] for r in mongo.db.orders.aggregate([
         {"$group": {"_id": "$email", "count": {"$sum": 1}}}
-    ]
-    order_counts = {r['_id']: r['count'] for r in mongo.db.orders.aggregate(pipeline)}
+    ])}
 
-    for u in raw_users:
-        u['order_count'] = order_counts.get(u.get('email'), 0)
+    registered_emails = {u.get('email', '').lower() for u in raw_users}
 
-    # Use the same subscriber source as the newsletter page for consistency
-    from models.user import User as _User
-    all_subs = _User.get_newsletter_subscribers()
+    # Deduplicated subscriber list (same source as newsletter page)
+    all_subs = User.get_newsletter_subscribers()
     total_subscriber_count = len(all_subs)
 
-    # Guests = subscribers who are NOT in the registered users collection
-    registered_emails = {u.get('email', '') for u in raw_users}
-    guest_subscribers = [s for s in all_subs if s.get('email') not in registered_emails]
+    # Build unified entry list: registered users first, then guest-only subscribers
+    entries = []
+    for u in raw_users:
+        entries.append({
+            '_id': u['_id'],
+            'email': u.get('email', ''),
+            'username': u.get('username', ''),
+            'is_admin': bool(u.get('is_admin')),
+            'newsletter_subscribed': bool(u.get('newsletter_subscribed')),
+            'order_count': order_counts.get(u.get('email'), 0),
+            'joined_at': u.get('created_at'),
+            'type': 'registered',
+        })
 
+    guest_subs = list(mongo.db.newsletter_subscribers.find(
+        {}, {"email": 1, "subscribed_at": 1}
+    ).sort("subscribed_at", -1))
+    for g in guest_subs:
+        if g.get('email', '').lower() not in registered_emails:
+            entries.append({
+                '_id': None,
+                'email': g.get('email', ''),
+                'username': '',
+                'is_admin': False,
+                'newsletter_subscribed': True,
+                'order_count': 0,
+                'joined_at': g.get('subscribed_at'),
+                'type': 'guest',
+            })
+
+    registered_count = len(raw_users)
+    admin_count = sum(1 for u in raw_users if u.get('is_admin'))
     pending_orders_count = mongo.db.orders.count_documents({'status': 'Pending'})
+
     return render_template('admin/users.html',
-                           users=raw_users,
-                           guest_subscribers=guest_subscribers,
+                           entries=entries,
+                           registered_count=registered_count,
+                           admin_count=admin_count,
                            total_subscriber_count=total_subscriber_count,
                            pending_orders_count=pending_orders_count)
 
@@ -1933,11 +2087,8 @@ def analytics_page():
 
     pending_orders_count = mongo.db.orders.count_documents({'status': {'$in': ['Pending', 'Në Pritje']}})
 
-    # ── Newsletter subscribers ────────────────────────────────────
-    newsletter_total = (
-        mongo.db.newsletter_subscribers.count_documents({}) +
-        mongo.db.users.count_documents({'newsletter_subscribed': True})
-    )
+    # ── Newsletter subscribers (deduplicated, same source as users page) ──
+    newsletter_total = len(User.get_newsletter_subscribers())
     newsletter_period = (
         mongo.db.newsletter_subscribers.count_documents({'subscribed_at': {'$gte': cutoff}}) +
         mongo.db.users.count_documents({'newsletter_subscribed': True, 'created_at': {'$gte': cutoff}})

@@ -1,23 +1,129 @@
 {% extends "admin/base.html" %}
 
-{% block title %}Menaxhimi i Përdoruesve - Meld Pharm Admin{% endblock %}
-{% block page_title %}Menaxhimi i Përdoruesve{% endblock %}
+{% block title %}Përdoruesit - Meld Pharm Admin{% endblock %}
+{% block page_title %}Përdoruesit{% endblock %}
 
 {% block admin_content %}
+<style>
+/* ── KPI row ── */
+.usr-kpi { display:grid; grid-template-columns:repeat(3,1fr); gap:1rem; margin-bottom:1.5rem; }
 
-<!-- KPI -->
-<div class="kpi-grid" style="margin-bottom:1.5rem; grid-template-columns: repeat(3, 1fr);">
-    <div class="kpi-card kpi-blue">
+/* ── Toolbar ── */
+.usr-toolbar {
+    display:flex; align-items:center; gap:0.75rem; flex-wrap:wrap;
+    background:var(--adm-card); border:1px solid var(--adm-border);
+    border-radius:var(--adm-radius); padding:0.9rem 1.1rem;
+    margin-bottom:1.25rem; box-shadow:var(--adm-shadow);
+}
+.usr-search-wrap { position:relative; flex:1; min-width:180px; }
+.usr-search-wrap i { position:absolute; left:0.85rem; top:50%; transform:translateY(-50%); color:var(--adm-muted); font-size:0.85rem; pointer-events:none; }
+.usr-search-wrap input {
+    width:100%; padding:0.62rem 0.9rem 0.62rem 2.4rem;
+    background:var(--adm-bg); border:1.5px solid var(--adm-border);
+    border-radius:var(--adm-radius-sm); font-size:0.875rem; font-family:inherit;
+    color:var(--adm-text); outline:none; transition:border-color 0.2s, background 0.2s;
+}
+.usr-search-wrap input:focus { background:#fff; border-color:var(--adm-accent); box-shadow:0 0 0 3px rgba(79,93,78,0.1); }
+.usr-tabs { display:flex; gap:0.3rem; }
+.usr-tab {
+    padding:0.45rem 0.9rem; border-radius:20px; font-size:0.78rem; font-weight:700;
+    border:1.5px solid var(--adm-border); background:var(--adm-bg);
+    color:var(--adm-muted); cursor:pointer; transition:all 0.18s; white-space:nowrap;
+}
+.usr-tab:hover { background:var(--adm-accent-light); color:var(--adm-accent); border-color:var(--adm-accent); }
+.usr-tab.active { background:var(--adm-accent); color:#fff; border-color:var(--adm-accent); }
+.usr-count-badge { font-size:0.65rem; background:rgba(0,0,0,0.13); border-radius:10px; padding:0.05rem 0.38rem; margin-left:0.22rem; }
+
+/* ── Table card ── */
+.usr-card-wrap { background:var(--adm-card); border:1px solid var(--adm-border); border-radius:var(--adm-radius); box-shadow:var(--adm-shadow); overflow:hidden; }
+.usr-tbl { width:100%; border-collapse:collapse; }
+.usr-tbl th {
+    background:var(--adm-bg); padding:0.7rem 1rem; text-align:left;
+    font-size:0.67rem; font-weight:800; letter-spacing:.06em; text-transform:uppercase;
+    color:var(--adm-muted); border-bottom:2px solid var(--adm-border); white-space:nowrap;
+}
+.usr-tbl td { padding:0.75rem 1rem; border-bottom:1px solid var(--adm-border); font-size:0.82rem; vertical-align:middle; }
+.usr-tbl tbody tr:last-child td { border-bottom:none; }
+.usr-tbl tbody tr { transition:background 0.13s; }
+.usr-tbl tbody tr:hover td { background:rgba(247,243,238,0.6); }
+.usr-tbl tbody tr[data-hidden="1"] { display:none; }
+
+/* ── Avatar ── */
+.usr-av {
+    width:36px; height:36px; border-radius:50%; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
+    font-weight:800; font-size:0.88rem; color:#fff;
+}
+.usr-av.reg { background:linear-gradient(135deg,var(--adm-accent),#6b7e6a); }
+.usr-av.guest { background:linear-gradient(135deg,#94a3b8,#64748b); }
+.usr-identity { display:flex; align-items:center; gap:0.65rem; }
+.usr-name { font-weight:700; color:var(--adm-text); font-size:0.855rem; }
+.usr-email-sub { font-size:0.72rem; color:var(--adm-muted); margin-top:0.06rem; }
+
+/* ── Badges ── */
+.type-badge { display:inline-flex; align-items:center; gap:0.28rem; padding:0.22rem 0.55rem; border-radius:6px; font-size:0.68rem; font-weight:700; }
+.type-reg   { background:var(--adm-accent-light); color:var(--adm-accent); }
+.type-guest { background:#f1f5f9; color:#64748b; }
+.role-badge { display:inline-flex; align-items:center; gap:0.28rem; padding:0.25rem 0.6rem; border-radius:6px; font-size:0.7rem; font-weight:700; }
+.role-admin { background:#eff6ff; color:#1d4ed8; }
+.role-user  { background:#f1f5f9; color:#64748b; }
+.nl-badge   { display:inline-flex; align-items:center; gap:0.28rem; padding:0.22rem 0.55rem; border-radius:6px; font-size:0.68rem; font-weight:700; }
+.nl-yes { background:#dcfce7; color:#15803d; }
+.nl-no  { color:var(--adm-muted); font-size:0.75rem; }
+.ord-pill { display:inline-flex; align-items:center; justify-content:center; min-width:24px; height:24px; padding:0 0.45rem; background:var(--adm-accent-light); color:var(--adm-accent); border-radius:6px; font-weight:800; font-size:0.75rem; }
+.ord-pill.zero { background:var(--adm-bg); color:var(--adm-muted); }
+
+/* ── Action buttons ── */
+.btn-make-admin   { background:#eff6ff; color:#1d4ed8; }
+.btn-make-admin:hover { background:#1d4ed8; color:white; }
+.btn-remove-admin { background:#fef2f2; color:#dc2626; }
+.btn-remove-admin:hover { background:#dc2626; color:white; }
+
+/* ── Empty state ── */
+.usr-empty { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:3rem 1rem; gap:0.55rem; }
+.usr-empty i { font-size:2.5rem; color:var(--adm-border); }
+.usr-empty p { margin:0; font-size:0.88rem; font-weight:600; color:var(--adm-muted); }
+
+/* ── Mobile row cards ── */
+@media(max-width:768px) {
+    .usr-kpi { grid-template-columns:repeat(3,1fr); gap:0.5rem; margin-bottom:1rem; }
+    .kpi-card { padding:0.65rem 0.7rem; gap:0.45rem; border-radius:12px; }
+    .kpi-icon { width:30px; height:30px; border-radius:8px; font-size:0.75rem; }
+    .kpi-number { font-size:1.25rem; }
+    .kpi-label { font-size:0.57rem; white-space:normal; line-height:1.2; margin-top:0.15rem; }
+
+    .usr-toolbar { flex-direction:column; align-items:stretch; gap:0.65rem; padding:0.75rem; }
+    .usr-tabs { justify-content:center; }
+
+    .usr-tbl thead { display:none; }
+    .usr-tbl tbody { display:flex; flex-direction:column; gap:0; }
+    .usr-tbl tbody tr { display:grid; grid-template-columns:1fr auto; column-gap:0.75rem; row-gap:0.25rem; padding:0.85rem 1rem; align-items:center; border-bottom:1px solid var(--adm-border); }
+    .usr-tbl tbody tr:hover td { background:transparent; }
+    .usr-tbl tbody tr:last-child { border-bottom:none; }
+    .usr-tbl td { padding:0; border:none; }
+    .usr-tbl td.td-who { grid-column:1; grid-row:1; }
+    .usr-tbl td.td-type { grid-column:1; grid-row:2; }
+    .usr-tbl td.td-date { display:none; }
+    .usr-tbl td.td-orders { display:none; }
+    .usr-tbl td.td-role { display:none; }
+    .usr-tbl td.td-nl { display:none; }
+    .usr-tbl td.td-actions { grid-column:2; grid-row:1 / span 2; display:flex; flex-direction:column; gap:0.35rem; align-items:flex-end; }
+}
+</style>
+
+{# ── KPI ── #}
+<div class="usr-kpi">
+    <div class="kpi-card kpi-teal">
         <div class="kpi-icon"><i class="fas fa-users"></i></div>
         <div class="kpi-body">
-            <div class="kpi-number">{{ users|length }}</div>
-            <div class="kpi-label">Gjithsej Përdorues</div>
+            <div class="kpi-number">{{ registered_count }}</div>
+            <div class="kpi-label">Të Regjistruar</div>
         </div>
     </div>
     <div class="kpi-card kpi-orange">
         <div class="kpi-icon"><i class="fas fa-user-shield"></i></div>
         <div class="kpi-body">
-            <div class="kpi-number">{{ users|selectattr('is_admin')|list|length }}</div>
+            <div class="kpi-number">{{ admin_count }}</div>
             <div class="kpi-label">Administratorë</div>
         </div>
     </div>
@@ -25,183 +131,180 @@
         <div class="kpi-icon"><i class="fas fa-paper-plane"></i></div>
         <div class="kpi-body">
             <div class="kpi-number">{{ total_subscriber_count }}</div>
-            <div class="kpi-label">Abonentë Buletini</div>
+            <div class="kpi-label">Abonentë</div>
         </div>
     </div>
 </div>
 
-<!-- Search -->
-<div class="admin-actions-bar" style="margin-bottom:1.5rem;">
-    <div class="search-and-filter" style="width:100%;">
-        <div class="admin-search-wrapper" style="max-width:100%; flex:1;">
-            <i class="fas fa-search"></i>
-            <input type="text" id="userSearch" placeholder="Kërko sipas emrit ose email-it...">
-        </div>
+{# ── Toolbar ── #}
+{% set reg_count = entries | selectattr('type','eq','registered') | list | length %}
+{% set guest_count = entries | selectattr('type','eq','guest') | list | length %}
+{% set sub_count = entries | selectattr('newsletter_subscribed') | list | length %}
+
+<div class="usr-toolbar">
+    <div class="usr-search-wrap">
+        <i class="fas fa-search"></i>
+        <input type="text" id="usrSearch" placeholder="Kërko sipas emrit ose email-it…" autocomplete="off">
+    </div>
+    <div class="usr-tabs">
+        <button class="usr-tab active" data-filter="all">
+            Të Gjithë<span class="usr-count-badge">{{ entries|length }}</span>
+        </button>
+        <button class="usr-tab" data-filter="registered">
+            Të Regjistruar<span class="usr-count-badge">{{ reg_count }}</span>
+        </button>
+        <button class="usr-tab" data-filter="guest">
+            Abonentë Mysafirë<span class="usr-count-badge">{{ guest_count }}</span>
+        </button>
     </div>
 </div>
 
-<!-- Users Table (desktop) -->
-<div class="admin-table-card usr-tbl-wrap">
-    <div class="table-responsive">
-        <table class="premium-admin-table" id="usersTable">
-            <thead>
-                <tr>
-                    <th>Përdoruesi</th>
-                    <th>Email</th>
-                    <th>Regjistruar më</th>
-                    <th>Porosi</th>
-                    <th>Roli</th>
-                    <th>Buletini</th>
-                    <th style="text-align:right;">Veprime</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for user in users %}
-                <tr data-name="{{ user.username|lower if user.username else '' }}" data-email="{{ user.email|lower if user.email else '' }}">
-                    <td><div class="user-cell"><div class="user-avatar">{{ (user.username or user.email or 'U')[0]|upper }}</div><span class="user-name">{{ user.username or '—' }}</span></div></td>
-                    <td><span style="color:#475569;font-size:0.9rem;">{{ user.email or '—' }}</span></td>
-                    <td><span style="color:#64748b;font-size:0.85rem;">{% if user.created_at %}{{ user.created_at.strftime('%d.%m.%Y') }}{% else %}—{% endif %}</span></td>
-                    <td><span class="table-cat-badge">{{ user.order_count if user.order_count is defined else 0 }}</span></td>
-                    <td>{% if user.is_admin %}<span class="role-badge role-admin"><i class="fas fa-shield-alt"></i> Admin</span>{% else %}<span class="role-badge role-user"><i class="fas fa-user"></i> Përdorues</span>{% endif %}</td>
-                    <td>{% if user.newsletter_subscribed %}<span class="sub-badge sub-yes"><i class="fas fa-check"></i> Abonuar</span>{% else %}<span class="sub-badge sub-no">—</span>{% endif %}</td>
-                    <td><div class="table-actions" style="justify-content:flex-end;"><a href="{{ url_for('admin.user_orders', user_id=user._id) }}" class="action-btn" title="Shiko Porositë" style="text-decoration:none;"><i class="fas fa-shopping-bag"></i></a><form action="{{ url_for('admin.toggle_admin', user_id=user._id) }}" method="POST" onsubmit="return confirmToggleAdmin(this,'{{ user.username or user.email }}',{{ 'true' if user.is_admin else 'false' }});"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/><button type="submit" class="action-btn {{ 'btn-remove-admin' if user.is_admin else 'btn-make-admin' }}" title="{{ 'Hiq të drejtat Admin' if user.is_admin else 'Bëje Admin' }}"><i class="fas {{ 'fa-user-minus' if user.is_admin else 'fa-user-plus' }}"></i></button></form></div></td>
-                </tr>
+{# ── Unified table ── #}
+<div class="usr-card-wrap">
+    <table class="usr-tbl" id="usrTable">
+        <thead>
+            <tr>
+                <th>Përdoruesi</th>
+                <th>Lloji</th>
+                <th>Data</th>
+                <th>Porosi</th>
+                <th>Roli</th>
+                <th>Buletin</th>
+                <th style="text-align:right;">Veprime</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for e in entries %}
+        <tr data-name="{{ (e.username or '')|lower }}"
+            data-email="{{ (e.email or '')|lower }}"
+            data-type="{{ e.type }}">
+            {# Who #}
+            <td class="td-who">
+                <div class="usr-identity">
+                    <div class="usr-av {{ 'reg' if e.type == 'registered' else 'guest' }}">
+                        {{ (e.username or e.email or 'U')[0]|upper }}
+                    </div>
+                    <div>
+                        {% if e.username %}
+                        <div class="usr-name">{{ e.username }}</div>
+                        <div class="usr-email-sub">{{ e.email }}</div>
+                        {% else %}
+                        <div class="usr-name">{{ e.email }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </td>
+            {# Type #}
+            <td class="td-type">
+                {% if e.type == 'registered' %}
+                <span class="type-badge type-reg"><i class="fas fa-user-check"></i> Llogari</span>
                 {% else %}
-                <tr><td colspan="7"><div class="adm-empty"><div class="adm-empty-icon"><i class="fas fa-users"></i></div><p class="adm-empty-title">Nuk u gjet asnjë përdorues</p><p class="adm-empty-desc">Përdoruesit regjistrohen vetë.</p></div></td></tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-</div>
-
-<!-- Users Card List (mobile only) -->
-<div class="usr-card-list" id="usrCardList">
-    {% for user in users %}
-    <div class="usr-card" data-name="{{ user.username|lower if user.username else '' }}" data-email="{{ user.email|lower if user.email else '' }}">
-        <div class="usr-card-left">
-            <div class="user-avatar usr-av-lg">{{ (user.username or user.email or 'U')[0]|upper }}</div>
-        </div>
-        <div class="usr-card-body">
-            <div class="usr-card-name">{{ user.username or '—' }}</div>
-            <div class="usr-card-email">{{ user.email or '—' }}</div>
-            <div class="usr-card-meta">
-                {% if user.is_admin %}
-                <span class="role-badge role-admin"><i class="fas fa-shield-alt"></i> Admin</span>
-                {% else %}
-                <span class="role-badge role-user"><i class="fas fa-user"></i> Përdorues</span>
+                <span class="type-badge type-guest"><i class="fas fa-envelope"></i> Mysafir</span>
                 {% endif %}
-                <span class="usr-orders-badge"><i class="fas fa-box"></i> {{ user.order_count if user.order_count is defined else 0 }}</span>
-                {% if user.newsletter_subscribed %}<span class="sub-badge sub-yes"><i class="fas fa-check"></i> Abonuar</span>{% endif %}
-            </div>
-        </div>
-        <div class="usr-card-actions">
-            <a href="{{ url_for('admin.user_orders', user_id=user._id) }}" class="action-btn" title="Porositë" style="text-decoration:none;"><i class="fas fa-shopping-bag"></i></a>
-            <form action="{{ url_for('admin.toggle_admin', user_id=user._id) }}" method="POST" onsubmit="return confirmToggleAdmin(this,'{{ user.username or user.email }}',{{ 'true' if user.is_admin else 'false' }});">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                <button type="submit" class="action-btn {{ 'btn-remove-admin' if user.is_admin else 'btn-make-admin' }}" title="{{ 'Hiq të drejtat Admin' if user.is_admin else 'Bëje Admin' }}"><i class="fas {{ 'fa-user-minus' if user.is_admin else 'fa-user-plus' }}"></i></button>
-            </form>
-        </div>
-    </div>
-    {% else %}
-    <div class="adm-empty"><div class="adm-empty-icon"><i class="fas fa-users"></i></div><p class="adm-empty-title">Nuk u gjet asnjë përdorues</p></div>
-    {% endfor %}
+            </td>
+            {# Date #}
+            <td class="td-date">
+                <span style="color:var(--adm-muted);font-size:0.8rem;">
+                    {{ e.joined_at.strftime('%d.%m.%Y') if e.joined_at else '—' }}
+                </span>
+            </td>
+            {# Orders #}
+            <td class="td-orders">
+                {% if e.type == 'registered' %}
+                <span class="ord-pill {{ '' if e.order_count > 0 else 'zero' }}">{{ e.order_count }}</span>
+                {% else %}
+                <span style="color:var(--adm-muted);">—</span>
+                {% endif %}
+            </td>
+            {# Role #}
+            <td class="td-role">
+                {% if e.type == 'registered' %}
+                    {% if e.is_admin %}
+                    <span class="role-badge role-admin"><i class="fas fa-shield-alt"></i> Admin</span>
+                    {% else %}
+                    <span class="role-badge role-user"><i class="fas fa-user"></i> Përdorues</span>
+                    {% endif %}
+                {% else %}
+                <span style="color:var(--adm-muted);">—</span>
+                {% endif %}
+            </td>
+            {# Newsletter #}
+            <td class="td-nl">
+                {% if e.newsletter_subscribed %}
+                <span class="nl-badge nl-yes"><i class="fas fa-check"></i> Abonuar</span>
+                {% else %}
+                <span class="nl-no">—</span>
+                {% endif %}
+            </td>
+            {# Actions #}
+            <td class="td-actions">
+                <div class="table-actions" style="justify-content:flex-end;">
+                {% if e.type == 'registered' and e._id %}
+                    <a href="{{ url_for('admin.user_orders', user_id=e._id) }}"
+                       class="action-btn" title="Shiko Porositë" style="text-decoration:none;">
+                        <i class="fas fa-shopping-bag"></i>
+                    </a>
+                    <form action="{{ url_for('admin.toggle_admin', user_id=e._id) }}" method="POST"
+                          onsubmit="return confirmToggleAdmin(this,'{{ e.username or e.email }}',{{ 'true' if e.is_admin else 'false' }});">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit"
+                                class="action-btn {{ 'btn-remove-admin' if e.is_admin else 'btn-make-admin' }}"
+                                title="{{ 'Hiq Admin' if e.is_admin else 'Bëje Admin' }}">
+                            <i class="fas {{ 'fa-user-minus' if e.is_admin else 'fa-user-plus' }}"></i>
+                        </button>
+                    </form>
+                {% else %}
+                    <span style="color:var(--adm-muted);font-size:0.75rem;padding:0 0.5rem;">—</span>
+                {% endif %}
+                </div>
+            </td>
+        </tr>
+        {% else %}
+        <tr>
+            <td colspan="7">
+                <div class="usr-empty">
+                    <i class="fas fa-users"></i>
+                    <p>Nuk u gjet asnjë përdorues</p>
+                </div>
+            </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
 </div>
-
-{% if guest_subscribers %}
-<div class="admin-table-card" style="margin-top:2rem;">
-    <div style="padding:1.25rem 1.5rem 0.75rem; border-bottom:1px solid #f1f5f9; display:flex; align-items:center; gap:0.6rem;">
-        <i class="fas fa-envelope" style="color:#6C7A61;"></i>
-        <h3 style="margin:0; font-size:1rem; font-weight:700; color:#1e293b;">Abonentë mysafirë (pa llogari)</h3>
-        <span style="margin-left:auto; background:#dcfce7; color:#15803d; padding:0.2rem 0.65rem; border-radius:20px; font-size:0.78rem; font-weight:700;">{{ guest_subscribers|length }}</span>
-    </div>
-    <div class="table-responsive">
-        <table class="premium-admin-table">
-            <thead>
-                <tr>
-                    <th>Email</th>
-                    <th>Abonuar më</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for sub in guest_subscribers %}
-                <tr>
-                    <td><span style="color:#475569; font-size:0.9rem;">{{ sub.email }}</span></td>
-                    <td><span style="color:#64748b; font-size:0.85rem;">{% if sub.subscribed_at %}{{ sub.subscribed_at.strftime('%d.%m.%Y') }}{% else %}—{% endif %}</span></td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-</div>
-{% endif %}
-
-<style>
-.user-cell { display:flex; align-items:center; gap:0.75rem; }
-.user-avatar { width:38px; height:38px; border-radius:50%; background:linear-gradient(135deg,#0f766e,#0ea5e9); color:white; font-weight:800; font-size:1rem; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-.user-name { font-weight:700; color:#1e293b; }
-.role-badge { display:inline-flex; align-items:center; gap:0.35rem; padding:0.35rem 0.75rem; border-radius:20px; font-size:0.78rem; font-weight:700; }
-.role-admin { background:#eff6ff; color:#1d4ed8; }
-.role-user  { background:#f1f5f9; color:#475569; }
-.btn-make-admin   { background:#eff6ff; color:#1d4ed8; }
-.btn-make-admin:hover { background:#1d4ed8; color:white; }
-.btn-remove-admin { background:#fef2f2; color:#dc2626; }
-.btn-remove-admin:hover { background:#dc2626; color:white; }
-.sub-badge { display:inline-flex; align-items:center; gap:0.3rem; padding:0.25rem 0.6rem; border-radius:20px; font-size:0.75rem; font-weight:700; }
-.sub-yes { background:#dcfce7; color:#15803d; }
-.sub-no  { color:#94a3b8; }
-
-/* ── Mobile card list (hidden on desktop) ── */
-.usr-card-list { display:none; }
-.usr-card { display:flex; align-items:center; gap:0.75rem; padding:0.85rem 1rem; border-bottom:1px solid #f1f5f9; }
-.usr-card:last-child { border-bottom:none; }
-.usr-av-lg { width:40px; height:40px; font-size:0.95rem; flex-shrink:0; }
-.usr-card-body { flex:1; min-width:0; }
-.usr-card-name { font-weight:700; color:#1e293b; font-size:0.9rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.usr-card-email { font-size:0.75rem; color:#64748b; margin-top:0.1rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.usr-card-meta { display:flex; align-items:center; gap:0.35rem; margin-top:0.35rem; flex-wrap:wrap; }
-.usr-orders-badge { display:inline-flex; align-items:center; gap:0.25rem; font-size:0.72rem; font-weight:700; color:#64748b; background:#f1f5f9; padding:0.2rem 0.5rem; border-radius:20px; }
-.usr-card-actions { display:flex; flex-direction:column; gap:0.35rem; flex-shrink:0; }
-
-@media(max-width:768px){
-    /* ── KPI cards: compact ── */
-    .kpi-grid { grid-template-columns:repeat(3,1fr) !important; gap:0.5rem !important; margin-bottom:1rem !important; }
-    .kpi-card { padding:0.65rem 0.7rem; gap:0.45rem; border-radius:12px; }
-    .kpi-icon { width:30px; height:30px; border-radius:8px; font-size:0.75rem; flex-shrink:0; }
-    .kpi-number { font-size:1.25rem; letter-spacing:-0.02em; }
-    .kpi-label { font-size:0.57rem; letter-spacing:0; white-space:normal; line-height:1.2; margin-top:0.15rem; }
-
-    /* ── Search ── */
-    .admin-actions-bar { margin-bottom:0.75rem !important; }
-
-    /* ── Hide desktop table, show card list ── */
-    .usr-tbl-wrap { display:none !important; }
-    .usr-card-list { display:block; background:#fff; border:1px solid #eef0ed; border-radius:14px; overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,0.04); }
-
-    /* ── Guest subscribers: compact ── */
-    .admin-table-card:not(.usr-tbl-wrap) thead { display:none; }
-    .admin-table-card:not(.usr-tbl-wrap) table,
-    .admin-table-card:not(.usr-tbl-wrap) tbody { display:block; }
-    .admin-table-card:not(.usr-tbl-wrap) tbody tr { display:flex; flex-direction:column; gap:0.15rem; padding:0.6rem 1rem; border-bottom:1px solid #f1f5f9; }
-    .admin-table-card:not(.usr-tbl-wrap) tbody tr:last-child { border-bottom:none; }
-    .admin-table-card:not(.usr-tbl-wrap) tbody tr td { padding:0; border:none; }
-    .admin-table-card:not(.usr-tbl-wrap) tbody tr td span { font-size:0.8rem !important; }
-}
-</style>
 
 <script>
-document.getElementById('userSearch').addEventListener('input', function(e) {
-    const term = e.target.value.toLowerCase().trim();
-    document.querySelectorAll('#usersTable tbody tr').forEach(row => {
-        const name = row.getAttribute('data-name') || '';
-        const email = row.getAttribute('data-email') || '';
-        row.style.display = (!term || name.includes(term) || email.includes(term)) ? '' : 'none';
+(function(){
+    const searchInput = document.getElementById('usrSearch');
+    const tabs = document.querySelectorAll('.usr-tab');
+    let activeFilter = 'all';
+    let searchTerm = '';
+
+    function applyFilters() {
+        document.querySelectorAll('#usrTable tbody tr[data-type]').forEach(row => {
+            const name = row.getAttribute('data-name') || '';
+            const email = row.getAttribute('data-email') || '';
+            const type = row.getAttribute('data-type') || '';
+            const matchSearch = !searchTerm || name.includes(searchTerm) || email.includes(searchTerm);
+            const matchFilter = activeFilter === 'all' || type === activeFilter;
+            row.style.display = (matchSearch && matchFilter) ? '' : 'none';
+        });
+    }
+
+    searchInput.addEventListener('input', function() {
+        searchTerm = this.value.toLowerCase().trim();
+        applyFilters();
     });
-    document.querySelectorAll('#usrCardList .usr-card').forEach(card => {
-        const name = card.getAttribute('data-name') || '';
-        const email = card.getAttribute('data-email') || '';
-        card.style.display = (!term || name.includes(term) || email.includes(term)) ? '' : 'none';
+
+    tabs.forEach(tab => {
+        tab.addEventListener('click', function() {
+            tabs.forEach(t => t.classList.remove('active'));
+            this.classList.add('active');
+            activeFilter = this.getAttribute('data-filter');
+            applyFilters();
+        });
     });
-});
+})();
 
 function confirmToggleAdmin(form, username, isAdmin) {
     const msg = isAdmin

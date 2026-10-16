@@ -4,7 +4,7 @@
 {% block page_title %}Produktet{% endblock %}
 
 {% block page_action %}
-<a href="{{ url_for('admin.new_product') }}" class="topbar-btn">
+<a href="{{ url_for('admin.new_product') }}" class="topbar-btn show-on-mobile-only">
     <i class="fas fa-plus"></i> Produkt i Ri
 </a>
 {% endblock %}
@@ -163,6 +163,13 @@
 .prod-empty { padding:4rem; text-align:center; }
 .prod-empty i { font-size:2.5rem; opacity:0.2; display:block; margin-bottom:1rem; color:#1a1f18; }
 
+/* Desktop: hide mobile-only topbar button */
+.show-on-mobile-only { display:none !important; }
+/* Mobile: hide the in-row button, show topbar one */
+@media(max-width:768px) {
+    .hide-on-mobile { display:none !important; }
+    .show-on-mobile-only { display:inline-flex !important; }
+}
 @media(max-width:768px) {
     .pf-bar { padding:0.85rem 1rem; }
     /* search full-width on its own row, then 4 filters in one row */
@@ -282,9 +289,14 @@ tr.row-saved-flash { animation: row-saved 2.2s ease forwards; }
             <i class="fas fa-box-open"></i><span class="chip-lbl"> Pa Stok</span>
         </button>
 
-        <span class="pf-count">
-            {% if any_filter %}{{ filtered_total }} / {{ total_count }}{% else %}{{ total_count }}{% endif %} produkte
-        </span>
+        <div style="margin-left:auto;display:flex;align-items:center;gap:.75rem;flex-shrink:0;">
+            <span class="pf-count">
+                {% if any_filter %}{{ filtered_total }} / {{ total_count }}{% else %}{{ total_count }}{% endif %} produkte
+            </span>
+            <a href="{{ url_for('admin.new_product') }}" class="topbar-btn pf-new-btn hide-on-mobile">
+                <i class="fas fa-plus"></i> Produkt i Ri
+            </a>
+        </div>
     </div>
 
     <!-- Active filter chips (one per active filter, click X to remove) -->

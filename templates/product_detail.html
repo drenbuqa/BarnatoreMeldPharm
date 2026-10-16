@@ -231,29 +231,33 @@
                 <i class="fas fa-chevron-down accordion-icon" style="transition:transform .3s cubic-bezier(.4,0,.2,1);color:#94a3b8;"></i>
             </div>
             <div class="accordion-content" style="max-height:0;overflow:hidden;transition:all .4s cubic-bezier(.4,0,.2,1);">
-                <div class="product-desc-body" style="padding:0 1.5rem 1.5rem;font-size:.95rem;color:#475569;line-height:1.8;">
-                    {% set lines = product.description.split('\n') %}
-                    {% set in_list = namespace(val=false) %}
-                    {% for line in lines %}
-                      {% set stripped = line.strip() %}
-                      {% if stripped %}
-                        {% if stripped[:1] in ['•', '-', '*'] or stripped[:2] == '- ' %}
-                          {% set item = stripped.lstrip('•*- ').strip() %}
-                          {% if not in_list.val %}
-                            <ul style="margin:.5rem 0 .75rem 1.1rem;padding:0;list-style:none;">
-                            {% set in_list.val = true %}
+                <div class="product-desc-body ql-content" style="padding:0 1.5rem 1.5rem;font-size:.95rem;color:#475569;line-height:1.8;">
+                    {% if '<' in product.description %}
+                        {{ product.description | safe }}
+                    {% else %}
+                        {% set lines = product.description.split('\n') %}
+                        {% set in_list = namespace(val=false) %}
+                        {% for line in lines %}
+                          {% set stripped = line.strip() %}
+                          {% if stripped %}
+                            {% if stripped[:1] in ['•', '-', '*'] or stripped[:2] == '- ' %}
+                              {% set item = stripped.lstrip('•*- ').strip() %}
+                              {% if not in_list.val %}
+                                <ul style="margin:.5rem 0 .75rem 1.1rem;padding:0;list-style:none;">
+                                {% set in_list.val = true %}
+                              {% endif %}
+                              <li style="position:relative;padding-left:1.2rem;margin-bottom:.45rem;">
+                                <span style="position:absolute;left:0;top:.55em;width:6px;height:6px;background:var(--primary);border-radius:50%;display:inline-block;"></span>
+                                {{ item }}
+                              </li>
+                            {% else %}
+                              {% if in_list.val %}</ul>{% set in_list.val = false %}{% endif %}
+                              <p style="margin-bottom:.75rem;">{{ stripped }}</p>
+                            {% endif %}
                           {% endif %}
-                          <li style="position:relative;padding-left:1.2rem;margin-bottom:.45rem;">
-                            <span style="position:absolute;left:0;top:.55em;width:6px;height:6px;background:var(--primary);border-radius:50%;display:inline-block;"></span>
-                            {{ item }}
-                          </li>
-                        {% else %}
-                          {% if in_list.val %}</ul>{% set in_list.val = false %}{% endif %}
-                          <p style="margin-bottom:.75rem;">{{ stripped }}</p>
-                        {% endif %}
-                      {% endif %}
-                    {% endfor %}
-                    {% if in_list.val %}</ul>{% endif %}
+                        {% endfor %}
+                        {% if in_list.val %}</ul>{% endif %}
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -267,8 +271,12 @@
                 <i class="fas fa-chevron-down accordion-icon" style="transition:transform .3s cubic-bezier(.4,0,.2,1);color:#94a3b8;"></i>
             </div>
             <div class="accordion-content" style="max-height:0;overflow:hidden;transition:all .4s cubic-bezier(.4,0,.2,1);">
-                <div style="padding:0 1.5rem 1.5rem;font-size:.95rem;color:#475569;line-height:1.7;">
-                    {{ product.how_to_use | e | replace('\n', '<br>') | safe }}
+                <div class="ql-content" style="padding:0 1.5rem 1.5rem;font-size:.95rem;color:#475569;line-height:1.7;">
+                    {% if '<' in product.how_to_use %}
+                        {{ product.how_to_use | safe }}
+                    {% else %}
+                        {{ product.how_to_use | e | replace('\n', '<br>') | safe }}
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -283,14 +291,12 @@
                 <i class="fas fa-chevron-down accordion-icon" style="transition:transform .3s cubic-bezier(.4,0,.2,1);color:#94a3b8;"></i>
             </div>
             <div class="accordion-content" style="max-height:0;overflow:hidden;transition:all .4s cubic-bezier(.4,0,.2,1);">
-                <div style="padding:0 1.5rem 1.5rem;font-size:.95rem;color:#475569;line-height:1.7;">
-                    <div class="ingredients-pills" style="display:flex;flex-wrap:wrap;gap:.6rem;margin-top:.5rem;">
-                        {% for ing in product.key_ingredients.split(',') %}
-                        {% if ing.strip() %}
-                        <span class="ingredient-pill" style="background:#f1f5f9;color:var(--primary);padding:.4rem .9rem;border-radius:30px;font-weight:600;font-size:.85rem;border:1px solid #e2e8f0;">{{ ing.strip() }}</span>
-                        {% endif %}
-                        {% endfor %}
-                    </div>
+                <div class="ql-content" style="padding:0 1.5rem 1.5rem;font-size:.95rem;color:#475569;line-height:1.7;">
+                    {% if '<' in product.key_ingredients %}
+                        {{ product.key_ingredients | safe }}
+                    {% else %}
+                        {{ product.key_ingredients | e | replace('\n', '<br>') | safe }}
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -327,9 +333,6 @@
                 <div class="spb-total-label">Total</div>
                 <div class="spb-total-price" id="spbTotalPrice">€{{ "%.2f"|format(product.display_price) }}</div>
             </div>
-            {% if product.auto_oct_discount or product.discount_price %}
-            <div class="spb-orig-price" id="spbOrigPrice">€{{ "%.2f"|format(product.display_original_price) }}</div>
-            {% endif %}
         </div>
 
         <!-- Mobile-only qty — on mobile row 1 right, hidden on desktop -->
@@ -720,6 +723,17 @@
 {% block footer %}{% endblock %}
 
 <style>
+    /* ── Quill rendered content ── */
+    .ql-content strong { font-weight:700; }
+    .ql-content em { font-style:italic; }
+    .ql-content u { text-decoration:underline; }
+    .ql-content h2 { font-size:1.1rem; font-weight:800; color:#1e293b; margin:.75rem 0 .4rem; }
+    .ql-content h3 { font-size:.98rem; font-weight:700; color:#334155; margin:.6rem 0 .35rem; }
+    .ql-content ul, .ql-content ol { padding-left:1.35rem; margin:.5rem 0 .75rem; }
+    .ql-content li { margin-bottom:.35rem; line-height:1.65; }
+    .ql-content p { margin-bottom:.65rem; }
+    .ql-content p:last-child { margin-bottom:0; }
+
     /* ── Product Info Card ─────────────────────────────────────── */
     .pinfo-card {
         position: relative;
@@ -1480,7 +1494,7 @@
             </div>
             {% if related.in_stock != False %}
             <button class="hp-card-atc" onclick="event.stopPropagation(); hpAddToCart(this, '{{ related._id }}')">
-                <span class="hp-atc-label"><i class="fas fa-plus"></i> Shto në shportë</span>
+                <span class="hp-atc-label"><span class="iconify" data-icon="lucide:shopping-cart" data-width="15" data-height="15"></span> Shto në shportë</span>
                 <span class="hp-atc-done"><i class="fas fa-check"></i> U shtua</span>
             </button>
             {% endif %}

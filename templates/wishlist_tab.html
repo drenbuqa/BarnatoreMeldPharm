@@ -49,7 +49,14 @@
                     <span class="hp-price-main">€{{ "%.2f"|format(product.price) }}</span>
                     {% endif %}
                 </div>
+                <div class="hp-urgency hp-urgency--placeholder" aria-hidden="true"></div>
             </div>
+            {% if product.in_stock != False %}
+            <button class="hp-card-atc" onclick="event.stopPropagation(); hpAddToCart(this, '{{ product._id }}')">
+                <span class="hp-atc-label"><span class="iconify" data-icon="lucide:shopping-cart" data-width="15" data-height="15"></span> Shto në shportë</span>
+                <span class="hp-atc-done"><i class="fas fa-check"></i> U shtua</span>
+            </button>
+            {% endif %}
         </div>
         {% endfor %}
     </div>

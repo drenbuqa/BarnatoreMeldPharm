@@ -56,6 +56,14 @@
                         <span class="price">€{{ "%.2f"|format(product.display_price) }}</span>
                         {% endif %}
                     </div>
+                    {% if product.in_stock != False %}
+                    <button class="wl-atc-btn" onclick="event.stopPropagation(); hpAddToCart(this, '{{ product._id }}')">
+                        <span class="wl-atc-label"><i class="fas fa-shopping-cart"></i> Shto në shportë</span>
+                        <span class="wl-atc-done"><i class="fas fa-check"></i> U shtua</span>
+                    </button>
+                    {% else %}
+                    <button class="wl-atc-btn wl-atc-oos" disabled>Jashtë stokut</button>
+                    {% endif %}
                 </div>
             </div>
             {% endfor %}
@@ -117,10 +125,23 @@
             grid-template-columns: repeat(2, 1fr);
             gap: 0.75rem;
         }
-
-        .page-title {
-            font-size: 1.75rem;
-        }
+        .page-title { font-size: 1.75rem; }
     }
+
+    .wl-atc-btn {
+        display: flex; align-items: center; justify-content: center; gap: .45rem;
+        width: 100%; margin-top: .6rem;
+        padding: .6rem .75rem; border: none; border-radius: 10px;
+        background: var(--primary, #059669); color: #fff;
+        font-family: inherit; font-size: .78rem; font-weight: 600;
+        cursor: pointer; transition: background .18s, box-shadow .18s;
+        box-shadow: 0 2px 8px rgba(5,150,105,.2); position: relative; z-index: 20;
+    }
+    .wl-atc-btn:hover { background: #047857; box-shadow: 0 4px 14px rgba(5,150,105,.3); }
+    .wl-atc-btn.hp-atc--added { background: #4a8c5c; }
+    .wl-atc-btn .wl-atc-done { display: none; }
+    .wl-atc-btn.hp-atc--added .wl-atc-label { display: none; }
+    .wl-atc-btn.hp-atc--added .wl-atc-done { display: flex; align-items: center; gap: .35rem; }
+    .wl-atc-oos { background: #e2e8f0 !important; color: #94a3b8 !important; box-shadow: none !important; cursor: not-allowed; }
 </style>
 {% endblock %}

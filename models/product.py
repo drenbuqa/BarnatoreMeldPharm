@@ -200,9 +200,16 @@ class Product:
 
         if brand and brand != 'all':
             import re
-            # Use case-insensitive regex, allow leading/trailing spaces, and escape special characters
-            escaped_brand = re.escape(brand.strip())
-            query["brand"] = {"$regex": f"^\\s*{escaped_brand}\\s*$", "$options": "i"}
+            brands_list = [b.strip() for b in brand.split(',') if b.strip()]
+            if len(brands_list) == 1:
+                escaped_brand = re.escape(brands_list[0])
+                query["brand"] = {"$regex": f"^\\s*{escaped_brand}\\s*$", "$options": "i"}
+            elif len(brands_list) > 1:
+                brand_or = [{"brand": {"$regex": f"^\\s*{re.escape(b)}\\s*$", "$options": "i"}} for b in brands_list]
+                if "$or" in query:
+                    query["$and"] = query.get("$and", []) + [{"$or": brand_or}]
+                else:
+                    query["$or"] = brand_or
 
         if discount_only:
             from datetime import datetime as _dt

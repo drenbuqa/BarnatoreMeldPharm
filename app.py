@@ -80,13 +80,19 @@ app.config['GOOGLE_CLIENT_SECRET'] = os.getenv('GOOGLE_CLIENT_SECRET', '')
 def make_session_permanent():
     session.permanent = True
 
+_NO_CACHE_PATHS = ('/login', '/register', '/logout', '/profile', '/orders',
+                   '/wishlist', '/forgot-password', '/reset-password', '/quiz',
+                   '/api/', '/guest_login', '/exit_guest')
+
 @app.after_request
-def set_static_cache_headers(response):
-    # Cache static files for 1 year in browsers; bust via ?v= query params in templates
+def set_cache_headers(response):
     if request.path.startswith('/static/'):
         response.cache_control.max_age = 31536000
         response.cache_control.public = True
         response.cache_control.immutable = True
+    elif any(request.path.startswith(p) for p in _NO_CACHE_PATHS) or request.method != 'GET':
+        response.cache_control.no_store = True
+        response.cache_control.private = True
     return response
 
 @app.after_request
@@ -110,6 +116,18 @@ limiter.init_app(app)
 if compress:
     compress.init_app(app)
 init_db(app)
+
+def _ensure_indexes():
+    try:
+        mongo.db.events.create_index([("ts", 1), ("e", 1)], background=True)
+        mongo.db.events.create_index([("ts", 1), ("e", 1), ("pid", 1)], background=True)
+        mongo.db.events.create_index([("ts", 1)], background=True)
+    except Exception:
+        pass
+
+with app.app_context():
+    _ensure_indexes()
+
 bcrypt = Bcrypt(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'auth.login'

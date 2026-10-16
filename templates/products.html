@@ -4,211 +4,405 @@
 <section class="section shop-section">
     <div class="container container-wide">
         <div class="shop-layout">
-            <!-- Sidebar Filters (Moved for correct stacking context) -->
+            <!-- Sidebar overlay -->
             <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeShopSidebar()"></div>
-            <!-- Sidebar Filters -->
-            <aside class="shop-sidebar" id="shopSidebar">
-                <div class="sidebar-mobile-header">
-                    <button class="btn-close-sidebar" id="closeSidebar" onclick="closeShopSidebar()"><i
-                            class="fas fa-times"></i></button>
-                    <h3>Filtroni Produktet</h3>
-                </div>
-                <div class="sidebar-content-wrapper">
-                    <div class="sidebar-filter-heading">
-                        <h3>Filtro produktet</h3>
+
+            {% set cat_icons = {
+              'Dermokozmetikë': 'fa-spa',
+              'Suplemente & Vitamina': 'fa-pills',
+              'Kujdes Personal & Higjienë': 'fa-soap',
+              'Pajisje Mjekësore': 'fa-stethoscope',
+              'Nënë & Fëmijë': 'fa-baby',
+              'Pajisje Ortopedike': 'fa-crutch',
+              'Produkte Natyrale & Bimore': 'fa-leaf'
+            } %}
+
+            <!-- Filter Panel -->
+            <aside class="shop-sidebar fsp-aside" id="shopSidebar">
+              <div class="fsp-screens" id="fspScreens">
+
+                <!-- ═══ MAIN SCREEN ═══════════════════════════════ -->
+                <div class="fsp-screen" id="fspMain">
+                  <div class="fsp-hd">
+                    <div class="fsp-hd-title-wrap">
+                      <h3 class="fsp-hd-title">Filtro produktet</h3>
+                      <span class="fsp-badge" id="fspActiveBadge"></span>
+                    </div>
+                    <button class="fsp-icon-btn fsp-mob-only" type="button" onclick="closeShopSidebar()">
+                      <i class="fas fa-times"></i>
+                    </button>
+                  </div>
+
+                  <div class="fsp-scroll">
+                    <!-- Category nav row -->
+                    <button class="fsp-nav-row {% if current_category != 'all' %}fsp-nav-sel{% endif %}"
+                            type="button" id="fspCatRowBtn" onclick="fspOpenSub('fspCatScreen')">
+                      <div class="fsp-nav-ico"><i class="fas fa-border-all"></i></div>
+                      <div class="fsp-nav-txt">
+                        <span class="fsp-nav-label">Kategoritë</span>
+                        <span class="fsp-nav-val" id="fspCatVal">{% if current_category != 'all' %}{{ current_category }}{% else %}Të gjitha kategoritë{% endif %}</span>
+                      </div>
+                      <i class="fas fa-chevron-right fsp-nav-arrow"></i>
+                    </button>
+
+                    <!-- Brand nav row -->
+                    <button class="fsp-nav-row {% if current_brand != 'all' %}fsp-nav-sel{% endif %}"
+                            type="button" id="fspBrandRowBtn" onclick="fspOpenSub('fspBrandScreen')">
+                      <div class="fsp-nav-ico"><i class="fas fa-tag"></i></div>
+                      <div class="fsp-nav-txt">
+                        <span class="fsp-nav-label">Brendet</span>
+                        <span class="fsp-nav-val" id="fspBrandVal">{% if current_brand != 'all' %}{% set brands_arr = current_brand.split(',') %}{{ brands_arr[0] }}{% if brands_arr|length > 1 %} +{{ brands_arr|length - 1 }}{% endif %}{% else %}Kërko nga qindra brende{% endif %}</span>
+                      </div>
+                      <i class="fas fa-chevron-right fsp-nav-arrow"></i>
+                    </button>
+
+                    <!-- Price section -->
+                    <div class="fsp-sect">
+                      <div class="fsp-sect-ttl">Çmimi</div>
+                      <div class="fsp-price-row">
+                        <div class="fsp-price-box">
+                          <div class="fsp-price-lbl">Nga</div>
+                          <div class="fsp-price-val" id="price-min-display">0 €</div>
+                        </div>
+                        <div class="fsp-price-sep">—</div>
+                        <div class="fsp-price-box">
+                          <div class="fsp-price-lbl">Deri</div>
+                          <div class="fsp-price-val" id="price-max-display">{{ price_slider_max }} €</div>
+                        </div>
+                      </div>
+                      <div class="prs-wrap fsp-slider-wrap">
+                        <div class="prs-track"></div>
+                        <div class="prs-fill" id="prs-fill"></div>
+                        <input type="range" id="range-slider-min" class="prs-input" min="0" max="{{ price_slider_max }}" step="1" value="0">
+                        <input type="range" id="range-slider-max" class="prs-input" min="0" max="{{ price_slider_max }}" step="1" value="{{ price_slider_max }}">
+                      </div>
+                      <div class="fsp-chips">
+                        <button class="fsp-chip" type="button" onclick="fspPriceChip(0,10,this)">Nën 10 €</button>
+                        <button class="fsp-chip" type="button" onclick="fspPriceChip(10,20,this)">10–20 €</button>
+                        <button class="fsp-chip" type="button" onclick="fspPriceChip(20,40,this)">20–40 €</button>
+                        <button class="fsp-chip" type="button" onclick="fspPriceChip(40,{{ price_slider_max }},this)">40+ €</button>
+                      </div>
+                      <input type="hidden" id="min-price" value="{{ request.args.get('min_price', '') }}">
+                      <input type="hidden" id="max-price" value="{{ request.args.get('max_price', '') }}">
                     </div>
 
-                    <div class="sidebar-block filter-accordion {% if discount_only or best_sellers or pharmacist_choice or product_labels %}has-selection{% endif %}">
-                        <button class="filter-accordion-trigger" type="button" aria-expanded="false"
-                            aria-controls="offersFilterPanel" id="offersFilterTrigger">
-                            <span>Etiketat e produktit</span>
-                            <span class="filter-trigger-meta">
-                                <i class="fas fa-chevron-down" aria-hidden="true"></i>
-                            </span>
-                        </button>
-                        <div class="filter-accordion-content" id="offersFilterPanel" role="region"
-                            aria-labelledby="offersFilterTrigger">
-                            <div class="filter-accordion-inner">
-                                <div class="filter-switch-row mb-3">
-                                    <span class="switch-label">Ofertë</span>
-                                    <label class="switch">
-                                        <input type="checkbox" id="label-sale-filter" class="product-label-filter" value="sale" {% if discount_only or 'sale' in product_labels %}checked{% endif
-                                            %} onchange="window.updateProductLabelFilters()">
-                                        <span class="slider round"></span>
-                                    </label>
-                                </div>
-                                <div class="filter-switch-row">
-                                    <span class="switch-label">Më të shiturit</span>
-                                    <label class="switch">
-                                        <input type="checkbox" id="label-best-seller-filter" class="product-label-filter" value="best_seller" {% if best_sellers or 'best_seller' in product_labels %}checked{% endif %}
-                                            onchange="window.updateProductLabelFilters()">
-                                        <span class="slider round"></span>
-                                    </label>
-                                </div>
-                                <div class="filter-switch-row">
-                                    <span class="switch-label">Zgjedhja e farmacistit</span>
-                                    <label class="switch">
-                                        <input type="checkbox" id="label-pharmacist-choice-filter" class="product-label-filter" value="pharmacist_choice" {% if pharmacist_choice or 'pharmacist_choice' in product_labels %}checked{% endif %}
-                                            onchange="window.updateProductLabelFilters()">
-                                        <span class="slider round"></span>
-                                    </label>
-                                </div>
-                                <div class="filter-switch-row">
-                                    <span class="switch-label">Produkte të reja</span>
-                                    <label class="switch">
-                                        <input type="checkbox" class="product-label-filter" value="new_arrival" {% if 'new_arrival' in product_labels %}checked{% endif %}
-                                            onchange="window.updateProductLabelFilters()">
-                                        <span class="slider round"></span>
-                                    </label>
-                                </div>
-                                <div class="filter-switch-row">
-                                    <span class="switch-label">Të kufizuara</span>
-                                    <label class="switch">
-                                        <input type="checkbox" class="product-label-filter" value="limited" {% if 'limited' in product_labels %}checked{% endif %}
-                                            onchange="window.updateProductLabelFilters()">
-                                        <span class="slider round"></span>
-                                    </label>
-                                </div>
-                                <div class="filter-switch-row">
-                                    <span class="switch-label">Sete dhe paketa</span>
-                                    <label class="switch">
-                                        <input type="checkbox" class="product-label-filter" value="set" {% if 'set' in product_labels %}checked{% endif %}
-                                            onchange="window.updateProductLabelFilters()">
-                                        <span class="slider round"></span>
-                                    </label>
-                                </div>
-                            </div>
-                        </div>
+                    <!-- Labels section -->
+                    <div class="fsp-sect">
+                      <div class="fsp-sect-ttl">Oferta dhe etiketa</div>
+                      <div class="fsp-labels">
+                        <label class="fsp-lbl">
+                          <input type="checkbox" class="product-label-filter" value="sale" {% if discount_only or 'sale' in product_labels %}checked{% endif %} onchange="window.updateProductLabelFilters()">
+                          <div class="fsp-lbl-box"><i class="fas fa-tag"></i><span>Me zbritje</span></div>
+                        </label>
+                        <label class="fsp-lbl">
+                          <input type="checkbox" class="product-label-filter" value="pharmacist_choice" {% if pharmacist_choice or 'pharmacist_choice' in product_labels %}checked{% endif %} onchange="window.updateProductLabelFilters()">
+                          <div class="fsp-lbl-box"><i class="fas fa-user-md"></i><span>Farmacisti</span></div>
+                        </label>
+                        <label class="fsp-lbl">
+                          <input type="checkbox" class="product-label-filter" value="new_arrival" {% if 'new_arrival' in product_labels %}checked{% endif %} onchange="window.updateProductLabelFilters()">
+                          <div class="fsp-lbl-box"><i class="fas fa-bolt"></i><span>Produkte të reja</span></div>
+                        </label>
+                        <label class="fsp-lbl">
+                          <input type="checkbox" class="product-label-filter" value="best_seller" {% if best_sellers or 'best_seller' in product_labels %}checked{% endif %} onchange="window.updateProductLabelFilters()">
+                          <div class="fsp-lbl-box"><i class="fas fa-fire"></i><span>Më të shiturit</span></div>
+                        </label>
+                        <label class="fsp-lbl">
+                          <input type="checkbox" class="product-label-filter" value="limited" {% if 'limited' in product_labels %}checked{% endif %} onchange="window.updateProductLabelFilters()">
+                          <div class="fsp-lbl-box"><i class="fas fa-clock"></i><span>Të kufizuara</span></div>
+                        </label>
+                        <label class="fsp-lbl">
+                          <input type="checkbox" class="product-label-filter" value="set" {% if 'set' in product_labels %}checked{% endif %} onchange="window.updateProductLabelFilters()">
+                          <div class="fsp-lbl-box"><i class="fas fa-layer-group"></i><span>Sete & paketa</span></div>
+                        </label>
+                      </div>
                     </div>
+                  </div><!-- /fsp-scroll -->
 
-                    <div class="sidebar-block filter-accordion {% if current_category != 'all' %}has-selection{% endif %}" id="categoryBlock">
-                        <button class="filter-accordion-trigger" type="button" aria-expanded="false"
-                            aria-controls="categoryFilterPanel" id="categoryFilterTrigger">
-                            <span>Kategoritë</span>
-                            <span class="filter-trigger-meta"><i class="fas fa-chevron-down" aria-hidden="true"></i></span>
-                        </button>
-                        <div class="filter-accordion-content" id="categoryFilterPanel" role="region" aria-labelledby="categoryFilterTrigger">
-                        <div class="filter-accordion-inner">
-                        <ul class="sidebar-cat-list">
-                            <li>
-                                <a href="#" onclick="filterByCategory(event, 'all')"
-                                    class="sidebar-cat-link {% if current_category == 'all' %}active{% endif %}">
-                                    <i class="fas fa-th-large"
-                                        style="width: 20px; margin-right: 10px; opacity: 0.7;"></i>
-                                    <span>Të Gjitha</span>
-                                </a>
-                            </li>
-                            {% for cat_name, subcats in categories.items() %}
-                            <li>
-                                <div class="sidebar-cat-group">
-                                    <div class="sidebar-cat-row">
-                                        <a href="#" onclick="filterByCategory(event, '{{ cat_name }}')"
-                                            class="sidebar-cat-link {% if current_category == cat_name %}active{% endif %}">
-                                            <span>{{ cat_name }}</span>
-                                            {% if subcats %}
-                                            <button class="subcat-toggle-btn" onclick="toggleSubcats(event, this)"
-                                                title="Shfaq nënkategoritë">
-                                                <i
-                                                    class="fas fa-chevron-right toggle-icon {% if current_category == cat_name %}rotated{% endif %}"></i>
-                                            </button>
-                                            {% endif %}
-                                        </a>
-                                    </div>
+                  <div class="fsp-foot">
+                    <button class="fsp-foot-clear" type="button" onclick="resetAllProductFilters(event)">Pastro</button>
+                    <button class="fsp-foot-apply" type="button" onclick="closeShopSidebar()">
+                      Shiko <span id="fspProductCount">{{ total_count }}</span> produkte
+                    </button>
+                  </div>
+                </div><!-- /fspMain -->
 
-                                    {% if subcats %}
-                                    <ul
-                                        class="sidebar-subcat-list {% if current_category == cat_name %}show{% endif %}">
-                                        {% for sub in subcats %}
-                                        <li style="margin-bottom: 2px;">
-                                            <a href="#"
-                                                onclick="filterBySubcategory(event, '{{ cat_name }}', '{{ sub }}')"
-                                                class="sidebar-subcat-link {% if current_subcategory == sub %}active{% endif %}">
-                                                {{ sub }}
-                                            </a>
-                                        </li>
-                                        {% endfor %}
-                                    </ul>
-                                    {% endif %}
-                                </div>
-                            </li>
-                            {% endfor %}
-                        </ul>
-                        </div>
-                        </div>
+                <!-- ═══ CATEGORY SUB-SCREEN ═══════════════════════ -->
+                <div class="fsp-screen fsp-sub" id="fspCatScreen">
+                  <div class="fsp-sub-hd">
+                    <button class="fsp-icon-btn" type="button" onclick="fspCloseSub()">
+                      <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <div class="fsp-sub-hd-txt">
+                      <div class="fsp-sub-hd-title">Zgjidh kategorinë</div>
+                      <div class="fsp-sub-hd-sub">{{ total_products_all }} produkte gjithsej</div>
                     </div>
+                    <button class="fsp-icon-btn fsp-mob-only" type="button" onclick="closeShopSidebar()">
+                      <i class="fas fa-times"></i>
+                    </button>
+                  </div>
+                  <div class="fsp-scroll">
+                    <button class="fsp-cat-item {% if current_category == 'all' %}fsp-cat-sel{% endif %}"
+                            type="button" onclick="fspApplyCat('all','Të gjitha kategoritë',[])">
+                      <div class="fsp-cat-ico"><i class="fas fa-th-large"></i></div>
+                      <div class="fsp-cat-txt"><span class="fsp-cat-name">Të gjitha produktet</span></div>
+                      <span class="fsp-cat-cnt">{{ total_products_all }}</span>
+                      {% if current_category == 'all' %}<i class="fas fa-check fsp-cat-check"></i>{% endif %}
+                    </button>
+                    {% for cat_name, subcats in categories.items() %}
+                    <button class="fsp-cat-item {% if current_category == cat_name %}fsp-cat-sel{% endif %}"
+                            type="button"
+                            data-cat="{{ cat_name }}"
+                            data-subcats="{{ subcats|tojson|forceescape }}"
+                            onclick="fspApplyCatBtn(this)">
+                      <div class="fsp-cat-ico"><i class="fas {{ cat_icons.get(cat_name, 'fa-circle-dot') }}"></i></div>
+                      <div class="fsp-cat-txt"><span class="fsp-cat-name">{{ cat_name }}</span></div>
+                      <span class="fsp-cat-cnt">{{ cat_counts.get(cat_name, 0) }}</span>
+                      <i class="fas fa-chevron-right fsp-cat-arrow"></i>
+                    </button>
+                    {% endfor %}
+                  </div>
+                  <div class="fsp-foot">
+                    <button class="fsp-foot-clear" type="button" onclick="resetAllProductFilters(event)">Pastro</button>
+                    <button class="fsp-foot-apply" type="button" onclick="closeShopSidebar()">
+                      Shiko <span class="fsp-count-sync">{{ total_count }}</span> produkte
+                    </button>
+                  </div>
+                </div><!-- /fspCatScreen -->
 
-                    <!-- Brand Filter -->
-                    <div class="sidebar-block filter-accordion {% if current_brand != 'all' %}has-selection{% endif %}" id="brandBlock">
-                        <button class="filter-accordion-trigger" type="button" aria-expanded="false"
-                            aria-controls="brandFilterPanel" id="brandFilterTrigger">
-                            <span>Brendet</span>
-                            <span class="filter-trigger-meta"><i class="fas fa-chevron-down" aria-hidden="true"></i></span>
-                        </button>
-                        <div class="filter-accordion-content" id="brandFilterPanel" role="region" aria-labelledby="brandFilterTrigger">
-                        <div class="filter-accordion-inner">
-                        <div class="brand-filter-search" style="margin-bottom: 10px; position: relative;">
-                            <input type="text" id="brandSearchInput" placeholder="Kërko brendin..." style="width: 100%; padding: 0.5rem 0.75rem 0.5rem 2rem; border-radius: 6px; border: 1px solid var(--border-light); font-size: 0.85rem;" onkeyup="filterBrandList()">
-                            <i class="fas fa-search" style="position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 0.8rem;"></i>
-                        </div>
-                        <div class="brand-filter-container" style="max-height: 250px; overflow-y: auto; padding-right: 10px;">
-                            <ul class="brand-list">
-                                <li>
-                                    <a href="#" onclick="filterByBrand(event, 'all')"
-                                        class="brand-link-item {% if current_brand == 'all' %}active{% endif %}">
-                                        Të gjitha
-                                    </a>
-                                </li>
-                                {% for brand in brands %}
-                                <li>
-                                    <a href="#" onclick="filterByBrand(event, '{{ brand }}')"
-                                        class="brand-link-item {% if current_brand == brand %}active{% endif %}">
-                                        {{ brand }}
-                                    </a>
-                                </li>
-                                {% endfor %}
-                            </ul>
-                        </div>
-                        </div>
-                        </div>
+                <!-- ═══ SUBCATEGORY SUB-SCREEN ════════════════════ -->
+                <div class="fsp-screen fsp-sub" id="fspSubcatScreen">
+                  <div class="fsp-sub-hd">
+                    <button class="fsp-icon-btn" type="button" onclick="fspOpenSub('fspCatScreen', true)">
+                      <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <div class="fsp-sub-hd-txt">
+                      <div class="fsp-sub-hd-title" id="fspSubcatTitle">Nënkategoritë</div>
+                      <div class="fsp-sub-hd-sub" id="fspSubcatSub"></div>
                     </div>
+                    <button class="fsp-icon-btn fsp-mob-only" type="button" onclick="closeShopSidebar()">
+                      <i class="fas fa-times"></i>
+                    </button>
+                  </div>
+                  <div class="fsp-scroll" id="fspSubcatBody"></div>
+                  <div class="fsp-foot">
+                    <button class="fsp-foot-clear" type="button" onclick="resetAllProductFilters(event)">Pastro</button>
+                    <button class="fsp-foot-apply" type="button" onclick="closeShopSidebar()">
+                      Shiko <span class="fsp-count-sync">{{ total_count }}</span> produkte
+                    </button>
+                  </div>
+                </div><!-- /fspSubcatScreen -->
 
-                    <div class="sidebar-block filter-accordion clickable-last-block {% if request.args.get('min_price') or request.args.get('max_price') %}has-selection{% endif %}">
-                        <button class="filter-accordion-trigger" type="button" aria-expanded="false"
-                            aria-controls="priceFilterPanel" id="priceFilterTrigger">
-                            <span>Çmimi</span>
-                            <span class="filter-trigger-meta"><i class="fas fa-chevron-down" aria-hidden="true"></i></span>
-                        </button>
-                        <div class="filter-accordion-content" id="priceFilterPanel" role="region" aria-labelledby="priceFilterTrigger">
-                        <div class="filter-accordion-inner">
-                        <div class="filter-group-price">
-                            <div class="prs-vals">
-                                <span class="prs-badge" id="price-min-display">0€</span>
-                                <span class="prs-badge" id="price-max-display">{{ price_slider_max }}€</span>
-                            </div>
-                            <div class="prs-wrap">
-                                <div class="prs-track"></div>
-                                <div class="prs-fill" id="prs-fill"></div>
-                                <input type="range" id="range-slider-min" class="prs-input" min="0" max="{{ price_slider_max }}" step="1" value="0">
-                                <input type="range" id="range-slider-max" class="prs-input" min="0" max="{{ price_slider_max }}" step="1" value="{{ price_slider_max }}">
-                            </div>
-                            <!-- Hidden inputs kept for compatibility with existing updateShop() JS -->
-                            <input type="hidden" id="min-price" value="{{ request.args.get('min_price', '') }}">
-                            <input type="hidden" id="max-price" value="{{ request.args.get('max_price', '') }}">
-                        </div>
-                        </div>
-                        </div>
+                <!-- ═══ BRAND SUB-SCREEN ══════════════════════════ -->
+                <div class="fsp-screen fsp-sub" id="fspBrandScreen">
+                  <div class="fsp-sub-hd">
+                    <button class="fsp-icon-btn" type="button" onclick="fspCloseSub()">
+                      <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <div class="fsp-sub-hd-txt">
+                      <div class="fsp-sub-hd-title">Zgjidh brendet</div>
+                      <div class="fsp-sub-hd-sub" id="fspBrandSubHd">0 brende të zgjedhura</div>
                     </div>
-                    <div class="filter-reset-footer">
-                        <button type="button" onclick="resetAllProductFilters(event)" class="btn-remove-all-filters">
-                            <i class="fas fa-xmark" aria-hidden="true"></i>
-                            <span>Hiq të gjithë filtrat</span>
-                        </button>
+                    <button class="fsp-icon-btn fsp-mob-only" type="button" onclick="closeShopSidebar()">
+                      <i class="fas fa-times"></i>
+                    </button>
+                  </div>
+                  <div class="fsp-brand-search-row">
+                    <i class="fas fa-search fsp-bsrch-ico"></i>
+                    <input type="text" id="brandSearchInput" class="fsp-bsrch-inp"
+                           placeholder="Kërko brendin..." oninput="fspFilterBrands()">
+                  </div>
+                  <!-- Brand body: scrollable list + alphabet index side by side -->
+                  <div class="fsp-brand-body">
+                    <div class="fsp-scroll" id="fspBrandScroll">
+                      <!-- Popular brands (top by count) -->
+                      <div class="fsp-brand-pop-section" id="fspBrandPopSection">
+                        <div class="fsp-brand-sect-ttl">Më të kërkuarat</div>
+                        <div class="fsp-brand-pop-grid" id="fspBrandPopGrid"></div>
+                      </div>
+                      <!-- Alphabetical list -->
+                      <ul class="brand-list fsp-brand-alpha-list" id="fspBrandAlphaList"></ul>
                     </div>
-                </div> <!-- End sidebar-content-wrapper -->
-                <div class="sidebar-mobile-footer d-md-none">
-                    <button class="btn btn-primary w-100" id="closeSidebarAlt">Shiko Produktet</button>
-                </div>
+                    <div class="fsp-alpha-idx" id="fspAlphaIdx"></div>
+                  </div>
+                  <!-- Hidden data for JS -->
+                  <script type="application/json" id="fspBrandsData">{{ brands|tojson }}</script>
+                  <script type="application/json" id="fspBrandCountsData">{{ brand_counts|tojson }}</script>
+                  <script type="application/json" id="fspSubcatCountsData">{{ subcat_counts|tojson }}</script>
+                  <div class="fsp-foot">
+                    <button class="fsp-foot-clear" type="button" onclick="resetAllProductFilters(event)">Pastro</button>
+                    <button class="fsp-foot-apply" type="button" onclick="closeShopSidebar()">
+                      Shiko <span class="fsp-count-sync">{{ total_count }}</span> produkte
+                    </button>
+                  </div>
+                </div><!-- /fspBrandScreen -->
+
+              </div><!-- /fsp-screens -->
             </aside>
+
+            <!-- ═══════════════════════════════════════════
+                 DESKTOP FILTER SIDEBAR (≥993px only)
+                 ═══════════════════════════════════════════ -->
+            <aside class="fsd-aside" id="fsdSidebar">
+              <div class="fsd-hdr">
+                <span class="fsd-hdr-title">Filtro</span>
+                <span class="fsd-badge" id="fsdActiveBadge"></span>
+                <button class="fsd-hdr-clear" id="fsdHeaderClear" type="button" onclick="fsdClearAll()">Pastro të gjitha</button>
+              </div>
+
+              <!-- Category accordion -->
+              <div class="fsd-section">
+                <button class="fsd-sect-toggle" type="button" onclick="fsdToggleSect('fsdCatBody',this)">
+                  <span>Kategoritë</span><i class="fas fa-chevron-down"></i>
+                </button>
+                <div class="fsd-sect-body" id="fsdCatBody">
+                  <button class="fsd-cat-row{% if current_category=='all' %} fsd-sel{% endif %}"
+                          type="button" data-cat="all" onclick="fsdApplyCat(this.dataset.cat,null)">
+                    <i class="fas fa-th-large fsd-cat-ico"></i>
+                    <span>Të gjitha kategoritë</span>
+                    <span class="fsd-cnt">{{ total_products_all }}</span>
+                  </button>
+                  {% for cat_name, subcats in categories.items() %}
+                  <div class="fsd-cat-grp{% if current_category==cat_name %} fsd-grp-open{% endif %}">
+                    <button class="fsd-cat-row fsd-cat-main{% if current_category==cat_name %} fsd-sel{% endif %}"
+                            type="button" data-cat="{{ cat_name }}" onclick="fsdToggleCat(this)">
+                      <i class="fas {{ cat_icons.get(cat_name,'fa-circle-dot') }} fsd-cat-ico"></i>
+                      <span>{{ cat_name }}</span>
+                      <span class="fsd-cnt">{{ cat_counts.get(cat_name,0) }}</span>
+                      <i class="fas fa-chevron-right fsd-cat-arrow"></i>
+                    </button>
+                    <div class="fsd-subcats">
+                      <button class="fsd-subcat-row{% if current_category==cat_name and not current_subcategory %} fsd-sel{% endif %}"
+                              type="button" data-cat="{{ cat_name }}" data-sub="" onclick="fsdApplySubcat(this)">
+                        <span>Të gjitha</span>
+                        <span class="fsd-cnt">{{ cat_counts.get(cat_name,0) }}</span>
+                      </button>
+                      {% for sub in subcats %}
+                      <button class="fsd-subcat-row{% if current_subcategory==sub %} fsd-sel{% endif %}"
+                              type="button" data-cat="{{ cat_name }}" data-sub="{{ sub }}" onclick="fsdApplySubcat(this)">
+                        <span>{{ sub }}</span>
+                        <span class="fsd-cnt">{{ subcat_counts.get(sub,0) }}</span>
+                      </button>
+                      {% endfor %}
+                    </div>
+                  </div>
+                  {% endfor %}
+                </div>
+              </div>
+
+              <!-- Brand section -->
+              <div class="fsd-section">
+                <button class="fsd-sect-toggle" type="button" onclick="fsdToggleSect('fsdBrandBody',this)">
+                  <span>Brendet</span><i class="fas fa-chevron-down"></i>
+                </button>
+                <div class="fsd-sect-body" id="fsdBrandBody">
+                  <div class="fsd-brand-srch-wrap">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="fsdBrandSrch" placeholder="Kërko brendin..." oninput="fsdFilterInlineBrands()">
+                  </div>
+                  <div id="fsdInlineBrands" class="fsd-inline-brands"></div>
+                  <button class="fsd-show-all-btn" type="button" onclick="fsdOpenBrandDialog()">
+                    <i class="fas fa-list"></i> Shiko të gjitha brendet
+                  </button>
+                </div>
+              </div>
+
+              <!-- Price section -->
+              <div class="fsd-section">
+                <button class="fsd-sect-toggle" type="button" onclick="fsdToggleSect('fsdPriceBody',this)">
+                  <span>Çmimi</span><i class="fas fa-chevron-down"></i>
+                </button>
+                <div class="fsd-sect-body" id="fsdPriceBody">
+                  <div style="padding:.5rem 1rem 0">
+                    <div class="fsp-price-row">
+                      <div class="fsp-price-box">
+                        <div class="fsp-price-lbl">Nga</div>
+                        <div class="fsp-price-val" id="fsd-price-min-d">{{ request.args.get('min_price','0') }} €</div>
+                      </div>
+                      <div class="fsp-price-sep">—</div>
+                      <div class="fsp-price-box">
+                        <div class="fsp-price-lbl">Deri</div>
+                        <div class="fsp-price-val" id="fsd-price-max-d">{{ request.args.get('max_price',price_slider_max) }} €</div>
+                      </div>
+                    </div>
+                    <div class="prs-wrap">
+                      <div class="prs-track"></div>
+                      <div class="prs-fill" id="fsd-prs-fill"></div>
+                      <input type="range" id="fsd-range-min" class="prs-input" min="0" max="{{ price_slider_max }}" step="1" value="{{ request.args.get('min_price',0)|int }}">
+                      <input type="range" id="fsd-range-max" class="prs-input" min="0" max="{{ price_slider_max }}" step="1" value="{{ request.args.get('max_price',price_slider_max)|int }}">
+                    </div>
+                    <div class="fsp-chips" style="margin-bottom:.5rem">
+                      <button class="fsp-chip" type="button" onclick="fsdPriceChip(0,10,this)">Nën 10 €</button>
+                      <button class="fsp-chip" type="button" onclick="fsdPriceChip(10,20,this)">10–20 €</button>
+                      <button class="fsp-chip" type="button" onclick="fsdPriceChip(20,40,this)">20–40 €</button>
+                      <button class="fsp-chip" type="button" onclick="fsdPriceChip(40,{{ price_slider_max }},this)">40+ €</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Offer labels (vertical checklist) -->
+              <div class="fsd-section">
+                <button class="fsd-sect-toggle" type="button" onclick="fsdToggleSect('fsdLabelsBody',this)">
+                  <span>Oferta dhe etiketa</span><i class="fas fa-chevron-down"></i>
+                </button>
+                <div class="fsd-sect-body" id="fsdLabelsBody">
+                  <label class="fsd-chk-row">
+                    <input type="checkbox" class="product-label-filter" value="sale" {% if discount_only or 'sale' in product_labels %}checked{% endif %} onchange="window.updateProductLabelFilters()">
+                    <div class="fsd-chk-box"><i class="fas fa-tag"></i><span>Me zbritje</span><div class="fsd-chk-ind"></div></div>
+                  </label>
+                  <label class="fsd-chk-row">
+                    <input type="checkbox" class="product-label-filter" value="pharmacist_choice" {% if pharmacist_choice or 'pharmacist_choice' in product_labels %}checked{% endif %} onchange="window.updateProductLabelFilters()">
+                    <div class="fsd-chk-box"><i class="fas fa-user-md"></i><span>Farmacisti</span><div class="fsd-chk-ind"></div></div>
+                  </label>
+                  <label class="fsd-chk-row">
+                    <input type="checkbox" class="product-label-filter" value="new_arrival" {% if 'new_arrival' in product_labels %}checked{% endif %} onchange="window.updateProductLabelFilters()">
+                    <div class="fsd-chk-box"><i class="fas fa-bolt"></i><span>Produkte të reja</span><div class="fsd-chk-ind"></div></div>
+                  </label>
+                  <label class="fsd-chk-row">
+                    <input type="checkbox" class="product-label-filter" value="best_seller" {% if best_sellers or 'best_seller' in product_labels %}checked{% endif %} onchange="window.updateProductLabelFilters()">
+                    <div class="fsd-chk-box"><i class="fas fa-fire"></i><span>Më të shiturit</span><div class="fsd-chk-ind"></div></div>
+                  </label>
+                  <label class="fsd-chk-row">
+                    <input type="checkbox" class="product-label-filter" value="limited" {% if 'limited' in product_labels %}checked{% endif %} onchange="window.updateProductLabelFilters()">
+                    <div class="fsd-chk-box"><i class="fas fa-clock"></i><span>Të kufizuara</span><div class="fsd-chk-ind"></div></div>
+                  </label>
+                  <label class="fsd-chk-row">
+                    <input type="checkbox" class="product-label-filter" value="set" {% if 'set' in product_labels %}checked{% endif %} onchange="window.updateProductLabelFilters()">
+                    <div class="fsd-chk-box"><i class="fas fa-layer-group"></i><span>Sete & paketa</span><div class="fsd-chk-ind"></div></div>
+                  </label>
+                </div>
+              </div>
+            </aside>
+
+            <!-- Brand dialog (desktop only) -->
+            <div class="fsd-bd-overlay" id="fsdBdOverlay" onclick="fsdCloseBrandDialog()"></div>
+            <div class="fsd-bd-dialog" id="fsdBdDialog">
+              <div class="fsd-bd-hdr">
+                <div>
+                  <div class="fsd-bd-ttl">Zgjidh brendet</div>
+                  <div class="fsd-bd-sub" id="fsdBdSub">0 brende të zgjedhura</div>
+                </div>
+                <button class="fsp-icon-btn" type="button" onclick="fsdCloseBrandDialog()"><i class="fas fa-times"></i></button>
+              </div>
+              <div class="fsd-bd-search">
+                <i class="fas fa-search"></i>
+                <input type="text" id="fsdDlgSrch" placeholder="Kërko brendin..." oninput="fsdFilterDlgBrands()">
+              </div>
+              <div class="fsd-bd-body">
+                <div class="fsd-scroll" id="fsdDlgScroll">
+                  <div class="fsp-brand-pop-section" id="fsdDlgPopSection">
+                    <div class="fsp-brand-sect-ttl">Më të kërkuarat</div>
+                    <div class="fsp-brand-pop-grid" id="fsdDlgPopGrid"></div>
+                  </div>
+                  <ul class="brand-list fsp-brand-alpha-list" id="fsdDlgAlphaList"></ul>
+                </div>
+                <div class="fsp-alpha-idx" id="fsdDlgAlphaIdx"></div>
+              </div>
+              <div class="fsd-bd-foot">
+                <button class="fsp-foot-clear" type="button" onclick="resetAllProductFilters(event)">Pastro</button>
+                <button class="fsp-foot-apply" type="button" onclick="fsdCloseBrandDialog()">Përfundo</button>
+              </div>
+            </div>
 
             <!-- Main Shop Content -->
             <main class="shop-main-content">
@@ -248,6 +442,9 @@
                     </div>
                 </div>
                 </div>{# end shop-controls-holder #}
+
+                <!-- Active filter chips (desktop only) -->
+                <div class="fsd-chips-bar" id="fsdChipsBar"></div>
 
                 <div id="productGrid" class="product-grid">
                     {% for product in products %}
@@ -311,7 +508,7 @@
                         </div>
                         {% if product.in_stock != False %}
                         <button class="hp-card-atc" onclick="event.stopPropagation(); hpAddToCart(this, '{{ product._id }}')">
-                            <span class="hp-atc-label"><i class="fas fa-plus"></i> Shto në shportë</span>
+                            <span class="hp-atc-label"><span class="iconify" data-icon="lucide:shopping-cart" data-width="15" data-height="15"></span> Shto në shportë</span>
                             <span class="hp-atc-done"><i class="fas fa-check"></i> U shtua</span>
                         </button>
                         {% endif %}
@@ -345,116 +542,805 @@
         </div>
     </div>
 </section>
+<!-- Subcat counts JSON for JS use -->
+<script type="application/json" id="fspSubcatCountsData">{{ subcat_counts|tojson }}</script>
 <style>
-.sidebar-filter-heading{display:flex;align-items:center;gap:1rem;margin-bottom:1rem;padding:0 .15rem}
-.sidebar-filter-heading h3{margin:0;color:var(--text-main);font-size:1.35rem;font-weight:700}
-.filter-reset-footer{margin-top:1rem;padding:1rem .25rem .15rem;border-top:1px solid #e2e8e3}
-.btn-remove-all-filters{display:inline-flex;align-items:center;justify-content:flex-start;gap:.55rem;width:auto;min-height:38px;padding:.45rem .65rem;border:0;border-radius:8px;background:transparent;color:#68736a;font:inherit;font-size:.86rem;font-weight:650;letter-spacing:.01em;cursor:pointer;box-shadow:none;transition:background .2s ease,color .2s ease}
-.btn-remove-all-filters i{font-size:1rem;color:#879188}
-.btn-remove-all-filters:hover{background:#edf1ed;color:#344237;box-shadow:none;transform:none}
-.btn-remove-all-filters:hover i{color:#4f5d4e}
-.btn-remove-all-filters:focus-visible{outline:3px solid rgba(79,93,78,.2);outline-offset:2px}
+/* ── Product card badges ── */
 .new-arrival-badge,.sale-label-badge{display:inline-flex;align-items:center;gap:4px;color:#fff;padding:3px 10px;font-size:.6rem;font-weight:800;border-radius:4px;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap}
 .new-arrival-badge{background:#0ea5e9;box-shadow:0 2px 8px rgba(14,165,233,.35)}
 .sale-label-badge{background:#ec4899;box-shadow:0 2px 8px rgba(236,72,153,.35)}
-.filter-accordion{margin-bottom:.75rem!important;padding:0!important;overflow:hidden;border:1px solid #e2e8f0!important;border-radius:14px!important;background:#fff;box-shadow:0 1px 3px rgba(15,23,42,.04);transition:border-color .2s ease,box-shadow .2s ease}
-.filter-accordion:hover{border-color:#cbd5e1!important}
-.filter-accordion.is-open{border-color:var(--primary)!important;box-shadow:0 5px 16px rgba(5,150,105,.08)}
-.filter-accordion-trigger{display:flex;align-items:center;justify-content:space-between;gap:1rem;width:100%;min-height:58px;padding:1rem 1.1rem;border:0;background:#fff;color:var(--text-main);font:inherit;font-size:.98rem;font-weight:600;text-align:left;cursor:pointer}
-.filter-accordion-trigger:focus-visible{outline:3px solid rgba(5,150,105,.22);outline-offset:-3px}
-.filter-trigger-meta{display:flex;align-items:center;gap:.7rem;color:var(--primary)}
-.filter-trigger-meta>i{font-size:.8rem;transition:transform .25s ease}
-.filter-accordion.is-open .filter-trigger-meta>i{transform:rotate(180deg)}
-.filter-accordion-content{display:grid;grid-template-rows:0fr;visibility:hidden;transition:grid-template-rows .28s ease,visibility .28s ease}
-.filter-accordion.is-open .filter-accordion-content{grid-template-rows:1fr;visibility:visible}
-.filter-accordion-inner{min-height:0;overflow:hidden;padding:0 1rem;opacity:0;transition:opacity .18s ease,padding .28s ease}
-.filter-accordion.is-open .filter-accordion-inner{padding:0 1rem 1rem;opacity:1}
-.filter-accordion .sidebar-cat-list{margin:0}
-.filter-accordion .brand-filter-container{margin-top:0}
-.filter-accordion .filter-group-price{padding-top:.35rem}
 .products-end-msg{padding:2rem 1rem 1.5rem;animation:fadeInUp .4s ease both}
 .products-end-inner{display:flex;align-items:center;gap:1rem}
 .products-end-line{flex:1;height:1px;background:#e2e8f0}
 .products-end-text{white-space:nowrap;font-size:.8rem;color:#94a3b8;font-weight:500;letter-spacing:.04em}
 @keyframes fadeInUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+/* ═══════════════════════════════════════════
+   FSP — Filter Sidebar Panel (multi-screen)
+   ═══════════════════════════════════════════ */
+
+/* Shell */
+.fsp-aside{display:flex!important;flex-direction:column!important;overflow:hidden!important;padding:0!important}
+
+/* Mobile: true full-screen — solid white, covers safe areas */
 @media(max-width:992px){
-  .sidebar-filter-heading{padding:0}
-  .filter-accordion-trigger{min-height:62px;padding:1rem 1.15rem;font-size:1rem}
-  .filter-accordion.is-open .filter-accordion-inner{padding:0 1.15rem 1.15rem}
-  .shop-section{padding-bottom:0!important;}
-  .shop-main-content{padding-bottom:0!important;}
-  .products-end-msg{padding:1rem 1rem 0!important;}
+  .shop-sidebar.fsp-aside{
+    position:fixed!important;
+    inset:0!important;
+    width:100%!important;max-width:100%!important;
+    height:100dvh!important;
+    border-radius:0!important;
+    background:#fff!important;
+    backdrop-filter:none!important;
+    -webkit-backdrop-filter:none!important;
+    box-shadow:none!important;
+  }
+  /* Overlay: no dark tint behind full-screen filter */
+  #sidebarOverlay.active, .sidebar-overlay.active{ background:transparent!important; backdrop-filter:none!important; }
 }
+
+/* Screens container — all screens stack here */
+.fsp-screens{position:relative;flex:1;overflow:hidden;display:flex;flex-direction:column}
+
+/* Individual screen */
+.fsp-screen{
+  position:absolute;inset:0;
+  display:flex;flex-direction:column;
+  background:#fff;
+  transition:transform .42s cubic-bezier(.32,.72,0,1), opacity .42s ease;
+  will-change:transform,opacity;
+}
+
+/* Sub-screens start off-screen to the right */
+.fsp-sub{transform:translateX(100%);pointer-events:none;opacity:1}
+.fsp-sub.fsp-screen-active{transform:translateX(0);pointer-events:auto}
+
+/* Main screen slides left when a sub is open */
+.fsp-sub-open #fspMain{transform:translateX(-30%);opacity:.4;pointer-events:none}
+
+/* ── Header (main screen) ── */
+.fsp-hd{display:flex;align-items:center;justify-content:space-between;padding:.9rem 1.1rem;padding-top:max(.9rem, env(safe-area-inset-top));border-bottom:1px solid #f1f5f9;flex-shrink:0}
+.fsp-hd-title-wrap{display:flex;align-items:center;gap:.5rem}
+.fsp-hd-title{margin:0;font-size:1rem;font-weight:700;color:var(--text-main,#1e293b)}
+.fsp-mob-only{display:none!important}
+@media(max-width:992px){.fsp-mob-only{display:flex!important}}
+.fsp-icon-btn{width:34px;height:34px;border:none;background:#f1f5f9;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#475569;font-size:.82rem;transition:background .15s,transform .15s;flex-shrink:0}
+.fsp-icon-btn:hover{background:#e2e8f0}
+.fsp-icon-btn:active{transform:scale(.92)}
+
+/* Badge */
+.fsp-badge{display:none;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 6px;background:var(--primary,#059669);color:#fff;font-size:.7rem;font-weight:700;border-radius:99px}
+.fsp-badge.visible{display:inline-flex}
+
+/* ── Sub-screen header ── */
+.fsp-sub-hd{display:flex;align-items:center;gap:.6rem;padding:.85rem 1rem;padding-top:max(.85rem, env(safe-area-inset-top));border-bottom:1px solid #f1f5f9;flex-shrink:0}
+.fsp-sub-hd-txt{flex:1;min-width:0}
+.fsp-sub-hd-title{font-size:.95rem;font-weight:700;color:var(--text-main,#1e293b);line-height:1.2}
+.fsp-sub-hd-sub{font-size:.73rem;color:#94a3b8;margin-top:1px}
+
+/* ── Scrollable body ── */
+.fsp-scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+
+/* ── Nav rows (Category / Brand) ── */
+.fsp-nav-row{display:flex;align-items:center;gap:.75rem;width:100%;padding:.9rem 1.1rem;background:none;border:none;border-bottom:1px solid #f1f5f9;cursor:pointer;text-align:left;transition:background .15s;color:inherit}
+.fsp-nav-row:hover{background:#f8fafc}
+.fsp-nav-row:active{background:#f1f5f9}
+.fsp-nav-sel{background:rgba(5,150,105,.04)}
+.fsp-nav-sel:hover{background:rgba(5,150,105,.08)}
+.fsp-nav-ico{width:36px;height:36px;border-radius:10px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;color:var(--primary,#059669);font-size:.84rem;flex-shrink:0;transition:background .15s}
+.fsp-nav-sel .fsp-nav-ico{background:rgba(5,150,105,.12)}
+.fsp-nav-txt{flex:1;min-width:0}
+.fsp-nav-label{display:block;font-size:.875rem;font-weight:600;color:var(--text-main,#1e293b)}
+.fsp-nav-val{display:block;font-size:.75rem;color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+.fsp-nav-sel .fsp-nav-val{color:var(--primary,#059669);font-weight:600}
+.fsp-nav-arrow{color:#cbd5e1;font-size:.7rem;flex-shrink:0;transition:color .15s}
+.fsp-nav-row:hover .fsp-nav-arrow{color:#94a3b8}
+
+/* ── Sections (price, labels) ── */
+.fsp-sect{padding:.9rem 1.1rem;border-bottom:1px solid #f1f5f9}
+.fsp-sect-ttl{font-size:.72rem;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.07em;margin-bottom:.7rem}
+
+/* Price display row */
+.fsp-price-row{display:flex;align-items:center;gap:.5rem;margin-bottom:.85rem}
+.fsp-price-box{flex:1;background:#f8fafc;border:1px solid #e9eef2;border-radius:10px;padding:.45rem .7rem;min-width:0}
+.fsp-price-lbl{font-size:.67rem;color:#94a3b8;font-weight:500;margin-bottom:1px}
+.fsp-price-val{font-size:.9rem;font-weight:700;color:var(--text-main,#1e293b)}
+.fsp-price-sep{color:#cbd5e1;font-size:.9rem;flex-shrink:0}
+
+/* Price chips */
+.fsp-chips{display:grid;grid-template-columns:1fr 1fr;gap:.4rem;margin-top:.75rem}
+.fsp-chip{padding:.45rem .5rem;border:1px solid #e2e8f0;border-radius:10px;background:#fff;font-size:.78rem;font-weight:500;color:#64748b;cursor:pointer;transition:all .15s;font-family:inherit;text-align:center;width:100%}
+.fsp-chip:hover,.fsp-chip.active{border-color:var(--primary,#059669);color:var(--primary,#059669);background:rgba(5,150,105,.06)}
+
+/* Labels 2-col */
+.fsp-labels{display:grid;grid-template-columns:1fr 1fr;gap:.38rem}
+.fsp-lbl{cursor:pointer;display:block}
+.fsp-lbl input[type=checkbox]{position:absolute;opacity:0;width:0;height:0}
+.fsp-lbl-box{display:flex;align-items:center;gap:.4rem;padding:.46rem .6rem;border:1px solid #e9eef2;border-radius:10px;background:#fff;font-size:.77rem;font-weight:500;color:#64748b;transition:all .15s;white-space:nowrap}
+.fsp-lbl-box i{font-size:.72rem;flex-shrink:0}
+.fsp-lbl:hover .fsp-lbl-box{border-color:#cbd5e1;background:#f8fafc}
+.fsp-lbl input:checked~.fsp-lbl-box{border-color:var(--primary,#059669);color:var(--primary,#059669);background:rgba(5,150,105,.06);font-weight:600}
+
+/* ── Category list (on sub-screen) ── */
+.fsp-cat-item{display:flex;align-items:center;gap:.6rem;width:100%;padding:.7rem 1.1rem;background:none;border:none;border-bottom:1px solid #f8fafc;cursor:pointer;text-align:left;transition:background .18s;color:inherit}
+.fsp-cat-item:hover{background:#f8fafc}
+.fsp-cat-item:active{background:#f1f5f9}
+.fsp-cat-sel{background:rgba(5,150,105,.06)!important}
+.fsp-cat-ico{width:32px;height:32px;border-radius:9px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;color:var(--primary,#059669);font-size:.78rem;flex-shrink:0}
+.fsp-cat-sel .fsp-cat-ico{background:rgba(5,150,105,.12)}
+.fsp-cat-txt{flex:1;min-width:0}
+.fsp-cat-name{font-size:.855rem;font-weight:500;color:var(--text-main,#1e293b);display:block}
+.fsp-cat-sel .fsp-cat-name{color:var(--primary,#059669);font-weight:700}
+.fsp-cat-cnt{font-size:.71rem;color:#94a3b8;background:#f1f5f9;padding:1px 7px;border-radius:99px;flex-shrink:0}
+.fsp-cat-sel .fsp-cat-cnt{background:rgba(5,150,105,.1);color:var(--primary,#059669)}
+.fsp-cat-arrow{color:#d1d5db;font-size:.65rem;flex-shrink:0}
+.fsp-cat-check{color:var(--primary,#059669);font-size:.75rem;flex-shrink:0}
+
+/* ── Brand search row ── */
+.fsp-brand-search-row{position:relative;padding:.65rem 1.1rem .5rem;flex-shrink:0}
+.fsp-bsrch-ico{position:absolute;left:1.85rem;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:.75rem;pointer-events:none}
+.fsp-bsrch-inp{width:100%;padding:.5rem .75rem .5rem 2.1rem;border:1px solid #e2e8f0;border-radius:10px;font-size:.83rem;background:#f8fafc;color:var(--text-main,#1e293b);outline:none;transition:border-color .15s;font-family:inherit}
+.fsp-bsrch-inp:focus{border-color:var(--primary,#059669);background:#fff}
+
+/* ── Brand body: list + alphabet index ── */
+.fsp-brand-body{display:flex;flex:1;overflow:hidden;min-height:0}
+.fsp-brand-body .fsp-scroll{flex:1;min-width:0}
+
+/* ── Popular brands section ── */
+.fsp-brand-pop-section{padding:.75rem 1rem .5rem}
+.fsp-brand-sect-ttl{font-size:.7rem;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.07em;margin-bottom:.6rem}
+.fsp-brand-pop-grid{display:grid;grid-template-columns:1fr 1fr;gap:.35rem}
+.fsp-brand-pop-btn{display:flex;align-items:center;gap:.45rem;padding:.5rem .7rem;border:1.5px solid #e9eef2;border-radius:10px;background:#fff;font-size:.8rem;font-weight:500;color:var(--text-main,#1e293b);cursor:pointer;font-family:inherit;transition:all .15s;text-align:left;width:100%}
+.fsp-brand-pop-btn:hover{border-color:#cbd5e1;background:#f8fafc}
+.fsp-brand-pop-btn.fsp-bsel{border-color:var(--primary,#059669);color:var(--primary,#059669);background:rgba(5,150,105,.06)}
+.fsp-brand-pop-chk{width:16px;height:16px;border:1.5px solid #cbd5e1;border-radius:5px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:.6rem;color:#fff;transition:all .15s}
+.fsp-brand-pop-btn.fsp-bsel .fsp-brand-pop-chk{background:var(--primary,#059669);border-color:var(--primary,#059669)}
+.fsp-brand-pop-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.8rem}
+.fsp-brand-pop-cnt{font-size:.7rem;color:#94a3b8;flex-shrink:0}
+.fsp-brand-pop-btn.fsp-bsel .fsp-brand-pop-cnt{color:rgba(5,150,105,.7)}
+
+/* ── Alpha list ── */
+.fsp-brand-alpha-list{list-style:none;margin:0;padding:0 0 1rem}
+.fsp-brand-letter-hdr{padding:.4rem 1rem .25rem;font-size:.72rem;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.06em;background:#f8fafc;border-top:1px solid #f1f5f9;border-bottom:1px solid #f1f5f9}
+.fsp-brand-row{display:flex;align-items:center;gap:.6rem;width:100%;padding:.55rem 1rem;background:none;border:none;border-bottom:1px solid #f8fafc;font-size:.855rem;color:var(--text-main,#1e293b);cursor:pointer;text-align:left;transition:background .15s;font-family:inherit}
+.fsp-brand-row:hover{background:#f8fafc}
+.fsp-brand-row-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fsp-brand-row-cnt{font-size:.72rem;color:#94a3b8;flex-shrink:0}
+.fsp-brand-chk{width:18px;height:18px;border:1.5px solid #cbd5e1;border-radius:5px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:.65rem;color:#fff;transition:all .15s}
+.fsp-brand-row.fsp-bsel{background:rgba(5,150,105,.04)}
+.fsp-brand-row.fsp-bsel .fsp-brand-chk{background:var(--primary,#059669);border-color:var(--primary,#059669)}
+.fsp-brand-row.fsp-bsel .fsp-brand-row-name{color:var(--primary,#059669);font-weight:600}
+
+/* ── Alphabet index sidebar ── */
+.fsp-alpha-idx{width:20px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:.4rem 0;gap:1px;flex-shrink:0;cursor:default;user-select:none}
+.fsp-alpha-idx span{font-size:.6rem;font-weight:600;color:#94a3b8;line-height:1.4;cursor:pointer;transition:color .12s;padding:1px 2px;border-radius:3px}
+.fsp-alpha-idx span:hover,.fsp-alpha-idx span.has-items:hover{color:var(--primary,#059669)}
+.fsp-alpha-idx span.no-items{color:#d1d5db;cursor:default}
+
+/* ── Footer action buttons ── */
+.fsp-foot{display:flex;gap:.5rem;padding:.75rem 1.1rem;padding-bottom:max(.75rem, env(safe-area-inset-bottom));border-top:1px solid #f1f5f9;background:#fff;flex-shrink:0}
+.fsp-foot-clear{flex:1;padding:.62rem .95rem;border:none;border-radius:12px;background:#f1f5f9;color:#64748b;font-size:.84rem;font-weight:600;cursor:pointer;transition:background .15s,color .15s;font-family:inherit}
+.fsp-foot-clear:hover{background:#e2e8f0;color:#475569}
+.fsp-foot-apply{flex:1;padding:.62rem .95rem;border:none;border-radius:12px;background:var(--primary,#059669);color:#fff;font-size:.84rem;font-weight:700;cursor:pointer;transition:background .15s;font-family:inherit}
+.fsp-foot-apply:hover{background:var(--primary-dark,#047857)}
+.fsp-foot-apply:active{background:var(--primary-dark,#047857);transform:scale(.98)}
+
+/* ── Desktop: give sidebar a defined height so absolute screens fill correctly ── */
+@media(min-width:993px){
+  .shop-sidebar.fsp-aside{
+    height:calc(100vh - 90px);
+    overflow:hidden;
+    /* No card look — integrated into page layout */
+    border-radius:0!important;
+    box-shadow:none!important;
+    border:none!important;
+    background:transparent!important;
+    border-right:1px solid #f1f5f9;
+    padding-right:0!important;
+  }
+  .fsp-screens{height:100%}
+  /* Main screen push-back on desktop */
+  .fsp-sub-open #fspMain{transform:translateX(-25%);opacity:.5}
+  /* Desktop header — no bottom border needed, page is integrated */
+  .fsp-hd{
+    padding:.7rem .9rem;
+    border-bottom:1px solid #f1f5f9;
+  }
+  /* Desktop footer — compact */
+  .fsp-foot{
+    padding:.6rem .9rem;
+    gap:.5rem;
+  }
+  /* Sub-screen headers on desktop — no safe-area padding */
+  .fsp-sub-hd{
+    padding:.7rem .9rem;
+  }
+  /* Sections — tighter on desktop */
+  .fsp-sect{padding:.75rem .9rem}
+  .fsp-nav-row{padding:.75rem .9rem}
+}
+
+/* ── Mobile: bigger touch targets everywhere ── */
+@media(max-width:992px){
+  /* Bigger nav rows */
+  .fsp-nav-row{padding:1.1rem 1.25rem}
+  .fsp-nav-ico{width:42px;height:42px;font-size:.9rem}
+  .fsp-nav-label{font-size:.95rem}
+  .fsp-nav-val{font-size:.8rem}
+
+  /* Bigger price chips — full 2-col grid, tall */
+  .fsp-chip{padding:.75rem .5rem;font-size:.88rem;border-radius:12px}
+
+  /* Bigger label boxes */
+  .fsp-lbl-box{padding:.65rem .75rem;font-size:.84rem;border-radius:12px}
+  .fsp-lbl-box i{font-size:.8rem}
+
+  /* Much taller footer buttons */
+  .fsp-foot{padding:1rem 1.1rem;padding-bottom:max(1.1rem, env(safe-area-inset-bottom));gap:.6rem}
+  .fsp-foot-clear{padding:.95rem 1rem;font-size:.95rem;border-radius:14px}
+  .fsp-foot-apply{padding:.95rem 1rem;font-size:.95rem;border-radius:14px}
+
+  .shop-section{padding-bottom:0!important}
+  .shop-main-content{padding-bottom:0!important}
+  .products-end-msg{padding:1rem 1rem 0!important}
+}
+
+/* ═══════════════════════════════════════════
+   FSD — Desktop filter sidebar (≥993px)
+   ═══════════════════════════════════════════ */
+.fsd-aside{display:none}
+@media(min-width:993px){
+  /* Hide mobile sidebar, show desktop one */
+  .shop-sidebar.fsp-aside{display:none!important}
+  .fsd-aside{
+    display:flex;flex-direction:column;
+    width:280px;flex-shrink:0;
+    background:#fff;
+    border:1px solid #e8eef4;
+    border-radius:14px;
+    box-shadow:0 2px 12px rgba(0,0,0,.06);
+    overflow:hidden;
+    overflow-y:auto;
+    align-self:flex-start;
+    margin-right:4px;
+  }
+  /* Header */
+  .fsd-hdr{display:flex;align-items:center;gap:.4rem;padding:.75rem 1rem;border-bottom:1px solid #f1f5f9;flex-shrink:0}
+  .fsd-hdr-title{font-size:.92rem;font-weight:700;color:var(--text-main,#1e293b);flex:1}
+  .fsd-badge{display:none;min-width:18px;height:18px;padding:0 5px;background:var(--primary,#059669);color:#fff;font-size:.65rem;font-weight:700;border-radius:99px;align-items:center;justify-content:center}
+  .fsd-badge.visible{display:inline-flex}
+  .fsd-hdr-clear{display:none;padding:.25rem .5rem;background:none;border:none;color:#ef4444;font-size:.72rem;font-weight:600;cursor:pointer;border-radius:5px;font-family:inherit;white-space:nowrap}
+  .fsd-hdr-clear:hover{background:#fef2f2}
+  .fsd-hdr-clear.visible{display:block}
+  /* Section */
+  .fsd-section{border-bottom:1px solid #f1f5f9}
+  .fsd-sect-toggle{display:flex;align-items:center;justify-content:space-between;width:100%;padding:.65rem 1rem;background:none;border:none;cursor:pointer;font-family:inherit;font-size:.82rem;font-weight:600;color:var(--text-main,#1e293b);text-align:left}
+  .fsd-sect-toggle:hover{background:#f8fafc}
+  .fsd-sect-toggle i{color:#94a3b8;font-size:.66rem;transition:transform .2s;flex-shrink:0}
+  .fsd-sect-toggle.collapsed i{transform:rotate(-90deg)}
+  .fsd-sect-body{padding:0 0 .4rem}
+  .fsd-sect-body.collapsed{display:none}
+  /* Category rows */
+  .fsd-cat-row{display:flex;align-items:center;gap:.45rem;width:100%;padding:.45rem .9rem;background:none;border:none;cursor:pointer;font-family:inherit;font-size:.8rem;color:var(--text-main,#1e293b);text-align:left;transition:background .15s}
+  .fsd-cat-row:hover{background:#f8fafc}
+  .fsd-cat-row.fsd-sel{color:var(--primary,#059669);font-weight:600;background:rgba(5,150,105,.04)}
+  .fsd-cat-ico{font-size:.68rem;color:#94a3b8;width:13px;flex-shrink:0}
+  .fsd-cat-row.fsd-sel .fsd-cat-ico{color:var(--primary,#059669)}
+  .fsd-cnt{font-size:.68rem;color:#94a3b8;background:#f1f5f9;padding:1px 6px;border-radius:99px;flex-shrink:0;margin-left:auto}
+  .fsd-cat-row.fsd-sel .fsd-cnt{background:rgba(5,150,105,.1);color:var(--primary,#059669)}
+  .fsd-cat-arrow{color:#d1d5db;font-size:.6rem;flex-shrink:0;transition:transform .2s;margin-left:0}
+  .fsd-cat-grp.fsd-grp-open>.fsd-cat-main .fsd-cat-arrow{transform:rotate(90deg)}
+  /* Subcategory tree */
+  .fsd-subcats{display:none;margin-left:1.2rem;border-left:2px solid #f1f5f9;padding-left:0}
+  .fsd-cat-grp.fsd-grp-open .fsd-subcats{display:block}
+  .fsd-subcat-row{display:flex;align-items:center;gap:.4rem;width:100%;padding:.38rem .75rem;background:none;border:none;cursor:pointer;font-family:inherit;font-size:.78rem;color:#64748b;text-align:left;transition:background .15s;border-radius:0}
+  .fsd-subcat-row:hover{background:#f8fafc;color:var(--text-main,#1e293b)}
+  .fsd-subcat-row.fsd-sel{color:var(--primary,#059669);font-weight:600}
+  .fsd-subcat-row .fsd-cnt{background:transparent;padding:0;color:#cbd5e1}
+  .fsd-subcat-row.fsd-sel .fsd-cnt{color:rgba(5,150,105,.5);background:transparent}
+  /* Brand inline */
+  .fsd-brand-srch-wrap{position:relative;padding:.5rem .9rem .35rem}
+  .fsd-brand-srch-wrap i{position:absolute;left:1.65rem;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:.7rem;pointer-events:none}
+  .fsd-brand-srch-wrap input{width:100%;padding:.4rem .65rem .4rem 1.85rem;border:1px solid #e2e8f0;border-radius:8px;font-size:.78rem;background:#f8fafc;color:var(--text-main,#1e293b);outline:none;font-family:inherit}
+  .fsd-brand-srch-wrap input:focus{border-color:var(--primary,#059669);background:#fff}
+  .fsd-inline-brands{padding:0 .5rem .2rem}
+  /* Inline brands use .fsp-brand-row class but styled via parent */
+  .fsd-inline-brands .fsp-brand-row{padding:.38rem .45rem;border-radius:6px;border-bottom:none;font-size:.8rem}
+  .fsd-inline-brands .fsp-brand-row-name{font-size:.8rem}
+  .fsd-inline-brands .fsp-brand-chk{width:16px;height:16px;font-size:.58rem;border-radius:4px}
+  .fsd-show-all-btn{display:flex;align-items:center;gap:.45rem;width:calc(100% - 1.8rem);margin:.15rem .9rem .5rem;padding:.38rem .65rem;background:none;border:1px solid #e2e8f0;border-radius:7px;font-size:.78rem;font-weight:500;color:#64748b;cursor:pointer;font-family:inherit;transition:all .15s}
+  .fsd-show-all-btn:hover{border-color:var(--primary,#059669);color:var(--primary,#059669);background:rgba(5,150,105,.04)}
+  .fsd-show-all-btn i{font-size:.68rem}
+  /* Offer checklist */
+  .fsd-chk-row{display:flex;align-items:center;cursor:pointer;padding:.22rem .9rem}
+  .fsd-chk-row input[type=checkbox]{display:none}
+  .fsd-chk-box{display:flex;align-items:center;gap:.45rem;font-size:.8rem;color:#64748b;width:100%;padding:.28rem .45rem;border-radius:6px;transition:all .15s}
+  .fsd-chk-box i{font-size:.7rem;width:13px;flex-shrink:0}
+  .fsd-chk-row:hover .fsd-chk-box{background:#f8fafc;color:var(--text-main,#1e293b)}
+  .fsd-chk-row input:checked~.fsd-chk-box{color:var(--primary,#059669);font-weight:600}
+  .fsd-chk-ind{width:15px;height:15px;border:1.5px solid #cbd5e1;border-radius:4px;flex-shrink:0;margin-left:auto;display:flex;align-items:center;justify-content:center;font-size:.58rem;color:#fff;transition:all .15s}
+  .fsd-chk-row input:checked~.fsd-chk-box .fsd-chk-ind{background:var(--primary,#059669);border-color:var(--primary,#059669)}
+  .fsd-chk-row input:checked~.fsd-chk-box .fsd-chk-ind::after{content:'\f00c';font-family:'Font Awesome 5 Free';font-weight:900}
+}
+
+/* Brand dialog (desktop) */
+.fsd-bd-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:10000;backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px)}
+.fsd-bd-overlay.open{display:block}
+.fsd-bd-dialog{display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:520px;max-width:90vw;max-height:82vh;background:#fff;border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.18);z-index:10001;flex-direction:column;overflow:hidden}
+.fsd-bd-dialog.open{display:flex}
+@media(max-width:992px){.fsd-bd-overlay,.fsd-bd-dialog{display:none!important}}
+.fsd-bd-hdr{display:flex;align-items:flex-start;justify-content:space-between;padding:1rem 1.25rem .75rem;border-bottom:1px solid #f1f5f9;flex-shrink:0}
+.fsd-bd-ttl{font-size:.97rem;font-weight:700;color:var(--text-main,#1e293b)}
+.fsd-bd-sub{font-size:.71rem;color:#94a3b8;margin-top:2px}
+.fsd-bd-search{position:relative;padding:.6rem 1.25rem .45rem;flex-shrink:0}
+.fsd-bd-search i{position:absolute;left:2rem;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:.75rem;pointer-events:none}
+.fsd-bd-search input{width:100%;padding:.48rem .75rem .48rem 2.1rem;border:1px solid #e2e8f0;border-radius:10px;font-size:.82rem;background:#f8fafc;outline:none;font-family:inherit}
+.fsd-bd-search input:focus{border-color:var(--primary,#059669);background:#fff}
+.fsd-bd-body{display:flex;flex:1;overflow:hidden;min-height:0}
+.fsd-scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;min-width:0}
+.fsd-bd-foot{display:flex;gap:.5rem;padding:.7rem 1.25rem;border-top:1px solid #f1f5f9;flex-shrink:0}
+
+/* Filter chips bar (desktop only) */
+.fsd-chips-bar{display:flex;flex-wrap:wrap;gap:.35rem;min-height:0}
+.fsd-chips-bar:empty{display:none;margin:0;padding:0}
+.fsd-chips-bar{margin-bottom:.5rem}
+.fsd-active-chip{display:inline-flex;align-items:center;gap:.28rem;padding:.28rem .55rem;background:rgba(5,150,105,.09);border:1px solid rgba(5,150,105,.22);border-radius:99px;font-size:.74rem;font-weight:600;color:var(--primary,#059669);cursor:pointer;transition:all .15s;font-family:inherit}
+.fsd-active-chip:hover{background:rgba(5,150,105,.18)}
+.fsd-active-chip i{font-size:.58rem;opacity:.7}
+@media(max-width:992px){.fsd-chips-bar{display:none!important}}
 </style>
 <script>
+// ── Label filter ──────────────────────────────────────────────────
 window.updateProductLabelFilters = function() {
-    var selectedValues = Array.prototype.map.call(
-        document.querySelectorAll('.product-label-filter:checked'),
-        function(input) { return input.value; }
-    );
-    var hasActiveOfferFilter = selectedValues.indexOf('sale') !== -1;
-    var selectedLabels = selectedValues.filter(function(value) { return value !== 'sale'; });
+    var selected = Array.from(new Set(Array.from(document.querySelectorAll('.product-label-filter:checked')).map(function(i){return i.value;})));
+    var hasSale = selected.includes('sale');
+    var labels = selected.filter(function(v){return v!=='sale';});
     var params = new URLSearchParams(window.location.search);
-    params.delete('best_sellers');
-    params.delete('pharmacist_choice');
-    params.delete('page');
-    params.delete('ajax');
-    if (hasActiveOfferFilter) params.set('discount_only', 'true');
-    else params.delete('discount_only');
-    if (selectedLabels.length) params.set('labels', selectedLabels.join(','));
-    else params.delete('labels');
-    var destination = window.location.pathname + (params.toString() ? '?' + params.toString() : '');
-    window.history.pushState({}, '', destination);
-    var labelsAccordion = document.getElementById('offersFilterTrigger');
-    if (labelsAccordion) {
-        labelsAccordion.setAttribute('aria-expanded', 'true');
-        labelsAccordion.closest('.filter-accordion').classList.add('is-open');
-    }
+    params.delete('best_sellers'); params.delete('pharmacist_choice'); params.delete('page'); params.delete('ajax');
+    if (hasSale) params.set('discount_only','true'); else params.delete('discount_only');
+    if (labels.length) params.set('labels', labels.join(',')); else params.delete('labels');
+    window.history.pushState({}, '', window.location.pathname + (params.toString() ? '?' + params.toString() : ''));
+    fspUpdateActiveBadge();fsdUpdateActiveBadge();fsdUpdateChipsBar();
     window.updateShop();
 };
 
-window.resetAllProductFilters = function(event) {
-    if (event) event.preventDefault();
-    document.querySelectorAll('.product-label-filter').forEach(function(input) {
-        input.checked = false;
+window.resetAllProductFilters = function(e) {
+    if (e) e.preventDefault();
+    document.querySelectorAll('.product-label-filter').forEach(function(i){i.checked=false;});
+    document.querySelectorAll('.fsp-chip').forEach(function(c){c.classList.remove('active');});
+    _fspSelectedBrands.clear();
+    _fspBrandUpdateSubHd();
+    // Rebuild brand screen so checkboxes clear
+    document.querySelectorAll('.fsp-brand-pop-btn.fsp-bsel, .fsp-brand-row.fsp-bsel').forEach(function(el){
+        el.classList.remove('fsp-bsel');
+        var chk = el.querySelector('.fsp-brand-pop-chk, .fsp-brand-chk');
+        if (chk) chk.innerHTML = '';
     });
-    window.resetFilters(event);
+    window.resetFilters(e);
 };
 
-// Keep the filter list compact: opening one group closes the others.
-(function(){
-    var accordions = Array.prototype.slice.call(document.querySelectorAll('.filter-accordion'));
+// ── Multi-screen navigation ────────────────────────────────────────
+var _fspSubStack = []; // track open sub-screens for back nav
 
-    function setAccordion(accordion, shouldOpen) {
-        var trigger = accordion.querySelector('.filter-accordion-trigger');
-        if (!trigger) return;
-        accordion.classList.toggle('is-open', shouldOpen);
-        trigger.setAttribute('aria-expanded', shouldOpen ? 'true' : 'false');
+function fspOpenSub(screenId, noStack) {
+    var screens = document.getElementById('fspScreens');
+    if (!screens) return;
+    // Deactivate any currently active sub
+    document.querySelectorAll('.fsp-sub.fsp-screen-active').forEach(function(s){
+        if (s.id !== screenId) {
+            s.classList.remove('fsp-screen-active');
+            // push to stack so we can go back
+        }
+    });
+    var target = document.getElementById(screenId);
+    if (!target) return;
+    if (!noStack) _fspSubStack.push(screenId);
+    screens.classList.add('fsp-sub-open');
+    target.classList.add('fsp-screen-active');
+}
+
+function fspCloseSub() {
+    _fspSubStack.pop();
+    if (_fspSubStack.length === 0) {
+        // Back to main screen
+        var screens = document.getElementById('fspScreens');
+        if (screens) screens.classList.remove('fsp-sub-open');
+        document.querySelectorAll('.fsp-sub.fsp-screen-active').forEach(function(s){ s.classList.remove('fsp-screen-active'); });
+    } else {
+        // Go back one level
+        var prev = _fspSubStack[_fspSubStack.length - 1];
+        document.querySelectorAll('.fsp-sub.fsp-screen-active').forEach(function(s){ s.classList.remove('fsp-screen-active'); });
+        var prevEl = document.getElementById(prev);
+        if (prevEl) prevEl.classList.add('fsp-screen-active');
+    }
+}
+
+// Called from HTML button — reads data attrs to avoid JSON-in-attribute escaping issues
+function fspApplyCatBtn(btn) {
+    var catName = btn.dataset.cat;
+    var subcats = JSON.parse(btn.dataset.subcats || '[]');
+    fspApplyCat(catName, catName, subcats);
+}
+
+// Apply category: always open subcat screen for non-"all"
+function fspApplyCat(catName, displayVal, subcats) {
+    if (catName === 'all') {
+        // Apply "all" directly from category list
+        var catValEl = document.getElementById('fspCatVal');
+        if (catValEl) catValEl.textContent = 'Të gjitha kategoritë';
+        var rowBtn = document.getElementById('fspCatRowBtn');
+        if (rowBtn) rowBtn.classList.remove('fsp-nav-sel');
+        var prms = new URLSearchParams(window.location.search);
+        prms.delete('category'); prms.delete('subcategory'); prms.delete('page'); prms.delete('ajax');
+        window.history.pushState({}, '', window.location.pathname + (prms.toString() ? '?' + prms.toString() : ''));
+        fspUpdateActiveBadge();
+        if (window.updateShop) window.updateShop();
+        _fspSubStack = [];
+        var screens = document.getElementById('fspScreens');
+        if (screens) screens.classList.remove('fsp-sub-open');
+        document.querySelectorAll('.fsp-sub.fsp-screen-active').forEach(function(s){ s.classList.remove('fsp-screen-active'); });
+        return;
+    }
+    // Any real category: always open subcat sub-screen
+    var title = document.getElementById('fspSubcatTitle');
+    var sub = document.getElementById('fspSubcatSub');
+    var body = document.getElementById('fspSubcatBody');
+    if (title) title.textContent = displayVal;
+    var params = new URLSearchParams(window.location.search);
+    var curSub = params.get('subcategory') || 'all';
+    var html = '';
+    var esc = function(s){ return s.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'); };
+    var counts = _fspSubcatCounts || {};
+    // "Të gjitha" for this category — sum of all subcats in this category
+    var allCnt = subcats && subcats.length > 0 ? subcats.reduce(function(acc,s){ return acc + (counts[s]||0); }, 0) : 0;
+    html += '<button class="fsp-cat-item' + (curSub === 'all' ? ' fsp-cat-sel' : '') + '" type="button"'
+          + ' data-cat="' + esc(catName) + '" data-sub="">'
+          + '<div class="fsp-cat-txt"><span class="fsp-cat-name">Të gjitha ' + displayVal + '</span></div>'
+          + (allCnt > 0 ? '<span class="fsp-cat-cnt">' + allCnt + '</span>' : '')
+          + (curSub === 'all' ? '<i class="fas fa-check fsp-cat-check"></i>' : '<i class="fas fa-chevron-right fsp-cat-arrow"></i>')
+          + '</button>';
+    if (subcats && subcats.length > 0) {
+        if (sub) sub.textContent = subcats.length + ' nënkategori';
+        subcats.forEach(function(s) {
+            var cnt = counts[s] || 0;
+            html += '<button class="fsp-cat-item' + (curSub === s ? ' fsp-cat-sel' : '') + '" type="button"'
+                  + ' data-cat="' + esc(catName) + '" data-sub="' + esc(s) + '">'
+                  + '<div class="fsp-cat-txt"><span class="fsp-cat-name">' + s + '</span></div>'
+                  + (cnt > 0 ? '<span class="fsp-cat-cnt">' + cnt + '</span>' : '')
+                  + (curSub === s ? '<i class="fas fa-check fsp-cat-check"></i>' : '')
+                  + '</button>';
+        });
+    } else {
+        if (sub) sub.textContent = '';
+    }
+    if (body) {
+        body.innerHTML = html;
+        // Attach click handlers via event delegation (avoids onclick attr quoting issues)
+        body.querySelectorAll('.fsp-cat-item').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                var c = btn.dataset.cat, s = btn.dataset.sub || null;
+                fspApplySubcat(c, c, s);
+            });
+        });
+    }
+    fspOpenSub('fspSubcatScreen');
+}
+
+function fspApplySubcat(catName, catDisplay, subName) {
+    var catValEl = document.getElementById('fspCatVal');
+    if (catValEl) catValEl.textContent = subName ? subName : catDisplay;
+    var rowBtn = document.getElementById('fspCatRowBtn');
+    if (rowBtn) rowBtn.classList.add('fsp-nav-sel');
+    var prms = new URLSearchParams(window.location.search);
+    prms.set('category', catName);
+    if (subName) prms.set('subcategory', subName); else prms.delete('subcategory');
+    prms.delete('page'); prms.delete('ajax');
+    window.history.pushState({}, '', window.location.pathname + (prms.toString() ? '?' + prms.toString() : ''));
+    fspUpdateActiveBadge();
+    if (window.updateShop) window.updateShop();
+    _fspSubStack = [];
+    var screens = document.getElementById('fspScreens');
+    if (screens) screens.classList.remove('fsp-sub-open');
+    document.querySelectorAll('.fsp-sub.fsp-screen-active').forEach(function(s){ s.classList.remove('fsp-screen-active'); });
+}
+
+// ── Multi-brand state ──────────────────────────────────────────────
+var _fspSelectedBrands = new Set();
+
+function _fspBrandCountsData() {
+    try { return JSON.parse(document.getElementById('fspBrandCountsData').textContent); } catch(e) { return {}; }
+}
+function _fspBrandsData() {
+    try { return JSON.parse(document.getElementById('fspBrandsData').textContent); } catch(e) { return []; }
+}
+
+function fspBuildBrandScreen() {
+    var brands = _fspBrandsData();
+    var counts = _fspBrandCountsData();
+    if (!brands.length) return;
+
+    // ── Popular brands: top 6 by count that are in available_brands ──
+    var branded = brands.map(function(b){ return {name:b, count: counts[b]||0}; })
+                         .filter(function(b){ return b.count > 0; })
+                         .sort(function(a,b){ return b.count - a.count; });
+    var popular = branded.slice(0, 6);
+
+    var popGrid = document.getElementById('fspBrandPopGrid');
+    var popSection = document.getElementById('fspBrandPopSection');
+    if (popGrid) {
+        if (popular.length > 0) {
+            popGrid.innerHTML = popular.map(function(b) {
+                var sel = _fspSelectedBrands.has(b.name);
+                return '<button class="fsp-brand-pop-btn' + (sel?' fsp-bsel':'') + '" type="button" data-brand="' + _esc(b.name) + '" onclick="fspBrandToggle(this)">'
+                     + '<div class="fsp-brand-pop-chk">' + (sel ? '<i class="fas fa-check"></i>' : '') + '</div>'
+                     + '<span class="fsp-brand-pop-name">' + _esc(b.name) + '</span>'
+                     + '<span class="fsp-brand-pop-cnt">' + b.count + '</span>'
+                     + '</button>';
+            }).join('');
+            if (popSection) popSection.style.display = '';
+        } else {
+            if (popSection) popSection.style.display = 'none';
+        }
     }
 
-    accordions.forEach(function(accordion){
-        var trigger = accordion.querySelector('.filter-accordion-trigger');
-        if (!trigger) return;
-        trigger.addEventListener('click', function(){
-            var shouldOpen = !accordion.classList.contains('is-open');
-            accordions.forEach(function(other){ setAccordion(other, false); });
-            setAccordion(accordion, shouldOpen);
-        });
+    // ── Alphabetical list ──
+    var grouped = {};
+    brands.forEach(function(b) {
+        var letter = b[0].toUpperCase();
+        if (!/[A-Z]/.test(letter)) letter = '#';
+        if (!grouped[letter]) grouped[letter] = [];
+        grouped[letter].push(b);
     });
+    var letters = Object.keys(grouped).sort(function(a,b){ return a<b?-1:a>b?1:0; });
+
+    var alphaList = document.getElementById('fspBrandAlphaList');
+    if (alphaList) {
+        var html = '';
+        letters.forEach(function(letter) {
+            html += '<li><div class="fsp-brand-letter-hdr" id="fsp-bl-' + letter + '">' + letter + '</div></li>';
+            grouped[letter].forEach(function(b) {
+                var sel = _fspSelectedBrands.has(b);
+                var cnt = counts[b] || 0;
+                html += '<li><button class="fsp-brand-row' + (sel?' fsp-bsel':'') + '" type="button" data-brand="' + _esc(b) + '" onclick="fspBrandToggle(this)">'
+                      + '<span class="fsp-brand-row-name">' + b + '</span>'
+                      + (cnt ? '<span class="fsp-brand-row-cnt">' + cnt + '</span>' : '')
+                      + '<div class="fsp-brand-chk">' + (sel ? '<i class="fas fa-check"></i>' : '') + '</div>'
+                      + '</button></li>';
+            });
+        });
+        alphaList.innerHTML = html;
+    }
+
+    // ── Alphabet index ──
+    var allLetters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+    var alphaIdx = document.getElementById('fspAlphaIdx');
+    if (alphaIdx) {
+        alphaIdx.innerHTML = allLetters.map(function(l) {
+            var has = !!grouped[l];
+            return '<span class="' + (has ? 'has-items' : 'no-items') + '" data-letter="' + l + '">' + l + '</span>';
+        }).join('');
+        alphaIdx.querySelectorAll('.has-items').forEach(function(span) {
+            span.addEventListener('click', function() {
+                var el = document.getElementById('fsp-bl-' + span.dataset.letter);
+                var scroll = document.getElementById('fspBrandScroll');
+                if (el && scroll) {
+                    var elTop = el.getBoundingClientRect().top;
+                    var scrollTop = scroll.getBoundingClientRect().top;
+                    scroll.scrollTop += elTop - scrollTop;
+                }
+            });
+        });
+    }
+
+    _fspBrandUpdateSubHd();
+}
+
+function _esc(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function fspBrandToggle(btn) {
+    var brand = btn.dataset.brand;
+    if (_fspSelectedBrands.has(brand)) {
+        _fspSelectedBrands.delete(brand);
+        btn.classList.remove('fsp-bsel');
+        btn.querySelector('.fsp-brand-pop-chk, .fsp-brand-chk').innerHTML = '';
+    } else {
+        _fspSelectedBrands.add(brand);
+        btn.classList.add('fsp-bsel');
+        btn.querySelector('.fsp-brand-pop-chk, .fsp-brand-chk').innerHTML = '<i class="fas fa-check"></i>';
+    }
+    // Sync the corresponding button in the other panel (popular ↔ alpha)
+    document.querySelectorAll('[data-brand="' + _esc(brand) + '"]').forEach(function(el) {
+        if (el === btn) return;
+        if (_fspSelectedBrands.has(brand)) {
+            el.classList.add('fsp-bsel');
+            var chk = el.querySelector('.fsp-brand-pop-chk, .fsp-brand-chk');
+            if (chk) chk.innerHTML = '<i class="fas fa-check"></i>';
+        } else {
+            el.classList.remove('fsp-bsel');
+            var chk = el.querySelector('.fsp-brand-pop-chk, .fsp-brand-chk');
+            if (chk) chk.innerHTML = '';
+        }
+    });
+    _fspBrandUpdateSubHd();
+    // Apply immediately so count updates live (consistent with other filters)
+    var prms = new URLSearchParams(window.location.search);
+    if (_fspSelectedBrands.size === 0) { prms.delete('brand'); } else { prms.set('brand', Array.from(_fspSelectedBrands).join(',')); }
+    prms.delete('page'); prms.delete('ajax');
+    window.history.pushState({}, '', window.location.pathname + (prms.toString() ? '?' + prms.toString() : ''));
+    fspUpdateActiveBadge();
+    if (window.updateShop) window.updateShop();
+}
+
+function _fspBrandUpdateSubHd() {
+    var n = _fspSelectedBrands.size;
+    var el = document.getElementById('fspBrandSubHd');
+    if (el) el.textContent = n === 0 ? 'Kërko nga qindra brende' : n + (n===1?' brend i zgjedhur':' brende të zgjedhura');
+    var rowBtn = document.getElementById('fspBrandRowBtn');
+    var brandValEl = document.getElementById('fspBrandVal');
+    if (n === 0) {
+        if (rowBtn) rowBtn.classList.remove('fsp-nav-sel');
+        if (brandValEl) brandValEl.textContent = 'Kërko nga qindra brende';
+    } else {
+        if (rowBtn) rowBtn.classList.add('fsp-nav-sel');
+        var arr = Array.from(_fspSelectedBrands);
+        if (brandValEl) brandValEl.textContent = arr.length === 1 ? arr[0] : arr[0] + ' +' + (arr.length-1);
+    }
+}
+
+function fspFilterBrands() {
+    var q = (document.getElementById('brandSearchInput').value || '').toLowerCase().trim();
+    var brands = _fspBrandsData();
+    var counts = _fspBrandCountsData();
+
+    // Filter popular grid
+    document.querySelectorAll('#fspBrandPopGrid .fsp-brand-pop-btn').forEach(function(btn) {
+        var name = (btn.dataset.brand || '').toLowerCase();
+        btn.style.display = (!q || name.indexOf(q) !== -1) ? '' : 'none';
+    });
+    var popSection = document.getElementById('fspBrandPopSection');
+    if (popSection && q) {
+        var anyPop = Array.from(document.querySelectorAll('#fspBrandPopGrid .fsp-brand-pop-btn')).some(function(b){ return b.style.display !== 'none'; });
+        popSection.style.display = anyPop ? '' : 'none';
+    } else if (popSection) {
+        popSection.style.display = '';
+    }
+
+    // Filter alpha list
+    document.querySelectorAll('#fspBrandAlphaList li').forEach(function(li) {
+        var btn = li.querySelector('.fsp-brand-row');
+        if (btn) {
+            var name = (btn.dataset.brand || '').toLowerCase();
+            li.style.display = (!q || name.indexOf(q) !== -1) ? '' : 'none';
+        }
+    });
+    // Hide letter headers if no brands visible below them
+    var items = document.querySelectorAll('#fspBrandAlphaList li');
+    for (var i = 0; i < items.length; i++) {
+        var hdr = items[i].querySelector('.fsp-brand-letter-hdr');
+        if (hdr) {
+            var hasVisible = false;
+            for (var j = i+1; j < items.length; j++) {
+                if (items[j].querySelector('.fsp-brand-letter-hdr')) break;
+                if (items[j].style.display !== 'none') { hasVisible = true; break; }
+            }
+            items[i].style.display = hasVisible ? '' : 'none';
+        }
+    }
+}
+
+// Price chip
+function fspPriceChip(minVal, maxVal, btn) {
+    document.querySelectorAll('.fsp-chip').forEach(function(c){c.classList.remove('active');});
+    if (btn) btn.classList.add('active');
+    var minEl = document.getElementById('range-slider-min');
+    var maxEl = document.getElementById('range-slider-max');
+    if (minEl) { minEl.value = minVal; minEl.dispatchEvent(new Event('input')); }
+    if (maxEl) { maxEl.value = maxVal; maxEl.dispatchEvent(new Event('input')); }
+    var minH = document.getElementById('min-price');
+    var maxH = document.getElementById('max-price');
+    if (minH) minH.value = minVal > 0 ? minVal : '';
+    if (maxH) maxH.value = maxVal;
+    var params = new URLSearchParams(window.location.search);
+    if (minVal > 0) params.set('min_price', minVal); else params.delete('min_price');
+    params.set('max_price', maxVal);
+    params.delete('page'); params.delete('ajax');
+    window.history.pushState({}, '', window.location.pathname + (params.toString() ? '?' + params.toString() : ''));
+    fspUpdateActiveBadge();
+    if (window.updateShop) window.updateShop();
+}
+
+// Active filter badge
+function fspUpdateActiveBadge() {
+    var params = new URLSearchParams(window.location.search);
+    var count = 0;
+    if (params.get('category') && params.get('category') !== 'all') count++;
+    var brandParam = params.get('brand') || '';
+    if (brandParam && brandParam !== 'all') {
+        count += brandParam.split(',').filter(Boolean).length;
+    }
+    if (params.get('min_price') || params.get('max_price')) count++;
+    if (params.get('discount_only')) count++;
+    var labels = params.get('labels');
+    if (labels) count += labels.split(',').filter(Boolean).length;
+    var checkedLabels = document.querySelectorAll('.product-label-filter:checked').length;
+    var activeCnt = Math.max(count, checkedLabels > 0 ? 1 : 0);
+    var badge = document.getElementById('fspActiveBadge');
+    if (badge) {
+        if (activeCnt > 0) { badge.textContent = activeCnt; badge.classList.add('visible'); }
+        else { badge.textContent = ''; badge.classList.remove('visible'); }
+    }
+}
+
+// Sync product count to all footer spans
+(function(){
+    var srcEl = document.getElementById('current-count');
+    if (!srcEl) return;
+    function syncCount() {
+        var txt = srcEl.textContent;
+        var mainEl = document.getElementById('fspProductCount');
+        if (mainEl) mainEl.textContent = txt;
+        document.querySelectorAll('.fsp-count-sync').forEach(function(el){ el.textContent = txt; });
+    }
+    var obs = new MutationObserver(syncCount);
+    obs.observe(srcEl, {childList:true, characterData:true, subtree:true});
 })();
 
-// ── Desktop: sidebar fixed-sticky ──────────────────────────────────
+// Body scroll lock on mobile when sidebar opens
+(function(){
+    var sidebar = document.getElementById('shopSidebar');
+    if (!sidebar) return;
+    var obs = new MutationObserver(function(){
+        if (window.innerWidth > 992) return;
+        if (sidebar.classList.contains('active')) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = '';
+            // Reset sub-screens when closed
+            _fspSubStack = [];
+            var screens = document.getElementById('fspScreens');
+            if (screens) screens.classList.remove('fsp-sub-open');
+            document.querySelectorAll('.fsp-sub.fsp-screen-active').forEach(function(s){ s.classList.remove('fsp-screen-active'); });
+        }
+    });
+    obs.observe(sidebar, {attributes:true, attributeFilter:['class']});
+})();
+
+fspUpdateActiveBadge();
+
+// ── Init brand state from URL ─────────────────────────────────────
+(function(){
+    var urlBrand = new URLSearchParams(window.location.search).get('brand') || '';
+    if (urlBrand && urlBrand !== 'all') {
+        urlBrand.split(',').forEach(function(b){ if(b.trim()) _fspSelectedBrands.add(b.trim()); });
+    }
+    _fspBrandUpdateSubHd();
+    // Build brand screen lazily on first open
+    var built = false;
+    var orig = fspOpenSub;
+    fspOpenSub = function(screenId, noStack) {
+        if (screenId === 'fspBrandScreen' && !built) {
+            fspBuildBrandScreen();
+            built = true;
+        }
+        orig(screenId, noStack);
+    };
+})();
+
+// ── Subcat counts data ────────────────────────────────────────────
+var _fspSubcatCounts = (function(){
+    try { return JSON.parse(document.getElementById('fspSubcatCountsData').textContent); } catch(e){ return {}; }
+})();
+
+// ── Desktop: sidebar fixed-sticky ────────────────────────────────
 (function(){
     var sidebar = document.getElementById('shopSidebar');
     var layout  = document.querySelector('.shop-layout');
     if (!sidebar || !layout) return;
-
-    var NAVBAR = 88; // px below viewport top to stick at
+    var NAVBAR = 88;
     var ph = null, fixed = false, natLeft = 0, natWidth = 0;
-
-    // Add transition on the sidebar once
     sidebar.style.transition = 'top 0.25s ease';
-
     function fix() {
         if (fixed) return;
         var r = sidebar.getBoundingClientRect();
@@ -463,113 +1349,464 @@ window.resetAllProductFilters = function(event) {
         ph.style.cssText = 'width:' + natWidth + 'px;height:' + sidebar.offsetHeight + 'px;flex-shrink:0;grid-column:1;';
         sidebar.parentNode.insertBefore(ph, sidebar);
         sidebar.style.position = 'fixed';
-        sidebar.style.top      = NAVBAR + 'px';
-        sidebar.style.left     = natLeft + 'px';
-        sidebar.style.width    = natWidth + 'px';
-        sidebar.style.zIndex   = '100';
+        sidebar.style.top = NAVBAR + 'px';
+        sidebar.style.left = natLeft + 'px';
+        sidebar.style.width = natWidth + 'px';
+        sidebar.style.zIndex = '100';
+        sidebar.style.maxHeight = (window.innerHeight - NAVBAR) + 'px';
         fixed = true;
     }
-
     function unfix() {
         if (!fixed) return;
-        sidebar.style.position = '';
-        sidebar.style.top = '';
-        sidebar.style.left = '';
-        sidebar.style.width = '';
-        sidebar.style.zIndex = '';
+        sidebar.style.position = ''; sidebar.style.top = ''; sidebar.style.left = '';
+        sidebar.style.width = ''; sidebar.style.zIndex = ''; sidebar.style.maxHeight = '';
         if (ph && ph.parentNode) ph.parentNode.removeChild(ph);
         ph = null; fixed = false;
     }
-
     function update() {
         if (window.innerWidth <= 992) { unfix(); return; }
+        if (sidebar.offsetParent === null) { unfix(); return; }
         var lrTop = layout.getBoundingClientRect().top;
-        if (lrTop <= NAVBAR) {
-            fix();
-        } else {
-            unfix();
-        }
+        if (lrTop <= NAVBAR) fix(); else unfix();
     }
-
-    window.addEventListener('scroll', update, { passive: true });
-    window.addEventListener('resize', function(){ unfix(); setTimeout(update, 50); }, { passive: true });
+    window.addEventListener('scroll', update, {passive:true});
+    window.addEventListener('resize', function(){ unfix(); setTimeout(update, 50); }, {passive:true});
     update();
 })();
 
-// ── Mobile: controls-bar fixed-sticky (wrapper holds space, class toggles position) ──
+// ── Mobile: controls-bar fixed-sticky ────────────────────────────
 (function(){
     var bar    = document.querySelector('.shop-controls-container');
     var holder = document.querySelector('.shop-controls-holder');
     var mhdr   = document.querySelector('.mobile-header');
     if (!bar || !holder || window.innerWidth > 992) return;
-
-    // Include the bar's bottom margin so the holder reserves full visual space
     var barMarginBottom = parseInt(getComputedStyle(bar).marginBottom) || 40;
-    var barH   = bar.offsetHeight + barMarginBottom;
+    var barH = bar.offsetHeight + barMarginBottom;
     holder.style.cssText = 'height:' + barH + 'px;flex-shrink:0;';
-
-    // Inject styles — top is NOT hardcoded here; set live in update()
     var s = document.createElement('style');
-    s.textContent =
-        '.shop-controls-container.bar-fixed{' +
-            'position:fixed!important;' +
-            'left:0!important;right:0!important;' +
-            'margin:0!important;border-radius:0!important;' +
-            'box-shadow:0 4px 14px rgba(0,0,0,0.10)!important;' +
-            'z-index:9999!important;' +
-            'background:#fff!important;' +
-            'border-bottom:1px solid #f1f5f9!important;' +
-        '}';
+    s.textContent = '.shop-controls-container.bar-fixed{position:fixed!important;left:0!important;right:0!important;margin:0!important;border-radius:0!important;box-shadow:0 4px 14px rgba(0,0,0,.10)!important;z-index:9999!important;background:#fff!important;border-bottom:1px solid #f1f5f9!important;}';
     document.head.appendChild(s);
-
     var isFixed = false;
-
-    function hdrH() {
-        // Read live every time — header shrinks when scrolled
-        return mhdr ? mhdr.getBoundingClientRect().bottom : 60;
-    }
-
+    function hdrH(){ return mhdr ? mhdr.getBoundingClientRect().bottom : 60; }
     function update() {
-        var h = hdrH();
-        var holderTop = holder.getBoundingClientRect().top;
-        if (!isFixed && holderTop <= h) {
-            bar.style.top = h + 'px';
-            bar.classList.add('bar-fixed');
-            isFixed = true;
-        } else if (isFixed) {
-            // Keep top in sync as header animates
-            bar.style.top = h + 'px';
-            if (holderTop > h) {
-                bar.classList.remove('bar-fixed');
-                bar.style.top = '';
-                isFixed = false;
-            }
-        }
+        var h = hdrH(), holderTop = holder.getBoundingClientRect().top;
+        if (!isFixed && holderTop <= h) { bar.style.top = h + 'px'; bar.classList.add('bar-fixed'); isFixed = true; }
+        else if (isFixed) { bar.style.top = h + 'px'; if (holderTop > h) { bar.classList.remove('bar-fixed'); bar.style.top = ''; isFixed = false; } }
     }
-
     var ticking = false;
-    window.addEventListener('scroll', function(){
-        if (ticking) return;
-        ticking = true;
-        requestAnimationFrame(function(){ update(); ticking = false; });
-    }, { passive: true });
-
+    window.addEventListener('scroll', function(){ if(ticking)return; ticking=true; requestAnimationFrame(function(){update();ticking=false;}); }, {passive:true});
     update();
 })();
 
+// ═══════════════════════════════════════════
+// FSD — Desktop sidebar functions
+// ═══════════════════════════════════════════
+
+function fsdToggleSect(bodyId, btn) {
+    var body = document.getElementById(bodyId);
+    if (!body) return;
+    body.classList.toggle('collapsed');
+    if (btn) btn.classList.toggle('collapsed');
+}
+
+function fsdToggleCat(btn) {
+    var catName = btn.dataset.cat;
+    var grp = btn.closest('.fsd-cat-grp');
+    var isOpen = grp && grp.classList.contains('fsd-grp-open');
+    document.querySelectorAll('.fsd-cat-grp.fsd-grp-open').forEach(function(g){
+        if (g !== grp) g.classList.remove('fsd-grp-open');
+    });
+    if (grp) grp.classList.toggle('fsd-grp-open');
+    if (!isOpen) {
+        var activeCat = new URLSearchParams(window.location.search).get('category');
+        if (activeCat !== catName) fsdApplyCat(catName, null);
+    }
+}
+
+function fsdApplyCat(catName, subName) {
+    var prms = new URLSearchParams(window.location.search);
+    if (!catName || catName === 'all') {
+        prms.delete('category'); prms.delete('subcategory');
+    } else {
+        prms.set('category', catName);
+        if (subName) prms.set('subcategory', subName); else prms.delete('subcategory');
+    }
+    prms.delete('page'); prms.delete('ajax');
+    window.history.pushState({}, '', window.location.pathname + (prms.toString() ? '?' + prms.toString() : ''));
+    fspUpdateActiveBadge(); fsdUpdateActiveBadge(); fsdUpdateChipsBar(); fsdRefreshCatUI();
+    if (window.updateShop) window.updateShop();
+}
+
+function fsdApplySubcat(btn) {
+    var cat = btn.dataset.cat;
+    var sub = btn.dataset.sub || null;
+    fsdApplyCat(cat, sub);
+}
+
+function fsdRefreshCatUI() {
+    var p = new URLSearchParams(window.location.search);
+    var activeCat = p.get('category') || 'all';
+    var activeSub = p.get('subcategory') || '';
+    document.querySelectorAll('.fsd-cat-row').forEach(function(r){r.classList.remove('fsd-sel');});
+    document.querySelectorAll('.fsd-subcat-row').forEach(function(r){r.classList.remove('fsd-sel');});
+    if (activeCat === 'all') {
+        var allRow = document.querySelector('.fsd-cat-row[data-cat="all"]');
+        if (allRow) allRow.classList.add('fsd-sel');
+    } else {
+        var catRow = document.querySelector('.fsd-cat-main[data-cat="' + activeCat + '"]');
+        if (catRow) catRow.classList.add('fsd-sel');
+        if (activeSub) {
+            var subRow = document.querySelector('.fsd-subcat-row[data-sub="' + activeSub + '"]');
+            if (subRow) subRow.classList.add('fsd-sel');
+        } else {
+            var firstSub = document.querySelector('.fsd-cat-grp.fsd-grp-open .fsd-subcat-row');
+            if (firstSub) firstSub.classList.add('fsd-sel');
+        }
+    }
+}
+
+// ── Desktop brands ────────────────────────────────────────────────
+function fsdBuildInlineBrands() {
+    var brands = _fspBrandsData();
+    var counts = _fspBrandCountsData();
+    var branded = brands.map(function(b){ return {name:b, count:counts[b]||0}; })
+                        .filter(function(b){ return b.count > 0; })
+                        .sort(function(a,b){ return b.count - a.count; });
+    var top6 = branded.slice(0, 6);
+    var cont = document.getElementById('fsdInlineBrands');
+    if (!cont) return;
+    cont.innerHTML = top6.map(function(b) {
+        var sel = _fspSelectedBrands.has(b.name);
+        return '<button class="fsp-brand-row' + (sel?' fsp-bsel':'') + '" type="button" data-brand="' + _esc(b.name) + '" onclick="fspBrandToggle(this)">'
+             + '<span class="fsp-brand-row-name">' + _esc(b.name) + '</span>'
+             + '<span class="fsp-brand-row-cnt">' + b.count + '</span>'
+             + '<div class="fsp-brand-chk">' + (sel ? '<i class="fas fa-check"></i>' : '') + '</div>'
+             + '</button>';
+    }).join('');
+}
+
+function fsdFilterInlineBrands() {
+    var q = (document.getElementById('fsdBrandSrch').value || '').toLowerCase().trim();
+    document.querySelectorAll('#fsdInlineBrands .fsp-brand-row').forEach(function(btn) {
+        btn.style.display = (!q || (btn.dataset.brand||'').toLowerCase().indexOf(q)!==-1) ? '' : 'none';
+    });
+}
+
+var _fsdDlgBuilt = false;
+function fsdBuildBrandDialog() {
+    if (_fsdDlgBuilt) return;
+    var brands = _fspBrandsData();
+    var counts = _fspBrandCountsData();
+    if (!brands.length) return;
+
+    var branded = brands.map(function(b){return{name:b,count:counts[b]||0};})
+                        .filter(function(b){return b.count>0;})
+                        .sort(function(a,b){return b.count-a.count;});
+    var popular = branded.slice(0,6);
+    var popGrid = document.getElementById('fsdDlgPopGrid');
+    var popSection = document.getElementById('fsdDlgPopSection');
+    if (popGrid) {
+        if (popular.length) {
+            popGrid.innerHTML = popular.map(function(b){
+                var sel=_fspSelectedBrands.has(b.name);
+                return '<button class="fsp-brand-pop-btn'+(sel?' fsp-bsel':'')+'" type="button" data-brand="'+_esc(b.name)+'" onclick="fspBrandToggle(this)">'
+                     +'<div class="fsp-brand-pop-chk">'+(sel?'<i class="fas fa-check"></i>':'')+' </div>'
+                     +'<span class="fsp-brand-pop-name">'+_esc(b.name)+'</span>'
+                     +'<span class="fsp-brand-pop-cnt">'+b.count+'</span>'
+                     +'</button>';
+            }).join('');
+        } else if (popSection) popSection.style.display='none';
+    }
+
+    var grouped={};
+    brands.forEach(function(b){
+        var l=b[0].toUpperCase(); if(!/[A-Z]/.test(l)) l='#';
+        if(!grouped[l]) grouped[l]=[];
+        grouped[l].push(b);
+    });
+    var letters=Object.keys(grouped).sort();
+    var alphaList=document.getElementById('fsdDlgAlphaList');
+    if (alphaList) {
+        var html='';
+        letters.forEach(function(l){
+            html+='<li><div class="fsp-brand-letter-hdr" id="fsd-dl-'+l+'">'+l+'</div></li>';
+            grouped[l].forEach(function(b){
+                var sel=_fspSelectedBrands.has(b);
+                var cnt=counts[b]||0;
+                html+='<li><button class="fsp-brand-row'+(sel?' fsp-bsel':'')+'" type="button" data-brand="'+_esc(b)+'" onclick="fspBrandToggle(this)">'
+                    +'<span class="fsp-brand-row-name">'+_esc(b)+'</span>'
+                    +(cnt?'<span class="fsp-brand-row-cnt">'+cnt+'</span>':'')
+                    +'<div class="fsp-brand-chk">'+(sel?'<i class="fas fa-check"></i>':'')+' </div>'
+                    +'</button></li>';
+            });
+        });
+        alphaList.innerHTML=html;
+    }
+
+    var allLetters='ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+    var alphaIdx=document.getElementById('fsdDlgAlphaIdx');
+    if (alphaIdx) {
+        alphaIdx.innerHTML=allLetters.map(function(l){
+            return '<span class="'+(grouped[l]?'has-items':'no-items')+'" data-letter="'+l+'">'+l+'</span>';
+        }).join('');
+        alphaIdx.querySelectorAll('.has-items').forEach(function(span){
+            span.addEventListener('click',function(){
+                var el=document.getElementById('fsd-dl-'+span.dataset.letter);
+                var scroll=document.getElementById('fsdDlgScroll');
+                if(el&&scroll){ var eT=el.getBoundingClientRect().top,sT=scroll.getBoundingClientRect().top; scroll.scrollTop+=eT-sT; }
+            });
+        });
+    }
+    fsdUpdateDlgSubHd();
+    _fsdDlgBuilt=true;
+}
+
+function fsdUpdateDlgSubHd() {
+    var n=_fspSelectedBrands.size;
+    var el=document.getElementById('fsdBdSub');
+    if(el) el.textContent=n===0?'0 brende të zgjedhura':n+(n===1?' brend i zgjedhur':' brende të zgjedhura');
+}
+
+function fsdOpenBrandDialog() {
+    fsdBuildBrandDialog();
+    document.getElementById('fsdBdOverlay').classList.add('open');
+    document.getElementById('fsdBdDialog').classList.add('open');
+    document.body.style.overflow='hidden';
+}
+function fsdCloseBrandDialog() {
+    document.getElementById('fsdBdOverlay').classList.remove('open');
+    document.getElementById('fsdBdDialog').classList.remove('open');
+    document.body.style.overflow='';
+}
+
+function fsdFilterDlgBrands() {
+    var q=(document.getElementById('fsdDlgSrch').value||'').toLowerCase().trim();
+    document.querySelectorAll('#fsdDlgAlphaList li').forEach(function(li){
+        var btn=li.querySelector('.fsp-brand-row');
+        if(btn) li.style.display=(!q||(btn.dataset.brand||'').toLowerCase().indexOf(q)!==-1)?'':'none';
+    });
+    var items=document.querySelectorAll('#fsdDlgAlphaList li');
+    for(var i=0;i<items.length;i++){
+        var hdr=items[i].querySelector('.fsp-brand-letter-hdr');
+        if(hdr){
+            var vis=false;
+            for(var j=i+1;j<items.length;j++){
+                if(items[j].querySelector('.fsp-brand-letter-hdr')) break;
+                if(items[j].style.display!=='none'){vis=true;break;}
+            }
+            items[i].style.display=vis?'':'none';
+        }
+    }
+    document.querySelectorAll('#fsdDlgPopGrid .fsp-brand-pop-btn').forEach(function(b){
+        b.style.display=(!q||(b.dataset.brand||'').toLowerCase().indexOf(q)!==-1)?'':'none';
+    });
+    var ps=document.getElementById('fsdDlgPopSection');
+    if(ps&&q) ps.style.display=Array.from(document.querySelectorAll('#fsdDlgPopGrid .fsp-brand-pop-btn')).some(function(b){return b.style.display!=='none';})?'':'none';
+    else if(ps) ps.style.display='';
+}
+
+// Wrap fspBrandToggle to sync desktop UI
+(function(){
+    var orig=fspBrandToggle;
+    fspBrandToggle=function(btn){
+        orig(btn);
+        fsdUpdateDlgSubHd();
+        fsdBuildInlineBrands();
+        fsdUpdateChipsBar();
+        fsdUpdateActiveBadge();
+    };
+})();
+
+// ── Desktop price slider ──────────────────────────────────────────
+function fsdInitPriceSlider() {
+    var minEl=document.getElementById('fsd-range-min');
+    var maxEl=document.getElementById('fsd-range-max');
+    var minD=document.getElementById('fsd-price-min-d');
+    var maxD=document.getElementById('fsd-price-max-d');
+    var fill=document.getElementById('fsd-prs-fill');
+    if(!minEl||!maxEl) return;
+    function updateFill(){
+        var mn=parseInt(minEl.value),mx=parseInt(maxEl.value),tot=parseInt(minEl.max);
+        if(fill){fill.style.left=(mn/tot*100)+'%';fill.style.right=((tot-mx)/tot*100)+'%';}
+        if(minD) minD.textContent=mn+' €';
+        if(maxD) maxD.textContent=mx+' €';
+    }
+    var deb;
+    function applyPrice(){
+        clearTimeout(deb);
+        deb=setTimeout(function(){
+            var mn=parseInt(minEl.value),mx=parseInt(maxEl.value),tot=parseInt(minEl.max);
+            var p=new URLSearchParams(window.location.search);
+            if(mn>0) p.set('min_price',mn); else p.delete('min_price');
+            if(mx<tot) p.set('max_price',mx); else p.delete('max_price');
+            p.delete('page');p.delete('ajax');
+            window.history.pushState({},'',(window.location.pathname+(p.toString()?'?'+p.toString():'')));
+            fspUpdateActiveBadge();fsdUpdateActiveBadge();fsdUpdateChipsBar();
+            if(window.updateShop) window.updateShop();
+        },400);
+    }
+    minEl.addEventListener('input',function(){if(parseInt(minEl.value)>parseInt(maxEl.value)) maxEl.value=minEl.value; updateFill();applyPrice();});
+    maxEl.addEventListener('input',function(){if(parseInt(maxEl.value)<parseInt(minEl.value)) minEl.value=maxEl.value; updateFill();applyPrice();});
+    updateFill();
+}
+
+function fsdPriceChip(minVal,maxVal,btn) {
+    document.querySelectorAll('.fsd-aside .fsp-chip').forEach(function(c){c.classList.remove('active');});
+    if(btn) btn.classList.add('active');
+    var mn=document.getElementById('fsd-range-min'),mx=document.getElementById('fsd-range-max');
+    if(mn){mn.value=minVal;mn.dispatchEvent(new Event('input'));}
+    if(mx){mx.value=maxVal;mx.dispatchEvent(new Event('input'));}
+}
+
+// ── Desktop clear all ─────────────────────────────────────────────
+function fsdClearAll() {
+    document.querySelectorAll('.product-label-filter').forEach(function(i){i.checked=false;});
+    _fspSelectedBrands.clear();
+    _fspBrandUpdateSubHd();fsdUpdateDlgSubHd();fsdBuildInlineBrands();
+    document.querySelectorAll('.fsp-brand-pop-btn.fsp-bsel,.fsp-brand-row.fsp-bsel').forEach(function(el){
+        el.classList.remove('fsp-bsel');
+        var chk=el.querySelector('.fsp-brand-pop-chk,.fsp-brand-chk');
+        if(chk) chk.innerHTML='';
+    });
+    document.querySelectorAll('.fsd-cat-grp.fsd-grp-open').forEach(function(g){g.classList.remove('fsd-grp-open');});
+    // Reset desktop price sliders
+    var mn=document.getElementById('fsd-range-min'),mx=document.getElementById('fsd-range-max');
+    if(mn){mn.value=0;mn.dispatchEvent(new Event('input'));}
+    if(mx){mx.value=mx.max;mx.dispatchEvent(new Event('input'));}
+    // Clear price quick-select chips
+    document.querySelectorAll('.fsd-aside .fsp-chip').forEach(function(c){c.classList.remove('active');});
+    window.resetFilters(null);
+    fsdRefreshCatUI();
+    fsdUpdateActiveBadge();
+    fsdUpdateChipsBar();
+}
+
+// ── Filter chips bar ──────────────────────────────────────────────
+function fsdUpdateChipsBar() {
+    var bar=document.getElementById('fsdChipsBar');
+    if(!bar) return;
+    var p=new URLSearchParams(window.location.search);
+    var chips=[];
+    var cat=p.get('category'),sub=p.get('subcategory');
+    if(cat&&cat!=='all') chips.push({type:'cat',cat:cat,sub:sub||null,label:sub||cat});
+    var brand=p.get('brand');
+    if(brand&&brand!=='all') brand.split(',').filter(Boolean).forEach(function(b){chips.push({type:'brand',brand:b.trim(),label:b.trim()});});
+    var minP=p.get('min_price'),maxP=p.get('max_price');
+    if(minP||maxP) chips.push({type:'price',label:(minP?minP+'€':'0€')+' – '+(maxP?maxP+'€':'max')});
+    if(p.get('discount_only')) chips.push({type:'sale',label:'Me zbritje'});
+    var labs=p.get('labels');
+    if(labs){
+        var ln={'pharmacist_choice':'Farmacisti','new_arrival':'Produkte të reja','best_seller':'Më të shiturit','limited':'Të kufizuara','set':'Sete & paketa'};
+        labs.split(',').filter(Boolean).forEach(function(l){chips.push({type:'label',label:ln[l]||l,labelVal:l});});
+    }
+    if(!chips.length){bar.innerHTML='';return;}
+    bar.innerHTML=chips.map(function(c){
+        return '<button class="fsd-active-chip" type="button">'+_esc(c.label)+' <i class="fas fa-times"></i></button>';
+    }).join('');
+    bar.querySelectorAll('.fsd-active-chip').forEach(function(btn,i){
+        btn.addEventListener('click',function(){fsdRemoveChipData(chips[i]);});
+    });
+}
+
+function fsdRemoveChipData(c) {
+    var p=new URLSearchParams(window.location.search);
+    if(c.type==='cat'){
+        p.delete('category');p.delete('subcategory');
+        document.querySelectorAll('.fsd-cat-grp.fsd-grp-open').forEach(function(g){g.classList.remove('fsd-grp-open');});
+    } else if(c.type==='brand'){
+        var bArr=(p.get('brand')||'').split(',').filter(function(b){return b.trim()&&b.trim()!==c.brand;});
+        if(bArr.length) p.set('brand',bArr.join(',')); else p.delete('brand');
+        _fspSelectedBrands.delete(c.brand);
+        document.querySelectorAll('[data-brand="'+_esc(c.brand)+'"]').forEach(function(el){
+            el.classList.remove('fsp-bsel');
+            var chk=el.querySelector('.fsp-brand-pop-chk,.fsp-brand-chk');
+            if(chk) chk.innerHTML='';
+        });
+        _fspBrandUpdateSubHd();fsdUpdateDlgSubHd();
+    } else if(c.type==='price'){
+        p.delete('min_price');p.delete('max_price');
+        var mn=document.getElementById('fsd-range-min'),mx=document.getElementById('fsd-range-max');
+        if(mn){mn.value=0;mn.dispatchEvent(new Event('input'));}
+        if(mx){mx.value=mx.max;mx.dispatchEvent(new Event('input'));}
+    } else if(c.type==='sale'){
+        p.delete('discount_only');
+        document.querySelectorAll('.product-label-filter[value="sale"]').forEach(function(i){i.checked=false;});
+    } else if(c.type==='label'){
+        var lArr=(p.get('labels')||'').split(',').filter(function(l){return l.trim()&&l!==c.labelVal;});
+        if(lArr.length) p.set('labels',lArr.join(',')); else p.delete('labels');
+        document.querySelectorAll('.product-label-filter[value="'+c.labelVal+'"]').forEach(function(i){i.checked=false;});
+    }
+    p.delete('page');p.delete('ajax');
+    window.history.pushState({},'',(window.location.pathname+(p.toString()?'?'+p.toString():'')));
+    fspUpdateActiveBadge();fsdUpdateActiveBadge();fsdUpdateChipsBar();fsdRefreshCatUI();
+    if(window.updateShop) window.updateShop();
+}
+
+// ── Desktop active badge ──────────────────────────────────────────
+function fsdUpdateActiveBadge() {
+    var p=new URLSearchParams(window.location.search);
+    var cnt=0;
+    if(p.get('category')&&p.get('category')!=='all') cnt++;
+    var bp=p.get('brand')||'';
+    if(bp&&bp!=='all') cnt+=bp.split(',').filter(Boolean).length;
+    if(p.get('min_price')||p.get('max_price')) cnt++;
+    if(p.get('discount_only')) cnt++;
+    var labs=p.get('labels');
+    if(labs) cnt+=labs.split(',').filter(Boolean).length;
+    var badge=document.getElementById('fsdActiveBadge'),clr=document.getElementById('fsdHeaderClear');
+    if(badge){if(cnt>0){badge.textContent=cnt;badge.classList.add('visible');}else{badge.textContent='';badge.classList.remove('visible');}}
+    if(clr){if(cnt>0) clr.classList.add('visible'); else clr.classList.remove('visible');}
+}
+
+// ── Init desktop sidebar ──────────────────────────────────────────
+(function(){
+    if(window.innerWidth<=992) return;
+    fsdBuildInlineBrands();
+    fsdInitPriceSlider();
+    fsdUpdateActiveBadge();
+    fsdUpdateChipsBar();
+    // Sticky sidebar for fsd-aside
+    var sidebar=document.getElementById('fsdSidebar');
+    var layout=document.querySelector('.shop-layout');
+    if(!sidebar||!layout) return;
+    var NAVBAR=88,ph=null,fixed=false;
+    sidebar.style.transition='top 0.25s ease';
+    function fix(){
+        if(fixed) return;
+        var r=sidebar.getBoundingClientRect();
+        ph=document.createElement('div');
+        ph.style.cssText='width:'+sidebar.offsetWidth+'px;height:'+sidebar.offsetHeight+'px;flex-shrink:0;grid-column:1;';
+        sidebar.parentNode.insertBefore(ph,sidebar);
+        sidebar.style.position='fixed';sidebar.style.top=NAVBAR+'px';
+        sidebar.style.left=r.left+'px';sidebar.style.width=sidebar.offsetWidth+'px';
+        sidebar.style.zIndex='100';sidebar.style.maxHeight=(window.innerHeight-NAVBAR-16)+'px';
+        sidebar.style.height='';sidebar.style.overflowY='auto';fixed=true;
+    }
+    function unfix(){
+        if(!fixed) return;
+        sidebar.style.cssText='';sidebar.style.maxHeight='';
+        if(ph&&ph.parentNode) ph.parentNode.removeChild(ph);
+        ph=null;fixed=false;
+    }
+    function update(){
+        if(window.innerWidth<=992){unfix();return;}
+        if(layout.getBoundingClientRect().top<=NAVBAR) fix(); else unfix();
+    }
+    window.addEventListener('scroll',update,{passive:true});
+    window.addEventListener('resize',function(){unfix();setTimeout(update,50);},{passive:true});
+    update();
+})();
+
+// ── Skeleton on sort/navigate ─────────────────────────────────────
 (function(){
     function showSkeleton(){
-        const grid = document.getElementById('productGrid');
-        const skel = document.getElementById('productSkeleton');
+        var grid = document.getElementById('productGrid');
+        var skel = document.getElementById('productSkeleton');
         if(grid && skel){ grid.style.display='none'; skel.style.display=''; }
     }
-    // Show skeleton when user submits filters or sorts (page reload)
-    document.querySelectorAll('form.filter-form, form[action*="products"]').forEach(function(f){
-        f.addEventListener('submit', showSkeleton);
-    });
-    // Show skeleton on sort/pagination link clicks
+    document.querySelectorAll('form.filter-form, form[action*="products"]').forEach(function(f){ f.addEventListener('submit', showSkeleton); });
     document.addEventListener('click', function(e){
-        const a = e.target.closest('a[href*="sort="], a[href*="page="], a[href*="category="], .sort-trigger[data-sort]');
+        var a = e.target.closest('a[href*="sort="], a[href*="page="], a[href*="category="], .sort-trigger[data-sort]');
         if(a && a.href) showSkeleton();
     });
 })();

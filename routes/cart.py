@@ -109,7 +109,7 @@ def get_wishlist_count():
     return count
 
 
-def _cart_recommendations(cart_items, limit=24):
+def _cart_recommendations(cart_items, limit=16):
     """Rank useful cross-sells without recommending products already in the cart."""
     cart_ids = {str(item.get('_id')) for item in cart_items}
     categories = {str(item.get('category') or '').strip() for item in cart_items} - {''}

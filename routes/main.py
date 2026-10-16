@@ -200,49 +200,35 @@ def _get_home_payload():
     _featured_rows = list(mongo.db.products.find({
         "discount_price": {"$ne": None, "$gt": 0},
         "is_deleted": {"$ne": True},
+        "in_stock": {"$ne": False},
         "$or": [
             {"discount_from": {"$exists": False}},
             {"discount_from": None},
             {"discount_from": {"$lte": _now_home}},
         ],
     }).limit(200))
-    featured_products = Product._decorate_products(_rank_best_random(_featured_rows, 20))
+    featured_products = Product._decorate_products(_rank_best_random(_featured_rows, 16))
 
     _best_seller_rows = list(mongo.db.products.find({
         "is_best_seller": True,
-        "is_deleted": {"$ne": True}
+        "is_deleted": {"$ne": True},
+        "in_stock": {"$ne": False},
     }).limit(200))
-    best_sellers = Product._decorate_products(_rank_best_random(_best_seller_rows, 20))
+    best_sellers = Product._decorate_products(_rank_best_random(_best_seller_rows, 16))
 
-    _regular_rows = list(mongo.db.products.find({
-        "$or": [
-            {"discount_price": {"$exists": False}},
-            {"discount_price": None},
-            {"discount_price": 0}
-        ],
-        "is_deleted": {"$ne": True}
-    }).limit(200))
-    has_more_regular = len(_regular_rows) > REGULAR_PRODUCTS_HOME_COUNT
-    regular_products = Product._decorate_products(_rank_best_random(_regular_rows, REGULAR_PRODUCTS_HOME_COUNT))
-    total_pages_regular = 2 if has_more_regular else 1
 
     # Category spotlight carousels
     _suplemente_rows = list(mongo.db.products.find({
         "category": "Suplemente & Vitamina",
         "is_deleted": {"$ne": True},
+        "in_stock": {"$ne": False},
     }).limit(100))
     suplemente_products = Product._decorate_products(_rank_best_random(_suplemente_rows, 16))
     suplemente_products = _apply_oct_5pct_discount(suplemente_products)
 
-    _kujdes_rows = list(mongo.db.products.find({
-        "category": "Kujdes Personal & Higjienë",
-        "is_deleted": {"$ne": True},
-    }).limit(100))
-    kujdes_products = Product._decorate_products(_rank_best_random(_kujdes_rows, 16))
-    kujdes_products = _apply_oct_5pct_discount(kujdes_products)
+    kujdes_products = []
 
     # Apply virtual Oct 5% discount to non-discounted products in all homepage sections
-    regular_products   = _apply_oct_5pct_discount(regular_products)
     best_sellers       = _apply_oct_5pct_discount(best_sellers)
 
     offer_banners = Banner.get_active()
@@ -271,8 +257,6 @@ def _get_home_payload():
     payload = {
         'featured_products': featured_products,
         'best_sellers': best_sellers,
-        'regular_products': regular_products,
-        'total_pages_regular': total_pages_regular,
         'offer_banners': offer_banners,
         'category_images': category_images,
         'suplemente_products': suplemente_products,
@@ -837,8 +821,6 @@ def index():
     return render_template('index.html',
                             featured_products=payload['featured_products'],
                             best_sellers=payload['best_sellers'],
-                            regular_products=payload['regular_products'],
-                            total_pages_regular=payload['total_pages_regular'],
                             categories=CATEGORIES,
                             offer_banners=payload['offer_banners'],
                             category_images=payload.get('category_images', {}),
@@ -896,7 +878,6 @@ def products():
     if category != 'all':
         filter_query["category"] = category
     if subcategory != 'all':
-        import re
         escaped_sub = re.escape(subcategory.strip())
         filter_query["subcategory"] = {"$regex": f"^\\s*{escaped_sub}\\s*$", "$options": "i"}
     raw_brands = mongo.db.products.distinct("brand", filter_query)
@@ -969,6 +950,32 @@ def products():
     raw_max = price_agg_result[0]["max_p"] if price_agg_result else 5000
     price_slider_max = int(math.ceil(float(raw_max or 5000)))
 
+    # Category counts for the filter nav panel
+    cat_count_agg = list(mongo.db.products.aggregate([
+        {"$match": {"is_deleted": {"$ne": True}}},
+        {"$group": {"_id": "$category", "count": {"$sum": 1}}}
+    ]))
+    cat_counts = {r["_id"]: r["count"] for r in cat_count_agg if r["_id"]}
+    total_products_all = sum(cat_counts.values())
+
+    # Subcategory counts (all subcategories, for the subcat sub-screen)
+    subcat_count_agg = list(mongo.db.products.aggregate([
+        {"$match": {"is_deleted": {"$ne": True}}},
+        {"$group": {"_id": "$subcategory", "count": {"$sum": 1}}}
+    ]))
+    subcat_counts = {r["_id"]: r["count"] for r in subcat_count_agg if r["_id"]}
+
+    # Brand counts (filtered by current category) — for popular brands section
+    brand_count_query: dict[str, object] = {"is_deleted": {"$ne": True}}
+    if category != 'all':
+        brand_count_query["category"] = category
+    brand_count_agg = list(mongo.db.products.aggregate([
+        {"$match": brand_count_query},
+        {"$group": {"_id": "$brand", "count": {"$sum": 1}}},
+        {"$sort": {"count": -1}}
+    ]))
+    brand_counts = {r["_id"]: r["count"] for r in brand_count_agg if r["_id"]}
+
     return render_template('products.html',
                          products=products,
                          page=page,
@@ -985,7 +992,11 @@ def products():
                          pharmacist_choice=pharmacist_choice,
                          product_labels=product_labels,
                          offer_name=offer_name,
-                         price_slider_max=price_slider_max)
+                         price_slider_max=price_slider_max,
+                         cat_counts=cat_counts,
+                         total_products_all=total_products_all,
+                         subcat_counts=subcat_counts,
+                         brand_counts=brand_counts)
 
     # Debug print
     print(f"Products found: {len(products)} on page {page} in category {category} subcategory {subcategory} search: {search_query}")

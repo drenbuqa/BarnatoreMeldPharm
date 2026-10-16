@@ -1,1433 +1,1204 @@
 {% extends "admin/base.html" %}
 
-{% block title %}Ofertat — Meld Pharm Admin{% endblock %}
-{% block page_title %}Menaxhimi i Ofertave{% endblock %}
+{% block title %}{% if edit_offer %}Edito Ofertën{% else %}Krijo Ofertë{% endif %} — Meld Pharm Admin{% endblock %}
+{% block page_title %}{% if edit_offer %}Edito Ofertën{% else %}Krijo Ofertë{% endif %}{% endblock %}
 
 {% block admin_content %}
 <style>
-/* ─── Layout ─── */
-.off-layout {
-    display:grid;
-    grid-template-columns:310px 1fr;
-    gap:1.25rem;
-    align-items:start;
+/* ── Layout ── */
+.of-form-wrap { max-width:1100px; margin:0 auto; }
+
+/* ── Step nav bar ── */
+.of-steps {
+    display:flex; align-items:center; gap:0;
+    background:#fff; border:1px solid #eef0ed; border-radius:14px;
+    padding:.6rem; margin-bottom:1.25rem; box-shadow:0 1px 3px rgba(0,0,0,.04);
 }
-.off-left {
-    position:sticky;
-    top:1rem;
-    display:flex;
-    flex-direction:column;
-    gap:1rem;
-    max-height:calc(100vh - 2rem);
-    overflow-y:auto;
-    scrollbar-width:thin;
-    scrollbar-color:#d4dcd3 transparent;
-    padding-right:2px;
+.of-step {
+    flex:1; display:flex; align-items:center; justify-content:center; gap:.5rem;
+    padding:.6rem .5rem; border-radius:10px; cursor:pointer;
+    font-size:.83rem; font-weight:700; color:#9aa095; transition:all .18s;
+    user-select:none;
 }
-.off-right { display:flex; flex-direction:column; gap:.75rem; }
+.of-step.active { background:var(--adm-accent); color:#fff; }
+.of-step.done   { background:#f0fdf4; color:var(--adm-accent); }
+.of-step-num {
+    width:22px; height:22px; border-radius:50%; display:flex;
+    align-items:center; justify-content:center; font-size:.7rem; font-weight:900;
+    background:rgba(0,0,0,.08); flex-shrink:0;
+}
+.of-step.active .of-step-num { background:rgba(255,255,255,.25); }
+.of-step.done .of-step-num   { background:var(--adm-accent); color:#fff; }
+.of-step-div { width:1px; background:#eef0ed; align-self:stretch; flex-shrink:0; margin:6px 0; }
+
+/* ── Step panels ── */
+.of-panel { display:none; }
+.of-panel.visible { display:block; }
+
+/* ─── Step 1 layout ─── */
+.of1-grid {
+    display:grid; grid-template-columns:1fr 1fr; gap:1.1rem; align-items:start;
+}
+.of1-full { grid-column:1/-1; }
+/* Force date cards to equal height */
+.of1-grid .of-card.date-card { height:100%; box-sizing:border-box; }
 
 /* ─── Cards ─── */
-.off-card {
-    background:#fff;
-    border:1px solid #eef0ed;
-    border-radius:14px;
-    padding:1.25rem;
-    box-shadow:0 1px 3px rgba(0,0,0,.04);
-    flex-shrink:0;
+.of-card {
+    background:#fff; border:1px solid #eef0ed; border-radius:14px;
+    padding:1.35rem; box-shadow:0 1px 3px rgba(0,0,0,.04); margin-bottom:1.1rem;
 }
-.off-card-title {
-    font-size:.71rem;
-    font-weight:800;
-    text-transform:uppercase;
-    letter-spacing:.07em;
-    color:#8a9186;
-    margin-bottom:.9rem;
-    display:flex;
-    align-items:center;
-    gap:.4rem;
+.of-card:last-child { margin-bottom:0; }
+.of-card-title {
+    font-size:.71rem; font-weight:800; text-transform:uppercase;
+    letter-spacing:.07em; color:#8a9186; margin-bottom:1rem;
+    display:flex; align-items:center; gap:.4rem;
 }
-
-/* ─── Active offers list ─── */
-.aor {
-    display:flex;
-    align-items:center;
-    gap:.6rem;
-    padding:.6rem .75rem;
-    border-radius:9px;
-    background:#f8faf7;
-    border:1.5px solid #eef0ed;
-    margin-bottom:.45rem;
-    cursor:pointer;
-    transition:all .15s;
-}
-.aor:last-child { margin-bottom:0; }
-.aor:hover { border-color:var(--adm-accent); background:#f0fdf4; }
-.aor.editing { border-color:var(--adm-accent); background:#f0fdf4; box-shadow:0 0 0 3px rgba(79,93,78,.12); }
-.aor-dot { width:8px; height:8px; border-radius:50%; background:var(--adm-accent); flex-shrink:0; }
-.aor-info { flex:1; min-width:0; }
-.aor-name { font-size:.84rem; font-weight:700; color:#1a1f18; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:block; }
-.aor-meta { font-size:.71rem; color:#8a9186; display:block; margin-top:1px; }
-.aor-del {
-    width:24px; height:24px; border-radius:6px; border:none;
-    background:#fef2f2; color:#dc2626; cursor:pointer; flex-shrink:0;
-    display:flex; align-items:center; justify-content:center; font-size:.7rem;
-    transition:all .15s;
-}
-.aor-del:hover { background:#dc2626; color:#fff; }
-.no-offers-msg { text-align:center; padding:1.2rem; color:#9aa095; font-size:.83rem; }
-
-/* ─── Selection badge ─── */
-.sel-badge-wrap { text-align:center; margin-bottom:1rem; }
-.sel-badge {
-    display:inline-flex; align-items:center; justify-content:center;
-    background:var(--adm-accent); color:#fff;
-    font-size:2rem; font-weight:900;
-    width:68px; height:68px; border-radius:18px;
-    margin-bottom:.4rem;
-    transition:transform .15s;
-}
-.sel-badge.pop { transform:scale(1.12); }
-.sel-label { font-size:.75rem; color:#8a9186; font-weight:600; display:block; }
 
 /* ─── Form fields ─── */
-.off-field { margin-bottom:.85rem; }
-.off-field:last-of-type { margin-bottom:0; }
-.off-label { display:block; font-size:.73rem; font-weight:700; color:#6b7280; margin-bottom:.35rem; }
-.off-input {
-    width:100%; padding:.55rem .75rem;
+.of-field { margin-bottom:.9rem; }
+.of-field:last-child { margin-bottom:0; }
+.of-label {
+    display:block; font-size:.73rem; font-weight:700; color:#6b7280;
+    margin-bottom:.38rem;
+}
+.of-label span { color:#dc2626; margin-left:2px; }
+.of-input {
+    width:100%; padding:.6rem .8rem;
     border:1.5px solid #e2e8f0; border-radius:9px;
-    font-size:.84rem; font-family:inherit; color:#1a1f18;
+    font-size:.875rem; font-family:inherit; color:#1a1f18;
     background:#fafafa; outline:none; box-sizing:border-box;
-    transition:border-color .15s;
+    transition:border-color .15s, box-shadow .15s;
 }
-.off-input:focus { border-color:var(--adm-accent); background:#fff; }
+.of-input:focus { border-color:var(--adm-accent); background:#fff; box-shadow:0 0 0 3px rgba(79,93,78,.08); }
+.of-input.error { border-color:#dc2626 !important; background:#fff9f9; }
+.of-input.error:focus { box-shadow:0 0 0 3px rgba(220,38,38,.1); }
+.of-input-wrap { position:relative; }
+.of-input-prefix {
+    position:absolute; left:.8rem; top:50%; transform:translateY(-50%);
+    font-size:.84rem; font-weight:700; color:#6b7280; pointer-events:none;
+}
+.of-input-prefix + .of-input { padding-left:2rem; }
+.of-input-suffix {
+    position:absolute; right:.8rem; top:50%; transform:translateY(-50%);
+    font-size:.84rem; font-weight:700; color:#6b7280; pointer-events:none;
+}
+.of-input.has-suffix { padding-right:2.5rem; }
+/* Inline field error */
+.of-field-err {
+    display:none; font-size:.71rem; color:#dc2626; font-weight:600;
+    margin-top:.3rem; align-items:center; gap:.3rem;
+}
+.of-field-err.show { display:flex; }
+/* Step 2 no-selection warning */
+.of-step2-warn {
+    display:none; background:#fffbeb; border:1px solid #fde68a; border-radius:9px;
+    padding:.55rem .8rem; font-size:.78rem; color:#92400e; font-weight:600;
+    align-items:center; gap:.4rem; margin-top:.5rem;
+}
+.of-step2-warn.show { display:flex; }
 
-/* ─── CUSTOM SELECT ─── */
-.csel { position:relative; user-select:none; }
-.csel-trigger {
-    display:flex; align-items:center; gap:.5rem;
-    padding:.55rem .75rem;
-    background:#fafafa; border:1.5px solid #e2e8f0; border-radius:9px;
-    font-size:.84rem; color:#1a1f18; cursor:pointer;
-    transition:all .15s;
+/* ─── Type selector ─── */
+.of-types { display:grid; grid-template-columns:repeat(3,1fr); gap:.6rem; }
+.of-type-opt {
+    border:2px solid #e2e8f0; border-radius:11px; padding:.85rem .75rem;
+    text-align:center; cursor:pointer; transition:all .16s; background:#fafafa;
+    display:flex; flex-direction:column; align-items:center; gap:.4rem;
+    user-select:none;
 }
-.csel-trigger:hover { border-color:#c4cfc3; background:#f5f7f4; }
-.csel-trigger.open { border-color:var(--adm-accent); background:#fff; border-radius:9px 9px 0 0; }
-.csel-icon { font-size:.82rem; flex-shrink:0; }
-.csel-label { flex:1; font-weight:600; }
-.csel-arrow { margin-left:auto; font-size:.62rem; color:#9aa095; transition:transform .2s; }
-.csel-trigger.open .csel-arrow { transform:rotate(180deg); }
-.csel-panel {
-    position:absolute; top:100%; left:0; right:0; z-index:300;
-    background:#fff; border:1.5px solid var(--adm-accent);
-    border-top:none; border-radius:0 0 10px 10px;
-    box-shadow:0 8px 20px rgba(0,0,0,.1);
-    display:none; flex-direction:column; overflow:hidden;
-    max-height:220px; overflow-y:auto;
-    scrollbar-width:thin; scrollbar-color:#d4dcd3 transparent;
+.of-type-opt:hover { border-color:#4F5D4E; background:#f0fdf4; }
+.of-type-opt.selected { border-color:#4F5D4E; background:#f0fdf4; box-shadow:0 0 0 3px rgba(79,93,78,.1); }
+.of-type-icon {
+    width:36px; height:36px; border-radius:10px; display:flex;
+    align-items:center; justify-content:center; font-size:1rem;
+    background:#eef0ed; color:#6b7280; transition:all .16s;
 }
-.csel-panel.open { display:flex; }
-.csel-opt {
-    display:flex; align-items:center; gap:.55rem;
-    padding:.55rem .85rem; cursor:pointer; font-size:.83rem; color:#374151;
-    transition:background .1s; border-bottom:1px solid #f5f7f4;
-}
-.csel-opt:last-child { border-bottom:none; }
-.csel-opt:hover { background:#f5f7f4; color:#1a1f18; }
-.csel-opt.selected { background:#f0fdf4; color:var(--adm-accent); font-weight:700; }
-.csel-opt-icon { font-size:.82rem; width:18px; text-align:center; flex-shrink:0; }
-.csel-check { margin-left:auto; font-size:.7rem; color:var(--adm-accent); opacity:0; }
-.csel-opt.selected .csel-check { opacity:1; }
+.of-type-opt.selected .of-type-icon { background:#4F5D4E; color:#fff; }
+.of-type-label { font-size:.8rem; font-weight:800; color:#374151; }
+.of-type-desc  { font-size:.68rem; color:#9aa095; line-height:1.3; }
 
-/* ─── CUSTOM DATE PICKER ─── */
-.cdp { position:relative; user-select:none; }
+/* ─── Multi-buy options ─── */
+.of-mb-opts { display:grid; grid-template-columns:repeat(2,1fr); gap:.5rem; }
+.of-mb-opt {
+    border:1.5px solid #e2e8f0; border-radius:9px; padding:.65rem .75rem;
+    cursor:pointer; transition:all .15s; background:#fafafa;
+    display:flex; align-items:center; gap:.55rem; user-select:none;
+}
+.of-mb-opt:hover { border-color:#4F5D4E; background:#f0fdf4; }
+.of-mb-opt.selected { border-color:#4F5D4E; background:#f0fdf4; box-shadow:0 0 0 3px rgba(79,93,78,.08); }
+.of-mb-badge {
+    min-width:38px; height:28px; border-radius:7px; display:flex;
+    align-items:center; justify-content:center; font-size:.78rem; font-weight:900;
+    background:#4F5D4E; color:#fff; padding:0 6px; flex-shrink:0;
+}
+.of-mb-opt:not(.selected) .of-mb-badge { background:#e5e7eb; color:#374151; }
+.of-mb-text { font-size:.78rem; font-weight:700; color:#374151; }
+
+/* ─── Date picker ─── */
+.cdp { position:relative; }
 .cdp-trigger {
-    display:flex; align-items:center; gap:.6rem;
-    padding:.55rem .75rem;
-    background:#fafafa; border:1.5px solid #e2e8f0; border-radius:9px;
-    font-size:.84rem; color:#9aa095; cursor:pointer;
-    transition:all .15s;
+    display:flex; align-items:center; gap:.55rem; padding:.6rem .8rem;
+    border:1.5px solid #e2e8f0; border-radius:9px; font-size:.875rem;
+    color:#9aa095; cursor:pointer; background:#fafafa; transition:all .15s;
+    user-select:none;
 }
-.cdp-trigger.has-value { color:#1a1f18; }
-.cdp-trigger:hover { border-color:#c4cfc3; background:#f5f7f4; }
+.cdp-trigger.has-val { color:#1a1f18; }
+.cdp-trigger:hover { border-color:#c4cfc3; }
 .cdp-trigger.open { border-color:var(--adm-accent); background:#fff; }
-.cdp-trigger i { color:#9aa095; font-size:.82rem; flex-shrink:0; }
+.cdp-trigger i { font-size:.82rem; flex-shrink:0; }
 .cdp-txt { flex:1; font-weight:600; }
-.cdp-clear {
-    margin-left:auto; width:18px; height:18px; border-radius:4px;
-    background:#fee2e2; color:#dc2626; border:none; cursor:pointer;
-    font-size:.62rem; display:none; align-items:center; justify-content:center;
-    transition:all .15s;
+.cdp-clr {
+    width:18px; height:18px; border-radius:4px; background:#fee2e2; color:#dc2626;
+    border:none; cursor:pointer; font-size:.62rem; display:none;
+    align-items:center; justify-content:center; transition:all .15s; flex-shrink:0;
 }
-.cdp-clear:hover { background:#dc2626; color:#fff; }
-.cdp-trigger.has-value .cdp-clear { display:flex; }
-
+.cdp-trigger.has-val .cdp-clr { display:flex; }
+.cdp-clr:hover { background:#dc2626; color:#fff; }
 .cdp-panel {
-    position:absolute; left:0; z-index:400;
+    position:absolute; top:calc(100% + 6px); left:0; z-index:500;
     background:#fff; border:1.5px solid #eef0ed; border-radius:14px;
-    box-shadow:0 12px 32px rgba(0,0,0,.13);
-    padding:1rem; display:none; flex-direction:column; gap:.75rem;
-    min-width:268px;
-    /* default: drop down */
-    top:calc(100% + 6px); bottom:auto;
-}
-.cdp-panel.drop-up {
-    top:auto; bottom:calc(100% + 6px);
+    box-shadow:0 12px 32px rgba(0,0,0,.13); padding:1rem;
+    display:none; flex-direction:column; gap:.75rem; min-width:268px;
 }
 .cdp-panel.open { display:flex; }
-.cdp-header { display:flex; align-items:center; gap:.5rem; }
+.cdp-panel.drop-up { top:auto; bottom:calc(100% + 6px); }
+.cdp-hd { display:flex; align-items:center; gap:.5rem; }
 .cdp-nav {
     width:30px; height:30px; border:1.5px solid #eef0ed; border-radius:8px;
     background:#f5f7f4; cursor:pointer; display:flex; align-items:center;
     justify-content:center; font-size:.72rem; color:#374151; transition:all .15s;
+    flex-shrink:0;
 }
 .cdp-nav:hover { background:var(--adm-accent); color:#fff; border-color:var(--adm-accent); }
-.cdp-month-year {
-    flex:1; text-align:center; font-size:.88rem; font-weight:800; color:#1a1f18; cursor:pointer;
-}
-.cdp-weekdays {
-    display:grid; grid-template-columns:repeat(7,1fr); gap:2px;
-    text-align:center;
-}
-.cdp-wd { font-size:.67rem; font-weight:700; color:#9aa095; padding:.2rem 0; text-transform:uppercase; }
+.cdp-my { flex:1; text-align:center; font-size:.88rem; font-weight:800; color:#1a1f18; }
+.cdp-wds { display:grid; grid-template-columns:repeat(7,1fr); gap:2px; text-align:center; }
+.cdp-wd  { font-size:.67rem; font-weight:700; color:#9aa095; padding:.2rem 0; }
 .cdp-days { display:grid; grid-template-columns:repeat(7,1fr); gap:2px; }
 .cdp-day {
     aspect-ratio:1; display:flex; align-items:center; justify-content:center;
-    font-size:.8rem; font-weight:600; color:#374151; border-radius:7px;
+    font-size:.79rem; font-weight:600; color:#374151; border-radius:7px;
     cursor:pointer; transition:all .12s;
 }
 .cdp-day:hover:not(.empty):not(.disabled) { background:#f0fdf4; color:var(--adm-accent); }
-.cdp-day.today { font-weight:900; color:var(--adm-accent); }
-.cdp-day.selected { background:var(--adm-accent) !important; color:#fff !important; font-weight:800; }
-.cdp-day.other-month { color:#d1d5db; }
-.cdp-day.empty { cursor:default; }
-.cdp-day.disabled { color:#e5e7eb; cursor:not-allowed; }
-.cdp-footer { display:flex; gap:.5rem; justify-content:flex-end; }
-.cdp-footer-btn {
+.cdp-day.today   { font-weight:900; color:var(--adm-accent); }
+.cdp-day.sel     { background:var(--adm-accent) !important; color:#fff !important; font-weight:800; }
+.cdp-day.other   { color:#d1d5db; }
+.cdp-day.empty   { cursor:default; }
+.cdp-day.disabled{ color:#e5e7eb; cursor:not-allowed; }
+.cdp-ft { display:flex; gap:.5rem; justify-content:flex-end; }
+.cdp-ftbtn {
     padding:.38rem .75rem; border-radius:7px; font-size:.78rem; font-weight:700;
     cursor:pointer; border:1.5px solid #eef0ed; background:#f5f7f4; color:#6b7280;
     font-family:inherit; transition:all .15s;
 }
-.cdp-footer-btn.primary { background:var(--adm-accent); color:#fff; border-color:var(--adm-accent); }
-.cdp-footer-btn:hover { opacity:.85; }
+.cdp-ftbtn.pri { background:var(--adm-accent); color:#fff; border-color:var(--adm-accent); }
 
-/* ─── Buttons ─── */
-.off-btn-apply {
-    width:100%; padding:.72rem;
-    background:var(--adm-accent); color:#fff;
-    border:none; border-radius:10px;
-    font-size:.88rem; font-weight:700; cursor:pointer;
-    display:flex; align-items:center; justify-content:center; gap:.45rem;
-    transition:all .15s; margin-bottom:.5rem;
-}
-.off-btn-apply:hover { opacity:.88; transform:translateY(-1px); }
-.off-btn-apply:disabled { opacity:.38; cursor:not-allowed; transform:none; }
-.off-btn-remove {
-    width:100%; padding:.62rem;
-    background:#fff; color:#dc2626;
-    border:1.5px solid #fca5a5; border-radius:10px;
-    font-size:.82rem; font-weight:700; cursor:pointer;
-    transition:all .15s; font-family:inherit;
-}
-.off-btn-remove:hover { background:#fef2f2; }
-
-/* ─── Toolbar ─── */
-.off-toolbar {
+/* ─── Action bar ─── */
+.of-actionbar {
     background:#fff; border:1px solid #eef0ed; border-radius:14px;
-    padding:.85rem 1rem; display:flex; align-items:center; gap:.6rem;
-    flex-wrap:wrap; box-shadow:0 1px 3px rgba(0,0,0,.04);
+    padding:.85rem 1.1rem; display:flex; align-items:center;
+    justify-content:space-between; gap:.75rem; box-shadow:0 1px 3px rgba(0,0,0,.04);
+    margin-top:1.1rem;
 }
-.off-search { position:relative; flex:1; min-width:180px; max-width:300px; }
-.off-search i { position:absolute; left:.7rem; top:50%; transform:translateY(-50%); color:#9aa095; font-size:.78rem; pointer-events:none; }
-.off-search input {
+.of-btn {
+    padding:.62rem 1.25rem; border-radius:10px; font-size:.875rem; font-weight:700;
+    cursor:pointer; border:1.5px solid; transition:all .15s; font-family:inherit;
+    display:inline-flex; align-items:center; gap:.45rem;
+}
+.of-btn.primary { background:var(--adm-accent); color:#fff; border-color:var(--adm-accent); }
+.of-btn.primary:hover { opacity:.88; }
+.of-btn.outline { background:#fff; color:#374151; border-color:#e2e8f0; }
+.of-btn.outline:hover { border-color:#4F5D4E; color:#4F5D4E; }
+.of-btn.danger { background:#fff; color:#dc2626; border-color:#fca5a5; }
+.of-btn.danger:hover { background:#fef2f2; }
+.of-btn:disabled { opacity:.38; cursor:not-allowed; }
+
+/* ── Step 2 layout ── */
+.of2-layout { display:grid; grid-template-columns:1fr 320px; gap:1.1rem; align-items:start; }
+.of2-right { position:sticky; top:1rem; }
+
+/* ── Toolbar ── */
+.of2-toolbar {
+    background:#fff; border:1px solid #eef0ed; border-radius:14px;
+    padding:.7rem 1rem; display:flex; align-items:center; gap:.6rem;
+    flex-wrap:wrap; margin-bottom:.75rem; box-shadow:0 1px 3px rgba(0,0,0,.04);
+}
+.of2-search { position:relative; flex:1; min-width:160px; }
+.of2-search i { position:absolute; left:.7rem; top:50%; transform:translateY(-50%); color:#9aa095; font-size:.78rem; pointer-events:none; }
+.of2-search input {
     width:100%; padding:.52rem .75rem .52rem 2.1rem;
     border:1.5px solid #e2e8f0; border-radius:8px; font-size:.84rem;
     background:#fafafa; color:#1a1f18; outline:none; box-sizing:border-box;
     transition:border-color .15s;
 }
-.off-search input:focus { border-color:var(--adm-accent); background:#fff; }
+.of2-search input:focus { border-color:var(--adm-accent); background:#fff; }
 
-/* ─── Toolbar pf-dd filters (matches products page style) ─── */
-.pf-dd { position:relative; display:inline-block; }
-.pf-dd-trigger {
-    display:inline-flex; align-items:center; gap:.45rem;
-    height:38px; padding:0 .85rem; border:1.5px solid #e2e8f0; border-radius:9px;
-    font-size:.83rem; font-weight:600; color:#6b7280; background:#fafafa;
+/* ── Filter dropdowns ── */
+.pf-dd { position:relative; }
+.pf-dd-t {
+    display:inline-flex; align-items:center; gap:.4rem; height:36px;
+    padding:0 .8rem; border:1.5px solid #e2e8f0; border-radius:8px;
+    font-size:.8rem; font-weight:600; color:#6b7280; background:#fafafa;
     cursor:pointer; white-space:nowrap; user-select:none; transition:all .15s;
-    min-width:120px; justify-content:space-between; box-sizing:border-box;
+    min-width:110px; justify-content:space-between;
 }
-.pf-dd-trigger:hover { border-color:#4F5D4E; color:#4F5D4E; background:#f5f7f4; }
-.pf-dd-trigger.active {
-    background:#4F5D4E; border-color:#4F5D4E; color:#fff; font-weight:700;
-    box-shadow:0 2px 8px rgba(79,93,78,.25);
-}
-.pf-dd-trigger .dd-arrow { font-size:.6rem; opacity:.6; transition:transform .18s; flex-shrink:0; }
-.pf-dd.open .pf-dd-trigger .dd-arrow { transform:rotate(180deg); }
-.pf-dd-menu {
+.pf-dd-t:hover { border-color:#4F5D4E; color:#4F5D4E; }
+.pf-dd-t.on { background:#4F5D4E; border-color:#4F5D4E; color:#fff; }
+.pf-dd-t .arr { font-size:.58rem; opacity:.6; transition:transform .18s; }
+.pf-dd.open .pf-dd-t .arr { transform:rotate(180deg); }
+.pf-dd-m {
     position:absolute; top:calc(100% + 6px); left:0; z-index:9999;
     background:#fff; border:1.5px solid #e2e8f0; border-radius:12px;
-    box-shadow:0 8px 28px rgba(0,0,0,.12); min-width:200px; max-width:280px;
-    overflow:hidden; display:none; flex-direction:column;
+    box-shadow:0 8px 28px rgba(0,0,0,.12); min-width:200px;
+    display:none; flex-direction:column; overflow:hidden;
 }
-.pf-dd.open .pf-dd-menu { display:flex; }
-.pf-dd-search {
-    padding:.55rem .75rem; border-bottom:1px solid #f0f2f0;
-    display:flex; align-items:center; gap:.5rem;
-}
-.pf-dd-search i { color:#9aa095; font-size:.78rem; flex-shrink:0; }
-.pf-dd-search input {
-    border:none; outline:none; font-size:.83rem; color:#1a1f18;
-    background:transparent; width:100%; font-family:inherit;
-}
+.pf-dd.open .pf-dd-m { display:flex; }
 .pf-dd-list { overflow-y:auto; max-height:240px; padding:.3rem 0; }
 .pf-dd-opt {
-    display:flex; align-items:center; gap:.55rem;
-    padding:.48rem .85rem; font-size:.83rem; color:#374151;
-    cursor:pointer; transition:background .1s; white-space:nowrap;
-    overflow:hidden; text-overflow:ellipsis;
+    display:flex; align-items:center; gap:.55rem; padding:.46rem .85rem;
+    font-size:.82rem; color:#374151; cursor:pointer; transition:background .1s;
 }
 .pf-dd-opt:hover { background:#f5f7f4; color:#4F5D4E; }
-.pf-dd-opt.selected { background:#eef5ee; color:#4F5D4E; font-weight:700; }
-.pf-dd-opt.selected::after { content:'✓'; margin-left:auto; font-size:.75rem; }
-.pf-dd-opt input[type=checkbox] { accent-color:#4F5D4E; width:13px; height:13px; cursor:pointer; flex-shrink:0; }
-.pf-dd-footer { padding:.4rem .6rem; border-top:1px solid #f0f2f0; }
+.pf-dd-opt.sel { background:#eef5ee; color:#4F5D4E; font-weight:700; }
 
-/* Select-all */
-.off-selall {
-    display:flex; align-items:center; gap:.45rem;
-    font-size:.79rem; font-weight:700; color:#6b7280; cursor:pointer;
-    white-space:nowrap; user-select:none; margin-left:auto;
-}
-.off-selall input { accent-color:var(--adm-accent); width:15px; height:15px; cursor:pointer; }
-.ms-clear { width:100%; padding:.35rem; background:#f5f7f4; border:none; border-radius:6px; font-size:.75rem; color:#6b7280; cursor:pointer; font-family:inherit; }
-.ms-clear:hover { background:#eef0ed; }
+.of2-selall { display:flex; align-items:center; gap:.4rem; font-size:.79rem; font-weight:700; color:#6b7280; cursor:pointer; user-select:none; white-space:nowrap; margin-left:auto; }
+.of2-selall input { accent-color:var(--adm-accent); width:15px; height:15px; cursor:pointer; }
 
-/* ─── Product card & rows ─── */
-.off-prod-card {
-    background:#fff; border:1px solid #eef0ed; border-radius:14px;
-    overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,.04);
+/* ── Product list ── */
+.of2-prod-card { background:#fff; border:1px solid #eef0ed; border-radius:14px; overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,.04); }
+.of2-prod-head {
+    display:grid; grid-template-columns:34px 42px 1fr 90px 68px;
+    gap:.55rem; padding:.55rem 1rem; background:#fafafa; border-bottom:2px solid #eef0ed;
 }
-.off-tbl-head {
-    display:grid; grid-template-columns:36px 44px 1fr 110px 70px;
-    gap:.6rem; padding:.55rem 1rem;
-    background:#fafafa; border-bottom:2px solid #eef0ed;
-}
-.off-tbl-head span { font-size:.67rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:#8a9186; }
-.off-prod-list {
-    max-height:calc(100vh - 280px); overflow-y:auto;
-    scrollbar-width:thin; scrollbar-color:#d4dcd3 transparent;
-}
-.off-prod-row {
-    display:grid; grid-template-columns:36px 44px 1fr 110px 70px;
-    align-items:center; gap:.6rem; padding:.55rem 1rem;
+.of2-prod-head span { font-size:.66rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:#8a9186; }
+.of2-prod-list { max-height:calc(100vh - 300px); overflow-y:auto; scrollbar-width:thin; scrollbar-color:#d4dcd3 transparent; }
+.of2-row {
+    display:grid; grid-template-columns:34px 42px 1fr 90px 68px;
+    align-items:center; gap:.55rem; padding:.55rem 1rem;
     border-bottom:1px solid #f3f4f2; cursor:pointer; transition:background .1s;
 }
-.off-prod-row:last-child { border-bottom:none; }
-.off-prod-row:hover { background:#f8faf7; }
-.off-prod-row.selected { background:#f0fdf4; }
-.off-prod-row input[type=checkbox] { width:16px; height:16px; accent-color:var(--adm-accent); cursor:pointer; }
-.off-prod-img { width:40px; height:40px; border-radius:8px; object-fit:contain; background:#f5f7f4; }
-.off-prod-info { min-width:0; }
-.off-prod-brand { font-size:.67rem; font-weight:700; color:#8a9186; text-transform:uppercase; letter-spacing:.04em; display:block; }
-.off-prod-name { font-size:.82rem; font-weight:700; color:#1a1f18; display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.off-prod-cat { font-size:.7rem; color:#9aa095; }
-.off-offer-tag { font-size:.68rem; font-weight:700; background:#f0fdf4; color:var(--adm-accent); border:1px solid #c6d4c5; padding:2px 8px; border-radius:20px; white-space:nowrap; display:inline-block; max-width:100px; overflow:hidden; text-overflow:ellipsis; }
-.off-prod-price { font-size:.82rem; font-weight:800; color:#1a1f18; white-space:nowrap; }
-.off-prod-row { flex-wrap:wrap; }
-.var-pills-row { width:100%; padding:.35rem 0 .1rem 36px; display:flex; flex-wrap:wrap; gap:.3rem; align-items:center; }
-.var-pill { font-size:.72rem; font-weight:600; padding:2px 10px; border-radius:20px; border:1.5px solid var(--adm-accent); color:var(--adm-accent); background:#f0fdf4; cursor:pointer; user-select:none; transition:all .15s; white-space:nowrap; }
-.var-pill.excl { background:#f5f5f5; color:#9aa095; border-color:#d1d5db; text-decoration:line-through; }
-.off-empty-row { padding:3rem; text-align:center; color:#9aa095; font-size:.88rem; }
-.off-offer-tag-inline { display:none; }  /* shown only on mobile */
+.of2-row:last-child { border-bottom:none; }
+.of2-row:hover { background:#f8faf7; }
+.of2-row.sel { background:#f0fdf4; }
+.of2-row input[type=checkbox] { width:15px; height:15px; accent-color:var(--adm-accent); cursor:pointer; }
+.of2-img { width:38px; height:38px; border-radius:7px; object-fit:contain; background:#f5f7f4; }
+.of2-info { min-width:0; }
+.of2-brand { font-size:.66rem; font-weight:700; color:#9aa095; text-transform:uppercase; letter-spacing:.03em; display:block; }
+.of2-name  { font-size:.81rem; font-weight:700; color:#1a1f18; display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.of2-cat   { font-size:.69rem; color:#9aa095; }
+.of2-tag   { font-size:.67rem; font-weight:700; background:#f0fdf4; color:var(--adm-accent); border:1px solid #c6d4c5; padding:2px 7px; border-radius:20px; white-space:nowrap; display:inline-block; max-width:85px; overflow:hidden; text-overflow:ellipsis; }
+.of2-price { font-size:.81rem; font-weight:800; color:#1a1f18; white-space:nowrap; }
+.of2-empty { padding:3rem; text-align:center; color:#9aa095; font-size:.88rem; }
 
-/* ─── Pagination ─── */
-.off-pager {
+/* ── Summary panel (right) ── */
+.of2-summary {
     background:#fff; border:1px solid #eef0ed; border-radius:14px;
-    padding:.75rem 1rem; display:grid; grid-template-columns:1fr auto 1fr;
-    align-items:center; box-shadow:0 1px 3px rgba(0,0,0,.04);
+    padding:1.25rem; box-shadow:0 1px 3px rgba(0,0,0,.04);
+    display:flex; flex-direction:column; gap:1rem;
 }
-.pg-info { font-size:.76rem; color:#8a9186; font-weight:600; white-space:nowrap; }
-.pg-buttons { display:flex; align-items:center; gap:.35rem; justify-content:center; }
+.of2-sum-title { font-size:.71rem; font-weight:800; text-transform:uppercase; letter-spacing:.07em; color:#8a9186; }
+.of2-count-badge {
+    text-align:center; padding:1rem 0;
+}
+.of2-count-num { font-size:2.8rem; font-weight:900; color:#4F5D4E; line-height:1; }
+.of2-count-lbl { font-size:.74rem; color:#8a9186; font-weight:600; margin-top:3px; }
+.of2-offer-preview {
+    background:#f8faf7; border:1px solid #eef0ed; border-radius:10px;
+    padding:.85rem; display:flex; flex-direction:column; gap:.4rem;
+}
+.of2-preview-row { display:flex; align-items:center; justify-content:space-between; gap:.5rem; }
+.of2-preview-key { font-size:.73rem; color:#8a9186; font-weight:600; }
+.of2-preview-val { font-size:.78rem; font-weight:800; color:#1a1f18; text-align:right; }
+
+/* ── Pagination ── */
+.of2-pager {
+    background:#fff; border:1px solid #eef0ed; border-radius:14px;
+    padding:.7rem 1rem; display:grid; grid-template-columns:1fr auto 1fr;
+    align-items:center; margin-top:.75rem; box-shadow:0 1px 3px rgba(0,0,0,.04);
+}
+.pg-info { font-size:.76rem; color:#8a9186; font-weight:600; }
+.pg-btns { display:flex; gap:.3rem; justify-content:center; }
 .pg-btn {
-    padding:.38rem .65rem; border:1.5px solid #e2e8f0; border-radius:7px;
-    font-size:.78rem; font-weight:600; cursor:pointer; background:#fff; color:#374151;
-    transition:all .15s; min-width:32px; text-align:center; font-family:inherit;
+    padding:.36rem .62rem; border:1.5px solid #e2e8f0; border-radius:7px;
+    font-size:.77rem; font-weight:600; cursor:pointer; background:#fff; color:#374151;
+    transition:all .15s; min-width:31px; text-align:center; font-family:inherit;
 }
 .pg-btn:hover:not(:disabled) { border-color:var(--adm-accent); color:var(--adm-accent); }
-.pg-btn.active { background:var(--adm-accent); color:#fff; border-color:var(--adm-accent); }
+.pg-btn.act { background:var(--adm-accent); color:#fff; border-color:var(--adm-accent); }
 .pg-btn:disabled { opacity:.35; cursor:not-allowed; }
 
-@media(max-width:1100px) { .off-layout { grid-template-columns:270px 1fr; } }
+/* ── Remove section ── */
+.of2-remove-wrap {
+    background:#fff; border:1px solid #fca5a5; border-radius:14px;
+    padding:1rem 1.25rem; display:flex; align-items:center; justify-content:space-between;
+    gap:.75rem; margin-top:1rem;
+}
+.of2-remove-info { font-size:.8rem; color:#6b7280; }
+.of2-remove-info strong { color:#dc2626; }
 
-/* ─── Mobile-only elements hidden on desktop ─── */
-.mob-overlay { display:none; }
-.mob-bar     { display:none; }
-.off-left-handle { display:none; }
-.off-left-topbar { display:none; }
-
+/* ── Responsive ── */
+@media(max-width:960px) {
+    .of2-layout { grid-template-columns:1fr; }
+    .of2-right { position:static; order:-1; }
+    .of2-summary { flex-direction:row; align-items:center; flex-wrap:wrap; gap:.75rem; }
+    .of2-count-badge { padding:.4rem .75rem; border-right:1px solid #eef0ed; }
+    .of2-count-num { font-size:1.9rem; }
+    .of2-offer-preview { flex:1; min-width:200px; }
+}
 @media(max-width:768px) {
-    /* ── Layout: only show right panel in normal flow ── */
-    .off-layout { display:block; }
+    .of1-grid { grid-template-columns:1fr; }
+    .of-types { grid-template-columns:repeat(3,1fr); }
+    .of2-prod-head { display:none; }
+    .of2-row { grid-template-columns:30px 36px 1fr 58px; gap:.4rem; padding:.55rem .85rem; }
+    .of2-col-offer { display:none; }
+    .of2-summary { flex-direction:column; }
+    .of2-count-badge { border-right:none; border-bottom:1px solid #eef0ed; padding-bottom:.75rem; }
+}
+@media(max-width:640px) {
+    /* Cards */
+    .of-card { padding:.9rem; margin-bottom:.75rem; border-radius:12px; }
+    .of-card-title { font-size:.66rem; margin-bottom:.65rem; }
 
-    /* ── Left panel becomes a bottom sheet ── */
-    .off-left {
-        position:fixed; left:0; right:0; bottom:0; z-index:820;
-        top:auto; max-height:0; overflow:hidden;
-        background:#fff; border-radius:20px 20px 0 0;
-        box-shadow:0 -8px 32px rgba(0,0,0,.2);
-        transition:max-height .38s cubic-bezier(.4,0,.2,1);
-        padding-right:0; overflow-y:auto; scrollbar-width:none;
-    }
-    .off-left::-webkit-scrollbar { display:none; }
-    .off-left.mob-open { max-height:92vh; }
+    /* Step bar */
+    .of-steps { padding:.4rem; margin-bottom:.85rem; }
+    .of-step { font-size:.72rem; padding:.45rem .3rem; gap:.35rem; }
+    .of-step-num { width:19px; height:19px; font-size:.63rem; }
 
-    .off-left-handle {
-        display:block; width:36px; height:4px; background:#dde0db;
-        border-radius:2px; margin:.7rem auto .2rem; flex-shrink:0;
-    }
-    .off-left-topbar {
-        display:flex; align-items:center; justify-content:space-between;
-        padding:.4rem 1.25rem .75rem; flex-shrink:0;
-    }
-    .off-left-topbar-title {
-        font-size:.93rem; font-weight:800; color:#1a1f18;
-        display:flex; align-items:center; gap:.45rem;
-    }
-    .off-left-close-btn {
-        width:30px; height:30px; border:1.5px solid #eef0ed; border-radius:9px;
-        background:#f5f7f4; cursor:pointer; display:flex; align-items:center;
-        justify-content:center; font-size:.85rem; color:#6b7280;
-    }
-    .off-left-inner { padding:0 1.25rem calc(1.5rem + env(safe-area-inset-bottom,0px)); }
+    /* Type options: keep 3-col grid, just smaller */
+    .of-types { grid-template-columns:repeat(3,1fr); gap:.4rem; }
+    .of-type-opt { padding:.6rem .4rem; gap:.3rem; border-radius:10px; }
+    .of-type-icon { width:28px; height:28px; font-size:.78rem; border-radius:7px; }
+    .of-type-label { font-size:.7rem; }
+    .of-type-desc  { font-size:.6rem; display:none; }
 
-    /* ── Overlay ── */
-    .mob-overlay {
-        display:block; position:fixed; inset:0; z-index:810;
-        background:rgba(0,0,0,.45); opacity:0; pointer-events:none;
-        transition:opacity .3s;
+    /* Multi-buy */
+    .of-mb-opts { grid-template-columns:1fr 1fr; gap:.4rem; }
+    .of-mb-opt { padding:.5rem .6rem; }
+    .of-mb-badge { min-width:32px; height:24px; font-size:.72rem; }
+    .of-mb-text { font-size:.73rem; }
+
+    /* Form inputs */
+    .of-label { font-size:.7rem; }
+    .of-input { padding:.52rem .7rem; font-size:.82rem; }
+    .of-field { margin-bottom:.65rem; }
+
+    /* Date trigger */
+    .cdp-trigger { padding:.52rem .7rem; font-size:.82rem; }
+
+    /* Action bar */
+    .of-actionbar { padding:.65rem .85rem; margin-top:.75rem; }
+    .of-btn { padding:.52rem 1rem; font-size:.8rem; }
+
+    /* Step 2 toolbar: search + 2 dropdowns + checkbox all on one row */
+    .of2-toolbar { padding:.55rem .75rem; gap:.4rem; flex-wrap:nowrap; }
+    .of2-search { flex:1; min-width:0; }
+    .pf-dd-t { height:32px; padding:0 .55rem; font-size:.73rem; min-width:80px; }
+    /* Brand dropdown opens to the right edge */
+    #dd2Brand .pf-dd-m { left:auto; right:0; }
+    /* Select-all: checkbox only, no text */
+    .of2-selall { margin-left:0; }
+    .of2-selall-text { display:none; }
+
+    /* ── Step 2 summary: sticky bottom bar ── */
+    .of2-layout { display:block; }
+    .of2-right { display:none; } /* hide original floating panel */
+    .of2-sticky-bar {
+        display:flex !important;
+        position:fixed; bottom:0; left:0; right:0; z-index:400;
+        background:#fff; border-top:1.5px solid #eef0ed;
+        box-shadow:0 -4px 16px rgba(0,0,0,.1);
+        padding:.65rem 1rem; align-items:center; gap:.75rem;
     }
-    .mob-overlay.open { opacity:1; pointer-events:auto; }
-
-    /* ── Fixed bottom action bar ── */
-    .mob-bar {
-        display:flex; align-items:center; justify-content:space-between; gap:1rem;
-        position:fixed; bottom:0; left:0; right:0; z-index:700;
-        background:#fff; border-top:1px solid #eef0ed;
-        padding:.7rem 1.25rem;
-        padding-bottom:calc(.7rem + env(safe-area-inset-bottom,0px));
-        box-shadow:0 -4px 20px rgba(0,0,0,.09);
+    .of2-sticky-count {
+        display:flex; flex-direction:column; align-items:center;
+        background:#f0fdf4; border:1px solid #c6d4c5; border-radius:10px;
+        padding:.3rem .65rem; flex-shrink:0;
     }
-    .mob-bar-info { line-height:1.2; }
-    .mob-bar-label { font-size:.68rem; color:#8a9186; font-weight:600; text-transform:uppercase; letter-spacing:.04em; }
-    .mob-bar-num   { font-size:1.4rem; font-weight:900; color:#1a1f18; }
-    .mob-bar-btn {
-        flex-shrink:0; padding:.65rem 1.3rem;
-        background:#4F5D4E; color:#fff; border:none; border-radius:11px;
-        font-size:.88rem; font-weight:700; font-family:inherit; cursor:pointer;
-        display:flex; align-items:center; gap:.45rem; transition:opacity .15s;
-    }
-    .mob-bar-btn:active { opacity:.82; }
-
-    /* ── Right panel: padding for fixed bottom bar ── */
-    .off-right { padding-bottom:76px; }
-
-    /* ── Toolbar: 2-row layout (search full-width, filters below) ── */
-    .off-toolbar { flex-wrap:wrap; overflow:visible; gap:.5rem; padding:.7rem .9rem; }
-    .off-search { flex:0 0 100%; max-width:100%; }
-    .off-toolbar .pf-dd { flex:1; min-width:0; }
-    .off-toolbar .pf-dd-trigger { width:100%; justify-content:space-between; box-sizing:border-box; white-space:nowrap; min-width:0; }
-    .off-toolbar .pf-dd-menu { min-width:180px; }
-    .off-selall { flex-shrink:0; margin-left:auto; white-space:nowrap; }
-
-    /* ── Product rows: hide header, compact grid ── */
-    .off-tbl-head { display:none; }
-    .off-prod-row { grid-template-columns:28px 38px 1fr 65px; gap:.45rem; padding:.6rem .9rem; }
-    .off-prod-col-offer { display:none; }  /* hide separate offer column on mobile */
-    .off-offer-tag-inline { display:inline-flex; align-items:center; gap:3px; font-size:.65rem; font-weight:700; background:#f0fdf4; color:#4F5D4E; border:1px solid #c6d4c5; padding:1px 6px; border-radius:20px; white-space:nowrap; max-width:100%; overflow:hidden; text-overflow:ellipsis; margin-top:1px; }
-    .var-pills-row { grid-column:1 / -1; padding-left:70px; }
-    .off-prod-img { width:38px; height:38px; }
-    .off-prod-brand { display:none; }
-    .off-prod-list { max-height:none; }
-
-    /* ── Pagination ── */
-    .off-pager { grid-template-columns:auto 1fr; gap:.45rem; }
-    .pg-info { grid-column:1/-1; text-align:center; }
+    .of2-sticky-count-num { font-size:1.1rem; font-weight:900; color:#4F5D4E; line-height:1; }
+    .of2-sticky-count-lbl { font-size:.57rem; color:#6b7280; font-weight:600; white-space:nowrap; }
+    .of2-sticky-btn { flex:1; justify-content:center; padding:.6rem; font-size:.84rem; }
+    /* Add bottom padding to product list so sticky bar doesn't cover last item */
+    .of2-prod-card { margin-bottom:72px; }
 }
 </style>
 
-<!-- ── Compact product data as JSON ── -->
+<!-- Product data for JS -->
 <script>
-const PD = [{% for p in all_products %}{"id":"{{ p._id }}","n":{{ p.name|tojson }},"b":{{ (p.brand or '')|tojson }},"c":{{ p.category|tojson }},"sc":{{ (p.subcategory or '')|tojson }},"p":{{ p.price|float }},"img":{{ (p.image_url or '')|tojson }},"on":{{ (p.offer_name or '')|tojson }},"variants":{{ (p.variants or [])|tojson }}}{% if not loop.last %},{% endif %}{% endfor %}];
+const PD = [{% for p in all_products %}{"id":"{{ p._id }}","n":{{ p.name|tojson }},"b":{{ (p.brand or '')|tojson }},"c":{{ p.category|tojson }},"sc":{{ (p.subcategory or '')|tojson }},"p":{{ p.price|float }},"img":{{ (p.image_url or '')|tojson }},"on":{{ (p.offer_name or '')|tojson }},"ot":{{ (p.offer_type or '')|tojson }}}{% if not loop.last %},{% endif %}{% endfor %}];
+const EDIT_OFFER = {{ edit_offer|tojson }};
 </script>
 
-<!-- ── Delete offer confirmation modal ── -->
-<div id="delOfferModal" style="display:none;position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.45);align-items:center;justify-content:center;">
-    <div style="background:#fff;border-radius:16px;padding:1.75rem;max-width:380px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,.2);" onclick="event.stopPropagation();">
-        <div style="width:48px;height:48px;border-radius:12px;background:#fef2f2;display:flex;align-items:center;justify-content:center;margin-bottom:1rem;">
-            <i class="fas fa-trash" style="color:#dc2626;font-size:1.1rem;"></i>
-        </div>
-        <div style="font-size:1rem;font-weight:800;color:#1a1f18;margin-bottom:.4rem;">Fshi Ofertën?</div>
-        <div style="font-size:.84rem;color:#6b7280;margin-bottom:1.25rem;" id="delOfferMsg">Kjo veprim do të heqë ofertën nga të gjitha produktet.</div>
-        <div style="display:flex;gap:.6rem;justify-content:flex-end;">
-            <button type="button" onclick="closeDelModal()"
-                style="padding:.55rem 1.1rem;border:1.5px solid #e2e8f0;border-radius:9px;background:#fff;color:#374151;font-size:.84rem;font-weight:700;cursor:pointer;font-family:inherit;">
-                Anulo
-            </button>
-            <button type="button" id="delOfferConfirmBtn" onclick="confirmDeleteOffer()"
-                style="padding:.55rem 1.1rem;border:none;border-radius:9px;background:#dc2626;color:#fff;font-size:.84rem;font-weight:700;cursor:pointer;font-family:inherit;">
-                <i class="fas fa-trash"></i> Po, Fshi
-            </button>
-        </div>
+<div class="of-form-wrap">
+<!-- Step bar -->
+<div class="of-steps">
+    <div class="of-step active" id="stepBtn1" onclick="goStep(1)">
+        <span class="of-step-num" id="stepN1">1</span>
+        <span>Detajet e Ofertës</span>
+    </div>
+    <div class="of-step-div"></div>
+    <div class="of-step" id="stepBtn2" onclick="goStep(2)">
+        <span class="of-step-num" id="stepN2">2</span>
+        <span>Zgjidhni Produktet</span>
     </div>
 </div>
 
-<form method="POST" action="{{ url_for('admin.bulk_offers') }}" id="offForm">
+<form method="POST" action="{{ url_for('admin.bulk_offers') }}" id="mainForm">
 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-<input type="hidden" name="target_name" id="targetName" value="">
-<!-- Hidden inputs for custom selects -->
-<input type="hidden" name="offer_type" id="offerTypeVal" value="discount">
-<input type="hidden" name="multi_buy_type" id="multiBuyTypeVal" value="1+1">
-<input type="hidden" name="discount_from" id="discountFromVal" value="">
-<input type="hidden" name="discount_until" id="discountUntilVal" value="">
+<input type="hidden" name="offer_type"      id="hidType"     value="discount">
+<input type="hidden" name="multi_buy_type"  id="hidMB"       value="1+1">
+<input type="hidden" name="discount_from"   id="hidFrom"     value="">
+<input type="hidden" name="discount_until"  id="hidUntil"    value="">
 
-<div class="off-layout">
+<!-- ════ STEP 1 — Details ════ -->
+<div class="of-panel visible" id="panel1">
+    <div class="of1-grid">
 
-    <!-- ────────── LEFT PANEL (bottom sheet on mobile) ────────── -->
-    <div class="off-left" id="offLeft">
-        <div class="off-left-handle"></div>
-        <div class="off-left-topbar">
-            <div class="off-left-topbar-title"><i class="fas fa-sliders-h" style="color:#4F5D4E;"></i> Konfiguro Ofertën</div>
-            <button type="button" class="off-left-close-btn" onclick="closeMobConfig()"><i class="fas fa-times"></i></button>
-        </div>
-        <div class="off-left-inner">
-
-        <!-- Active offers -->
-        <div class="off-card">
-            <div class="off-card-title"><i class="fas fa-fire-alt" style="color:#d97706;"></i> Ofertat Aktive</div>
-            {% if active_offers_info %}
-            {% for offer in active_offers_info %}
-            <div class="aor" id="aor-{{ loop.index }}"
-                 data-name="{{ offer.name|e }}"
-                 data-type="{{ offer.type|e }}"
-                 data-value="{{ offer.value|e }}"
-                 data-start="{{ offer.start or '' }}"
-                 data-expiry="{{ offer.expiry or '' }}">
-                <div class="aor-dot"></div>
-                <div class="aor-info">
-                    <span class="aor-name">{{ offer.name }}</span>
-                    <span class="aor-meta">{{ offer.count }} produkte ·
-                        {% if offer.type == 'discount' %}{{ offer.value }}% zbritje{% else %}{{ offer.value }}{% endif %}
-                        {% if offer.expiry %} · skadon {{ offer.expiry }}{% endif %}
-                    </span>
-                </div>
-                <button type="button" class="aor-del" title="Fshi ofertën"
-                        data-offer="{{ offer.name|e }}">
-                    <i class="fas fa-times"></i>
-                </button>
+        <!-- Name -->
+        <div class="of-card of1-full">
+            <div class="of-card-title"><i class="fas fa-tag"></i> Emri i Ofertës</div>
+            <div class="of-field">
+                <label class="of-label">Emri<span>*</span></label>
+                <input type="text" name="offer_name" id="fldName" class="of-input"
+                       placeholder="p.sh. Oferta e Verës, Java Dermokozmetikës..."
+                       value="{{ edit_offer.name if edit_offer else '' }}"
+                       oninput="clearErr('fldName','errName')">
+                <div class="of-field-err" id="errName"><i class="fas fa-exclamation-circle"></i> Ju lutem shkruani emrin e ofertës.</div>
             </div>
-            {% endfor %}
-            {% else %}
-            <div class="no-offers-msg">
-                <i class="fas fa-tag" style="font-size:1.4rem;opacity:.18;display:block;margin-bottom:.4rem;"></i>
-                Nuk ka oferta aktive
-            </div>
-            {% endif %}
         </div>
 
-        <!-- Config + actions -->
-        <div class="off-card">
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
-                <div class="off-card-title" style="margin-bottom:0;" id="configCardTitle">
-                    <i class="fas fa-sliders-h"></i> Konfigurimi
+        <!-- Type -->
+        <div class="of-card of1-full">
+            <div class="of-card-title"><i class="fas fa-list"></i> Lloji i Ofertës</div>
+            <div class="of-types" id="typeOpts">
+                <div class="of-type-opt selected" data-type="discount" onclick="pickType('discount')">
+                    <div class="of-type-icon"><i class="fas fa-percent"></i></div>
+                    <div class="of-type-label">Zbritje %</div>
+                    <div class="of-type-desc">Hiq përqindjen nga çmimi</div>
                 </div>
-                <button type="button" id="newOfferBtn" onclick="resetToNew()"
-                    style="padding:.32rem .65rem;background:#f0fdf4;border:1.5px solid #c6d4c5;border-radius:7px;
-                           font-size:.74rem;font-weight:700;color:var(--adm-accent);cursor:pointer;
-                           display:flex;align-items:center;gap:.3rem;transition:all .15s;white-space:nowrap;">
-                    <i class="fas fa-plus"></i> Ofertë e Re
-                </button>
-            </div>
-            <div class="sel-badge-wrap">
-                <div class="sel-badge" id="selBadge">0</div>
-                <div class="sel-label">produkte të zgjedhura</div>
-            </div>
-
-            <div class="off-field">
-                <label class="off-label"><i class="fas fa-tag"></i> Emri i Ofertës</label>
-                <input type="text" name="offer_name" id="offerName" class="off-input" placeholder="p.sh. Oferta e Verës" required>
-            </div>
-
-            <div class="off-field">
-                <label class="off-label"><i class="fas fa-list"></i> Lloji i Ofertës</label>
-                <div class="csel" id="cselType">
-                    <div class="csel-trigger" onclick="toggleCsel('cselType')">
-                        <i class="fas fa-percent csel-icon" style="font-size:.72rem;color:#6b7280;"></i>
-                        <span class="csel-label" id="cselTypeLabel">Zbritje (%)</span>
-                        <i class="fas fa-chevron-down csel-arrow"></i>
-                    </div>
-                    <div class="csel-panel" id="cselTypePanel">
-                        <div class="csel-opt selected" data-value="discount" onclick="pickCsel('cselType','discount','','Zbritje (%)');toggleOfferType();">
-                            <i class="fas fa-percent csel-opt-icon" style="font-size:.72rem;color:#6b7280;"></i> Zbritje (%)
-                            <i class="fas fa-check csel-check"></i>
-                        </div>
-                        <div class="csel-opt" data-value="multi_buy" onclick="pickCsel('cselType','multi_buy','','Multi Buy');toggleOfferType();">
-                            <i class="fas fa-layer-group csel-opt-icon" style="font-size:.72rem;color:#6b7280;"></i> Multi Buy
-                            <i class="fas fa-check csel-check"></i>
-                        </div>
-                    </div>
+                <div class="of-type-opt" data-type="multi_buy" onclick="pickType('multi_buy')">
+                    <div class="of-type-icon"><i class="fas fa-layer-group"></i></div>
+                    <div class="of-type-label">Multi Buy</div>
+                    <div class="of-type-desc">1+1, 2+1, 3+1 falas</div>
+                </div>
+                <div class="of-type-opt" data-type="fixed_amount" onclick="pickType('fixed_amount')">
+                    <div class="of-type-icon"><i class="fas fa-euro-sign"></i></div>
+                    <div class="of-type-label">Çmim Fiks</div>
+                    <div class="of-type-desc">Zbritje me shumë fikse në €</div>
                 </div>
             </div>
+        </div>
 
-            <div class="off-field" id="discountField">
-                <label class="off-label"><i class="fas fa-percent"></i> Përqindja e Zbritjes</label>
-                <input type="number" name="discount_percent" id="discountPercent" class="off-input"
-                       min="1" max="99" placeholder="p.sh. 20">
+        <!-- Discount % (shows when type=discount) -->
+        <div class="of-card of1-full" id="discountCard">
+            <div class="of-card-title"><i class="fas fa-percent"></i> Përqindja e Zbritjes</div>
+            <div class="of-field">
+                <label class="of-label">Zbritja (1–99%)<span>*</span></label>
+                <div class="of-input-wrap">
+                    <input type="number" name="discount_percent" id="fldPct" class="of-input has-suffix"
+                           min="1" max="99" placeholder="p.sh. 20"
+                           value="{{ edit_offer.discount_percent if edit_offer and edit_offer.type=='discount' else '' }}"
+                           oninput="clearErr('fldPct','errPct')">
+                    <span class="of-input-suffix">%</span>
+                </div>
+                <div class="of-field-err" id="errPct"><i class="fas fa-exclamation-circle"></i> Shkruani një përqindje midis 1 dhe 99.</div>
             </div>
+        </div>
 
-            <div class="off-field" id="multiBuyField" style="display:none;">
-                <label class="off-label"><i class="fas fa-layer-group"></i> Lloji Multi Buy</label>
-                <div class="csel" id="cselMB">
-                    <div class="csel-trigger" onclick="toggleCsel('cselMB')">
-                        <i class="fas fa-layer-group csel-icon" style="font-size:.72rem;color:#6b7280;"></i>
-                        <span class="csel-label" id="cselMBLabel">1+1 — Bli 1, Merr 1 Falas</span>
-                        <i class="fas fa-chevron-down csel-arrow"></i>
-                    </div>
-                    <div class="csel-panel" id="cselMBPanel">
-                        <div class="csel-opt selected" data-value="1+1" onclick="pickCsel('cselMB','1+1','','1+1 — Bli 1, Merr 1 Falas')">
-                            1+1 — Bli 1, Merr 1 Falas <i class="fas fa-check csel-check"></i>
-                        </div>
-                        <div class="csel-opt" data-value="2+1" onclick="pickCsel('cselMB','2+1','','2+1 — Bli 2, Merr 1 Falas')">
-                            2+1 — Bli 2, Merr 1 Falas <i class="fas fa-check csel-check"></i>
-                        </div>
-                        <div class="csel-opt" data-value="3+1" onclick="pickCsel('cselMB','3+1','','3+1 — Bli 3, Merr 1 Falas')">
-                            3+1 — Bli 3, Merr 1 Falas <i class="fas fa-check csel-check"></i>
-                        </div>
-                        <div class="csel-opt" data-value="buy2get50" onclick="pickCsel('cselMB','buy2get50','','Bli 2, Merr 50% Zbritje')">
-                            Bli 2, Merr 50% Zbritje <i class="fas fa-check csel-check"></i>
-                        </div>
-                    </div>
+        <!-- Multi-buy options (shows when type=multi_buy) -->
+        <div class="of-card of1-full" id="multiBuyCard" style="display:none;">
+            <div class="of-card-title"><i class="fas fa-layer-group"></i> Lloji Multi Buy</div>
+            <div class="of-mb-opts">
+                <div class="of-mb-opt selected" data-mb="1+1" onclick="pickMB(this,'1+1')">
+                    <div class="of-mb-badge">1+1</div>
+                    <div class="of-mb-text">Bli 1, Merr 1 Falas</div>
+                </div>
+                <div class="of-mb-opt" data-mb="2+1" onclick="pickMB(this,'2+1')">
+                    <div class="of-mb-badge">2+1</div>
+                    <div class="of-mb-text">Bli 2, Merr 1 Falas</div>
+                </div>
+                <div class="of-mb-opt" data-mb="3+1" onclick="pickMB(this,'3+1')">
+                    <div class="of-mb-badge">3+1</div>
+                    <div class="of-mb-text">Bli 3, Merr 1 Falas</div>
+                </div>
+                <div class="of-mb-opt" data-mb="buy2get50" onclick="pickMB(this,'buy2get50')">
+                    <div class="of-mb-badge" style="font-size:.65rem;">2+50%</div>
+                    <div class="of-mb-text">Bli 2, Merr 50% Zbritje</div>
                 </div>
             </div>
+        </div>
 
-            <div class="off-field">
-                <label class="off-label"><i class="fas fa-calendar-check"></i> Fillon më (default: sot)</label>
-                <div class="cdp" id="cdpFromWrap">
-                    <div class="cdp-trigger" id="cdpFromTrigger" onclick="toggleCdpFrom()">
+        <!-- Fixed amount (shows when type=fixed_amount) -->
+        <div class="of-card of1-full" id="fixedCard" style="display:none;">
+            <div class="of-card-title"><i class="fas fa-euro-sign"></i> Shuma e Zbritjes</div>
+            <div class="of-field">
+                <label class="of-label">Zbritja në Euro<span>*</span></label>
+                <div class="of-input-wrap">
+                    <span class="of-input-prefix">€</span>
+                    <input type="number" name="fixed_amount" id="fldFixed" class="of-input"
+                           min="0.01" step="0.01" placeholder="p.sh. 5.00"
+                           style="padding-left:2rem;"
+                           value="{{ edit_offer.fixed_amount if edit_offer and edit_offer.type=='fixed_amount' else '' }}"
+                           oninput="clearErr('fldFixed','errFixed')">
+                </div>
+                <div class="of-field-err" id="errFixed"><i class="fas fa-exclamation-circle"></i> Shkruani një shumë të vlefshme (> 0).</div>
+                <div style="font-size:.73rem;color:#9aa095;margin-top:.4rem;">
+                    <i class="fas fa-info-circle" style="font-size:.68rem;"></i>
+                    P.sh. produkti me çmim €25 do të kushtojë €20 me zbritje €5.
+                </div>
+            </div>
+        </div>
+
+        <!-- Start date -->
+        <div class="of-card date-card">
+            <div class="of-card-title"><i class="fas fa-calendar-check"></i> Data e Fillimit</div>
+            <div class="of-field">
+                <label class="of-label">Fillon (default: sot)</label>
+                <div class="cdp" id="cdpFrom">
+                    <div class="cdp-trigger" id="cdpFromTrig" onclick="toggleCdp('from')">
                         <i class="fas fa-calendar"></i>
-                        <span class="cdp-txt" id="cdpFromDisplay">Sot (default)</span>
-                        <button type="button" class="cdp-clear" onclick="event.stopPropagation();clearFromDate()"><i class="fas fa-times"></i></button>
+                        <span class="cdp-txt" id="cdpFromTxt">Sot (default)</span>
+                        <button type="button" class="cdp-clr" onclick="event.stopPropagation();clearCdp('from')"><i class="fas fa-times"></i></button>
                     </div>
                     <div class="cdp-panel" id="cdpFromPanel">
-                        <div class="cdp-header">
-                            <button type="button" class="cdp-nav" onclick="cdpFromNav(-1)"><i class="fas fa-chevron-left"></i></button>
-                            <div class="cdp-month-year" id="cdpFromMonthYear"></div>
-                            <button type="button" class="cdp-nav" onclick="cdpFromNav(1)"><i class="fas fa-chevron-right"></i></button>
+                        <div class="cdp-hd">
+                            <button type="button" class="cdp-nav" onclick="cdpNav('from',-1)"><i class="fas fa-chevron-left"></i></button>
+                            <div class="cdp-my" id="cdpFromMY"></div>
+                            <button type="button" class="cdp-nav" onclick="cdpNav('from',1)"><i class="fas fa-chevron-right"></i></button>
                         </div>
-                        <div class="cdp-weekdays" id="cdpFromWeekdays"></div>
+                        <div class="cdp-wds" id="cdpFromWD"></div>
                         <div class="cdp-days" id="cdpFromDays"></div>
-                        <div class="cdp-footer">
-                            <button type="button" class="cdp-footer-btn" onclick="clearFromDate()">Pastro</button>
-                            <button type="button" class="cdp-footer-btn primary" onclick="closeCdpFrom()">Mbyll</button>
+                        <div class="cdp-ft">
+                            <button type="button" class="cdp-ftbtn" onclick="clearCdp('from')">Pastro</button>
+                            <button type="button" class="cdp-ftbtn pri" onclick="closeCdp('from')">Mbyll</button>
                         </div>
                     </div>
                 </div>
             </div>
+        </div>
 
-            <div class="off-field">
-                <label class="off-label"><i class="fas fa-calendar-alt"></i> Skadon më (opsionale)</label>
-                <div class="cdp" id="cdpWrap">
-                    <div class="cdp-trigger" id="cdpTrigger" onclick="toggleCdp()">
+        <!-- End date -->
+        <div class="of-card date-card">
+            <div class="of-card-title"><i class="fas fa-calendar-alt"></i> Data e Mbarimit</div>
+            <div class="of-field">
+                <label class="of-label">Skadon më (opsionale)</label>
+                <div class="cdp" id="cdpUntil">
+                    <div class="cdp-trigger" id="cdpUntilTrig" onclick="toggleCdp('until')">
                         <i class="fas fa-calendar"></i>
-                        <span class="cdp-txt" id="cdpDisplay">Zgjidh datën...</span>
-                        <button type="button" class="cdp-clear" onclick="event.stopPropagation();clearDate()"><i class="fas fa-times"></i></button>
+                        <span class="cdp-txt" id="cdpUntilTxt">Pa datë skadencie</span>
+                        <button type="button" class="cdp-clr" onclick="event.stopPropagation();clearCdp('until')"><i class="fas fa-times"></i></button>
                     </div>
-                    <div class="cdp-panel" id="cdpPanel">
-                        <div class="cdp-header">
-                            <button type="button" class="cdp-nav" onclick="cdpNav(-1)"><i class="fas fa-chevron-left"></i></button>
-                            <div class="cdp-month-year" id="cdpMonthYear"></div>
-                            <button type="button" class="cdp-nav" onclick="cdpNav(1)"><i class="fas fa-chevron-right"></i></button>
+                    <div class="cdp-panel" id="cdpUntilPanel">
+                        <div class="cdp-hd">
+                            <button type="button" class="cdp-nav" onclick="cdpNav('until',-1)"><i class="fas fa-chevron-left"></i></button>
+                            <div class="cdp-my" id="cdpUntilMY"></div>
+                            <button type="button" class="cdp-nav" onclick="cdpNav('until',1)"><i class="fas fa-chevron-right"></i></button>
                         </div>
-                        <div class="cdp-weekdays" id="cdpWeekdays"></div>
-                        <div class="cdp-days" id="cdpDays"></div>
-                        <div class="cdp-footer">
-                            <button type="button" class="cdp-footer-btn" onclick="clearDate()">Pastro</button>
-                            <button type="button" class="cdp-footer-btn primary" onclick="closeCdp()">Mbyll</button>
+                        <div class="cdp-wds" id="cdpUntilWD"></div>
+                        <div class="cdp-days" id="cdpUntilDays"></div>
+                        <div class="cdp-ft">
+                            <button type="button" class="cdp-ftbtn" onclick="clearCdp('until')">Pastro</button>
+                            <button type="button" class="cdp-ftbtn pri" onclick="closeCdp('until')">Mbyll</button>
                         </div>
                     </div>
                 </div>
             </div>
-
-            <div style="margin-top:1rem;">
-                <button type="submit" name="action" value="apply" class="off-btn-apply">
-                    <i class="fas fa-check-circle"></i> Apliko Ofertën
-                </button>
-                <button type="submit" name="action" value="remove" class="off-btn-remove">
-                    <i class="fas fa-ban"></i> Largo Ofertën nga Produktet
-                </button>
-            </div>
-        </div><!-- /.off-card config -->
-        </div><!-- /.off-left-inner -->
-    </div><!-- /.off-left -->
-
-    <!-- ────────── RIGHT PANEL ────────── -->
-    <div class="off-right">
-        <div class="off-toolbar">
-            <div class="off-search">
-                <i class="fas fa-search"></i>
-                <input type="text" id="offSearch" placeholder="Kërko produkt..." autocomplete="off">
-            </div>
-
-            <!-- Category filter -->
-            <div class="pf-dd" id="tbDdCat">
-                <div class="pf-dd-trigger" id="tbDdCatTrigger" onclick="toggleTbDd('tbDdCat')">
-                    <span id="tbCatLabel">Kategoria</span>
-                    <i class="fas fa-chevron-down dd-arrow"></i>
-                </div>
-                <div class="pf-dd-menu">
-                    <div class="pf-dd-list">
-                        <div class="pf-dd-opt selected" data-value="" onclick="pickTbCat('')">Të gjitha kategorite</div>
-                        {% for cat in categories.keys() %}
-                        <div class="pf-dd-opt" data-value="{{ cat }}" onclick="pickTbCat('{{ cat|e }}')">{{ cat }}</div>
-                        {% endfor %}
-                    </div>
-                </div>
-            </div>
-
-            <!-- Brand filter (multi-select) -->
-            <div class="pf-dd" id="tbDdBrand">
-                <div class="pf-dd-trigger" id="tbDdBrandTrigger" onclick="toggleTbDd('tbDdBrand')">
-                    <span id="msLabel">Brendi</span>
-                    <i class="fas fa-chevron-down dd-arrow"></i>
-                </div>
-                <div class="pf-dd-menu" style="min-width:210px;">
-                    <div class="pf-dd-search">
-                        <i class="fas fa-search"></i>
-                        <input type="text" placeholder="Kërko brend..." id="msSearch" oninput="filterBrandOpts(this.value)" onclick="event.stopPropagation()">
-                    </div>
-                    <div class="pf-dd-list" id="msOpts">
-                        {% for brand in brands %}
-                        <label class="pf-dd-opt">
-                            <input type="checkbox" value="{{ brand }}" onchange="onBrandChange()"> {{ brand }}
-                        </label>
-                        {% endfor %}
-                    </div>
-                    <div class="pf-dd-footer">
-                        <button type="button" class="ms-clear" onclick="clearBrands();event.stopPropagation();">Hiq filtrat e brendeve</button>
-                    </div>
-                </div>
-            </div>
-
-            <label class="off-selall">
-                <input type="checkbox" id="selectAll" onchange="toggleAll(this)"> Të gjitha
-            </label>
         </div>
 
-        <div class="off-prod-card">
-            <div class="off-tbl-head">
-                <span></span><span></span>
-                <span>Produkti</span>
-                <span>Oferta</span>
-                <span>Çmimi</span>
-            </div>
-            <div class="off-prod-list" id="prodList">
-                <div class="adm-skeleton-row"><div class="adm-skeleton adm-skeleton-avatar"></div><div class="adm-skeleton-lines"><div class="adm-skeleton adm-skeleton-line" style="width:55%"></div><div class="adm-skeleton adm-skeleton-line" style="width:30%"></div></div></div>
-                <div class="adm-skeleton-row"><div class="adm-skeleton adm-skeleton-avatar"></div><div class="adm-skeleton-lines"><div class="adm-skeleton adm-skeleton-line" style="width:70%"></div><div class="adm-skeleton adm-skeleton-line" style="width:40%"></div></div></div>
-                <div class="adm-skeleton-row"><div class="adm-skeleton adm-skeleton-avatar"></div><div class="adm-skeleton-lines"><div class="adm-skeleton adm-skeleton-line" style="width:45%"></div><div class="adm-skeleton adm-skeleton-line" style="width:25%"></div></div></div>
-                <div class="adm-skeleton-row"><div class="adm-skeleton adm-skeleton-avatar"></div><div class="adm-skeleton-lines"><div class="adm-skeleton adm-skeleton-line" style="width:60%"></div><div class="adm-skeleton adm-skeleton-line" style="width:35%"></div></div></div>
-            </div>
-        </div>
+    </div><!-- /of1-grid -->
 
-        <div class="off-pager" id="pager" style="display:none;"></div>
-    </div>
-
-    <!-- Mobile action bar -->
-    <div class="mob-bar" id="mobBar">
-        <div class="mob-bar-info">
-            <div class="mob-bar-label">Zgjedhura</div>
-            <div class="mob-bar-num" id="mobBarNum">0</div>
-        </div>
-        <button type="button" class="mob-bar-btn" onclick="openMobConfig()">
-            <i class="fas fa-sliders-h"></i> Konfiguro Ofertën
+    <div class="of-actionbar">
+        <a href="{{ url_for('admin.offers_list') }}" class="of-btn outline">
+            <i class="fas fa-arrow-left"></i> Anulo
+        </a>
+        <button type="button" class="of-btn primary" onclick="validateStep1()">
+            Vazhdo <i class="fas fa-arrow-right"></i>
         </button>
     </div>
 </div>
-<!-- Mobile overlay -->
-<div class="mob-overlay" id="mobOverlay" onclick="closeMobConfig()"></div>
+
+<!-- ════ STEP 2 — Products ════ -->
+<div class="of-panel" id="panel2">
+    <div class="of2-layout">
+
+        <!-- Left: product picker -->
+        <div>
+            <div class="of2-toolbar">
+                <div class="of2-search">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="p2Search" placeholder="Kërko produkt..." autocomplete="off">
+                </div>
+                <!-- Category filter -->
+                <div class="pf-dd" id="dd2Cat">
+                    <div class="pf-dd-t" onclick="toggleDd('dd2Cat')">
+                        <span id="dd2CatLbl">Kategoria</span>
+                        <i class="fas fa-chevron-down arr"></i>
+                    </div>
+                    <div class="pf-dd-m">
+                        <div class="pf-dd-list">
+                            <div class="pf-dd-opt sel" data-v="" onclick="pickCat('')">Të gjitha</div>
+                            {% for cat in categories.keys() %}
+                            <div class="pf-dd-opt" data-v="{{ cat }}" onclick="pickCat('{{ cat|e }}')">{{ cat }}</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                <!-- Brand filter -->
+                <div class="pf-dd" id="dd2Brand">
+                    <div class="pf-dd-t" onclick="toggleDd('dd2Brand')">
+                        <span id="dd2BrandLbl">Brendi</span>
+                        <i class="fas fa-chevron-down arr"></i>
+                    </div>
+                    <div class="pf-dd-m" style="min-width:220px;">
+                        <div style="padding:.5rem .75rem .4rem;border-bottom:1px solid #f0f2f0;display:flex;align-items:center;gap:.45rem;">
+                            <i class="fas fa-search" style="color:#9aa095;font-size:.75rem;flex-shrink:0;"></i>
+                            <input type="text" id="p2BrandSearch" placeholder="Kërko brend..."
+                                   onclick="event.stopPropagation()"
+                                   oninput="filterBrandSearch(this.value)"
+                                   style="border:none;outline:none;font-size:.82rem;color:#1a1f18;background:transparent;width:100%;font-family:inherit;">
+                        </div>
+                        <div class="pf-dd-list" id="p2BrandList" style="max-height:220px;">
+                            {% for brand in brands %}
+                            <label class="pf-dd-opt" data-brand="{{ brand|lower }}">
+                                <input type="checkbox" value="{{ brand }}" onchange="onBrandCh()"> {{ brand }}
+                            </label>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <label class="of2-selall">
+                    <input type="checkbox" id="selAllCb" onchange="toggleAll(this)"><span class="of2-selall-text"> Të gjitha</span>
+                </label>
+            </div>
+
+            <div class="of2-prod-card">
+                <div class="of2-prod-head">
+                    <span></span><span></span>
+                    <span>Produkti</span>
+                    <span>Oferta</span>
+                    <span>Çmimi</span>
+                </div>
+                <div class="of2-prod-list" id="p2List">
+                    <!-- rendered by JS -->
+                    <div class="of2-empty"><i class="fas fa-spinner fa-spin" style="font-size:1.5rem;opacity:.4;"></i></div>
+                </div>
+            </div>
+            <div class="of2-pager" id="p2Pager" style="display:none;"></div>
+
+            <!-- Remove from existing offer -->
+            <div class="of2-remove-wrap" id="p2RemoveWrap" style="display:none;">
+                <div class="of2-remove-info">
+                    Keni zgjedhur produkte. Mund t'i <strong>hiqni ofertën</strong> nga produktet e zgjedhura.
+                </div>
+                <button type="button" class="of-btn danger" onclick="submitRemove()"
+                        style="white-space:nowrap; flex-shrink:0;">
+                    <i class="fas fa-ban"></i> Largo Ofertën
+                </button>
+            </div>
+        </div>
+
+        <!-- Right: summary -->
+        <div class="of2-right">
+            <div class="of2-summary">
+                <div class="of2-sum-title"><i class="fas fa-clipboard-list"></i> Përmbledhja</div>
+
+                <div class="of2-count-badge">
+                    <div class="of2-count-num" id="sumCount">0</div>
+                    <div class="of2-count-lbl">produkte të zgjedhura</div>
+                </div>
+
+                <div class="of2-offer-preview" id="sumPreview">
+                    <div class="of2-preview-row">
+                        <span class="of2-preview-key">Emri</span>
+                        <span class="of2-preview-val" id="sumName">—</span>
+                    </div>
+                    <div class="of2-preview-row">
+                        <span class="of2-preview-key">Lloji</span>
+                        <span class="of2-preview-val" id="sumType">—</span>
+                    </div>
+                    <div class="of2-preview-row">
+                        <span class="of2-preview-key">Vlera</span>
+                        <span class="of2-preview-val" id="sumVal">—</span>
+                    </div>
+                    <div class="of2-preview-row" id="sumExpRow" style="display:none;">
+                        <span class="of2-preview-key">Skadon</span>
+                        <span class="of2-preview-val" id="sumExp">—</span>
+                    </div>
+                </div>
+
+                <button type="button" class="of-btn primary" id="submitBtn"
+                        onclick="submitApply()"
+                        style="width:100%;justify-content:center;opacity:.55;">
+                    <i class="fas fa-check-circle"></i> Apliko Ofertën
+                </button>
+                <div class="of-step2-warn" id="warnNoSel">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    Zgjidhni të paktën 1 produkt para se të aplikoni.
+                </div>
+            </div>
+        </div>
+
+    </div><!-- /of2-layout -->
+
+    <!-- Mobile sticky bottom bar (shown only on ≤640px via CSS) -->
+    <div class="of2-sticky-bar" id="of2StickyBar" style="display:none;">
+        <div class="of2-sticky-count">
+            <span class="of2-sticky-count-num" id="stickyCount">0</span>
+            <span class="of2-sticky-count-lbl">zgjedhura</span>
+        </div>
+        <button type="button" class="of-btn primary of2-sticky-btn" id="stickyApplyBtn"
+                onclick="submitApply()" style="opacity:.55;">
+            <i class="fas fa-check-circle"></i> Apliko Ofertën
+        </button>
+    </div>
+
+    <div class="of-actionbar">
+        <button type="button" class="of-btn outline" onclick="goStep(1)">
+            <i class="fas fa-arrow-left"></i> Mbrapa
+        </button>
+        <span style="font-size:.79rem;color:#8a9186;" id="p2BottomInfo">Zgjidhni të paktën 1 produkt</span>
+    </div>
+</div>
 </form>
+</div><!-- /of-form-wrap -->
 
 <script>
-/* ════════════════════════════════════════
-   CUSTOM SELECT
-════════════════════════════════════════ */
-let _openCsel = null;
-function toggleCsel(id) {
-    const panel = document.getElementById(id+'Panel');
-    const trigger = document.querySelector('#'+id+' .csel-trigger');
-    if (_openCsel && _openCsel !== id) closeCselById(_openCsel);
-    if (panel.classList.contains('open')) { closeCselById(id); }
-    else { panel.classList.add('open'); trigger.classList.add('open'); _openCsel = id; }
-}
-function closeCselById(id) {
-    const panel = document.getElementById(id+'Panel');
-    const trigger = document.querySelector('#'+id+' .csel-trigger');
-    if (panel) panel.classList.remove('open');
-    if (trigger) trigger.classList.remove('open');
-    if (_openCsel === id) _openCsel = null;
-}
-function pickCsel(id, value, icon, label) {
-    document.getElementById(id+'Label').textContent = label;
-    // mark selected
-    document.querySelectorAll('#'+id+'Panel .csel-opt').forEach(o => {
-        o.classList.toggle('selected', o.dataset.value === value);
+/* ════════════════════════════════
+   STEP NAVIGATION
+════════════════════════════════ */
+let currentStep = 1;
+function goStep(n) {
+    if (n === 2 && !validateStep1(false)) return;
+    currentStep = n;
+    document.querySelectorAll('.of-panel').forEach((p,i) => p.classList.toggle('visible', i+1===n));
+    // Update step buttons
+    [1,2].forEach(i => {
+        const btn = document.getElementById('stepBtn'+i);
+        const num = document.getElementById('stepN'+i);
+        btn.classList.remove('active','done');
+        if (i < n) { btn.classList.add('done'); num.innerHTML = '<i class="fas fa-check" style="font-size:.65rem;"></i>'; }
+        else if (i === n) { btn.classList.add('active'); num.textContent = i; }
+        else { num.textContent = i; }
     });
-    closeCselById(id);
-    // update hidden input
-    if (id === 'cselType') document.getElementById('offerTypeVal').value = value;
-    if (id === 'cselMB')   document.getElementById('multiBuyTypeVal').value = value;
+    if (n === 2) updateSummary();
 }
 
-/* Toolbar pf-dd toggle */
-function toggleTbDd(id) {
-    const dd = document.getElementById(id);
-    const isOpen = dd.classList.contains('open');
-    document.querySelectorAll('.off-toolbar .pf-dd.open').forEach(d => d.classList.remove('open'));
-    if (!isOpen) {
-        dd.classList.add('open');
-        if (id === 'tbDdBrand') setTimeout(() => { const s = document.getElementById('msSearch'); if(s) s.focus(); }, 50);
+function showErr(inputId, errId) {
+    const inp = document.getElementById(inputId);
+    const err = document.getElementById(errId);
+    if (inp) inp.classList.add('error');
+    if (err) err.classList.add('show');
+}
+function clearErr(inputId, errId) {
+    const inp = document.getElementById(inputId);
+    const err = document.getElementById(errId);
+    if (inp) inp.classList.remove('error');
+    if (err) err.classList.remove('show');
+}
+
+function validateStep1(show=true) {
+    const name = document.getElementById('fldName').value.trim();
+    const type = document.getElementById('hidType').value;
+    let valid = true;
+
+    if (!name) {
+        if (show) { showErr('fldName','errName'); document.getElementById('fldName').focus(); }
+        valid = false;
     }
-}
-
-/* Category picker */
-let catFilter = '';
-function pickTbCat(val) {
-    catFilter = val;
-    document.getElementById('tbCatLabel').textContent = val || 'Kategoria';
-    document.getElementById('tbDdCatTrigger').classList.toggle('active', !!val);
-    document.querySelectorAll('#tbDdCat .pf-dd-opt').forEach(o => o.classList.toggle('selected', o.dataset.value === val));
-    document.getElementById('tbDdCat').classList.remove('open');
-    currentPage = 1;
-    applyFilters();
-}
-
-/* Close any open csel on outside click */
-document.addEventListener('click', e => {
-    if (_openCsel) {
-        const el = document.getElementById(_openCsel);
-        if (el && !el.contains(e.target)) closeCselById(_openCsel);
+    if (type === 'discount') {
+        const pct = parseFloat(document.getElementById('fldPct').value);
+        if (!pct || pct < 1 || pct > 99) {
+            if (show) { showErr('fldPct','errPct'); if (valid) document.getElementById('fldPct').focus(); }
+            valid = false;
+        }
     }
-    document.querySelectorAll('.off-toolbar .pf-dd.open').forEach(d => {
-        if (!d.contains(e.target)) d.classList.remove('open');
-    });
-    if (!document.getElementById('cdpWrap').contains(e.target)) closeCdp();
-});
-
-function toggleOfferType() {
-    const v = document.getElementById('offerTypeVal').value;
-    document.getElementById('discountField').style.display  = v==='discount'  ? '' : 'none';
-    document.getElementById('multiBuyField').style.display  = v==='multi_buy' ? '' : 'none';
-}
-
-/* ════════════════════════════════════════
-   CUSTOM DATE PICKER
-════════════════════════════════════════ */
-const MONTHS_ALB = ['Janar','Shkurt','Mars','Prill','Maj','Qershor','Korrik','Gusht','Shtator','Tetor','Nëntor','Dhjetor'];
-const DAYS_ALB   = ['Hë','Ma','Më','En','Pr','Sh','Di'];
-let cdpYear, cdpMonth, cdpSelected = null;
-
-function initCdp() {
-    const now = new Date();
-    cdpYear  = now.getFullYear();
-    cdpMonth = now.getMonth();
-    renderCdp();
-}
-function toggleCdp() {
-    const panel = document.getElementById('cdpPanel');
-    if (panel.classList.contains('open')) { closeCdp(); return; }
-    // Smart direction: flip up if not enough space below
-    const trigger = document.getElementById('cdpTrigger');
-    const rect = trigger.getBoundingClientRect();
-    const spaceBelow = window.innerHeight - rect.bottom;
-    panel.classList.toggle('drop-up', spaceBelow < 320);
-    panel.classList.add('open');
-    trigger.classList.add('open');
-    renderCdp();
-}
-function closeCdp() {
-    document.getElementById('cdpPanel').classList.remove('open');
-    document.getElementById('cdpTrigger').classList.remove('open');
-}
-function cdpNav(dir) {
-    cdpMonth += dir;
-    if (cdpMonth > 11) { cdpMonth = 0; cdpYear++; }
-    if (cdpMonth < 0)  { cdpMonth = 11; cdpYear--; }
-    renderCdp();
-}
-function renderCdp() {
-    document.getElementById('cdpMonthYear').textContent = MONTHS_ALB[cdpMonth]+' '+cdpYear;
-    // Weekday headers
-    const wdEl = document.getElementById('cdpWeekdays');
-    wdEl.innerHTML = DAYS_ALB.map(d=>`<div class="cdp-wd">${d}</div>`).join('');
-    // Days
-    const firstDay = new Date(cdpYear, cdpMonth, 1).getDay(); // 0=Sun
-    const startOffset = (firstDay + 6) % 7; // Mon-first
-    const daysInMonth = new Date(cdpYear, cdpMonth+1, 0).getDate();
-    const today = new Date(); today.setHours(0,0,0,0);
-    let html = '';
-    for (let i=0; i<startOffset; i++) html += '<div class="cdp-day empty"></div>';
-    for (let d=1; d<=daysInMonth; d++) {
-        const date = new Date(cdpYear, cdpMonth, d);
-        const isPast = date < today;
-        const isSel = cdpSelected && date.toDateString()===cdpSelected.toDateString();
-        const isToday = date.toDateString()===today.toDateString();
-        html += `<div class="cdp-day${isSel?' selected':''}${isToday&&!isSel?' today':''}${isPast?' disabled':''}"
-                      onclick="${isPast?'':'selectDay('+d+')'}">
-                    ${d}
-                 </div>`;
+    if (type === 'fixed_amount') {
+        const amt = parseFloat(document.getElementById('fldFixed').value);
+        if (!amt || amt <= 0) {
+            if (show) { showErr('fldFixed','errFixed'); if (valid) document.getElementById('fldFixed').focus(); }
+            valid = false;
+        }
     }
-    document.getElementById('cdpDays').innerHTML = html;
-}
-function selectDay(d) {
-    cdpSelected = new Date(cdpYear, cdpMonth, d);
-    const y = cdpSelected.getFullYear();
-    const m = String(cdpSelected.getMonth()+1).padStart(2,'0');
-    const day = String(cdpSelected.getDate()).padStart(2,'0');
-    const iso = `${y}-${m}-${day}`;
-    document.getElementById('discountUntilVal').value = iso;
-    document.getElementById('cdpDisplay').textContent = `${d} ${MONTHS_ALB[cdpSelected.getMonth()]} ${y}`;
-    document.getElementById('cdpTrigger').classList.add('has-value');
-    renderCdp();
-    closeCdp();
-}
-function clearDate() {
-    cdpSelected = null;
-    document.getElementById('discountUntilVal').value = '';
-    document.getElementById('cdpDisplay').textContent = 'Zgjidh datën...';
-    document.getElementById('cdpTrigger').classList.remove('has-value');
-    const now = new Date();
-    cdpYear = now.getFullYear(); cdpMonth = now.getMonth();
-    renderCdp();
-}
-function setCdpValue(isoStr) {
-    if (!isoStr) { clearDate(); return; }
-    const [y,m,d] = isoStr.split('-').map(Number);
-    cdpSelected = new Date(y, m-1, d);
-    cdpYear = y; cdpMonth = m-1;
-    document.getElementById('discountUntilVal').value = isoStr;
-    document.getElementById('cdpDisplay').textContent = `${d} ${MONTHS_ALB[m-1]} ${y}`;
-    document.getElementById('cdpTrigger').classList.add('has-value');
-    renderCdp();
+    if (valid && show) goStep(2);
+    return valid;
 }
 
-/* ════════════════════════════════════════
-   CUSTOM DATE PICKER — FROM (start date)
-════════════════════════════════════════ */
-let cdpFromYear, cdpFromMonth, cdpFromSelected = null;
-
-function initCdpFrom() {
-    const now = new Date();
-    cdpFromYear = now.getFullYear(); cdpFromMonth = now.getMonth();
-    renderCdpFrom();
-    // Weekday headers (same as main CDP)
-    const wd = document.getElementById('cdpFromWeekdays');
-    if (wd) { wd.innerHTML = ''; DAYS_ALB.forEach(d => { const s = document.createElement('div'); s.className = 'cdp-wd'; s.textContent = d; wd.appendChild(s); }); }
+/* ════════════════════════════════
+   TYPE SELECTOR
+════════════════════════════════ */
+function pickType(t) {
+    document.getElementById('hidType').value = t;
+    document.querySelectorAll('.of-type-opt').forEach(o => o.classList.toggle('selected', o.dataset.type===t));
+    document.getElementById('discountCard').style.display  = t==='discount'     ? '' : 'none';
+    document.getElementById('multiBuyCard').style.display  = t==='multi_buy'    ? '' : 'none';
+    document.getElementById('fixedCard').style.display     = t==='fixed_amount' ? '' : 'none';
+    updateSummary();
 }
-function renderCdpFrom() {
-    const el = document.getElementById('cdpFromDays');
-    const my = document.getElementById('cdpFromMonthYear');
-    if (!el || !my) return;
-    my.textContent = `${MONTHS_ALB[cdpFromMonth]} ${cdpFromYear}`;
-    const first = new Date(cdpFromYear, cdpFromMonth, 1).getDay();
+
+function pickMB(el, val) {
+    document.getElementById('hidMB').value = val;
+    document.querySelectorAll('.of-mb-opt').forEach(o => o.classList.toggle('selected', o===el));
+    updateSummary();
+}
+
+/* ════════════════════════════════
+   DATE PICKER (shared for from/until)
+════════════════════════════════ */
+const MONTHS = ['Janar','Shkurt','Mars','Prill','Maj','Qershor','Korrik','Gusht','Shtator','Tetor','Nëntor','Dhjetor'];
+const WDAYS  = ['Hë','Ma','Më','En','Pr','Sh','Di'];
+const cdpState = {
+    from:  {yr: new Date().getFullYear(), mo: new Date().getMonth(), sel: null},
+    until: {yr: new Date().getFullYear(), mo: new Date().getMonth(), sel: null},
+};
+let openCdp = null;
+
+function toggleCdp(id) {
+    if (openCdp && openCdp !== id) closeCdp(openCdp);
+    const panel = document.getElementById('cdp'+cap(id)+'Panel');
+    if (panel.classList.contains('open')) { closeCdp(id); return; }
+    const trig = document.getElementById('cdp'+cap(id)+'Trig');
+    const rect = trig.getBoundingClientRect();
+    panel.classList.toggle('drop-up', window.innerHeight - rect.bottom < 340);
+    panel.classList.add('open'); trig.classList.add('open');
+    openCdp = id;
+    renderCdp(id);
+}
+function closeCdp(id) {
+    document.getElementById('cdp'+cap(id)+'Panel').classList.remove('open');
+    document.getElementById('cdp'+cap(id)+'Trig').classList.remove('open');
+    if (openCdp === id) openCdp = null;
+}
+function cdpNav(id, dir) {
+    const s = cdpState[id];
+    s.mo += dir;
+    if (s.mo > 11) { s.mo=0; s.yr++; }
+    if (s.mo < 0)  { s.mo=11; s.yr--; }
+    renderCdp(id);
+}
+function renderCdp(id) {
+    const s = cdpState[id];
+    document.getElementById('cdp'+cap(id)+'MY').textContent = MONTHS[s.mo]+' '+s.yr;
+    const wdEl = document.getElementById('cdp'+cap(id)+'WD');
+    wdEl.innerHTML = WDAYS.map(d=>`<div class="cdp-wd">${d}</div>`).join('');
+    const first  = new Date(s.yr, s.mo, 1).getDay();
     const offset = (first + 6) % 7;
-    const days = new Date(cdpFromYear, cdpFromMonth + 1, 0).getDate();
-    el.innerHTML = '';
-    for (let i = 0; i < offset; i++) { const e = document.createElement('div'); e.className = 'cdp-day empty'; el.appendChild(e); }
-    for (let d = 1; d <= days; d++) {
-        const e = document.createElement('div'); e.className = 'cdp-day';
-        const date = new Date(cdpFromYear, cdpFromMonth, d);
-        const today = new Date(); today.setHours(0,0,0,0);
-        if (date.toDateString() === today.toDateString()) e.classList.add('today');
-        if (cdpFromSelected && date.toDateString() === cdpFromSelected.toDateString()) e.classList.add('selected');
-        e.textContent = d;
-        e.onclick = () => selectFromDay(d);
-        el.appendChild(e);
+    const days   = new Date(s.yr, s.mo+1, 0).getDate();
+    const today  = new Date(); today.setHours(0,0,0,0);
+    let html = '';
+    for (let i=0;i<offset;i++) html+='<div class="cdp-day empty"></div>';
+    for (let d=1;d<=days;d++) {
+        const date = new Date(s.yr, s.mo, d);
+        const past  = id==='from' ? false : date < today; // allow past for start date
+        const isSel = s.sel && date.toDateString()===s.sel.toDateString();
+        const isTod = date.toDateString()===today.toDateString();
+        html+=`<div class="cdp-day${isSel?' sel':''}${isTod&&!isSel?' today':''}${past?' disabled':''}"
+                    onclick="${past?'':'selectCdpDay(\''+id+'\','+d+')'}">
+               ${d}</div>`;
     }
+    document.getElementById('cdp'+cap(id)+'Days').innerHTML = html;
 }
-function toggleCdpFrom() {
-    const panel = document.getElementById('cdpFromPanel');
-    if (panel.classList.contains('open')) { closeCdpFrom(); return; }
-    document.getElementById('cdpPanel').classList.remove('open');
-    document.getElementById('cdpFromTrigger').classList.add('open');
-    panel.classList.add('open');
-    renderCdpFrom();
+function selectCdpDay(id, d) {
+    const s = cdpState[id];
+    s.sel = new Date(s.yr, s.mo, d);
+    const iso = fmtIso(s.sel);
+    const disp = `${d} ${MONTHS[s.sel.getMonth()]} ${s.sel.getFullYear()}`;
+    document.getElementById('hid'+cap(id)).value = iso;
+    document.getElementById('cdp'+cap(id)+'Txt').textContent = disp;
+    document.getElementById('cdp'+cap(id)+'Trig').classList.add('has-val');
+    renderCdp(id); closeCdp(id);
+    updateSummary();
 }
-function closeCdpFrom() {
-    document.getElementById('cdpFromPanel').classList.remove('open');
-    document.getElementById('cdpFromTrigger').classList.remove('open');
+function clearCdp(id) {
+    cdpState[id].sel = null;
+    document.getElementById('hid'+cap(id)).value = '';
+    const defaults = {from:'Sot (default)', until:'Pa datë skadencie'};
+    document.getElementById('cdp'+cap(id)+'Txt').textContent = defaults[id];
+    document.getElementById('cdp'+cap(id)+'Trig').classList.remove('has-val');
+    const now=new Date(); cdpState[id].yr=now.getFullYear(); cdpState[id].mo=now.getMonth();
+    renderCdp(id); updateSummary();
 }
-function cdpFromNav(dir) { cdpFromMonth += dir; if (cdpFromMonth > 11) { cdpFromMonth = 0; cdpFromYear++; } else if (cdpFromMonth < 0) { cdpFromMonth = 11; cdpFromYear--; } renderCdpFrom(); }
-function selectFromDay(d) {
-    cdpFromSelected = new Date(cdpFromYear, cdpFromMonth, d);
-    const y = cdpFromSelected.getFullYear();
-    const m = String(cdpFromSelected.getMonth()+1).padStart(2,'0');
-    const day = String(cdpFromSelected.getDate()).padStart(2,'0');
-    const iso = `${y}-${m}-${day}`;
-    document.getElementById('discountFromVal').value = iso;
-    document.getElementById('cdpFromDisplay').textContent = `${d} ${MONTHS_ALB[cdpFromSelected.getMonth()]} ${y}`;
-    document.getElementById('cdpFromTrigger').classList.add('has-value');
-    renderCdpFrom();
-    closeCdpFrom();
+function setCdpVal(id, iso) {
+    if (!iso) { clearCdp(id); return; }
+    const [y,m,d] = iso.split('-').map(Number);
+    const s = cdpState[id];
+    s.sel = new Date(y,m-1,d); s.yr=y; s.mo=m-1;
+    document.getElementById('hid'+cap(id)).value = iso;
+    document.getElementById('cdp'+cap(id)+'Txt').textContent = `${d} ${MONTHS[m-1]} ${y}`;
+    document.getElementById('cdp'+cap(id)+'Trig').classList.add('has-val');
+    renderCdp(id);
 }
-function clearFromDate() {
-    cdpFromSelected = null;
-    document.getElementById('discountFromVal').value = '';
-    document.getElementById('cdpFromDisplay').textContent = 'Sot (default)';
-    document.getElementById('cdpFromTrigger').classList.remove('has-value');
-    const now = new Date(); cdpFromYear = now.getFullYear(); cdpFromMonth = now.getMonth();
-    renderCdpFrom();
+function cap(s) { return s.charAt(0).toUpperCase()+s.slice(1); }
+function fmtIso(d) {
+    const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), dd=String(d.getDate()).padStart(2,'0');
+    return `${y}-${m}-${dd}`;
 }
-function setCdpFromValue(isoStr) {
-    if (!isoStr) { clearFromDate(); return; }
-    const [y,m,d] = isoStr.split('-').map(Number);
-    cdpFromSelected = new Date(y, m-1, d);
-    cdpFromYear = y; cdpFromMonth = m-1;
-    document.getElementById('discountFromVal').value = isoStr;
-    document.getElementById('cdpFromDisplay').textContent = `${d} ${MONTHS_ALB[m-1]} ${y}`;
-    document.getElementById('cdpFromTrigger').classList.add('has-value');
-    renderCdpFrom();
-}
-// Close from-CDP on outside click
+// Close cdp on outside click
 document.addEventListener('click', e => {
-    if (!document.getElementById('cdpFromWrap').contains(e.target)) closeCdpFrom();
-});
-initCdpFrom();
-
-/* ════════════════════════════════════════
-   PRODUCT STATE
-════════════════════════════════════════ */
-const PAGE_SIZE = 100;
-let currentPage = 1;
-let selectedIds = new Set();
-let excludedVariants = {}; // { productId: Set of excluded variant ids }
-let filteredData = [];
-let pinnedOffer = '';
-let searchQ = '';
-let brandFilter = new Set();
-
-function toggleVariant(pid, vid, el) {
-    if (!excludedVariants[pid]) excludedVariants[pid] = new Set();
-    if (excludedVariants[pid].has(vid)) {
-        excludedVariants[pid].delete(vid);
-        el.classList.remove('excl');
-        el.title = 'Klikoni për ta përjashtuar';
-    } else {
-        excludedVariants[pid].add(vid);
-        el.classList.add('excl');
-        el.title = 'Klikoni për ta përfshirë';
+    if (openCdp) {
+        const wrap = document.getElementById('cdp'+cap(openCdp));
+        if (wrap && !wrap.contains(e.target)) closeCdp(openCdp);
     }
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-    filteredData = [...PD];
-    renderPage();
-    updateCount();
-    initCdp();
-
-    // ── Search ──
-    let t;
-    document.getElementById('offSearch').addEventListener('input', e => {
-        clearTimeout(t);
-        t = setTimeout(() => { searchQ = e.target.value.toLowerCase().trim(); currentPage=1; applyFilters(); }, 220);
-    });
-    document.getElementById('offSearch').addEventListener('keydown', e => { if (e.key==='Enter') e.preventDefault(); });
-
-    // ── Active offer rows — use data-* attributes to avoid tojson-in-onclick escaping bugs ──
-    document.querySelectorAll('.aor').forEach(row => {
-        row.addEventListener('click', function(e) {
-            // If the delete button was clicked, handle that instead
-            const delBtn = e.target.closest('.aor-del');
-            if (delBtn) { e.stopPropagation(); deleteOffer(delBtn.dataset.offer); return; }
-            loadOffer(this.dataset.name, this.dataset.type, this.dataset.value, this.dataset.expiry, this.dataset.start);
-        });
-    });
-
-    // ── Form submit: inject hidden inputs for ALL selected IDs (not just the visible page) ──
-    document.getElementById('offForm').addEventListener('submit', function() {
-        // Re-sync date pickers from JS state so browser autofill / DOM quirks can't clear them
-        console.log('[offForm] cdpFromSelected:', cdpFromSelected, 'discountFromVal:', document.getElementById('discountFromVal').value);
-        if (cdpFromSelected) {
-            const y = cdpFromSelected.getFullYear();
-            const m = String(cdpFromSelected.getMonth()+1).padStart(2,'0');
-            const d = String(cdpFromSelected.getDate()).padStart(2,'0');
-            document.getElementById('discountFromVal').value = `${y}-${m}-${d}`;
+    document.querySelectorAll('.pf-dd.open').forEach(d => {
+        if(!d.contains(e.target)) {
+            d.classList.remove('open');
+            const s = d.querySelector('input[type=text]');
+            if (s) { s.value=''; filterBrandSearch(''); }
         }
-        if (typeof cdpSelected !== 'undefined' && cdpSelected) {
-            const y = cdpSelected.getFullYear();
-            const m = String(cdpSelected.getMonth()+1).padStart(2,'0');
-            const d = String(cdpSelected.getDate()).padStart(2,'0');
-            document.getElementById('discountUntilVal').value = `${y}-${m}-${d}`;
-        }
-        // Remove previously injected dynamic inputs
-        this.querySelectorAll('.sel-hidden').forEach(el => el.remove());
-        // Add one hidden input per selected product
-        selectedIds.forEach(id => {
-            const inp = document.createElement('input');
-            inp.type = 'hidden';
-            inp.name = 'selected_products';
-            inp.value = id;
-            inp.className = 'sel-hidden';
-            this.appendChild(inp);
-            // Add excluded variant inputs for this product
-            const excl = excludedVariants[id];
-            if (excl && excl.size > 0) {
-                excl.forEach(vid => {
-                    const vi = document.createElement('input');
-                    vi.type = 'hidden';
-                    vi.name = `excl_variants_${id}`;
-                    vi.value = vid;
-                    vi.className = 'sel-hidden';
-                    this.appendChild(vi);
-                });
-            }
-        });
     });
 });
+// Initialize calendars
+renderCdp('from'); renderCdp('until');
 
-/* ════════════════════════════════════════
-   FILTERING & RENDERING
-════════════════════════════════════════ */
+/* ════════════════════════════════
+   PRODUCT LIST (step 2)
+════════════════════════════════ */
+const PAGE_SIZE = 80;
+let selIds = new Set();
+let filtData = [...PD];
+let catF = '', brandF = new Set(), srchQ = '';
+let pg = 1;
+
 function applyFilters() {
-    const brandFilterLower = brandFilter.size ? new Set([...brandFilter].map(b => b.trim().toLowerCase())) : null;
-    filteredData = PD.filter(p => {
-        const matchQ = !searchQ || (p.n+' '+p.b).toLowerCase().includes(searchQ);
-        const matchC = !catFilter || p.c.trim().toLowerCase() === catFilter.trim().toLowerCase();
-        const matchB = !brandFilterLower || brandFilterLower.has((p.b||'').trim().toLowerCase());
-        return matchQ && matchC && matchB;
+    const bfLow = brandF.size ? new Set([...brandF].map(b=>b.toLowerCase())) : null;
+    filtData = PD.filter(p => {
+        const qm = !srchQ || (p.n+' '+p.b).toLowerCase().includes(srchQ);
+        const cm = !catF  || p.c.trim().toLowerCase()===catF.trim().toLowerCase();
+        const bm = !bfLow || bfLow.has((p.b||'').toLowerCase());
+        return qm && cm && bm;
     });
-    if (pinnedOffer) {
-        filteredData.sort((a,b) => {
-            const aP = a.on.toLowerCase()===pinnedOffer ? 0 : 1;
-            const bP = b.on.toLowerCase()===pinnedOffer ? 0 : 1;
-            return aP - bP;
-        });
-    }
-    currentPage = 1;
-    renderPage();
+    pg = 1; renderList();
 }
 
-function renderPage() {
-    const start = (currentPage-1)*PAGE_SIZE;
-    const slice = filteredData.slice(start, start+PAGE_SIZE);
-    const list  = document.getElementById('prodList');
-
-    if (filteredData.length === 0) {
-        list.innerHTML = `<div class="adm-empty" style="border:none;padding:2.5rem 1rem;">
-            <div class="adm-empty-icon"><i class="fas fa-search"></i></div>
-            <p class="adm-empty-title">Nuk u gjet asnjë produkt</p>
-            <p class="adm-empty-desc">Provo të ndryshosh filtrat ose fjalën e kërkimit.</p>
-        </div>`;
-        document.getElementById('pager').style.display = 'none';
+function renderList() {
+    const start = (pg-1)*PAGE_SIZE;
+    const slice = filtData.slice(start, start+PAGE_SIZE);
+    const el = document.getElementById('p2List');
+    if (!filtData.length) {
+        el.innerHTML = '<div class="of2-empty">Nuk u gjet asnjë produkt</div>';
+        document.getElementById('p2Pager').style.display='none';
         return;
     }
-
-    list.innerHTML = slice.map(p => {
-        const chk = selectedIds.has(p.id);
-        const tag = p.on ? `<span class="off-offer-tag" title="${esc(p.on)}"><i class="fas fa-tag"></i> ${esc(p.on)}</span>` : '';
-        const hasVariants = p.variants && p.variants.length > 1;
-
-        let variantRow = '';
-        if (hasVariants && chk) {
-            const excl = excludedVariants[p.id] || new Set();
-            const pills = p.variants.map(v => {
-                const label = Object.values(v.attributes || {}).join(' / ') || v.id;
-                const isExcl = excl.has(v.id);
-                return `<span class="var-pill${isExcl?' excl':''}" onclick="event.stopPropagation();toggleVariant('${p.id}','${v.id}',this)" title="${isExcl?'Klikoni për ta përfshirë':'Klikoni për ta përjashtuar'}">${esc(label)}</span>`;
-            }).join('');
-            variantRow = `<div class="var-pills-row"><i class="fas fa-layer-group" style="color:#9aa095;font-size:10px;margin-right:4px;"></i><span style="font-size:10px;color:#9aa095;margin-right:6px;">Variantet:</span>${pills}</div>`;
-        }
-
-        return `<div class="off-prod-row${chk?' selected':''}" onclick="toggleRow('${p.id}',this)" data-pid="${p.id}">
-            <input type="checkbox" value="${p.id}" ${chk?'checked':''}
-                   onclick="event.stopPropagation();" onchange="onCbChange('${p.id}',this)">
-            <img class="off-prod-img" src="${esc(p.img||'/static/img/placeholder.png')}"
-                 onerror="this.src='/static/img/placeholder.png'" loading="lazy" alt="">
-            <div class="off-prod-info">
-                <span class="off-prod-brand">${esc(p.b||'—')}</span>
-                <span class="off-prod-name">${esc(p.n)}</span>
-                ${tag ? `<span class="off-offer-tag-inline">${tag}</span>` : ''}
-                <span class="off-prod-cat">${esc(p.c)}${p.sc?' · '+esc(p.sc):''}</span>
+    el.innerHTML = slice.map(p => {
+        const chk = selIds.has(p.id);
+        const tag = p.on ? `<span class="of2-tag"><i class="fas fa-tag" style="font-size:.6rem;"></i> ${esc(p.on)}</span>` : '—';
+        return `<div class="of2-row${chk?' sel':''}" onclick="toggleRow('${p.id}',this)" data-pid="${p.id}">
+            <input type="checkbox" value="${p.id}" ${chk?'checked':''} onclick="event.stopPropagation();" onchange="onCbCh('${p.id}',this)">
+            <img class="of2-img" src="${esc(p.img||'/static/img/placeholder.png')}" onerror="this.src='/static/img/placeholder.png'" loading="lazy" alt="">
+            <div class="of2-info">
+                <span class="of2-brand">${esc(p.b||'—')}</span>
+                <span class="of2-name">${esc(p.n)}</span>
+                <span class="of2-cat">${esc(p.c)}${p.sc?(' · '+esc(p.sc)):''}</span>
             </div>
-            <div class="off-prod-col-offer">${tag}</div>
-            <span class="off-prod-price">€${p.p.toFixed(2)}</span>
-            ${variantRow}
+            <div class="of2-col-offer">${tag}</div>
+            <span class="of2-price">€${p.p.toFixed(2)}</span>
         </div>`;
     }).join('');
-
-    renderPagination();
-    syncSelectAll();
+    renderPager();
+    syncSelAll();
 }
 
-function esc(s) {
-    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-
-function renderPagination() {
-    const total = filteredData.length;
-    const totalPages = Math.ceil(total / PAGE_SIZE);
-    const pager = document.getElementById('pager');
-    if (totalPages <= 1) { pager.style.display='none'; return; }
-    pager.style.display='grid';
-
-    let btns = `<button class="pg-btn" onclick="goPage(${currentPage-1})" ${currentPage===1?'disabled':''}>‹</button>`;
-    getPageRange(currentPage,totalPages).forEach(pg => {
-        if (pg==='…') btns+=`<span style="padding:0 .2rem;color:#9aa095;font-size:.85rem;">…</span>`;
-        else btns+=`<button class="pg-btn ${pg===currentPage?'active':''}" onclick="goPage(${pg})">${pg}</button>`;
-    });
-    btns += `<button class="pg-btn" onclick="goPage(${currentPage+1})" ${currentPage===totalPages?'disabled':''}>›</button>`;
-
-    pager.innerHTML = `<span class="pg-info">Fq. ${currentPage}/${totalPages} · ${total} produkte</span>
-        <div class="pg-buttons">${btns}</div>
-        <div></div>`;
-}
-
-function getPageRange(cur, total) {
-    if (total<=7) return Array.from({length:total},(_,i)=>i+1);
-    const r=[];
-    if (cur<=4)       { for(let i=1;i<=5;i++) r.push(i); r.push('…'); r.push(total); }
-    else if(cur>=total-3){ r.push(1); r.push('…'); for(let i=total-4;i<=total;i++) r.push(i); }
-    else { r.push(1); r.push('…'); for(let i=cur-1;i<=cur+1;i++) r.push(i); r.push('…'); r.push(total); }
-    return r;
-}
-
-function goPage(p) {
-    const max = Math.ceil(filteredData.length/PAGE_SIZE);
-    if (p<1||p>max) return;
-    currentPage=p; renderPage();
-    document.getElementById('prodList').scrollTop=0;
-}
-
-/* ════════════════════════════════════════
-   SELECTION
-════════════════════════════════════════ */
-function _syncVariantPills(id, row, selected) {
-    const p = PD.find(x => x.id === id);
-    if (!p || !p.variants || p.variants.length <= 1) return;
-    let pills = row.querySelector('.var-pills-row');
-    if (selected) {
-        if (!pills) {
-            const excl = excludedVariants[id] || new Set();
-            const html = p.variants.map(v => {
-                const label = Object.values(v.attributes || {}).join(' / ') || v.id;
-                const isExcl = excl.has(v.id);
-                return `<span class="var-pill${isExcl?' excl':''}" onclick="event.stopPropagation();toggleVariant('${id}','${v.id}',this)" title="${isExcl?'Klikoni për ta përfshirë':'Klikoni për ta përjashtuar'}">${label}</span>`;
-            }).join('');
-            row.insertAdjacentHTML('beforeend',
-                `<div class="var-pills-row"><i class="fas fa-layer-group" style="color:#9aa095;font-size:10px;margin-right:4px;"></i><span style="font-size:10px;color:#9aa095;margin-right:6px;">Variantet:</span>${html}</div>`);
-        }
-    } else {
-        if (pills) pills.remove();
+function renderPager() {
+    const total = filtData.length;
+    const pages = Math.ceil(total/PAGE_SIZE);
+    const el = document.getElementById('p2Pager');
+    if (pages <= 1) { el.style.display='none'; return; }
+    el.style.display='grid';
+    let btns = `<button class="pg-btn" onclick="goPg(${pg-1})" ${pg===1?'disabled':''}>‹</button>`;
+    for (let i=1;i<=pages;i++) {
+        if (pages<=7||i===1||i===pages||Math.abs(i-pg)<=1)
+            btns+=`<button class="pg-btn${i===pg?' act':''}" onclick="goPg(${i})">${i}</button>`;
+        else if (Math.abs(i-pg)===2)
+            btns+=`<span style="padding:0 .2rem;color:#9aa095;font-size:.85rem;">…</span>`;
     }
+    btns+=`<button class="pg-btn" onclick="goPg(${pg+1})" ${pg===pages?'disabled':''}>›</button>`;
+    el.innerHTML = `<span class="pg-info">Fq.${pg}/${pages} · ${total} produkte</span><div class="pg-btns">${btns}</div><div></div>`;
 }
-function toggleRow(id,row) {
-    if (selectedIds.has(id)) { selectedIds.delete(id); row.classList.remove('selected'); row.querySelector('input').checked=false; _syncVariantPills(id,row,false); }
-    else                     { selectedIds.add(id);    row.classList.add('selected');    row.querySelector('input').checked=true;  _syncVariantPills(id,row,true); }
-    updateCount(); syncSelectAll();
+function goPg(p) { if(p<1||p>Math.ceil(filtData.length/PAGE_SIZE))return; pg=p; renderList(); document.getElementById('p2List').scrollTop=0; }
+
+function toggleRow(id, row) {
+    if(selIds.has(id)){selIds.delete(id);row.classList.remove('sel');row.querySelector('input').checked=false;}
+    else{selIds.add(id);row.classList.add('sel');row.querySelector('input').checked=true;}
+    afterSel();
 }
-function onCbChange(id,cb) {
-    const row=cb.closest('.off-prod-row');
-    if(cb.checked){selectedIds.add(id);row.classList.add('selected');_syncVariantPills(id,row,true);}
-    else{selectedIds.delete(id);row.classList.remove('selected');_syncVariantPills(id,row,false);}
-    updateCount(); syncSelectAll();
+function onCbCh(id,cb) {
+    const row=cb.closest('.of2-row');
+    if(cb.checked){selIds.add(id);row.classList.add('sel');}
+    else{selIds.delete(id);row.classList.remove('sel');}
+    afterSel();
 }
-function toggleAll(masterCb) {
-    const start=(currentPage-1)*PAGE_SIZE;
-    filteredData.slice(start,start+PAGE_SIZE).forEach(p => {
-        if(masterCb.checked) selectedIds.add(p.id); else selectedIds.delete(p.id);
-    });
-    renderPage(); updateCount();
+function toggleAll(cb) {
+    const start=(pg-1)*PAGE_SIZE;
+    filtData.slice(start,start+PAGE_SIZE).forEach(p=>{if(cb.checked)selIds.add(p.id);else selIds.delete(p.id);});
+    renderList(); afterSel();
 }
-function syncSelectAll() {
-    const slice=filteredData.slice((currentPage-1)*PAGE_SIZE,(currentPage)*PAGE_SIZE);
-    const checked=slice.filter(p=>selectedIds.has(p.id)).length;
-    const sa=document.getElementById('selectAll');
-    if(checked===0){sa.checked=false;sa.indeterminate=false;}
-    else if(checked===slice.length){sa.checked=true;sa.indeterminate=false;}
-    else{sa.checked=false;sa.indeterminate=true;}
+function syncSelAll() {
+    const slice=filtData.slice((pg-1)*PAGE_SIZE,pg*PAGE_SIZE);
+    const chk=slice.filter(p=>selIds.has(p.id)).length;
+    const cb=document.getElementById('selAllCb');
+    if(!chk){cb.checked=false;cb.indeterminate=false;}
+    else if(chk===slice.length){cb.checked=true;cb.indeterminate=false;}
+    else{cb.checked=false;cb.indeterminate=true;}
 }
+function afterSel() { syncSelAll(); updateCount(); updateSummary(); }
+
 function updateCount() {
-    const n=selectedIds.size;
-    const badge=document.getElementById('selBadge');
-    badge.textContent=n;
-    badge.classList.add('pop');
-    setTimeout(()=>badge.classList.remove('pop'),200);
-    const mobNum=document.getElementById('mobBarNum');
-    if(mobNum) mobNum.textContent=n;
+    const n = selIds.size;
+    document.getElementById('sumCount').textContent = n;
+    const btn = document.getElementById('submitBtn');
+    btn.style.opacity = n === 0 ? '.55' : '1';
+    document.getElementById('p2BottomInfo').textContent = n===0 ? 'Zgjidhni të paktën 1 produkt' : `${n} produkte të zgjedhura`;
+    document.getElementById('p2RemoveWrap').style.display = n > 0 ? '' : 'none';
+    if (n > 0) document.getElementById('warnNoSel').classList.remove('show');
+    // Sync sticky bar
+    const stickyCount = document.getElementById('stickyCount');
+    const stickyBtn = document.getElementById('stickyApplyBtn');
+    if (stickyCount) stickyCount.textContent = n;
+    if (stickyBtn) stickyBtn.style.opacity = n === 0 ? '.55' : '1';
 }
 
-/* ── Mobile sheet ── */
-function openMobConfig() {
-    document.getElementById('offLeft').classList.add('mob-open');
-    document.getElementById('mobOverlay').classList.add('open');
-    document.body.style.overflow='hidden';
-}
-function closeMobConfig() {
-    document.getElementById('offLeft').classList.remove('mob-open');
-    document.getElementById('mobOverlay').classList.remove('open');
-    document.body.style.overflow='';
-}
-
-/* ════════════════════════════════════════
-   LOAD OFFER
-════════════════════════════════════════ */
-function loadOffer(name, type, value, expiry, start) {
-    // Offer name
-    document.getElementById('offerName').value = name;
-
-    // Offer type custom select
-    const typeLabel = type==='discount' ? 'Zbritje (%)' : 'Multi Buy';
-    document.getElementById('cselTypeLabel').textContent = typeLabel;
-    document.querySelectorAll('#cselTypePanel .csel-opt').forEach(o => {
-        o.classList.toggle('selected', o.dataset.value === type);
-    });
-    document.getElementById('offerTypeVal').value = type;
-    toggleOfferType();
-
-    if (type === 'discount') {
-        document.getElementById('discountPercent').value = value;
-    } else {
-        const strVal = String(value);
-        const mbLabels = {'1+1':'1+1 — Bli 1, Merr 1 Falas','2+1':'2+1 — Bli 2, Merr 1 Falas','3+1':'3+1 — Bli 3, Merr 1 Falas','buy2get50':'Bli 2, Merr 50% Zbritje'};
-        document.getElementById('cselMBLabel').textContent = mbLabels[strVal] || strVal;
-        document.querySelectorAll('#cselMBPanel .csel-opt').forEach(o => {
-            o.classList.toggle('selected', o.dataset.value === strVal);
-        });
-        document.getElementById('multiBuyTypeVal').value = strVal;
+/* ── Filters ── */
+function toggleDd(id) {
+    const el=document.getElementById(id);
+    const was=el.classList.contains('open');
+    document.querySelectorAll('.pf-dd.open').forEach(d=>d.classList.remove('open'));
+    if(!was) {
+        el.classList.add('open');
+        if (id === 'dd2Brand') {
+            const s = document.getElementById('p2BrandSearch');
+            if (s) setTimeout(()=>s.focus(), 50);
+        }
     }
-
-    // Start date
-    setCdpFromValue(start || '');
-
-    // Expiry date
-    setCdpValue(expiry || '');
-
-    // Highlight the clicked offer row
-    document.querySelectorAll('.aor').forEach(r => {
-        r.classList.toggle('editing', r.querySelector('.aor-name')?.textContent?.trim() === name);
+}
+function filterBrandSearch(q) {
+    const ql = q.toLowerCase();
+    document.querySelectorAll('#p2BrandList label').forEach(l => {
+        l.style.display = (l.dataset.brand||'').includes(ql) ? '' : 'none';
     });
-
-    // Pin offer's products to top + select only them
-    pinnedOffer = name.toLowerCase();
-    selectedIds.clear();
-    PD.forEach(p => { if (p.on && p.on.toLowerCase() === pinnedOffer) selectedIds.add(p.id); });
-
-    // Clear all filters so all products are visible, pinned ones on top
-    searchQ = ''; catFilter = ''; brandFilter.clear();
-    document.getElementById('offSearch').value = '';
-    document.getElementById('tbCatLabel').textContent = 'Kategoria';
-    document.getElementById('tbDdCatTrigger').classList.remove('active');
-    document.querySelectorAll('#tbDdCat .pf-dd-opt').forEach(o => o.classList.toggle('selected', o.dataset.value === ''));
-    clearBrandsState();
-    currentPage = 1;
+}
+function pickCat(v) {
+    catF=v;
+    document.getElementById('dd2CatLbl').textContent=v||'Kategoria';
+    document.querySelector('#dd2Cat .pf-dd-t').classList.toggle('on',!!v);
+    document.querySelectorAll('#dd2Cat .pf-dd-opt').forEach(o=>o.classList.toggle('sel',o.dataset.v===v));
+    document.getElementById('dd2Cat').classList.remove('open');
     applyFilters();
+}
+function onBrandCh() {
+    brandF.clear();
+    document.querySelectorAll('#p2BrandList input:checked').forEach(c=>brandF.add(c.value));
+    const lbl=document.getElementById('dd2BrandLbl');
+    const t=document.querySelector('#dd2Brand .pf-dd-t');
+    if(!brandF.size){lbl.textContent='Brendi';t.classList.remove('on');}
+    else if(brandF.size===1){lbl.textContent=[...brandF][0].substring(0,14);t.classList.add('on');}
+    else{lbl.textContent=`Brendet (${brandF.size})`;t.classList.add('on');}
+    applyFilters();
+}
+let srchT;
+document.getElementById('p2Search').addEventListener('input', e=>{
+    clearTimeout(srchT);
+    srchT=setTimeout(()=>{srchQ=e.target.value.toLowerCase().trim();pg=1;applyFilters();},220);
+});
+document.getElementById('p2Search').addEventListener('keydown',e=>{if(e.key==='Enter')e.preventDefault();});
+
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+/* ── Summary panel ── */
+function updateSummary() {
+    const type  = document.getElementById('hidType').value;
+    const name  = document.getElementById('fldName').value.trim();
+    const until = cdpState.until.sel;
+    const typeLabels = {discount:'Zbritje %', multi_buy:'Multi Buy', fixed_amount:'Çmim Fiks'};
+    let valStr = '—';
+    if (type==='discount') {
+        const pct = document.getElementById('fldPct').value;
+        valStr = pct ? pct+'%' : '—';
+    } else if (type==='multi_buy') {
+        valStr = document.getElementById('hidMB').value;
+    } else if (type==='fixed_amount') {
+        const amt = document.getElementById('fldFixed').value;
+        valStr = amt ? '€'+parseFloat(amt).toFixed(2)+' zbritje' : '—';
+    }
+    document.getElementById('sumName').textContent = name || '—';
+    document.getElementById('sumType').textContent = typeLabels[type]||type;
+    document.getElementById('sumVal').textContent  = valStr;
+    if (until) {
+        document.getElementById('sumExpRow').style.display='';
+        document.getElementById('sumExp').textContent = fmtIso(until);
+    } else {
+        document.getElementById('sumExpRow').style.display='none';
+    }
     updateCount();
-
-    // Update config card title to show editing mode
-    document.getElementById('configCardTitle').innerHTML =
-        `<i class="fas fa-pen"></i> Edito: ${esc(name)}`;
-
-    // Scroll product list to top so pinned products are immediately visible
-    document.getElementById('prodList').scrollTop = 0;
 }
 
-function resetToNew() {
-    // Clear form fields
-    document.getElementById('offerName').value = '';
-    document.getElementById('discountPercent').value = '';
-    document.getElementById('cselTypeLabel').textContent = 'Zbritje (%)';
-    document.querySelectorAll('#cselTypePanel .csel-opt').forEach(o => o.classList.toggle('selected', o.dataset.value==='discount'));
-    document.getElementById('offerTypeVal').value = 'discount';
-    toggleOfferType();
-    clearDate();
-    clearFromDate();
-
-    // Remove editing highlight
-    document.querySelectorAll('.aor').forEach(r => r.classList.remove('editing'));
-
-    // Reset title
-    document.getElementById('configCardTitle').innerHTML = '<i class="fas fa-sliders-h"></i> Konfigurimi';
-
-    // Clear selections and pinned offer
-    pinnedOffer = '';
-    selectedIds.clear();
-
-    // Reset filters and re-render
-    searchQ = ''; catFilter = ''; brandFilter.clear();
-    document.getElementById('offSearch').value = '';
-    document.getElementById('tbCatLabel').textContent = 'Kategoria';
-    document.getElementById('tbDdCatTrigger').classList.remove('active');
-    document.querySelectorAll('#tbDdCat .pf-dd-opt').forEach(o => o.classList.toggle('selected', o.dataset.value===''));
-    clearBrandsState();
-    currentPage = 1;
-    filteredData = [...PD];
-    renderPage();
-    updateCount();
-}
-
-/* ════════════════════════════════════════
-   BRAND MULTI-SELECT
-════════════════════════════════════════ */
-function filterBrandOpts(q) {
-    const ql=q.toLowerCase();
-    document.querySelectorAll('#msOpts .pf-dd-opt').forEach(o => {
-        o.style.display=o.textContent.toLowerCase().includes(ql)?'':'none';
+/* ── Submit ── */
+function submitApply() {
+    if (!selIds.size) {
+        const w = document.getElementById('warnNoSel');
+        w.classList.add('show');
+        setTimeout(() => w.classList.remove('show'), 3500);
+        return;
+    }
+    // Sync date pickers
+    if (cdpState.from.sel) document.getElementById('hidFrom').value = fmtIso(cdpState.from.sel);
+    if (cdpState.until.sel) document.getElementById('hidUntil').value = fmtIso(cdpState.until.sel);
+    // Remove old sel hidden inputs
+    document.querySelectorAll('.sel-hidden').forEach(e=>e.remove());
+    selIds.forEach(id => {
+        const inp = document.createElement('input');
+        inp.type='hidden'; inp.name='selected_products'; inp.value=id; inp.className='sel-hidden';
+        document.getElementById('mainForm').appendChild(inp);
     });
-}
-function onBrandChange() {
-    brandFilter.clear();
-    document.querySelectorAll('#msOpts input:checked').forEach(cb=>brandFilter.add(cb.value));
-    updateBrandLabel(); currentPage=1; applyFilters();
-}
-function clearBrands() { clearBrandsState(); currentPage=1; applyFilters(); }
-function clearBrandsState() {
-    brandFilter.clear();
-    document.querySelectorAll('#msOpts input').forEach(cb=>cb.checked=false);
-    updateBrandLabel();
-}
-function updateBrandLabel() {
-    const lbl=document.getElementById('msLabel');
-    const trigger=document.getElementById('tbDdBrandTrigger');
-    if(brandFilter.size===0){ lbl.textContent='Brendi'; trigger.classList.remove('active'); }
-    else if(brandFilter.size===1){ lbl.textContent=[...brandFilter][0].substring(0,14); trigger.classList.add('active'); }
-    else{ lbl.textContent=`Brendet (${brandFilter.size})`; trigger.classList.add('active'); }
+    const a = document.createElement('input');
+    a.type='hidden'; a.name='action'; a.value='apply'; a.className='sel-hidden';
+    document.getElementById('mainForm').appendChild(a);
+    document.getElementById('mainForm').submit();
 }
 
-/* ════════════════════════════════════════
-   DELETE OFFER MODAL
-════════════════════════════════════════ */
-let _delOfferName = null;
-function deleteOffer(name) {
-    _delOfferName = name;
-    document.getElementById('delOfferMsg').textContent = `Kjo do të heqë ofertën "${name}" nga të gjitha produktet e saj.`;
-    document.getElementById('delOfferModal').style.display = 'flex';
+function submitRemove() {
+    if (!selIds.size) return;
+    document.querySelectorAll('.sel-hidden').forEach(e=>e.remove());
+    selIds.forEach(id => {
+        const inp = document.createElement('input');
+        inp.type='hidden'; inp.name='selected_products'; inp.value=id; inp.className='sel-hidden';
+        document.getElementById('mainForm').appendChild(inp);
+    });
+    const a = document.createElement('input');
+    a.type='hidden'; a.name='action'; a.value='remove'; a.className='sel-hidden';
+    document.getElementById('mainForm').appendChild(a);
+    document.getElementById('mainForm').submit();
 }
-function closeDelModal() {
-    _delOfferName = null;
-    document.getElementById('delOfferModal').style.display = 'none';
-}
-function confirmDeleteOffer() {
-    if (!_delOfferName) return;
-    document.getElementById('targetName').value = _delOfferName;
-    const btn = document.createElement('input');
-    btn.type='hidden'; btn.name='action'; btn.value='delete_named_offer';
-    document.getElementById('offForm').appendChild(btn);
-    document.getElementById('offForm').submit();
-}
-// Close modal on backdrop click
-document.getElementById('delOfferModal').addEventListener('click', closeDelModal);
 
-// "Largo Ofertën" button — deselect all products in UI, then submit to remove from DB
-document.querySelector('.off-btn-remove').addEventListener('click', function(e) {
-    // The backend remove action handles DB cleanup for checked products.
-    // Nothing extra needed — form submit event injects the hidden inputs.
+/* ════════════════════════════════
+   INITIALIZE
+════════════════════════════════ */
+document.addEventListener('DOMContentLoaded', () => {
+    filtData = [...PD];
+    renderList();
+    updateSummary();
+
+    // If editing an offer, pre-fill and jump to step 2
+    if (EDIT_OFFER) {
+        const o = EDIT_OFFER;
+        document.getElementById('fldName').value = o.name || '';
+        pickType(o.type || 'discount');
+        if (o.type === 'discount' && o.discount_percent)
+            document.getElementById('fldPct').value = o.discount_percent;
+        if (o.type === 'multi_buy' && o.multi_buy_type) {
+            document.getElementById('hidMB').value = o.multi_buy_type;
+            document.querySelectorAll('.of-mb-opt').forEach(el =>
+                el.classList.toggle('selected', el.dataset.mb === o.multi_buy_type));
+        }
+        if (o.type === 'fixed_amount' && o.fixed_amount)
+            document.getElementById('fldFixed').value = o.fixed_amount;
+        if (o.start) setCdpVal('from', o.start);
+        if (o.expiry) setCdpVal('until', o.expiry);
+
+        // Select products belonging to this offer
+        PD.forEach(p => { if (p.on && p.on.toLowerCase() === (o.name||'').toLowerCase()) selIds.add(p.id); });
+        filtData = [...PD];
+        renderList(); updateSummary();
+        goStep(2);
+    }
 });
 </script>
 {% endblock %}
