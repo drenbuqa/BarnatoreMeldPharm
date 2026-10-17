@@ -1518,27 +1518,29 @@
 
     {% block pixel_events %}{% endblock %}
 <script>
-/* ── Urgency countdown (runs on all pages) ── */
+/* ── Expiry strip/line countdown (runs on all pages) ── */
 (function() {
   var FOURTEEN_DAYS = 14 * 86400000;
-  function renderUrgency(el, deadlineMs) {
-    var diff = deadlineMs - Date.now();
-    var txt = el.querySelector('.hp-urgency-text');
-    if (diff <= 0 || diff > FOURTEEN_DAYS) { el.classList.remove('hp-urgency--visible'); return; }
-    el.classList.add('hp-urgency--visible');
-    if (!txt) return;
-    var days = Math.floor(diff / 86400000);
-    var hours = Math.floor((diff % 86400000) / 3600000);
-    txt.textContent = days >= 1 ? (days === 1 ? 'Skadon nesër' : 'Skadon pas ' + days + ' ditësh') : 'Skadon brenda ' + (hours || 1) + 'h';
-  }
   window.hpInitUrgency = function() {
-    document.querySelectorAll('.hp-urgency[data-deadline]').forEach(function(el) {
+    document.querySelectorAll('.hp-expiry-strip[data-deadline], .pinfo-expiry[data-deadline]').forEach(function(el) {
       if (el._urgencyInited) return;
       el._urgencyInited = true;
       var dl = new Date(el.dataset.deadline).getTime();
       if (!dl || isNaN(dl)) return;
-      renderUrgency(el, dl);
-      setInterval(function() { renderUrgency(el, dl); }, 60000);
+      var txtSel = el.classList.contains('pinfo-expiry') ? '.pinfo-expiry-text' : '.hp-expiry-text';
+      var visCls = el.classList.contains('pinfo-expiry') ? 'pinfo-expiry--visible' : 'hp-expiry--visible';
+      function _render() {
+        var diff = dl - Date.now();
+        var txt = el.querySelector(txtSel);
+        if (diff <= 0 || diff > FOURTEEN_DAYS) { el.classList.remove(visCls); return; }
+        el.classList.add(visCls);
+        if (!txt) return;
+        var days = Math.floor(diff / 86400000);
+        var hours = Math.floor((diff % 86400000) / 3600000);
+        txt.textContent = days >= 1 ? (days === 1 ? 'Skadon nesër' : 'Skadon pas ' + days + ' ditësh') : 'Skadon brenda ' + (hours || 1) + 'h';
+      }
+      _render();
+      setInterval(_render, 60000);
     });
   };
   document.addEventListener('DOMContentLoaded', window.hpInitUrgency);

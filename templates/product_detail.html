@@ -102,7 +102,7 @@
                 </div>
 
                 <!-- ② All labels on one row -->
-                {% set has_labels = (product.labels and ('set' in product.labels or 'limited' in product.labels or 'sale' in product.labels or 'new_arrival' in product.labels)) or product.is_best_seller or product.discount_price or product.auto_oct_discount or product.offer_badge_text %}
+                {% set has_labels = (product.labels and ('set' in product.labels or 'limited' in product.labels or 'sale' in product.labels or 'new_arrival' in product.labels)) or product.is_best_seller or product.is_pharmacist_choice or product.discount_price or product.auto_oct_discount or product.offer_badge_text %}
                 {% if has_labels %}
                 <div class="pinfo-labels-row">
                     {% if product.offer_badge_text %}
@@ -112,14 +112,14 @@
                     {% elif product.discount_price %}
                     <span class="pinfo-badge pinfo-badge--red"><i class="fas fa-tag"></i> Ofertë</span>
                     {% endif %}
-                    {% if product.labels and 'sale' in product.labels %}
+                    {% if product.labels and 'sale' in product.labels and not product.discount_price %}
                     <span class="pinfo-badge pinfo-badge--red"><i class="fas fa-tag"></i> Ofertë Speciale</span>
                     {% endif %}
                     {% if product.labels and 'new_arrival' in product.labels %}
-                    <span class="pinfo-badge pinfo-badge--sky"><i class="fas fa-sparkles"></i> I Ri</span>
+                    <span class="pinfo-badge pinfo-badge--sage"><i class="fas fa-sparkles"></i> I Ri</span>
                     {% endif %}
                     {% if product.labels and 'set' in product.labels %}
-                    <span class="pinfo-badge pinfo-badge--teal"><i class="fas fa-layer-group"></i> Set / Paketë</span>
+                    <span class="pinfo-badge pinfo-badge--sage"><i class="fas fa-layer-group"></i> Set / Paketë</span>
                     {% endif %}
                     {% if product.labels and 'limited' in product.labels %}
                     <span class="pinfo-badge pinfo-badge--red"><i class="fas fa-clock"></i> I Kufizuar</span>
@@ -127,6 +127,15 @@
                     {% if product.is_best_seller %}
                     <span class="pinfo-badge pinfo-badge--amber">Më i Shituri</span>
                     {% endif %}
+                    {% if product.is_pharmacist_choice %}
+                    <span class="pinfo-badge pinfo-badge--olive"><i class="fas fa-user-md"></i> Farmacisti</span>
+                    {% endif %}
+                </div>
+                {% endif %}
+                {% if product.auto_oct_discount or product.discount_until %}
+                {% set _pd_deadline = '2026-10-31T23:59:59' if product.auto_oct_discount else (product.discount_until.strftime('%Y-%m-%d') + 'T23:59:59' if product.discount_until else '') %}
+                <div class="pinfo-expiry" data-deadline="{{ _pd_deadline }}">
+                    <i class="fas fa-clock"></i><span class="pinfo-expiry-text"></span>
                 </div>
                 {% endif %}
 
@@ -820,13 +829,15 @@
         color: white;
         letter-spacing: 0.02em;
     }
-    .pinfo-badge--teal  { background: linear-gradient(135deg,#0d9488,#0f766e); }
-    .pinfo-badge--red   { background: #C0392B; }
-    .pinfo-badge--amber { background: #f59e0b; }
-    .pinfo-badge--pink  { background: #C0392B; }
-    .pinfo-badge--sky   { background: linear-gradient(135deg,#0ea5e9,#0284c7); }
-    .pinfo-badge--oct   { background: linear-gradient(110deg,#8B6914,#C49A1C); }
+    .pinfo-badge--red   { background: #b4534b; box-shadow:0 2px 7px rgba(180,83,75,0.2); }
+    .pinfo-badge--amber { background: #f59e0b; box-shadow:0 2px 7px rgba(245,158,11,0.2); }
+    .pinfo-badge--sage  { background: #68766c; box-shadow:0 2px 7px rgba(104,118,108,0.18); }
+    .pinfo-badge--olive { background: #4f5d4e; box-shadow:0 2px 7px rgba(79,93,78,0.2); }
+    .pinfo-badge--oct   { background: linear-gradient(110deg,#8B6914,#C49A1C); box-shadow:0 2px 7px rgba(139,105,20,0.25); }
 
+    .pinfo-expiry { display:none;align-items:center;gap:0.35rem;margin-bottom:0.75rem;font-size:0.72rem;font-weight:600;color:#8B6914;background:rgba(196,154,28,0.08);border:1px solid rgba(196,154,28,0.2);border-radius:7px;padding:0.32rem 0.65rem;width:fit-content; }
+    .pinfo-expiry.pinfo-expiry--visible { display:inline-flex; }
+    .pinfo-expiry i { font-size:0.62rem;flex-shrink:0; }
     .pinfo-brand {
         font-size: 0.82rem;
         font-weight: 700;

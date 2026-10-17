@@ -27,18 +27,23 @@
 {# ── Reusable carousel product card macro ── #}
 {% macro hp_card(product, idx) %}
 <div class="hp-card{% if product.auto_oct_discount %} hp-card--oct{% endif %}" data-href="{{ url_for('main.product_detail', product_id=product._id) }}" onclick="window.location.href=this.dataset.href">
+  {# Determine which badges to show — max 2 total, expiry strip counts as 1 #}
+  {% set has_expiry = product.auto_oct_discount or product.discount_until %}
+  {% set badge_slots = 1 if has_expiry else 2 %}
+  {% set badges = [] %}
+  {% if product.offer_type == 'multi_buy' %}{% set _ = badges.append(('offer', product.offer_badge_text or '1+1', '')) %}
+  {% elif product.auto_oct_discount %}{% set _ = badges.append(('offer', '-5%', 'hp-card-badge--oct')) %}
+  {% elif product.discount_price %}{% set _ = badges.append(('offer', 'Ofertë Speciale', '')) %}{% endif %}
+  {% if product.is_best_seller and badges|length < badge_slots %}{% set _ = badges.append(('bestseller', 'Më i Shituri', '')) %}{% endif %}
   <div class="hp-card-img">
     <div class="badge-stack">
-      {% if product.offer_type == 'multi_buy' %}
-        <span class="hp-card-badge">{{ product.offer_badge_text or '1+1' }}</span>
-      {% elif product.auto_oct_discount %}
-        <span class="hp-card-badge hp-card-badge--oct">-5%</span>
-      {% elif product.discount_price %}
-        <span class="hp-card-badge">Ofertë Speciale</span>
-      {% endif %}
-      {% if product.is_best_seller %}
-        <div class="best-seller-badge">Më i Shituri</div>
-      {% endif %}
+      {% for btype, btext, bclass in badges[:badge_slots] %}
+        {% if btype == 'bestseller' %}
+          <div class="best-seller-badge">{{ btext }}</div>
+        {% else %}
+          <span class="hp-card-badge {{ bclass }}">{{ btext }}</span>
+        {% endif %}
+      {% endfor %}
     </div>
     <div class="img-shimmer"></div>
     <img src="{{ product.image_url|cld(400) }}" alt="{{ product.name }}"
@@ -47,6 +52,11 @@
       onerror="this.src='/static/img/placeholder.png';this.classList.add('error','loaded');var s=this.parentElement.querySelector('.img-shimmer');if(s)s.classList.add('hidden')">
     {% if product.in_stock == False %}
       <div class="hp-out-stock"><span>Jashtë Stokut</span></div>
+    {% endif %}
+    {% if has_expiry %}
+      <div class="hp-expiry-strip" data-deadline="{% if product.auto_oct_discount %}2026-10-31T23:59:59{% else %}{{ product.discount_until.strftime('%Y-%m-%d') + 'T23:59:59' if product.discount_until else '' }}{% endif %}">
+        <i class="fas fa-clock"></i><span class="hp-expiry-text"></span>
+      </div>
     {% endif %}
     <button class="hp-card-fav {{ 'active' if (current_user.is_authenticated and product.favorites and current_user.id in product.favorites) or (not current_user.is_authenticated and product._id|string in session.get('liked_products', [])) else '' }}"
       onclick="event.stopPropagation(); toggleFavorite(this, '{{ product._id }}')">
@@ -76,15 +86,6 @@
         <span class="hp-price-main">€{{ "%.2f"|format(product.display_price) }}</span>
       {% endif %}
     </div>
-    {# urgency: always reserve space, JS reveals only when < 14 days #}
-    {% if product.auto_oct_discount or product.discount_until %}
-      <div class="hp-urgency" data-deadline="{% if product.auto_oct_discount %}2026-10-31T23:59:59{% else %}{{ product.discount_until.strftime('%Y-%m-%d') + 'T23:59:59' if product.discount_until else '' }}{% endif %}">
-        <i class="fas fa-clock"></i>
-        <span class="hp-urgency-text"></span>
-      </div>
-    {% else %}
-      <div class="hp-urgency hp-urgency--placeholder" aria-hidden="true"></div>
-    {% endif %}
   </div>
   {% if product.in_stock != False %}
   <button class="hp-card-atc" onclick="event.stopPropagation(); hpAddToCart(this, '{{ product._id }}')">
@@ -316,17 +317,19 @@
       <button type="button" class="hp-carousel-arrow hp-next" onclick="hpScrollCarousel(this,1)"><i class="fas fa-chevron-right"></i></button>
       <div class="hp-carousel">
         {% for product in featured_products %}
+        {% set fp_has_expiry = product.discount_until %}
+        {% set fp_badge_slots = 1 if fp_has_expiry else 2 %}
+        {% set fp_badges = [] %}
+        {% if product.offer_type == 'multi_buy' %}{% set _ = fp_badges.append(('offer', product.offer_badge_text or '1+1', '')) %}
+        {% elif product.discount_price %}{% set _ = fp_badges.append(('offer', 'Ofertë Speciale', '')) %}{% endif %}
+        {% if product.is_best_seller and fp_badges|length < fp_badge_slots %}{% set _ = fp_badges.append(('bestseller', 'Më i Shituri', '')) %}{% endif %}
         <div class="hp-card" data-href="{{ url_for('main.product_detail', product_id=product._id) }}" onclick="window.location.href=this.dataset.href">
           <div class="hp-card-img">
             <div class="badge-stack">
-              {% if product.offer_type == 'multi_buy' %}
-                <span class="hp-card-badge">{{ product.offer_badge_text or '1+1' }}</span>
-              {% elif product.discount_price %}
-                <span class="hp-card-badge">Ofertë Speciale</span>
-              {% endif %}
-              {% if product.is_best_seller %}
-                <div class="best-seller-badge">Më i Shituri</div>
-              {% endif %}
+              {% for btype, btext, bclass in fp_badges[:fp_badge_slots] %}
+                {% if btype == 'bestseller' %}<div class="best-seller-badge">{{ btext }}</div>
+                {% else %}<span class="hp-card-badge {{ bclass }}">{{ btext }}</span>{% endif %}
+              {% endfor %}
             </div>
             <div class="img-shimmer"></div>
             <img src="{{ product.image_url|cld(400) }}" alt="{{ product.name }}"
@@ -335,6 +338,11 @@
               onerror="this.src='/static/img/placeholder.png';this.classList.add('error','loaded');var s=this.parentElement.querySelector('.img-shimmer');if(s)s.classList.add('hidden')">
             {% if product.in_stock == False %}
               <div class="hp-out-stock"><span>Jashtë Stokut</span></div>
+            {% endif %}
+            {% if fp_has_expiry %}
+              <div class="hp-expiry-strip" data-deadline="{{ product.discount_until.strftime('%Y-%m-%d') + 'T23:59:59' }}">
+                <i class="fas fa-clock"></i><span class="hp-expiry-text"></span>
+              </div>
             {% endif %}
             <button class="hp-card-fav {{ 'active' if (current_user.is_authenticated and product.favorites and current_user.id in product.favorites) or (not current_user.is_authenticated and product._id|string in session.get('liked_products', [])) else '' }}"
               onclick="event.stopPropagation(); toggleFavorite(this, '{{ product._id }}')">
@@ -362,14 +370,6 @@
                 <span class="hp-price-main">€{{ "%.2f"|format(product.display_price) }}</span>
               {% endif %}
             </div>
-            {% if product.discount_until %}
-            <div class="hp-urgency" data-deadline="{{ product.discount_until.strftime('%Y-%m-%d') + 'T23:59:59' if product.discount_until else '' }}">
-              <i class="fas fa-clock"></i>
-              <span class="hp-urgency-text"></span>
-            </div>
-            {% else %}
-            <div class="hp-urgency hp-urgency--placeholder" aria-hidden="true"></div>
-            {% endif %}
           </div>
           {% if product.in_stock != False %}
           <button class="hp-card-atc" onclick="event.stopPropagation(); hpAddToCart(this, '{{ product._id }}')">
