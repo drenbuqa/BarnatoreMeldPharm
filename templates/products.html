@@ -220,7 +220,7 @@
                         <div class="fsp-brand-pop-grid" id="fspBrandPopGrid"></div>
                       </div>
                       <!-- Alphabetical list -->
-                      <ul class="brand-list fsp-brand-alpha-list" id="fspBrandAlphaList"></ul>
+                      <ul class="fsp-brand-alpha-list" id="fspBrandAlphaList"></ul>
                     </div>
                     <div class="fsp-alpha-idx" id="fspAlphaIdx"></div>
                   </div>
@@ -517,10 +517,13 @@
 
 
                     {% if not products %}
-                    <div class="empty-state" style="grid-column: 1/-1; padding: 4rem; text-align: center;">
-                        <i class="fas fa-search fa-3x mb-3" style="color: #cbd5e1;"></i>
-                        <p>Nuk u gjetën produkte në këtë kategori.</p>
-                        <a href="{{ url_for('main.products') }}" class="btn btn-primary mt-3">Shiko të gjitha</a>
+                    <div class="shop-empty-state" style="grid-column:1/-1">
+                      <div class="shop-empty-icon"><i class="fas fa-filter"></i></div>
+                      <p class="shop-empty-title">Nuk u gjet asnjë produkt</p>
+                      <p class="shop-empty-sub">Filtrat e zgjedhur nuk përputhen me asnjë produkt.<br>Provo të ndryshosh ose të heqësh filtrat.</p>
+                      <a href="{{ url_for('main.products') }}" class="shop-empty-btn" onclick="if(window.resetAllProductFilters){event.preventDefault();resetAllProductFilters(event);}">
+                        <i class="fas fa-times-circle"></i> Pastro filtrat
+                      </a>
                     </div>
                     {% endif %}
                 </div>
@@ -549,7 +552,7 @@
 .new-arrival-badge,.sale-label-badge{display:inline-flex;align-items:center;gap:4px;color:#fff;padding:3px 10px;font-size:.6rem;font-weight:800;border-radius:4px;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap}
 .new-arrival-badge{background:#0ea5e9;box-shadow:0 2px 8px rgba(14,165,233,.35)}
 .sale-label-badge{background:#ec4899;box-shadow:0 2px 8px rgba(236,72,153,.35)}
-.products-end-msg{padding:2rem 1rem 1.5rem;animation:fadeInUp .4s ease both}
+.shop-empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:52vh;padding:3rem 1rem;text-align:center}.shop-empty-icon{width:76px;height:76px;background:#f1f5f9;border-radius:50%;display:flex;align-items:center;justify-content:center;margin-bottom:1.5rem;flex-shrink:0}.shop-empty-icon i{font-size:1.7rem;color:#94a3b8}.shop-empty-title{font-size:1.05rem;font-weight:700;color:#1e293b;margin:0 0 0.55rem}.shop-empty-sub{font-size:0.875rem;color:#64748b;margin:0 0 1.75rem;max-width:320px;line-height:1.65}.shop-empty-btn{display:inline-flex;align-items:center;gap:0.45rem;padding:0.72rem 1.65rem;background:#4F5D4E;color:#fff;border:none;border-radius:50px;font-size:0.875rem;font-weight:700;cursor:pointer;font-family:inherit;text-decoration:none;transition:background 0.18s}.shop-empty-btn:hover{background:#3a4538;color:#fff}.products-end-msg{padding:2rem 1rem 1.5rem;animation:fadeInUp .4s ease both}
 .products-end-inner{display:flex;align-items:center;gap:1rem}
 .products-end-line{flex:1;height:1px;background:#e2e8f0}
 .products-end-text{white-space:nowrap;font-size:.8rem;color:#94a3b8;font-weight:500;letter-spacing:.04em}
@@ -1048,8 +1051,52 @@ function fspApplySubcat(catName, catDisplay, subName) {
 var _fspSelectedBrands = new Set();
 
 function _fspBrandCountsData() {
+    if (window._fspBrandCountsRuntime) return window._fspBrandCountsRuntime;
     try { return JSON.parse(document.getElementById('fspBrandCountsData').textContent); } catch(e) { return {}; }
 }
+
+window._fspRefreshBrandCounts = function() {
+    var counts = _fspBrandCountsData();
+    // Popular grid
+    document.querySelectorAll('#fspBrandPopGrid .fsp-brand-pop-btn').forEach(function(btn) {
+        var b = btn.dataset.brand;
+        var cnt = counts[b] || 0;
+        var cntEl = btn.querySelector('.fsp-brand-pop-cnt');
+        if (cntEl) cntEl.textContent = cnt;
+        btn.style.opacity = (cnt === 0 && !_fspSelectedBrands.has(b)) ? '0.4' : '';
+    });
+    // Alpha list — update count and dim unavailable brands
+    document.querySelectorAll('#fspBrandAlphaList .fsp-brand-row').forEach(function(btn) {
+        var b = btn.dataset.brand;
+        var cnt = counts[b] || 0;
+        var cntEl = btn.querySelector('.fsp-brand-row-cnt');
+        if (cnt) {
+            if (cntEl) { cntEl.textContent = cnt; }
+            else { var sp = document.createElement('span'); sp.className = 'fsp-brand-row-cnt'; sp.textContent = cnt; btn.insertBefore(sp, btn.querySelector('.fsp-brand-chk')); }
+        } else {
+            if (cntEl) cntEl.textContent = '0';
+        }
+        btn.style.opacity = (cnt === 0 && !_fspSelectedBrands.has(b)) ? '0.4' : '';
+    });
+    // Desktop inline brands — rebuild so top-6 reflects current counts
+    if (window.fsdBuildInlineBrands) window.fsdBuildInlineBrands();
+    // Desktop dialog alpha counts
+    document.querySelectorAll('#fsdDlgAlphaList .fsp-brand-row').forEach(function(btn) {
+        var b = btn.dataset.brand;
+        var cnt = counts[b] || 0;
+        var cntEl = btn.querySelector('.fsp-brand-row-cnt');
+        if (cntEl) cntEl.textContent = cnt || '0';
+        else if (cnt) { var sp = document.createElement('span'); sp.className = 'fsp-brand-row-cnt'; sp.textContent = cnt; btn.insertBefore(sp, btn.querySelector('.fsp-brand-chk')); }
+        btn.style.opacity = (cnt === 0 && !_fspSelectedBrands.has(b)) ? '0.4' : '';
+    });
+    document.querySelectorAll('#fsdDlgPopGrid .fsp-brand-pop-btn').forEach(function(btn) {
+        var b = btn.dataset.brand;
+        var cnt = counts[b] || 0;
+        var cntEl = btn.querySelector('.fsp-brand-pop-cnt');
+        if (cntEl) cntEl.textContent = cnt;
+        btn.style.opacity = (cnt === 0 && !_fspSelectedBrands.has(b)) ? '0.4' : '';
+    });
+};
 function _fspBrandsData() {
     try { return JSON.parse(document.getElementById('fspBrandsData').textContent); } catch(e) { return []; }
 }

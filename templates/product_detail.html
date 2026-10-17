@@ -3,7 +3,7 @@
 {% block content %}
 <!-- Product Breadcrumbs -->
 <nav class="product-breadcrumbs" style="margin-bottom: 2rem; font-size: 0.9rem; color: #64748b;">
-    <a href="{{ url_for('main.index') }}" style="color: #64748b;">Ballina</a>
+    <a href="{{ url_for('main.products') }}" style="color: #64748b;">Produktet</a>
     <span style="margin: 0 0.5rem;">/</span>
     <a href="{{ url_for('main.products', category=product.category) }}" style="color: #64748b;">{{ product.category
         }}</a>
@@ -1053,6 +1053,9 @@
     /* Hide gallery favorite btn — shown in info card instead */
     .product-gallery .btn-favorite { display: none !important; }
 
+    /* Back-to-top must always sit above all page content including sticky bars */
+    #backToTop { z-index: 2147483647 !important; }
+
     /* ── Sticky Product Bar ─────────────────────────────────────── */
     #sticky-product-bar {
         position: fixed;
@@ -1294,10 +1297,13 @@
         }
         .desktop-action-container { display: none !important; }
         body { padding-bottom: 118px !important; }
+        /* Back-to-top must clear the sticky add-to-cart bar on mobile */
+        #backToTop { bottom: calc(70px + env(safe-area-inset-bottom) + 80px) !important; z-index: 99999999 !important; }
 
         /* Related products: proper card width on mobile */
         .pd-related-card {
             flex: 0 0 44% !important;
+            max-width: 44% !important;
         }
 
         /* Sticky bar: show original price when discounted */

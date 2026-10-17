@@ -894,6 +894,78 @@ def products():
     if _is_oct_promo_active():
         products = _apply_oct_5pct_discount(list(products))
 
+    # Build base label/flag query (shared across all facet count computations)
+    def _facet_base_q() -> dict:
+        from datetime import datetime as _dt
+        q: dict[str, object] = {"is_deleted": {"$ne": True}}
+        if discount_only:
+            q["discount_price"] = {"$ne": None, "$gt": 0}
+            q["$or"] = [
+                {"discount_from": {"$exists": False}},
+                {"discount_from": None},
+                {"discount_from": {"$lte": _dt.now()}},
+            ]
+        if best_sellers:
+            q["is_best_seller"] = True
+        if pharmacist_choice:
+            q["is_pharmacist_choice"] = True
+        if product_labels:
+            clean = list(dict.fromkeys(l for l in product_labels if l))
+            conds: list[dict] = [{"labels": {"$in": clean}}]
+            if "best_seller" in clean:
+                conds.append({"is_best_seller": True})
+            if "pharmacist_choice" in clean:
+                conds.append({"is_pharmacist_choice": True})
+            if "featured" in clean:
+                conds.append({"featured": True})
+            q.setdefault("$and", []).append({"$or": conds})
+        if offer_name and offer_name != 'all':
+            escaped_offer = re.escape(offer_name.strip())
+            q["offer_name"] = {"$regex": f"^\\s*{escaped_offer}\\s*$", "$options": "i"}
+        return q
+
+    import copy as _copy
+
+    # Brand counts: all active filters except brand (so all brands are shown with correct counts)
+    _bq = _copy.deepcopy(_facet_base_q())
+    if category != 'all':
+        _bq["category"] = category
+    if subcategory != 'all':
+        escaped_sub2 = re.escape(subcategory.strip())
+        _bq["subcategory"] = {"$regex": f"^\\s*{escaped_sub2}\\s*$", "$options": "i"}
+    ajax_brand_counts = {
+        r["_id"]: r["count"]
+        for r in mongo.db.products.aggregate([
+            {"$match": _bq},
+            {"$group": {"_id": "$brand", "count": {"$sum": 1}}}
+        ])
+        if r["_id"]
+    }
+
+    # Category counts: only label/flag filters (NOT category/subcategory)
+    _cq = _facet_base_q()
+    ajax_cat_counts = {
+        r["_id"]: r["count"]
+        for r in mongo.db.products.aggregate([
+            {"$match": _cq},
+            {"$group": {"_id": "$category", "count": {"$sum": 1}}}
+        ])
+        if r["_id"]
+    }
+
+    # Subcategory counts: label/flag filters + current category (NOT subcategory)
+    _sq = _copy.deepcopy(_facet_base_q())
+    if category != 'all':
+        _sq["category"] = category
+    ajax_subcat_counts = {
+        r["_id"]: r["count"]
+        for r in mongo.db.products.aggregate([
+            {"$match": _sq},
+            {"$group": {"_id": "$subcategory", "count": {"$sum": 1}}}
+        ])
+        if r["_id"]
+    }
+
     # If it's an AJAX request (from our new filter system)
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.args.get('ajax') == '1':
         results = []
@@ -938,7 +1010,10 @@ def products():
             'best_sellers': best_sellers,
             'pharmacist_choice': pharmacist_choice,
             'product_labels': product_labels,
-            'available_brands': available_brands
+            'available_brands': available_brands,
+            'brand_counts': ajax_brand_counts,
+            'cat_counts': ajax_cat_counts,
+            'subcat_counts': ajax_subcat_counts,
         })
 
     # Compute slider ceiling from highest product price in the DB
@@ -1096,13 +1171,11 @@ def wishlist():
 
 @main.route('/profile/wishlist')
 def profile_wishlist():
-    favorites = []
-    if current_user.is_authenticated:
-        favorites = Product.get_favorites_by_user(current_user.id)
-    else:
+    if not current_user.is_authenticated:
         liked_ids = session.get('liked_products', [])
-        if liked_ids:
-            favorites = Product.get_by_ids(liked_ids)
+        favorites = Product.get_by_ids(liked_ids) if liked_ids else []
+        return render_template('wishlist.html', favorites=favorites)
+    favorites = Product.get_favorites_by_user(current_user.id)
     return render_template('wishlist_tab.html', favorites=favorites)
 
 @main.route('/orders')

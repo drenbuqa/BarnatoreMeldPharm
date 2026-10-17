@@ -283,13 +283,16 @@
   </div>
   <div class="oct-promo-section-body">
     <a href="{{ url_for('main.products') }}" class="oct-banner-link" aria-label="Shfleto të gjitha produktet me zbritje 5% deri më 31 Tetor 2026">
-      <img
-        src="{{ url_for('static', filename='img/oct-promo-banner.png') }}"
-        alt="Të gjitha produktet -5% deri në -20% — Pa kod kuponi — Deri më 31.10.2026"
-        class="oct-banner-img"
-        fetchpriority="high"
-        decoding="async"
-      >
+      <picture>
+        <source srcset="{{ url_for('static', filename='img/oct-promo-banner.webp') }}" type="image/webp">
+        <img
+          src="{{ url_for('static', filename='img/oct-promo-banner.png') }}"
+          alt="Të gjitha produktet -5% deri në -20% — Pa kod kuponi — Deri më 31.10.2026"
+          class="oct-banner-img"
+          fetchpriority="high"
+          decoding="async"
+        >
+      </picture>
     </a>
   </div>
 </section>
@@ -406,8 +409,8 @@
           <span>Eucerin</span>
         </div>
         <picture>
-          <source media="(max-width: 639px)" srcset="https://res.cloudinary.com/drljgepgy/image/upload/v1782389810/ChatGPT_Image_Jun_25_2026_at_12_49_37_PM_lwqrqv.png">
-          <img src="https://res.cloudinary.com/drljgepgy/image/upload/v1782389827/ChatGPT_Image_Jun_25_2026_at_12_49_31_PM_axfvpl.png" alt="Eucerin" class="hp-brand-img" loading="lazy">
+          <source media="(max-width: 639px)" srcset="https://res.cloudinary.com/drljgepgy/image/upload/f_auto,q_auto,w_600,c_limit/v1782389810/ChatGPT_Image_Jun_25_2026_at_12_49_37_PM_lwqrqv.png">
+          <img src="https://res.cloudinary.com/drljgepgy/image/upload/f_auto,q_auto,w_900,c_limit/v1782389827/ChatGPT_Image_Jun_25_2026_at_12_49_31_PM_axfvpl.png" alt="Eucerin" class="hp-brand-img" loading="lazy">
         </picture>
         <div class="hp-brand-arrow"><i class="fas fa-arrow-right"></i></div>
       </a>
@@ -418,8 +421,8 @@
           <span>La Roche-Posay</span>
         </div>
         <picture>
-          <source media="(max-width: 639px)" srcset="https://res.cloudinary.com/drljgepgy/image/upload/v1782389810/ChatGPT_Image_Jun_25_2026_at_12_52_28_PM_txctpu.png">
-          <img src="https://res.cloudinary.com/drljgepgy/image/upload/v1782389810/ChatGPT_Image_Jun_25_2026_at_12_52_23_PM_ogbuch.png" alt="La Roche-Posay" class="hp-brand-img" loading="lazy">
+          <source media="(max-width: 639px)" srcset="https://res.cloudinary.com/drljgepgy/image/upload/f_auto,q_auto,w_600,c_limit/v1782389810/ChatGPT_Image_Jun_25_2026_at_12_52_28_PM_txctpu.png">
+          <img src="https://res.cloudinary.com/drljgepgy/image/upload/f_auto,q_auto,w_900,c_limit/v1782389810/ChatGPT_Image_Jun_25_2026_at_12_52_23_PM_ogbuch.png" alt="La Roche-Posay" class="hp-brand-img" loading="lazy">
         </picture>
         <div class="hp-brand-arrow"><i class="fas fa-arrow-right"></i></div>
       </a>
@@ -430,8 +433,8 @@
           <span>CeraVe</span>
         </div>
         <picture>
-          <source media="(max-width: 639px)" srcset="https://res.cloudinary.com/drljgepgy/image/upload/v1782389810/ChatGPT_Image_Jun_25_2026_at_12_58_51_PM_i8dlyi.png">
-          <img src="https://res.cloudinary.com/drljgepgy/image/upload/v1782389810/ChatGPT_Image_Jun_25_2026_at_12_58_49_PM_fi3e6l.png" alt="CeraVe" class="hp-brand-img" loading="lazy">
+          <source media="(max-width: 639px)" srcset="https://res.cloudinary.com/drljgepgy/image/upload/f_auto,q_auto,w_600,c_limit/v1782389810/ChatGPT_Image_Jun_25_2026_at_12_58_51_PM_i8dlyi.png">
+          <img src="https://res.cloudinary.com/drljgepgy/image/upload/f_auto,q_auto,w_900,c_limit/v1782389810/ChatGPT_Image_Jun_25_2026_at_12_58_49_PM_fi3e6l.png" alt="CeraVe" class="hp-brand-img" loading="lazy">
         </picture>
         <div class="hp-brand-arrow"><i class="fas fa-arrow-right"></i></div>
       </a>
@@ -442,8 +445,8 @@
           <span>Vichy</span>
         </div>
         <picture>
-          <source media="(max-width: 639px)" srcset="https://res.cloudinary.com/drljgepgy/image/upload/v1782389813/ChatGPT_Image_Jun_25_2026_at_01_17_18_PM_onymh0.png">
-          <img src="https://res.cloudinary.com/drljgepgy/image/upload/v1782389809/ChatGPT_Image_Jun_25_2026_at_01_17_16_PM_ysi7sm.png" alt="Vichy" class="hp-brand-img" loading="lazy">
+          <source media="(max-width: 639px)" srcset="https://res.cloudinary.com/drljgepgy/image/upload/f_auto,q_auto,w_600,c_limit/v1782389813/ChatGPT_Image_Jun_25_2026_at_01_17_18_PM_onymh0.png">
+          <img src="https://res.cloudinary.com/drljgepgy/image/upload/f_auto,q_auto,w_900,c_limit/v1782389809/ChatGPT_Image_Jun_25_2026_at_01_17_16_PM_ysi7sm.png" alt="Vichy" class="hp-brand-img" loading="lazy">
         </picture>
         <div class="hp-brand-arrow"><i class="fas fa-arrow-right"></i></div>
       </a>
@@ -517,7 +520,7 @@
         </div>
         <div class="hp-cat-footer">
           <i class="fas fa-ellipsis-h hp-cat-fi"></i>
-          <span class="hp-cat-name">Të Tjerat</span>
+          <span class="hp-cat-name">Të Gjitha</span>
           <i class="fas fa-arrow-right hp-cat-arrow"></i>
         </div>
       </a>

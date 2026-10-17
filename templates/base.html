@@ -2,6 +2,14 @@
 <html lang="en">
 
 <head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-TCCZKK6WGB"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-TCCZKK6WGB');
+    </script>
     <!-- Google Search Console verification -->
     <meta name="google-site-verification" content="I59sQbzM9lZ8_cX6hiAaEgQHMZvgWRSkM5HgMy-DD_M" />
     <!-- Security: CSRF Token for AJAX -->
@@ -197,8 +205,10 @@
                                         class="mini-item-name" onclick="event.stopPropagation()">{{ item.name }}</a>
                                     <div class="mini-item-meta">
                                         {% if item.item_savings > 0 %}
+                                        <span style="display:inline-flex;align-items:center;gap:4px;">
                                         <span class="mini-item-price">€{{ "%.2f"|format(item.display_price) }}</span>
-                                        <span style="text-decoration:line-through;color:#94a3b8;font-size:0.78rem;margin-left:4px;">€{{ "%.2f"|format(item.price) }}</span>
+                                        <span style="text-decoration:line-through;color:#94a3b8;font-size:0.78rem;">€{{ "%.2f"|format(item.price) }}</span>
+                                        </span>
                                         {% else %}
                                         <span class="mini-item-price">€{{ "%.2f"|format(item.price) }}</span>
                                         {% endif %}
@@ -1466,15 +1476,15 @@
     </script>
 
     <!-- Cookie consent banner -->
-    <div id="cookie-banner" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:9999;background:#1e293b;color:#e2e8f0;padding:14px 20px;box-shadow:0 -2px 12px rgba(0,0,0,0.2);">
+    <div id="cookie-banner" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:9999;background:#2B2B2B;color:#EFE7DE;padding:14px 20px;box-shadow:0 -2px 16px rgba(43,43,43,0.18);border-top:1px solid rgba(239,231,222,0.1);">
       <div style="max-width:1100px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;">
-        <p style="margin:0;font-size:0.88rem;line-height:1.5;flex:1;color:#e2e8f0 !important;">
+        <p style="margin:0;font-size:0.88rem;line-height:1.5;flex:1;color:#C4B8AC !important;">
           Faqja jonë përdor cookies të nevojshme për shportën dhe kyçjen tuaj, si dhe cookies të marketingut (Meta Pixel) për të matur efektivitetin e reklamave.
-          <a href="{{ url_for('main.privacy') }}" style="color:#5eead4;text-decoration:underline;">Mëso më shumë</a>
+          <a href="{{ url_for('main.privacy') }}" style="color:#A8C5A0;text-decoration:underline;">Mëso më shumë</a>
         </p>
         <div style="display:flex;gap:10px;flex-shrink:0;">
-          <button onclick="acceptCookies()" style="background:#0f766e;color:#fff;border:none;padding:8px 20px;border-radius:7px;font-size:0.88rem;font-weight:600;cursor:pointer;">Prano</button>
-          <button onclick="declineCookies()" style="background:transparent;color:#94a3b8;border:1px solid #475569;padding:8px 16px;border-radius:7px;font-size:0.88rem;cursor:pointer;">Refuzo</button>
+          <button onclick="acceptCookies()" style="background:#6C7A61;color:#fff;border:none;padding:8px 20px;border-radius:7px;font-size:0.88rem;font-weight:600;cursor:pointer;transition:background 0.18s;" onmouseover="this.style.background='#4F5D4E'" onmouseout="this.style.background='#6C7A61'">Prano</button>
+          <button onclick="declineCookies()" style="background:transparent;color:#7A7068;border:1px solid #4a4540;padding:8px 16px;border-radius:7px;font-size:0.88rem;cursor:pointer;transition:color 0.18s,border-color 0.18s;" onmouseover="this.style.color='#C4B8AC';this.style.borderColor='#7A7068'" onmouseout="this.style.color='#7A7068';this.style.borderColor='#4a4540'">Refuzo</button>
         </div>
       </div>
     </div>

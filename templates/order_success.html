@@ -187,8 +187,18 @@
         }
 
         _firePurchase();
+
+        // GA4 purchase event
+        if (typeof gtag === 'function') {
+            gtag('event', 'purchase', {
+                transaction_id: '{{ order._id }}',
+                value: {{ (order.grand_total or 0) | float }},
+                currency: 'EUR',
+                items: [{% for item in order['items'] %}{item_id:'{{ item.product_id }}',item_name:'{{ item.product_name | replace("'", "\\'") }}',price:{{ item.price | float }},quantity:{{ item.quantity | int }}}{% if not loop.last %},{% endif %}{% endfor %}]
+            });
+        }
     } catch(e) {
-        console.error('[Meta Pixel] Purchase event error:', e);
+        console.error('[Pixel] Purchase event error:', e);
     }
 })();
 </script>
