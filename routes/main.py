@@ -849,7 +849,7 @@ def products():
     
     # Custom products comma separated support
     comma_searches = [s.strip() for s in search_query.split(',')] if ',' in search_query else None
-    sort = request.args.get('sort', 'relevance')
+    sort = request.args.get('sort', 'featured')
     brand = request.args.get('brand', 'all')
     min_price = request.args.get('min_price', type=float)
     max_price = request.args.get('max_price', type=float)

@@ -413,25 +413,26 @@
                     </div>
                     <div class="shop-sorting" style="display: flex; gap: 0.5rem; align-items: center;">
                         <div class="dropdown" id="sortDropdown">
+                            {% set sort_labels = {'featured': 'Të rekomanduara', 'price-low': 'Çmimi: Ulët - Lartë', 'price-high': 'Çmimi: Lartë - Ulët', 'newest': 'Më të rejat', 'discount': 'Zbritja më e lartë'} %}
                             <button class="btn btn-outline-secondary order-button" type="button" id="sortTrigger">
-                                Rendit: <span id="current-sort-label">Relevanca</span> <i
+                                Rendit: <span id="current-sort-label">{{ sort_labels.get(sort, 'Të rekomanduara') }}</span> <i
                                     class="fas fa-chevron-down ml-2"></i>
                             </button>
                             <div class="dropdown-menu dropdown-menu-end" id="sortMenu">
-                                <a class="dropdown-item sort-trigger active" data-sort="relevance">
-                                    <i class="fas fa-star"></i> Relevanca
+                                <a class="dropdown-item sort-trigger{% if sort == 'featured' or not sort %} active{% endif %}" data-sort="featured">
+                                    <i class="fas fa-star"></i> Të rekomanduara
                                 </a>
-                                <a class="dropdown-item sort-trigger" data-sort="price-low">
+                                <a class="dropdown-item sort-trigger{% if sort == 'price-low' %} active{% endif %}" data-sort="price-low">
                                     <i class="fas fa-sort-amount-down-alt"></i> Çmimi: Ulët - Lartë
                                 </a>
-                                <a class="dropdown-item sort-trigger" data-sort="price-high">
+                                <a class="dropdown-item sort-trigger{% if sort == 'price-high' %} active{% endif %}" data-sort="price-high">
                                     <i class="fas fa-sort-amount-up"></i> Çmimi: Lartë - Ulët
                                 </a>
-                                <a class="dropdown-item sort-trigger" data-sort="newest">
+                                <a class="dropdown-item sort-trigger{% if sort == 'newest' %} active{% endif %}" data-sort="newest">
                                     <i class="fas fa-clock"></i> Më të rejat
                                 </a>
-                                <a class="dropdown-item sort-trigger" data-sort="discount">
-                                    <i class="fas fa-tag"></i> Zbritjes (%) më të lartë
+                                <a class="dropdown-item sort-trigger{% if sort == 'discount' %} active{% endif %}" data-sort="discount">
+                                    <i class="fas fa-tag"></i> Zbritja më e lartë
                                 </a>
                             </div>
                         </div>
@@ -477,11 +478,6 @@
                                 onload="this.classList.add('loaded');var s=this.parentElement.querySelector('.img-shimmer');if(s)s.classList.add('hidden')"
                                 onerror="this.src='/static/img/placeholder.png';this.classList.add('error','loaded');var s=this.parentElement.querySelector('.img-shimmer');if(s)s.classList.add('hidden')">
                             {% if product.in_stock == False %}<div class="hp-out-stock"><span>Jashtë Stokut</span></div>{% endif %}
-                            {% if pg_has_expiry %}
-                              <div class="hp-expiry-strip" data-deadline="{% if product.auto_oct_discount %}2026-10-31T23:59:59{% else %}{{ product.discount_until.strftime('%Y-%m-%d') + 'T23:59:59' if product.discount_until else '' }}{% endif %}">
-                                <i class="fas fa-clock"></i><span class="hp-expiry-text"></span>
-                              </div>
-                            {% endif %}
                             <button class="hp-card-fav {{ 'active' if (current_user.is_authenticated and product.favorites and current_user.id in product.favorites) or (not current_user.is_authenticated and product._id|string in session.get('liked_products', [])) else '' }}"
                                 onclick="event.stopPropagation(); toggleFavorite(this, '{{ product._id }}')">
                                 <i class="{{ 'fas' if (current_user.is_authenticated and product.favorites and current_user.id in product.favorites) or (not current_user.is_authenticated and product._id|string in session.get('liked_products', [])) else 'far' }} fa-heart"></i>

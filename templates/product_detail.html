@@ -271,7 +271,7 @@
             </div>
         </div>
 
-        {% if product.how_to_use %}
+        {% if product.how_to_use and product.how_to_use | striptags | trim %}
         <div class="accordion-item" style="background:white;border-radius:16px;margin-bottom:1rem;border:1px solid #f1f5f9;box-shadow:0 2px 4px rgba(0,0,0,.02);overflow:hidden;">
             <div class="accordion-header" style="padding:1.25rem 1.5rem;display:flex;justify-content:space-between;align-items:center;cursor:pointer;transition:background .2s;" onclick="toggleAccordion(this)">
                 <h3 style="font-size:1rem;color:var(--text-main);font-weight:700;margin:0;display:flex;align-items:center;gap:.8rem;">
@@ -291,7 +291,7 @@
         </div>
         {% endif %}
 
-        {% if product.key_ingredients %}
+        {% if product.key_ingredients and product.key_ingredients | striptags | trim %}
         <div class="accordion-item" style="background:white;border-radius:16px;margin-bottom:1rem;border:1px solid #f1f5f9;box-shadow:0 2px 4px rgba(0,0,0,.02);overflow:hidden;">
             <div class="accordion-header" style="padding:1.25rem 1.5rem;display:flex;justify-content:space-between;align-items:center;cursor:pointer;transition:background .2s;" onclick="toggleAccordion(this)">
                 <h3 style="font-size:1rem;color:var(--text-main);font-weight:700;margin:0;display:flex;align-items:center;gap:.8rem;">
@@ -733,15 +733,38 @@
 
 <style>
     /* ── Quill rendered content ── */
-    .ql-content strong { font-weight:700; }
-    .ql-content em { font-style:italic; }
+    .ql-content { font-size:.95rem; color:#475569; line-height:1.75; }
+    .ql-content strong, .ql-content b { font-weight:700; color:#1e293b; }
+    .ql-content em, .ql-content i { font-style:italic; }
     .ql-content u { text-decoration:underline; }
-    .ql-content h2 { font-size:1.1rem; font-weight:800; color:#1e293b; margin:.75rem 0 .4rem; }
-    .ql-content h3 { font-size:.98rem; font-weight:700; color:#334155; margin:.6rem 0 .35rem; }
-    .ql-content ul, .ql-content ol { padding-left:1.35rem; margin:.5rem 0 .75rem; }
-    .ql-content li { margin-bottom:.35rem; line-height:1.65; }
+    .ql-content s { text-decoration:line-through; }
+    .ql-content h1 { font-size:1.3rem; font-weight:800; color:#1e293b; margin:1rem 0 .5rem; line-height:1.3; }
+    .ql-content h2 { font-size:1.1rem; font-weight:800; color:#1e293b; margin:.85rem 0 .45rem; line-height:1.3; }
+    .ql-content h3 { font-size:.98rem; font-weight:700; color:#334155; margin:.7rem 0 .4rem; }
     .ql-content p { margin-bottom:.65rem; }
     .ql-content p:last-child { margin-bottom:0; }
+    .ql-content p:empty { margin:0; min-height:0; line-height:0; }
+    /* Lists — restore browser defaults that CSS resets strip */
+    .ql-content ul { list-style:disc; padding-left:1.5rem; margin:.5rem 0 .75rem; }
+    .ql-content ol { list-style:decimal; padding-left:1.5rem; margin:.5rem 0 .75rem; }
+    .ql-content li { margin-bottom:.4rem; line-height:1.65; display:list-item; }
+    /* Quill indent classes */
+    .ql-content .ql-indent-1 { padding-left:2rem; }
+    .ql-content .ql-indent-2 { padding-left:3.5rem; }
+    .ql-content .ql-indent-3 { padding-left:5rem; }
+    /* Quill list item classes (Quill 1.x uses data-list attr on li) */
+    .ql-content li[data-list="bullet"] { list-style-type:disc; }
+    .ql-content li[data-list="ordered"] { list-style-type:decimal; }
+    /* Blockquote */
+    .ql-content blockquote { border-left:3px solid var(--primary,#4F5D4E); margin:.75rem 0; padding:.5rem 1rem; color:#64748b; font-style:italic; background:#f8faf8; border-radius:0 6px 6px 0; }
+    /* Code */
+    .ql-content code { background:#f1f5f9; border-radius:4px; padding:.1em .35em; font-family:monospace; font-size:.88em; color:#334155; }
+    /* Links */
+    .ql-content a { color:var(--primary,#4F5D4E); text-decoration:underline; }
+    /* Alignment */
+    .ql-content .ql-align-center { text-align:center; }
+    .ql-content .ql-align-right  { text-align:right; }
+    .ql-content .ql-align-justify { text-align:justify; }
 
     /* ── Product Info Card ─────────────────────────────────────── */
     .pinfo-card {
@@ -1311,10 +1334,13 @@
         /* Back-to-top must clear the sticky add-to-cart bar on mobile */
         #backToTop { bottom: calc(70px + env(safe-area-inset-bottom) + 80px) !important; z-index: 99999999 !important; }
 
-        /* Related products: proper card width on mobile */
+        /* Related products: proper card width and gap on mobile */
         .pd-related-card {
             flex: 0 0 44% !important;
             max-width: 44% !important;
+        }
+        #relatedProductsSection .hp-carousel {
+            gap: 0.75rem !important;
         }
 
         /* Sticky bar: show original price when discounted */
@@ -1455,12 +1481,12 @@
 </style>
 
 {% if related_products %}
-<div id="relatedProductsSection" class="container container-wide" style="padding-top: 3rem; padding-bottom: 3rem; overflow: hidden;">
+<div id="relatedProductsSection" class="container container-wide" style="padding-top: 3rem; padding-bottom: 3rem;">
     <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1.5rem; flex-wrap:wrap; gap:1rem;">
         <h2 style="font-family:'Cormorant Garamond',serif; font-size:1.75rem; font-weight:700; color:var(--hp-charcoal,#2B2B2B); margin:0;">Produkte të Ngjashme</h2>
         <a href="{{ url_for('main.products') }}" style="font-size:0.85rem; font-weight:600; color:var(--primary); text-decoration:none;">Shiko të gjitha &rarr;</a>
     </div>
-    <div class="hp-carousel-outer" style="position:relative; overflow:hidden;">
+    <div class="hp-carousel-outer" style="position:relative;">
     <button type="button" class="hp-carousel-arrow hp-prev" onclick="hpScrollCarousel(this,-1)"><i class="fas fa-chevron-left"></i></button>
     <button type="button" class="hp-carousel-arrow hp-next" onclick="hpScrollCarousel(this,1)"><i class="fas fa-chevron-right"></i></button>
     <div class="hp-carousel" style="display:flex; gap:1rem; overflow-x:auto; scroll-snap-type:x mandatory; scroll-behavior:smooth; scrollbar-width:none; padding-bottom:0.5rem;">
@@ -1495,7 +1521,7 @@
                 <div class="img-shimmer"></div>
             </div>
             <div class="hp-card-body" style="padding:0.8rem 0.9rem 0.5rem; flex:1; display:flex; flex-direction:column;">
-                <div style="font-size:0.65rem; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:0.2rem;">{{ related.category }}</div>
+                <div style="font-size:0.65rem; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:0.2rem;">{{ related.brand or related.category }}</div>
                 <div style="font-size:0.82rem; font-weight:600; color:var(--hp-charcoal,#2B2B2B); line-height:1.3; margin-bottom:0.5rem; flex:1; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">{{ related.name }}</div>
                 <div style="display:flex; align-items:center; gap:0.4rem; flex-wrap:wrap;">
                     {% if related.auto_oct_discount %}
@@ -2053,6 +2079,22 @@
         window._metaPixelPendingEvent = null;
     } else {
         window._metaPixelPendingEvent = { event: 'ViewContent', params: params };
+    }
+
+    // GA4 view_item
+    if (typeof gtag === 'function') {
+        gtag('event', 'view_item', {
+            currency: 'EUR',
+            value: {{ product.display_price | float }},
+            items: [{
+                item_id: {{ product._id | string | tojson }},
+                item_name: {{ product.name | tojson }},
+                item_brand: {{ (product.brand or '') | tojson }},
+                item_category: {{ (product.category or '') | tojson }},
+                price: {{ product.display_price | float }},
+                quantity: 1
+            }]
+        });
     }
 })();
 </script>

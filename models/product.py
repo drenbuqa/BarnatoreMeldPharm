@@ -313,17 +313,19 @@ class Product:
                 query["$and"].append(search_filter)
             
         # Determine sort order
-        # Default sort
-        sort_dict = {"_id": -1}
+        # Default: "featured" — deterministic quality score so pagination is stable (no duplicates)
+        sort_dict = {"_quality_score": -1, "_id": -1}
         if sort == 'price-low':
-            sort_dict = {"effective_price": 1}
+            sort_dict = {"effective_price": 1, "_id": -1}
         elif sort == 'price-high':
-            sort_dict = {"effective_price": -1}
+            sort_dict = {"effective_price": -1, "_id": -1}
         elif sort == 'newest':
             sort_dict = {"_id": -1}
         elif sort == 'discount':
-            sort_dict = {"discount_percent": -1}
+            sort_dict = {"discount_percent": -1, "_id": -1}
         elif sort == 'relevance':
+            # Weighted random (Efraimidis-Spirakis) — intentionally non-deterministic.
+            # Only used when the user explicitly selects it; pagination may show duplicates.
             sort_dict = {"relevance_score": -1}
 
         # Use aggregation to handle dynamic sorting by effective price (discount_price if exists, else price)
@@ -367,28 +369,37 @@ class Product:
                 }
             },
             {
-                # "Best products first, but shuffled" — weighted random ranking (Efraimidis-Spirakis):
-                # best-seller/pharmacist-choice/discounted products get a higher weight so they land
-                # near the top more *often*, but it's not a guarantee — plain products can still surface.
+                # Deterministic quality score: best sellers / pharmacist picks / discounted / featured
+                # products bubble to the top. Stable across requests so pagination never shows duplicates.
                 "$addFields": {
-                    "_relevance_weight": {
+                    "_quality_score": {
                         "$add": [
-                            1,
-                            {"$cond": ["$is_best_seller", 3, 0]},
-                            {"$cond": ["$is_pharmacist_choice", 2, 0]},
-                            {"$cond": [{"$gt": ["$discount_percent", 0]}, 1, 0]}
+                            {"$cond": ["$is_best_seller", 8, 0]},
+                            {"$cond": ["$is_pharmacist_choice", 6, 0]},
+                            {"$cond": [{"$eq": ["$featured", True]}, 4, 0]},
+                            {"$cond": [{"$gt": ["$discount_percent", 0]}, 2, 0]}
                         ]
-                    }
-                }
-            },
-            {
-                "$addFields": {
-                    "relevance_score": {
-                        "$pow": [{"$rand": {}}, {"$divide": [1, "$_relevance_weight"]}]
                     }
                 }
             }
         ]
+
+        # Only compute the random relevance_score when explicitly requested
+        if sort == 'relevance':
+            pipeline.append({
+                "$addFields": {
+                    "relevance_score": {
+                        "$pow": [{"$rand": {}}, {"$divide": [1, {
+                            "$add": [
+                                1,
+                                {"$cond": ["$is_best_seller", 3, 0]},
+                                {"$cond": ["$is_pharmacist_choice", 2, 0]},
+                                {"$cond": [{"$gt": ["$discount_percent", 0]}, 1, 0]}
+                            ]
+                        }]}]
+                    }
+                }
+            })
 
         # Apply basic filters first
         match_query = query.copy()

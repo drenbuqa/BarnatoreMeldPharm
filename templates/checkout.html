@@ -838,6 +838,22 @@
     } else {
         window._metaPixelPendingEvent = { event: 'InitiateCheckout', params: params };
     }
+
+    // GA4 begin_checkout
+    if (typeof gtag === 'function') {
+        gtag('event', 'begin_checkout', {
+            currency: 'EUR',
+            value: {{ grand_total | float }},
+            items: [{% for item in cart_items %}{
+                item_id: {{ item._id | string | tojson }},
+                item_name: {{ item.name | tojson }},
+                item_brand: {{ (item.brand or '') | tojson }},
+                item_category: {{ (item.category or '') | tojson }},
+                price: {{ item.display_price | float }},
+                quantity: {{ item.quantity | int }}
+            }{% if not loop.last %},{% endif %}{% endfor %}]
+        });
+    }
 })();
 </script>
 {% endblock %}
