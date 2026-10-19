@@ -314,7 +314,7 @@ class Product:
             
         # Determine sort order
         # Default: "featured" — deterministic quality score so pagination is stable (no duplicates)
-        sort_dict = {"_quality_score": -1, "display_order": 1}
+        sort_dict = {"_final_score": -1}
         if sort == 'price-low':
             sort_dict = {"effective_price": 1, "display_order": 1}
         elif sort == 'price-high':
@@ -369,8 +369,9 @@ class Product:
                 }
             },
             {
-                # Deterministic quality score: best sellers / pharmacist picks / discounted / featured
-                # products bubble to the top. Stable across requests so pagination never shows duplicates.
+                # Blend quality boost (40%) with permanent random display_order (60%) so
+                # flagged products (best sellers, pharmacist picks, etc.) surface more often
+                # but don't form hard clusters — all product types stay visible across pages.
                 "$addFields": {
                     "_quality_score": {
                         "$add": [
@@ -378,6 +379,23 @@ class Product:
                             {"$cond": ["$is_pharmacist_choice", 6, 0]},
                             {"$cond": [{"$eq": ["$featured", True]}, 4, 0]},
                             {"$cond": [{"$gt": ["$discount_percent", 0]}, 2, 0]}
+                        ]
+                    },
+                    "_final_score": {
+                        "$add": [
+                            {"$multiply": [
+                                {"$divide": [
+                                    {"$add": [
+                                        {"$cond": ["$is_best_seller", 8, 0]},
+                                        {"$cond": ["$is_pharmacist_choice", 6, 0]},
+                                        {"$cond": [{"$eq": ["$featured", True]}, 4, 0]},
+                                        {"$cond": [{"$gt": ["$discount_percent", 0]}, 2, 0]}
+                                    ]},
+                                    20
+                                ]},
+                                0.4
+                            ]},
+                            {"$multiply": [{"$ifNull": ["$display_order", 0.5]}, 0.6]}
                         ]
                     }
                 }
