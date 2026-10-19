@@ -661,18 +661,34 @@ class Product:
                     src_line_tokens = src_tokens & line_tokens
 
             # ── Broad candidate pool ─────────────────────────────────────────
-            or_clauses = [{'category': category}]
-            if brand:
-                or_clauses.append({'brand': brand})
-            if subcategory:
-                or_clauses.append({'subcategory': subcategory})
-
-            candidates = list(mongo.db.products.find({
+            # Fetch same-brand products first (no limit — brands rarely exceed
+            # a few hundred products and these are the most relevant results).
+            base_filter = {
                 'is_deleted': {'$ne': True},
                 'in_stock':   {'$ne': False},
                 '_id':        {'$ne': ObjectId(exclude_id)},
-                '$or':        or_clauses,
-            }).limit(limit * 8))
+            }
+            seen_ids = set()
+            candidates = []
+
+            if brand:
+                brand_products = list(mongo.db.products.find(
+                    {**base_filter, 'brand': brand}
+                ))
+                for p in brand_products:
+                    seen_ids.add(p['_id'])
+                candidates.extend(brand_products)
+
+            # Fill remaining slots from same subcategory / category
+            exclude_ids = list(seen_ids) + [ObjectId(exclude_id)]
+            cat_filter = {**base_filter, '_id': {'$nin': exclude_ids}}
+            if subcategory:
+                cat_filter['$or'] = [{'subcategory': subcategory}, {'category': category}]
+            else:
+                cat_filter['category'] = category
+
+            cat_candidates = list(mongo.db.products.find(cat_filter).limit(limit * 6))
+            candidates.extend(cat_candidates)
 
             # ── Score every candidate ────────────────────────────────────────
             scored = []
