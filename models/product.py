@@ -314,15 +314,15 @@ class Product:
             
         # Determine sort order
         # Default: "featured" — deterministic quality score so pagination is stable (no duplicates)
-        sort_dict = {"_quality_score": -1, "name": 1}
+        sort_dict = {"_quality_score": -1, "display_order": 1}
         if sort == 'price-low':
-            sort_dict = {"effective_price": 1, "name": 1}
+            sort_dict = {"effective_price": 1, "display_order": 1}
         elif sort == 'price-high':
-            sort_dict = {"effective_price": -1, "name": 1}
+            sort_dict = {"effective_price": -1, "display_order": 1}
         elif sort == 'newest':
             sort_dict = {"_id": -1}
         elif sort == 'discount':
-            sort_dict = {"discount_percent": -1, "name": 1}
+            sort_dict = {"discount_percent": -1, "display_order": 1}
         elif sort == 'relevance':
             # Weighted random (Efraimidis-Spirakis) — intentionally non-deterministic.
             # Only used when the user explicitly selects it; pagination may show duplicates.
@@ -713,7 +713,9 @@ class Product:
     @staticmethod
 
     def create(data):
-
+        import random
+        if 'display_order' not in data:
+            data['display_order'] = random.random()
         return mongo.db.products.insert_one(data)
 
 
