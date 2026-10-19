@@ -849,8 +849,11 @@ def products():
     
     # Custom products comma separated support
     comma_searches = [s.strip() for s in search_query.split(',')] if ',' in search_query else None
+    import random as _random
     sort = request.args.get('sort', 'featured')
     seed = request.args.get('seed', type=float)
+    if seed is None and sort == 'featured':
+        seed = _random.random()
     brand = request.args.get('brand', 'all')
     min_price = request.args.get('min_price', type=float)
     max_price = request.args.get('max_price', type=float)
@@ -1009,6 +1012,7 @@ def products():
             'current_subcategory': subcategory,
             'current_brand': brand,
             'sort': sort,
+            'seed': seed,
             'best_sellers': best_sellers,
             'pharmacist_choice': pharmacist_choice,
             'product_labels': product_labels,
@@ -1073,7 +1077,8 @@ def products():
                          cat_counts=cat_counts,
                          total_products_all=total_products_all,
                          subcat_counts=subcat_counts,
-                         brand_counts=brand_counts)
+                         brand_counts=brand_counts,
+                         seed=seed)
 
     # Debug print
     print(f"Products found: {len(products)} on page {page} in category {category} subcategory {subcategory} search: {search_query}")
