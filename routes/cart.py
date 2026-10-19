@@ -668,6 +668,21 @@ def place_order():
         "status": "Pending"
     })
         
+    # Increment total_sold per product
+    try:
+        from models.db import mongo as _mongo
+        from bson import ObjectId as _ObjId
+        for _item in order_items:
+            try:
+                _mongo.db.products.update_one(
+                    {"_id": _ObjId(str(_item["product_id"]))},
+                    {"$inc": {"total_sold": int(_item.get("quantity", 1))}}
+                )
+            except Exception:
+                pass
+    except Exception:
+        pass
+
     # Process Cash on Delivery
     session.pop('cart', None)
     if current_user.is_authenticated:

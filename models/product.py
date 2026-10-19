@@ -328,6 +328,18 @@ class Product:
             # Only used when the user explicitly selects it; pagination may show duplicates.
             sort_dict = {"relevance_score": -1}
 
+        # Pre-compute log normalisation denominators for the ranking formula.
+        # These are re-queried each call so they stay accurate as the data grows.
+        import math as _math
+        _max_views_doc = mongo.db.products.find_one(
+            {"is_deleted": {"$ne": True}}, {"views": 1}, sort=[("views", -1)]
+        )
+        _max_sold_doc = mongo.db.products.find_one(
+            {"is_deleted": {"$ne": True}}, {"total_sold": 1}, sort=[("total_sold", -1)]
+        )
+        _log_max_views = _math.log(1 + (_max_views_doc.get("views") or 0 if _max_views_doc else 0)) or 1
+        _log_max_sold  = _math.log(1 + (_max_sold_doc.get("total_sold") or 0 if _max_sold_doc else 0)) or 1
+
         # Use aggregation to handle dynamic sorting by effective price (discount_price if exists, else price)
         pipeline = [
             {
@@ -369,40 +381,49 @@ class Product:
                 }
             },
             {
-                # _final_score = 40% quality boost + 60% session-shuffled display_order.
-                # display_order is a permanent random float per product; shifting it by a
-                # per-session seed (passed from JS) and wrapping mod 1 gives a different
-                # order every page load while remaining stable within a session so
-                # "load more" scrolling never produces duplicate products.
+                # _final_score: 10% quality (best_seller+pharmacist_choice), 10% views,
+                # 15% sales, 65% session-seeded random.
+                # Views and sales are log-normalised so a single viral product can't dominate.
+                # display_order is a stable per-product float; adding a per-session seed and
+                # taking mod 1 rotates the order each visit while keeping it stable within a
+                # session so "load more" never produces duplicate products.
                 "$addFields": {
-                    "_quality_score": {
-                        "$add": [
-                            {"$cond": ["$is_best_seller", 8, 0]},
-                            {"$cond": ["$is_pharmacist_choice", 6, 0]},
-                            {"$cond": [{"$eq": ["$featured", True]}, 4, 0]},
-                            {"$cond": [{"$gt": ["$discount_percent", 0]}, 2, 0]}
-                        ]
-                    },
                     "_final_score": {
                         "$add": [
+                            # 10% quality: (is_best_seller + is_pharmacist_choice) / 2
                             {"$multiply": [
                                 {"$divide": [
                                     {"$add": [
-                                        {"$cond": ["$is_best_seller", 8, 0]},
-                                        {"$cond": ["$is_pharmacist_choice", 6, 0]},
-                                        {"$cond": [{"$eq": ["$featured", True]}, 4, 0]},
-                                        {"$cond": [{"$gt": ["$discount_percent", 0]}, 2, 0]}
+                                        {"$cond": ["$is_best_seller", 1, 0]},
+                                        {"$cond": ["$is_pharmacist_choice", 1, 0]}
                                     ]},
-                                    20
+                                    2
                                 ]},
-                                0.4
+                                0.10
                             ]},
+                            # 10% views (log-normalised)
+                            {"$multiply": [
+                                {"$divide": [
+                                    {"$ln": {"$add": [{"$ifNull": ["$views", 0]}, 1]}},
+                                    _log_max_views
+                                ]},
+                                0.10
+                            ]},
+                            # 15% sales (log-normalised)
+                            {"$multiply": [
+                                {"$divide": [
+                                    {"$ln": {"$add": [{"$ifNull": ["$total_sold", 0]}, 1]}},
+                                    _log_max_sold
+                                ]},
+                                0.15
+                            ]},
+                            # 65% session-seeded random shuffle
                             {"$multiply": [
                                 {"$mod": [
                                     {"$add": [{"$ifNull": ["$display_order", 0.5]}, seed if seed is not None else 0]},
                                     1
                                 ]},
-                                0.6
+                                0.65
                             ]}
                         ]
                     }
