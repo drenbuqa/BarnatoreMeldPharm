@@ -850,6 +850,7 @@ def products():
     # Custom products comma separated support
     comma_searches = [s.strip() for s in search_query.split(',')] if ',' in search_query else None
     sort = request.args.get('sort', 'featured')
+    seed = request.args.get('seed', type=float)
     brand = request.args.get('brand', 'all')
     min_price = request.args.get('min_price', type=float)
     max_price = request.args.get('max_price', type=float)
@@ -866,11 +867,12 @@ def products():
     ]
     
     products, total_pages, total_count = Product.get_paginated(
-        page, per_page, category, search_query, subcategory, 
+        page, per_page, category, search_query, subcategory,
         sort=sort, brand=brand, min_price=min_price, max_price=max_price,
         discount_only=discount_only, best_seller_only=best_sellers,
         no_discount=no_discount, pharmacist_choice=pharmacist_choice,
-        offer_name=offer_name or None, product_labels=product_labels
+        offer_name=offer_name or None, product_labels=product_labels,
+        seed=seed
     )
     
     # Get all unique brands for the filter sidebar

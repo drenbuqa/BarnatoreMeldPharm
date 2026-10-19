@@ -187,7 +187,7 @@ class Product:
 
 
     @staticmethod
-    def get_paginated(page=1, per_page=20, category=None, search_query=None, subcategory=None, sort=None, brand=None, min_price=None, max_price=None, discount_only=False, best_seller_only=False, no_discount=False, pharmacist_choice=False, offer_name=None, product_labels=None):
+    def get_paginated(page=1, per_page=20, category=None, search_query=None, subcategory=None, sort=None, brand=None, min_price=None, max_price=None, discount_only=False, best_seller_only=False, no_discount=False, pharmacist_choice=False, offer_name=None, product_labels=None, seed=None):
         Product.revert_expired_offers()
         query = {"is_deleted": {"$ne": True}}
         if category and category != 'all':
@@ -369,9 +369,11 @@ class Product:
                 }
             },
             {
-                # Blend quality boost (40%) with permanent random display_order (60%) so
-                # flagged products (best sellers, pharmacist picks, etc.) surface more often
-                # but don't form hard clusters — all product types stay visible across pages.
+                # _final_score = 40% quality boost + 60% session-shuffled display_order.
+                # display_order is a permanent random float per product; shifting it by a
+                # per-session seed (passed from JS) and wrapping mod 1 gives a different
+                # order every page load while remaining stable within a session so
+                # "load more" scrolling never produces duplicate products.
                 "$addFields": {
                     "_quality_score": {
                         "$add": [
@@ -395,7 +397,13 @@ class Product:
                                 ]},
                                 0.4
                             ]},
-                            {"$multiply": [{"$ifNull": ["$display_order", 0.5]}, 0.6]}
+                            {"$multiply": [
+                                {"$mod": [
+                                    {"$add": [{"$ifNull": ["$display_order", 0.5]}, seed if seed is not None else 0]},
+                                    1
+                                ]},
+                                0.6
+                            ]}
                         ]
                     }
                 }
