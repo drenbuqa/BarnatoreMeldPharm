@@ -171,9 +171,7 @@
                 fbq('track', 'Purchase', params, {eventID: eventID});
                 window._metaPixelPendingEvent = null;
             } else {
-                // Store for when pixel loads (new visitor accepts cookies)
                 window._metaPixelPendingEvent = { event: 'Purchase', params: params, options: {eventID: eventID} };
-                // Poll up to 10s in case consent is given after page load
                 var _attempts = 0;
                 var _iv = setInterval(function() {
                     if (++_attempts > 100) { clearInterval(_iv); return; }
@@ -187,20 +185,46 @@
         }
 
         _firePurchase();
-
-        // GA4 purchase event
-        if (typeof gtag === 'function') {
-            gtag('event', 'purchase', {
-                transaction_id: '{{ order._id }}',
-                value: {{ (order.grand_total or 0) | float }},
-                currency: 'EUR',
-                items: [{% for item in order['items'] %}{item_id:'{{ item.product_id }}',item_name:'{{ item.product_name | replace("'", "\\'") }}',price:{{ item.price | float }},quantity:{{ item.quantity | int }}}{% if not loop.last %},{% endif %}{% endfor %}]
-            });
-        }
     } catch(e) {
         console.error('[Pixel] Purchase event error:', e);
     }
 })();
 </script>
 {% endif %}
+
+{# GA4 purchase — fires independently on first visit. GA4 deduplicates by transaction_id. #}
+<script>
+(function() {
+    var _txId = '{{ order._id }}';
+    var _lsKey = 'ga4_purchase_' + _txId;
+    try { if (sessionStorage.getItem(_lsKey)) return; } catch(e) {}
+    var _payload = {
+        transaction_id: _txId,
+        value: {{ (order.grand_total or 0) | float }},
+        currency: 'EUR',
+        items: [{% for item in order['items'] %}{
+            item_id: {{ item.product_id | string | tojson }},
+            item_name: {{ (item.product_name or '') | tojson }},
+            price: {{ item.price | float }},
+            quantity: {{ item.quantity | int }}
+        }{% if not loop.last %},{% endif %}{% endfor %}]
+    };
+    function _sendGA4Purchase() {
+        if (typeof gtag === 'function') {
+            gtag('event', 'purchase', _payload);
+            try { sessionStorage.setItem(_lsKey, '1'); } catch(e) {}
+        }
+    }
+    // Fire immediately if gtag is ready, else wait for it
+    if (typeof gtag === 'function') {
+        _sendGA4Purchase();
+    } else {
+        var _t = 0;
+        var _iv = setInterval(function() {
+            if (typeof gtag === 'function') { clearInterval(_iv); _sendGA4Purchase(); }
+            else if (++_t > 50) { clearInterval(_iv); }
+        }, 100);
+    }
+})();
+</script>
 {% endblock %}
