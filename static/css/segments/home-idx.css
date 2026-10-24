@@ -52,8 +52,13 @@
 /* ── Mobile hero: CSS scroll-snap (no arrows, finger swipe) ── */
 @media (max-width:992px){
   .hero-prev,.hero-next{display:none!important;}
-  /* Let the carousel's own overflow control clipping; hidden on wrapper
-     can block native touch-scroll on iOS */
+  /* Break out of Bootstrap container so image fills full viewport width */
+  .home-page .hero-carousel-container{
+    width:100vw!important;
+    margin-left:calc(-50vw + 50%)!important;
+    border-radius:0!important;
+    box-shadow:none!important;
+  }
   .home-page .hero-inner-wrapper{overflow:visible!important;border-radius:0!important;}
   .home-page .hero-carousel{
     display:flex!important;
@@ -81,16 +86,13 @@
     transition:none!important;
     scroll-snap-align:start!important;
   }
-  /* pull dots tight under the image */
+  /* Dots: overlaid on image, same position and style as desktop */
   .home-page .hero-dots{
-    position:relative!important;
-    bottom:auto!important;
-    left:auto!important;
-    transform:none!important;
+    position:absolute!important;
+    bottom:0.6rem!important;
+    left:50%!important;
+    transform:translateX(-50%)!important;
     justify-content:center!important;
-    margin-top:0!important;
     padding:0!important;
   }
-  .home-page .hero-dot{background:rgba(43,43,43,0.22)!important;}
-  .home-page .hero-dot.active{background:var(--hp-sage)!important;}
 }
