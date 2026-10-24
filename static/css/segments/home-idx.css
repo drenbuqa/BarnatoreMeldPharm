@@ -81,5 +81,5 @@
     scroll-snap-align:start!important;
   }
   /* Dots: full-width row below image so justify-content:center works from viewport edge */
-  .home-page .hero-dots{width:100%!important;padding:8px 0!important;margin-top:0!important;}
+  .home-page .hero-dots{width:100%!important;padding:2px 0!important;margin-top:0!important;}
 }
