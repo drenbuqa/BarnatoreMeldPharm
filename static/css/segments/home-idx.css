@@ -48,3 +48,43 @@
 .hp-need-label{font-size:0.9rem}
 .hp-need-badge{width:38px;height:38px;top:14px;left:14px}
 }
+
+/* ── Mobile hero: CSS scroll-snap (no arrows, finger swipe) ── */
+@media (max-width:992px){
+  .hero-prev,.hero-next{display:none!important;}
+  .home-page .hero-inner-wrapper{overflow:hidden!important;}
+  .home-page .hero-carousel{
+    display:flex!important;
+    flex-direction:row!important;
+    overflow-x:scroll!important;
+    scroll-snap-type:x mandatory!important;
+    scrollbar-width:none!important;
+    -ms-overflow-style:none!important;
+    -webkit-overflow-scrolling:touch!important;
+    scroll-behavior:auto!important;
+  }
+  .home-page .hero-carousel::-webkit-scrollbar{display:none!important;}
+  .home-page .hero-slide{
+    flex:0 0 100%!important;
+    min-width:100%!important;
+    position:relative!important;
+    top:auto!important;left:auto!important;
+    height:100%!important;
+    opacity:1!important;
+    visibility:visible!important;
+    display:block!important;
+    z-index:1!important;
+    transition:none!important;
+  }
+  /* dots sit outside the clipped wrapper — move them below */
+  .home-page .hero-dots{
+    position:relative!important;
+    bottom:auto!important;
+    left:auto!important;
+    transform:none!important;
+    justify-content:center!important;
+    margin-top:6px!important;
+  }
+  .home-page .hero-dot{background:rgba(43,43,43,0.25)!important;}
+  .home-page .hero-dot.active{background:var(--hp-sage)!important;}
+}
