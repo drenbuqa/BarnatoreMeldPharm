@@ -184,15 +184,15 @@
         <button class="hero-prev" onclick="plusSlides(-1)"><i class="fas fa-chevron-left"></i></button>
         <button class="hero-next" onclick="plusSlides(1)"><i class="fas fa-chevron-right"></i></button>
       </div>
-      <div class="hero-dots">
-        {% for offer in offer_banners %}
-        <span class="hero-dot {{ 'active' if loop.first else '' }}" data-idx="{{ loop.index }}" onclick="currentSlide(this.dataset.idx)"></span>
-        {% endfor %}
-        {% if not offer_banners %}
-        <span class="hero-dot active" onclick="currentSlide(1)"></span>
-        {% endif %}
-      </div>
     </header>
+    <div class="hero-dots">
+      {% for offer in offer_banners %}
+      <span class="hero-dot {{ 'active' if loop.first else '' }}" data-idx="{{ loop.index }}" onclick="currentSlide(this.dataset.idx)"></span>
+      {% endfor %}
+      {% if not offer_banners %}
+      <span class="hero-dot active" onclick="currentSlide(1)"></span>
+      {% endif %}
+    </div>
     <div class="hero-scroll-hint" id="heroScrollHint" aria-hidden="true">
       <div class="hero-scroll-hint-arrow"><i class="fas fa-chevron-down"></i></div>
     </div>
