@@ -54,7 +54,7 @@
   .hero-prev,.hero-next{display:none!important;}
   /* Let the carousel's own overflow control clipping; hidden on wrapper
      can block native touch-scroll on iOS */
-  .home-page .hero-inner-wrapper{overflow:visible!important;}
+  .home-page .hero-inner-wrapper{overflow:visible!important;border-radius:0!important;}
   .home-page .hero-carousel{
     display:flex!important;
     flex-direction:row!important;
@@ -88,7 +88,7 @@
     left:auto!important;
     transform:none!important;
     justify-content:center!important;
-    margin-top:4px!important;
+    margin-top:0!important;
     padding:0!important;
   }
   .home-page .hero-dot{background:rgba(43,43,43,0.22)!important;}
