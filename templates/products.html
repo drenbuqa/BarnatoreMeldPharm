@@ -449,24 +449,20 @@
 
                 <div id="productGrid" class="product-grid">
                     {% for product in products %}
-                    {% set pg_has_expiry = product.auto_oct_discount or product.discount_until %}
-                    {% set pg_badge_slots = 1 if pg_has_expiry else 2 %}
                     {% set pg_badges = [] %}
                     {% if product.offer_type == 'multi_buy' %}{% set _ = pg_badges.append(('offer', product.offer_badge_text or '1+1', '')) %}
                     {% elif product.auto_oct_discount %}{% set _ = pg_badges.append(('offer', '-5%', 'hp-card-badge--oct')) %}
-                    {% elif product.discount_price %}{% set _ = pg_badges.append(('offer', 'Ofertë Speciale', '')) %}
-                    {% elif product.labels and 'sale' in product.labels %}{% set _ = pg_badges.append(('label', 'Ofertë', 'sale-label-badge')) %}{% endif %}
-                    {% if pg_badges|length < pg_badge_slots %}
-                      {% if product.labels and 'new_arrival' in product.labels %}{% set _ = pg_badges.append(('label', 'I Ri', 'new-arrival-badge')) %}
-                      {% elif product.labels and 'set' in product.labels %}{% set _ = pg_badges.append(('label', 'Set', 'set-badge')) %}
-                      {% elif product.labels and 'limited' in product.labels %}{% set _ = pg_badges.append(('label', 'I Kufizuar', 'limited-badge')) %}
-                      {% elif product.is_best_seller %}{% set _ = pg_badges.append(('bestseller', 'Më i Shituri', '')) %}
-                      {% elif product.is_pharmacist_choice %}{% set _ = pg_badges.append(('pharmacist', 'Farmacisti', '')) %}{% endif %}
-                    {% endif %}
+                    {% elif product.discount_price %}{% set _pg_disc=((product.display_original_price-product.discount_price)/product.display_original_price*100)|round|int %}{% set _ = pg_badges.append(('offer', '-' ~ _pg_disc ~ '%', '')) %}
+                    {% elif product.labels and 'sale' in product.labels %}{% set _ = pg_badges.append(('label', 'Ofertë', 'sale-label-badge')) %}
+                    {% elif product.is_pharmacist_choice %}{% set _ = pg_badges.append(('pharmacist', 'Farmacisti', '')) %}
+                    {% elif product.labels and 'limited' in product.labels %}{% set _ = pg_badges.append(('label', 'I Kufizuar', 'limited-badge')) %}
+                    {% elif product.labels and 'set' in product.labels %}{% set _ = pg_badges.append(('label', 'Set', 'set-badge')) %}
+                    {% elif product.labels and 'new_arrival' in product.labels %}{% set _ = pg_badges.append(('label', 'I Ri', 'new-arrival-badge')) %}
+                    {% elif product.is_best_seller %}{% set _ = pg_badges.append(('bestseller', 'Më i Shituri', '')) %}{% endif %}
                     <div class="hp-card fade-in-section{% if product.auto_oct_discount %} hp-card--oct{% endif %}" data-href="{{ url_for('main.product_detail', product_id=product._id) }}" onclick="window.location.href=this.dataset.href">
                         <div class="hp-card-img">
                             <div class="badge-stack">
-                                {% for btype, btext, bclass in pg_badges[:pg_badge_slots] %}
+                                {% for btype, btext, bclass in pg_badges[:1] %}
                                   {% if btype == 'offer' %}<span class="hp-card-badge {{ bclass }}">{{ btext }}</span>
                                   {% elif btype == 'bestseller' %}<div class="best-seller-badge">{{ btext }}</div>
                                   {% elif btype == 'pharmacist' %}<div class="pharmacist-badge"><i class="fas fa-user-md"></i> {{ btext }}</div>
@@ -499,9 +495,6 @@
                                 {% elif product.discount_price or product.auto_oct_discount %}
                                     <span class="hp-price-main">€{{ "%.2f"|format(product.display_price) }}</span>
                                     <span class="hp-price-orig">€{{ "%.2f"|format(product.display_original_price) }}</span>
-                                    <span class="hp-price-pct{% if product.auto_oct_discount %} hp-price-pct--oct{% endif %}">
-                                        {% if product.auto_oct_discount %}-5%{% elif product.offer_badge_text and not product.offer_badge_text.startswith('-') %}{{ product.offer_badge_text }}{% else %}-{{ ((product.display_original_price - product.discount_price) / product.display_original_price * 100)|round|int }}%{% endif %}
-                                    </span>
                                 {% else %}
                                     <span class="hp-price-main">€{{ "%.2f"|format(product.display_price) }}</span>
                                 {% endif %}
@@ -898,10 +891,15 @@
 window.updateProductLabelFilters = function() {
     var selected = Array.from(new Set(Array.from(document.querySelectorAll('.product-label-filter:checked')).map(function(i){return i.value;})));
     var hasSale = selected.includes('sale');
-    var labels = selected.filter(function(v){return v!=='sale';});
+    var hasBestSeller = selected.includes('best_seller');
+    var hasPharmacist = selected.includes('pharmacist_choice');
+    // Remaining labels that go as a multi-value `labels` param
+    var labels = selected.filter(function(v){ return v !== 'sale' && v !== 'best_seller' && v !== 'pharmacist_choice'; });
     var params = new URLSearchParams(window.location.search);
-    params.delete('best_sellers'); params.delete('pharmacist_choice'); params.delete('page'); params.delete('ajax');
+    params.delete('page'); params.delete('ajax');
     if (hasSale) params.set('discount_only','true'); else params.delete('discount_only');
+    if (hasBestSeller) params.set('best_sellers','true'); else params.delete('best_sellers');
+    if (hasPharmacist) params.set('pharmacist_choice','true'); else params.delete('pharmacist_choice');
     if (labels.length) params.set('labels', labels.join(',')); else params.delete('labels');
     window.history.pushState({}, '', window.location.pathname + (params.toString() ? '?' + params.toString() : ''));
     fspUpdateActiveBadge();fsdUpdateActiveBadge();fsdUpdateChipsBar();
@@ -921,6 +919,7 @@ window.resetAllProductFilters = function(e) {
         if (chk) chk.innerHTML = '';
     });
     window.resetFilters(e);
+    fspUpdateActiveBadge();fsdUpdateActiveBadge();fsdUpdateChipsBar();
 };
 
 // ── Multi-screen navigation ────────────────────────────────────────
@@ -1056,16 +1055,48 @@ function _fspBrandCountsData() {
     try { return JSON.parse(document.getElementById('fspBrandCountsData').textContent); } catch(e) { return {}; }
 }
 
+// Rebuild the popular-brands grid (dynamic count, even-snapped) in any container
+function _fspRebuildPopularGrid(gridId) {
+    var grid = document.getElementById(gridId);
+    if (!grid) return;
+    var brands = _fspBrandsData();
+    var counts = _fspBrandCountsData();
+    var sorted = brands.map(function(b){ return {name:b, count:counts[b]||0}; })
+                       .filter(function(b){ return b.count > 0; })
+                       .sort(function(a,b){ return b.count - a.count; });
+    // Dynamic threshold: brand needs ≥15% of top brand's count, minimum 5 products
+    var topCount = sorted.length ? sorted[0].count : 0;
+    var threshold = Math.max(5, Math.round(topCount * 0.15));
+    var eligible = sorted.filter(function(b){ return b.count >= threshold; }).slice(0, 6);
+    // Snap down to nearest even number (avoids orphaned cell in 2-col grid)
+    var showN = Math.floor(eligible.length / 2) * 2;
+    var topN = eligible.slice(0, showN);
+    if (!topN.length) { grid.innerHTML = ''; return; }
+    var hasBrandFilter = _fspSelectedBrands.size > 0;
+    grid.innerHTML = topN.map(function(b) {
+        var sel = _fspSelectedBrands.has(b.name);
+        var dim = !hasBrandFilter && b.count === 0 && !sel;
+        return '<button class="fsp-brand-pop-btn' + (sel?' fsp-bsel':'') + '" type="button" data-brand="' + _esc(b.name) + '" onclick="fspBrandToggle(this)"'
+             + (dim ? ' style="opacity:.4"' : '') + '>'
+             + '<div class="fsp-brand-pop-chk">' + (sel ? '<i class="fas fa-check"></i>' : '') + '</div>'
+             + '<span class="fsp-brand-pop-name">' + _esc(b.name) + '</span>'
+             + '<span class="fsp-brand-pop-cnt">' + b.count + '</span>'
+             + '</button>';
+    }).join('');
+}
+
 window._fspRefreshBrandCounts = function() {
     var counts = _fspBrandCountsData();
-    // Popular grid
-    document.querySelectorAll('#fspBrandPopGrid .fsp-brand-pop-btn').forEach(function(btn) {
-        var b = btn.dataset.brand;
-        var cnt = counts[b] || 0;
-        var cntEl = btn.querySelector('.fsp-brand-pop-cnt');
-        if (cntEl) cntEl.textContent = cnt;
-        btn.style.opacity = (cnt === 0 && !_fspSelectedBrands.has(b)) ? '0.4' : '';
-    });
+    // When brands are selected, OR logic means selecting MORE brands adds results.
+    // Never dim unselected brands when a brand filter is active — they're all additive.
+    var hasBrandFilter = _fspSelectedBrands.size > 0;
+    function shouldDim(b, cnt) {
+        if (hasBrandFilter) return false; // OR logic: always allow adding more brands
+        return cnt === 0 && !_fspSelectedBrands.has(b);
+    }
+    // Popular grid — full rebuild so top-4 re-sorts to current counts
+    _fspRebuildPopularGrid('fspBrandPopGrid');
+    _fspRebuildPopularGrid('fsdDlgPopGrid');
     // Alpha list — update count and dim unavailable brands
     document.querySelectorAll('#fspBrandAlphaList .fsp-brand-row').forEach(function(btn) {
         var b = btn.dataset.brand;
@@ -1075,9 +1106,9 @@ window._fspRefreshBrandCounts = function() {
             if (cntEl) { cntEl.textContent = cnt; }
             else { var sp = document.createElement('span'); sp.className = 'fsp-brand-row-cnt'; sp.textContent = cnt; btn.insertBefore(sp, btn.querySelector('.fsp-brand-chk')); }
         } else {
-            if (cntEl) cntEl.textContent = '0';
+            if (cntEl) cntEl.textContent = '';
         }
-        btn.style.opacity = (cnt === 0 && !_fspSelectedBrands.has(b)) ? '0.4' : '';
+        btn.style.opacity = shouldDim(b, cnt) ? '0.4' : '';
     });
     // Desktop inline brands — rebuild so top-6 reflects current counts
     if (window.fsdBuildInlineBrands) window.fsdBuildInlineBrands();
@@ -1086,16 +1117,9 @@ window._fspRefreshBrandCounts = function() {
         var b = btn.dataset.brand;
         var cnt = counts[b] || 0;
         var cntEl = btn.querySelector('.fsp-brand-row-cnt');
-        if (cntEl) cntEl.textContent = cnt || '0';
+        if (cntEl) cntEl.textContent = cnt || '';
         else if (cnt) { var sp = document.createElement('span'); sp.className = 'fsp-brand-row-cnt'; sp.textContent = cnt; btn.insertBefore(sp, btn.querySelector('.fsp-brand-chk')); }
-        btn.style.opacity = (cnt === 0 && !_fspSelectedBrands.has(b)) ? '0.4' : '';
-    });
-    document.querySelectorAll('#fsdDlgPopGrid .fsp-brand-pop-btn').forEach(function(btn) {
-        var b = btn.dataset.brand;
-        var cnt = counts[b] || 0;
-        var cntEl = btn.querySelector('.fsp-brand-pop-cnt');
-        if (cntEl) cntEl.textContent = cnt;
-        btn.style.opacity = (cnt === 0 && !_fspSelectedBrands.has(b)) ? '0.4' : '';
+        btn.style.opacity = shouldDim(b, cnt) ? '0.4' : '';
     });
 };
 function _fspBrandsData() {
@@ -1107,28 +1131,12 @@ function fspBuildBrandScreen() {
     var counts = _fspBrandCountsData();
     if (!brands.length) return;
 
-    // ── Popular brands: top 6 by count that are in available_brands ──
-    var branded = brands.map(function(b){ return {name:b, count: counts[b]||0}; })
-                         .filter(function(b){ return b.count > 0; })
-                         .sort(function(a,b){ return b.count - a.count; });
-    var popular = branded.slice(0, 6);
-
-    var popGrid = document.getElementById('fspBrandPopGrid');
+    // ── Popular brands: top 4 by count ──
+    _fspRebuildPopularGrid('fspBrandPopGrid');
     var popSection = document.getElementById('fspBrandPopSection');
-    if (popGrid) {
-        if (popular.length > 0) {
-            popGrid.innerHTML = popular.map(function(b) {
-                var sel = _fspSelectedBrands.has(b.name);
-                return '<button class="fsp-brand-pop-btn' + (sel?' fsp-bsel':'') + '" type="button" data-brand="' + _esc(b.name) + '" onclick="fspBrandToggle(this)">'
-                     + '<div class="fsp-brand-pop-chk">' + (sel ? '<i class="fas fa-check"></i>' : '') + '</div>'
-                     + '<span class="fsp-brand-pop-name">' + _esc(b.name) + '</span>'
-                     + '<span class="fsp-brand-pop-cnt">' + b.count + '</span>'
-                     + '</button>';
-            }).join('');
-            if (popSection) popSection.style.display = '';
-        } else {
-            if (popSection) popSection.style.display = 'none';
-        }
+    if (popSection) {
+        var hasTop = document.querySelector('#fspBrandPopGrid .fsp-brand-pop-btn');
+        popSection.style.display = hasTop ? '' : 'none';
     }
 
     // ── Alphabetical list ──
@@ -1300,20 +1308,22 @@ function fspPriceChip(minVal, maxVal, btn) {
 }
 
 // Active filter badge
-function fspUpdateActiveBadge() {
-    var params = new URLSearchParams(window.location.search);
+function _countActiveFilters(params) {
     var count = 0;
     if (params.get('category') && params.get('category') !== 'all') count++;
     var brandParam = params.get('brand') || '';
-    if (brandParam && brandParam !== 'all') {
-        count += brandParam.split(',').filter(Boolean).length;
-    }
+    if (brandParam && brandParam !== 'all') count += brandParam.split(',').filter(Boolean).length;
     if (params.get('min_price') || params.get('max_price')) count++;
     if (params.get('discount_only')) count++;
+    if (params.get('best_sellers')) count++;
+    if (params.get('pharmacist_choice')) count++;
     var labels = params.get('labels');
     if (labels) count += labels.split(',').filter(Boolean).length;
-    var checkedLabels = document.querySelectorAll('.product-label-filter:checked').length;
-    var activeCnt = Math.max(count, checkedLabels > 0 ? 1 : 0);
+    return count;
+}
+function fspUpdateActiveBadge() {
+    var params = new URLSearchParams(window.location.search);
+    var activeCnt = _countActiveFilters(params);
     var badge = document.getElementById('fspActiveBadge');
     if (badge) {
         if (activeCnt > 0) { badge.textContent = activeCnt; badge.classList.add('visible'); }
@@ -1333,6 +1343,36 @@ function fspUpdateActiveBadge() {
     }
     var obs = new MutationObserver(syncCount);
     obs.observe(srcEl, {childList:true, characterData:true, subtree:true});
+})();
+
+// Wrap updateShop to show loading state in footer buttons
+(function(){
+    function setCountLoading() {
+        var mainEl = document.getElementById('fspProductCount');
+        if (mainEl) mainEl.textContent = '...';
+        document.querySelectorAll('.fsp-count-sync').forEach(function(el){ el.textContent = '...'; });
+    }
+    function patchUpdateShop() {
+        if (!window.updateShop) return;
+        var _orig = window.updateShop;
+        window.updateShop = function() {
+            setCountLoading();
+            return _orig.apply(this, arguments);
+        };
+    }
+    if (window.updateShop) {
+        patchUpdateShop();
+    } else {
+        var _origDef = Object.getOwnPropertyDescriptor(window, 'updateShop');
+        Object.defineProperty(window, 'updateShop', {
+            configurable: true, enumerable: true,
+            set: function(fn) {
+                Object.defineProperty(window, 'updateShop', {configurable:true, enumerable:true, writable:true, value:fn});
+                patchUpdateShop();
+            },
+            get: function() { return undefined; }
+        });
+    }
 })();
 
 // Body scroll lock on mobile when sidebar opens
@@ -1364,13 +1404,11 @@ fspUpdateActiveBadge();
         urlBrand.split(',').forEach(function(b){ if(b.trim()) _fspSelectedBrands.add(b.trim()); });
     }
     _fspBrandUpdateSubHd();
-    // Build brand screen lazily on first open
-    var built = false;
+    // Build brand screen on every open so popular brands reflect current filter state
     var orig = fspOpenSub;
     fspOpenSub = function(screenId, noStack) {
-        if (screenId === 'fspBrandScreen' && !built) {
+        if (screenId === 'fspBrandScreen') {
             fspBuildBrandScreen();
-            built = true;
         }
         orig(screenId, noStack);
     };
@@ -1547,23 +1585,12 @@ function fsdBuildBrandDialog() {
     var counts = _fspBrandCountsData();
     if (!brands.length) return;
 
-    var branded = brands.map(function(b){return{name:b,count:counts[b]||0};})
-                        .filter(function(b){return b.count>0;})
-                        .sort(function(a,b){return b.count-a.count;});
-    var popular = branded.slice(0,6);
-    var popGrid = document.getElementById('fsdDlgPopGrid');
+    // Popular brands top-4 — _fspRefreshBrandCounts handles live updates; build initial state here
+    _fspRebuildPopularGrid('fsdDlgPopGrid');
     var popSection = document.getElementById('fsdDlgPopSection');
-    if (popGrid) {
-        if (popular.length) {
-            popGrid.innerHTML = popular.map(function(b){
-                var sel=_fspSelectedBrands.has(b.name);
-                return '<button class="fsp-brand-pop-btn'+(sel?' fsp-bsel':'')+'" type="button" data-brand="'+_esc(b.name)+'" onclick="fspBrandToggle(this)">'
-                     +'<div class="fsp-brand-pop-chk">'+(sel?'<i class="fas fa-check"></i>':'')+' </div>'
-                     +'<span class="fsp-brand-pop-name">'+_esc(b.name)+'</span>'
-                     +'<span class="fsp-brand-pop-cnt">'+b.count+'</span>'
-                     +'</button>';
-            }).join('');
-        } else if (popSection) popSection.style.display='none';
+    if (popSection) {
+        var hasTop = document.querySelector('#fsdDlgPopGrid .fsp-brand-pop-btn');
+        popSection.style.display = hasTop ? '' : 'none';
     }
 
     var grouped={};
@@ -1742,6 +1769,8 @@ function fsdUpdateChipsBar() {
     var minP=p.get('min_price'),maxP=p.get('max_price');
     if(minP||maxP) chips.push({type:'price',label:(minP?minP+'€':'0€')+' – '+(maxP?maxP+'€':'max')});
     if(p.get('discount_only')) chips.push({type:'sale',label:'Me zbritje'});
+    if(p.get('best_sellers')) chips.push({type:'best_sellers',label:'Më të shiturit'});
+    if(p.get('pharmacist_choice')) chips.push({type:'pharmacist_choice',label:'Farmacisti'});
     var labs=p.get('labels');
     if(labs){
         var ln={'pharmacist_choice':'Farmacisti','new_arrival':'Produkte të reja','best_seller':'Më të shiturit','limited':'Të kufizuara','set':'Sete & paketa'};
@@ -1779,6 +1808,12 @@ function fsdRemoveChipData(c) {
     } else if(c.type==='sale'){
         p.delete('discount_only');
         document.querySelectorAll('.product-label-filter[value="sale"]').forEach(function(i){i.checked=false;});
+    } else if(c.type==='best_sellers'){
+        p.delete('best_sellers');
+        document.querySelectorAll('.product-label-filter[value="best_seller"]').forEach(function(i){i.checked=false;});
+    } else if(c.type==='pharmacist_choice'){
+        p.delete('pharmacist_choice');
+        document.querySelectorAll('.product-label-filter[value="pharmacist_choice"]').forEach(function(i){i.checked=false;});
     } else if(c.type==='label'){
         var lArr=(p.get('labels')||'').split(',').filter(function(l){return l.trim()&&l!==c.labelVal;});
         if(lArr.length) p.set('labels',lArr.join(',')); else p.delete('labels');
@@ -1793,14 +1828,7 @@ function fsdRemoveChipData(c) {
 // ── Desktop active badge ──────────────────────────────────────────
 function fsdUpdateActiveBadge() {
     var p=new URLSearchParams(window.location.search);
-    var cnt=0;
-    if(p.get('category')&&p.get('category')!=='all') cnt++;
-    var bp=p.get('brand')||'';
-    if(bp&&bp!=='all') cnt+=bp.split(',').filter(Boolean).length;
-    if(p.get('min_price')||p.get('max_price')) cnt++;
-    if(p.get('discount_only')) cnt++;
-    var labs=p.get('labels');
-    if(labs) cnt+=labs.split(',').filter(Boolean).length;
+    var cnt=_countActiveFilters(p);
     var badge=document.getElementById('fsdActiveBadge'),clr=document.getElementById('fsdHeaderClear');
     if(badge){if(cnt>0){badge.textContent=cnt;badge.classList.add('visible');}else{badge.textContent='';badge.classList.remove('visible');}}
     if(clr){if(cnt>0) clr.classList.add('visible'); else clr.classList.remove('visible');}

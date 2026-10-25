@@ -903,17 +903,20 @@ def products():
     def _facet_base_q() -> dict:
         from datetime import datetime as _dt
         q: dict[str, object] = {"is_deleted": {"$ne": True}}
+        _lc: list[dict] = []
         if discount_only:
-            q["discount_price"] = {"$ne": None, "$gt": 0}
-            q["$or"] = [
-                {"discount_from": {"$exists": False}},
-                {"discount_from": None},
-                {"discount_from": {"$lte": _dt.now()}},
-            ]
+            _lc.append({"$and": [
+                {"discount_price": {"$ne": None, "$gt": 0}},
+                {"$or": [
+                    {"discount_from": {"$exists": False}},
+                    {"discount_from": None},
+                    {"discount_from": {"$lte": _dt.now()}},
+                ]}
+            ]})
         if best_sellers:
-            q["is_best_seller"] = True
+            _lc.append({"is_best_seller": True})
         if pharmacist_choice:
-            q["is_pharmacist_choice"] = True
+            _lc.append({"is_pharmacist_choice": True})
         if product_labels:
             clean = list(dict.fromkeys(l for l in product_labels if l))
             conds: list[dict] = [{"labels": {"$in": clean}}]
@@ -923,7 +926,11 @@ def products():
                 conds.append({"is_pharmacist_choice": True})
             if "featured" in clean:
                 conds.append({"featured": True})
-            q.setdefault("$and", []).append({"$or": conds})
+            _lc.append({"$or": conds})
+        if len(_lc) == 1:
+            q.setdefault("$and", []).append(_lc[0])
+        elif len(_lc) > 1:
+            q.setdefault("$and", []).append({"$or": _lc})
         if offer_name and offer_name != 'all':
             escaped_offer = re.escape(offer_name.strip())
             q["offer_name"] = {"$regex": f"^\\s*{escaped_offer}\\s*$", "$options": "i"}
@@ -938,7 +945,7 @@ def products():
     if subcategory != 'all':
         escaped_sub2 = re.escape(subcategory.strip())
         _bq["subcategory"] = {"$regex": f"^\\s*{escaped_sub2}\\s*$", "$options": "i"}
-    ajax_brand_counts = {
+    _raw_brand_counts = {
         r["_id"]: r["count"]
         for r in mongo.db.products.aggregate([
             {"$match": _bq},
@@ -946,6 +953,12 @@ def products():
         ])
         if r["_id"]
     }
+    # Normalize keys to match available_brands capitalization (case-insensitive merge)
+    _brand_map_lower = {b.lower(): b for b in available_brands}
+    ajax_brand_counts: dict[str, int] = {}
+    for _bname, _cnt in _raw_brand_counts.items():
+        _canonical = _brand_map_lower.get(_bname.lower(), _bname)
+        ajax_brand_counts[_canonical] = ajax_brand_counts.get(_canonical, 0) + _cnt
 
     # Category counts: only label/flag filters (NOT category/subcategory)
     _cq = _facet_base_q()
@@ -1055,7 +1068,11 @@ def products():
         {"$group": {"_id": "$brand", "count": {"$sum": 1}}},
         {"$sort": {"count": -1}}
     ]))
-    brand_counts = {r["_id"]: r["count"] for r in brand_count_agg if r["_id"]}
+    _raw_bc = {r["_id"]: r["count"] for r in brand_count_agg if r["_id"]}
+    brand_counts: dict[str, int] = {}
+    for _bn, _bc in _raw_bc.items():
+        _can = _brand_map_lower.get(_bn.lower(), _bn)
+        brand_counts[_can] = brand_counts.get(_can, 0) + _bc
 
     return render_template('products.html',
                          products=products,
@@ -1181,7 +1198,7 @@ def profile_wishlist():
     if not current_user.is_authenticated:
         liked_ids = session.get('liked_products', [])
         favorites = Product.get_by_ids(liked_ids) if liked_ids else []
-        return render_template('wishlist.html', favorites=favorites)
+        return render_template('wishlist_tab.html', favorites=favorites)
     favorites = Product.get_favorites_by_user(current_user.id)
     return render_template('wishlist_tab.html', favorites=favorites)
 

@@ -25,11 +25,7 @@
     <link rel="preconnect" href="https://cdnjs.cloudflare.com">
     <link rel="preconnect" href="https://res.cloudinary.com" crossorigin>
     <link rel="dns-prefetch" href="https://res.cloudinary.com">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css', v=37) }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/cart-recommendations.css', v=12) }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/mobile.css', v=38) }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/chatbot-new.css', v=2) }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/label-badges.css', v=3) }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css', v=39) }}">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&family=Cormorant+Garamond:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <!-- Font Awesome: load asynchronously to avoid render-blocking -->
     <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
@@ -37,7 +33,7 @@
     <!-- SweetAlert2: deferred so it never blocks first paint -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/@iconify/iconify@3.1.1/dist/iconify.min.js" defer></script>
-    <script src="{{ url_for('static', filename='js/main.js', v=17) }}" defer></script>
+    <script src="{{ url_for('static', filename='js/main.js', v=18) }}" defer></script>
 
     {% if meta_pixel_id %}
     <!-- Meta Pixel bootstrap — gated on marketing consent (cookie_consent_v2) -->
@@ -788,7 +784,7 @@
 
     <!-- Newsletter popup (shows after 30s, once per session) -->
     {% if not (current_user.is_authenticated and current_user.newsletter_subscribed) and not (request.endpoint and request.endpoint.startswith('admin.')) %}
-    <div id="newsletter-popup" style="display:none;position:fixed;inset:0;z-index:10000;background:rgba(43,43,43,0.52);align-items:center;justify-content:center;padding:1.25rem;">
+    <div id="newsletter-popup" style="display:none;position:fixed;inset:0;z-index:10100;background:rgba(43,43,43,0.52);align-items:center;justify-content:center;padding:1.25rem;">
         <div style="background:#F7F3EE;border-radius:24px;max-width:460px;width:100%;overflow:hidden;box-shadow:0 32px 80px rgba(43,43,43,0.22);position:relative;">
 
             <!-- Close button -->
@@ -848,6 +844,28 @@
             }
         });
     </script>
+    <!-- Clear Cart Confirmation Modal -->
+    <div id="clearCartModal" role="dialog" aria-modal="true" aria-labelledby="clearCartModalTitle" style="display:none;position:fixed;inset:0;z-index:99999;display:none;align-items:center;justify-content:center;padding:1rem;">
+      <div id="clearCartBackdrop" onclick="closeClearCartModal()" style="position:absolute;inset:0;background:rgba(43,43,43,0.45);backdrop-filter:blur(3px);"></div>
+      <div style="position:relative;background:#fff;border-radius:20px;width:100%;max-width:400px;box-shadow:0 24px 48px rgba(43,43,43,0.18);overflow:hidden;animation:ccm-in 0.22s cubic-bezier(0.34,1.56,0.64,1) both;">
+        <div style="background:linear-gradient(135deg,#F7F3EE 0%,#EFE7DE 100%);padding:2rem 2rem 1.5rem;text-align:center;border-bottom:1px solid #E2D9CE;">
+          <div style="width:56px;height:56px;border-radius:50%;background:#fff;border:1.5px solid #E2D9CE;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;box-shadow:0 2px 10px rgba(43,43,43,0.08);">
+            <span class="iconify" data-icon="lucide:trash-2" data-width="24" data-height="24" style="color:#C0392B;"></span>
+          </div>
+          <h3 id="clearCartModalTitle" style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.4rem;font-weight:600;color:#2B2B2B;margin:0 0 0.5rem;line-height:1.2;">Pastroni shportën?</h3>
+          <p style="font-family:'Inter',sans-serif;font-size:0.88rem;color:#7A7068;margin:0;line-height:1.55;">Të gjitha produktet do të hiqen nga shporta juaj. Ky veprim nuk mund të kthehet mbrapsht.</p>
+        </div>
+        <div style="padding:1.5rem 2rem;display:flex;gap:0.75rem;">
+          <button onclick="closeClearCartModal()" style="flex:1;padding:0.75rem 1rem;border:1.5px solid #E2D9CE;border-radius:12px;background:#fff;font-family:'Inter',sans-serif;font-size:0.9rem;font-weight:600;color:#7A7068;cursor:pointer;transition:all 0.18s;line-height:1;" onmouseenter="this.style.borderColor='#6C7A61';this.style.color='#4F5D4E'" onmouseleave="this.style.borderColor='#E2D9CE';this.style.color='#7A7068'">Anulo</button>
+          <button onclick="confirmClearCart()" style="flex:1;padding:0.75rem 1rem;border:none;border-radius:12px;background:#C0392B;font-family:'Inter',sans-serif;font-size:0.9rem;font-weight:600;color:#fff;cursor:pointer;transition:background 0.18s;line-height:1;" onmouseenter="this.style.background='#A93226'" onmouseleave="this.style.background='#C0392B'">Pastro shportën</button>
+        </div>
+      </div>
+    </div>
+    <style>
+    @keyframes ccm-in{from{opacity:0;transform:scale(0.88) translateY(12px)}to{opacity:1;transform:scale(1) translateY(0)}}
+    #clearCartModal.ccm-open{display:flex!important;}
+    </style>
+
     <!-- Back to Top Button -->
     <button id="backToTop" class="back-to-top" title="Kthehu në fillim">
         <span class="iconify" data-icon="lucide:chevron-up" data-width="20" data-height="20"></span>
@@ -1698,31 +1716,43 @@ document.addEventListener('DOMContentLoaded', function() {
     const priceHtml = hasDisc
       ? `<span class="ep-new">${discPrice}€</span><span class="ep-old">${origPrice}€</span><span class="ep-pct">-${pct}%</span>`
       : `<span class="ep-new">${origPrice}€</span>`;
-    let badge = '';
-    if(p.auto_oct_discount) badge = `<span class="ep-badge ep-badge-oct">-5%</span>`;
-    else if(hasDisc) badge = `<span class="ep-badge">-${pct}%</span>`;
-    else if(p.is_pharmacist_choice) badge = '<span class="ep-badge ep-badge-pharm">Farmacisti</span>';
-    else if(p.is_best_seller) badge = '<span class="ep-badge ep-badge-bs">Bestseller</span>';
+    let epBadgeHtml = '';
+    if(p.offer_type === 'multi_buy') epBadgeHtml = `<span class="ep-badge">${p.offer_badge_text||'1+1'}</span>`;
+    else if(p.auto_oct_discount) epBadgeHtml = `<span class="ep-badge ep-badge-oct">-5%</span>`;
+    else if(hasDisc) epBadgeHtml = `<span class="ep-badge">-${pct}%</span>`;
+    else if(p.labels && p.labels.includes('sale')) epBadgeHtml = '<span class="ep-badge">Ofertë</span>';
+    else if(p.is_pharmacist_choice) epBadgeHtml = '<span class="ep-badge ep-badge-pharm">Farmacisti</span>';
+    else if(p.labels && p.labels.includes('limited')) epBadgeHtml = '<span class="ep-badge">I Kufizuar</span>';
+    else if(p.labels && p.labels.includes('set')) epBadgeHtml = '<span class="ep-badge ep-badge-set">Set</span>';
+    else if(p.labels && p.labels.includes('new_arrival')) epBadgeHtml = '<span class="ep-badge ep-badge-new">I Ri</span>';
+    else if(p.is_best_seller) epBadgeHtml = '<span class="ep-badge ep-badge-bs">Më i Shituri</span>';
+    const badge = epBadgeHtml ? `<div class="ep-badge-stack">${epBadgeHtml}</div>` : '';
     const img = p.image_url || '';
     const brand = p.brand ? `<span class="ep-brand">${p.brand}</span>` : `<span class="ep-brand">${p.category||''}</span>`;
     const size = p.size ? `<span class="ep-size">${p.size}</span>` : '';
+    const atcBtn = p.in_stock !== false ? `<button class="ep-atc" onclick="event.stopPropagation();hpAddToCart(this,'${p.id}')"><span class="ep-atc-label"><span class="iconify" data-icon="lucide:shopping-cart" data-width="15" data-height="15"></span> Shto në shportë</span><span class="ep-atc-done"><i class="fas fa-check"></i> U shtua</span></button>` : '';
     return `<div class="ep-card-wrap">
       <a href="/product/${p.id}" class="ep-card" onclick="window.closeExploreOverlay()">
         <div class="ep-img">${img?`<img src="${img}" alt="" loading="lazy">`:'<div class="ep-no-img"><span class="iconify" data-icon="lucide:image" data-width="32" data-height="32"></span></div>'}${badge}</div>
         <div class="ep-info">${brand}<p class="ep-name">${p.name}</p>${size}<div class="ep-prices">${priceHtml}</div></div>
       </a>
-      <button class="ep-fav-btn" onclick="event.stopPropagation();epToggleWish(this,'${p.id}')" aria-label="Shto në wishlist"><span class="iconify" data-icon="lucide:heart" data-width="22" data-height="22"></span></button>
+      ${atcBtn}
+      <button class="ep-fav-btn" onclick="event.stopPropagation();epToggleWish(this,'${p.id}')" aria-label="Shto në wishlist"><i class="far fa-heart"></i></button>
     </div>`;
   }
 
-  function epToggleWish(btn, pid){
-    fetch('/product/favorite/'+pid, {method:'POST', headers:{'X-Requested-With':'XMLHttpRequest','Content-Type':'application/json'}})
+  window.epToggleWish = function(btn, pid){
+    const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+    const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
+    fetch('/product/favorite/'+pid, {method:'POST', headers:{'X-Requested-With':'XMLHttpRequest','Content-Type':'application/json','X-CSRFToken':csrfToken}})
       .then(r=>r.json()).then(data=>{
         const icon = btn.querySelector('i');
         if(data.action==='added'){ icon.className='fas fa-heart'; btn.classList.add('active'); }
         else { icon.className='far fa-heart'; btn.classList.remove('active'); }
+        if(window.showToast) window.showToast(data.action==='added'?'Produkti u shtua në të preferuarat!':'Produkti u hoq nga të preferuarat.', data.action==='added'?'success':'info');
+        if(window.updateGlobalBadges && data.count!=null) window.updateGlobalBadges({wishlist_count:data.count});
       }).catch(()=>{});
-  }
+  };
 
   function curate(pool, n){
     // Score each product: discount % + bestseller boost + image presence

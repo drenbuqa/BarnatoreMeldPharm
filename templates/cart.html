@@ -10,7 +10,7 @@
         </a>
     </div>
     <div class="cart-page-header" style="justify-content: space-between; align-items: center; margin-top: 1rem;">
-        <h1 class="section-title" style="margin: 0; text-align: left;">Shporta Juaj</h1>
+        <h1 style="margin:0;font-family:'Cormorant Garamond',Georgia,serif;font-size:1.75rem;font-weight:600;color:#2B2B2B;display:flex;align-items:center;gap:0.7rem;line-height:1.2;"><i class="fas fa-shopping-cart" style="color:#6C7A61;font-size:1.35rem;flex-shrink:0;"></i> Shporta Juaj</h1>
     </div>
 
     {% if cart_items %}
@@ -304,30 +304,45 @@
 
     {% if recommended_products %}
     <section class="cart-recommendations" aria-labelledby="cartRecommendationsTitle" data-kosovo="{{ 'true' if is_kosovo else 'false' }}" style="--hp-ivory:#F7F3EE;--hp-beige:#EFE7DE;--hp-sage:#6C7A61;--hp-olive:#4F5D4E;--hp-charcoal:#2B2B2B;--hp-muted:#7A7068;--hp-border:#E2D9CE;--hp-shadow:0 2px 16px rgba(43,43,43,0.07);--hp-radius:14px;">
-        <div class="hp-head" style="margin-bottom:1.25rem;">
-            <div>
-                <span class="cart-recommendations-eyebrow">Zgjedhur për ju</span>
-                <h2 id="cartRecommendationsTitle" style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.65rem;font-weight:600;color:#2B2B2B;margin:0.2rem 0 0;">{% if is_kosovo and total_price < 50 and cart_items %}Plotësoni shportën dhe përfitoni dërgesë falas{% elif cart_items %}Mund t'ju pëlqejnë edhe këto{% else %}Produkte të rekomanduara{% endif %}</h2>
+        {% if is_kosovo and total_price < 50 and cart_items %}
+        <div style="margin-bottom:1.25rem;">
+            <div class="hp-head" style="margin-bottom:0; align-items:baseline;">
+                <h2 id="cartRecommendationsTitle" style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.65rem;font-weight:600;color:#2B2B2B;margin:0;">Plotësoni shportën dhe<span class="cr-tail"> përfitoni dërgesë falas</span></h2>
+                <a href="{{ url_for('main.products') }}" class="hp-see-all cr-see-top">Shiko të gjitha <i class="fas fa-arrow-right"></i></a>
             </div>
+            <div class="cr-mobile-row">
+                <span class="cr-tail-m">përfitoni dërgesë falas</span>
+                <a href="{{ url_for('main.products') }}" class="hp-see-all">Shiko të gjitha <i class="fas fa-arrow-right"></i></a>
+            </div>
+        </div>
+        {% else %}
+        <div class="hp-head" style="margin-bottom:1.25rem; align-items:baseline;">
+            <h2 id="cartRecommendationsTitle" style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.65rem;font-weight:600;color:#2B2B2B;margin:0;">{% if cart_items %}Mund t'ju pëlqejnë edhe këto{% else %}Produkte të rekomanduara{% endif %}</h2>
             <a href="{{ url_for('main.products') }}" class="hp-see-all">Shiko të gjitha <i class="fas fa-arrow-right"></i></a>
         </div>
+        {% endif %}
         <div class="hp-carousel-outer" style="position:relative;overflow:visible;">
             <button type="button" class="hp-carousel-arrow hp-prev" onclick="hpScrollCarousel(this,-1)"><i class="fas fa-chevron-left"></i></button>
             <button type="button" class="hp-carousel-arrow hp-next" onclick="hpScrollCarousel(this,1)"><i class="fas fa-chevron-right"></i></button>
             <div class="hp-carousel" id="cartRecommendationsTrack">
                 {% for product in recommended_products %}
-                {% set cr_has_expiry = product.auto_oct_discount or product.discount_until %}
-                {% set cr_badge_slots = 1 if cr_has_expiry else 2 %}
                 {% set cr_badges = [] %}
                 {% if product.offer_type == 'multi_buy' %}{% set _ = cr_badges.append(('offer', product.offer_badge_text or '1+1', '')) %}
                 {% elif product.auto_oct_discount %}{% set _ = cr_badges.append(('offer', '-5%', 'hp-card-badge--oct')) %}
-                {% elif product.discount_price %}{% set _ = cr_badges.append(('offer', 'Ofertë Speciale', '')) %}{% endif %}
-                {% if product.is_best_seller and cr_badges|length < cr_badge_slots %}{% set _ = cr_badges.append(('bestseller', 'Më i Shituri', '')) %}{% endif %}
+                {% elif product.discount_price %}{% set _disc = ((product.display_original_price - product.discount_price) / product.display_original_price * 100)|round|int %}{% set _ = cr_badges.append(('offer', '-' ~ _disc ~ '%', '')) %}
+                {% elif product.is_pharmacist_choice %}{% set _ = cr_badges.append(('pharmacist', 'Farmacisti', 'pharmacist-badge')) %}
+                {% elif product.labels and 'limited' in product.labels %}{% set _ = cr_badges.append(('label', 'I Kufizuar', 'limited-badge')) %}
+                {% elif product.labels and 'set' in product.labels %}{% set _ = cr_badges.append(('label', 'Set', 'set-badge')) %}
+                {% elif product.labels and 'sale' in product.labels %}{% set _ = cr_badges.append(('label', 'Ofertë', 'sale-label-badge')) %}
+                {% elif product.labels and 'new_arrival' in product.labels %}{% set _ = cr_badges.append(('label', 'I Ri', 'new-arrival-badge')) %}
+                {% elif product.is_best_seller %}{% set _ = cr_badges.append(('bestseller', 'Më i Shituri', '')) %}{% endif %}
                 <div class="hp-card{% if product.auto_oct_discount %} hp-card--oct{% endif %}" data-href="{{ url_for('main.product_detail', product_id=product._id) }}" onclick="window.location.href=this.dataset.href">
                     <div class="hp-card-img">
                         <div class="badge-stack">
-                            {% for btype, btext, bclass in cr_badges[:cr_badge_slots] %}
+                            {% for btype, btext, bclass in cr_badges[:1] %}
                               {% if btype == 'bestseller' %}<div class="best-seller-badge">{{ btext }}</div>
+                              {% elif btype == 'pharmacist' %}<div class="pharmacist-badge" style="font-size:0.65rem;padding:3px 8px;letter-spacing:0.4px;border-radius:20px;font-weight:700;text-transform:uppercase;color:#fff;">{{ btext }}</div>
+                              {% elif btype == 'label' %}<div class="{{ bclass }}" style="font-size:0.65rem;padding:3px 8px;letter-spacing:0.4px;border-radius:20px;font-weight:700;text-transform:uppercase;color:#fff;">{{ btext }}</div>
                               {% else %}<span class="hp-card-badge {{ bclass }}">{{ btext }}</span>{% endif %}
                             {% endfor %}
                         </div>

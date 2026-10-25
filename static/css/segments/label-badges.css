@@ -1,0 +1,42 @@
+/* A restrained badge palette: promotion, popularity, trust, and information. */
+.special-offer-badge,
+.sale-label-badge,
+.limited-badge {
+    background: #b4534b !important;
+    box-shadow: 0 2px 8px rgba(180, 83, 75, 0.4) !important;
+}
+
+.best-seller-badge {
+    background: #c49a3c !important;
+    box-shadow: 0 2px 8px rgba(196, 154, 60, 0.4) !important;
+}
+
+.pharmacist-badge {
+    background: #4f5d4e !important;
+    box-shadow: 0 2px 8px rgba(79, 93, 78, 0.4) !important;
+}
+
+.new-arrival-badge {
+    background: #68766c !important;
+    box-shadow: 0 2px 8px rgba(104, 118, 108, 0.35) !important;
+}
+
+.set-badge {
+    background: #4a7d9a !important;
+    box-shadow: 0 2px 8px rgba(74, 125, 154, 0.4) !important;
+}
+
+/* October promo discount badge — golden gradient */
+.oct-badge {
+    background: linear-gradient(110deg, #8B6914, #C49A1C) !important;
+    color: #fff !important;
+    box-shadow: 0 2px 8px rgba(139, 105, 20, 0.4) !important;
+}
+
+/* Discount percentages — red alert */
+.discount-badge {
+    background: #b4534b !important;
+    color: #fff !important;
+    border: none !important;
+    box-shadow: 0 2px 8px rgba(180, 83, 75, 0.4) !important;
+}

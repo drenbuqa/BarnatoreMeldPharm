@@ -211,41 +211,50 @@ class Product:
                 else:
                     query["$or"] = brand_or
 
-        if discount_only:
-            from datetime import datetime as _dt
-            _now = _dt.now()
-            query["discount_price"] = {"$ne": None, "$gt": 0}
-            query["$or"] = [
-                {"discount_from": {"$exists": False}},
-                {"discount_from": None},
-                {"discount_from": {"$lte": _now}},
-            ]
-        elif no_discount:
-            query["$or"] = [
+        if no_discount:
+            query.setdefault("$and", []).append({"$or": [
                 {"discount_price": {"$exists": False}},
                 {"discount_price": None},
                 {"discount_price": 0}
-            ]
+            ]})
+
+        # Label-family filters (discount, best_seller, pharmacist_choice, labels)
+        # are combined with OR — selecting multiple shows products matching ANY of them.
+        _label_conds: list[dict] = []
+
+        if discount_only:
+            from datetime import datetime as _dt
+            _now = _dt.now()
+            _label_conds.append({"$and": [
+                {"discount_price": {"$ne": None, "$gt": 0}},
+                {"$or": [
+                    {"discount_from": {"$exists": False}},
+                    {"discount_from": None},
+                    {"discount_from": {"$lte": _now}},
+                ]}
+            ]})
 
         if best_seller_only:
-            query["is_best_seller"] = True
+            _label_conds.append({"is_best_seller": True})
 
         if pharmacist_choice:
-            query["is_pharmacist_choice"] = True
+            _label_conds.append({"is_pharmacist_choice": True})
 
-        # Label checkboxes are one filter family, so selecting multiple labels
-        # matches products carrying any selected label. Keep compatibility with
-        # older products that stored the three original labels as booleans.
         if product_labels:
-            clean_labels = list(dict.fromkeys(label for label in product_labels if label))
-            label_conditions = [{"labels": {"$in": clean_labels}}]
+            clean_labels = list(dict.fromkeys(l for l in product_labels if l))
+            sub = [{"labels": {"$in": clean_labels}}]
             if "best_seller" in clean_labels:
-                label_conditions.append({"is_best_seller": True})
+                sub.append({"is_best_seller": True})
             if "pharmacist_choice" in clean_labels:
-                label_conditions.append({"is_pharmacist_choice": True})
+                sub.append({"is_pharmacist_choice": True})
             if "featured" in clean_labels:
-                label_conditions.append({"featured": True})
-            query.setdefault("$and", []).append({"$or": label_conditions})
+                sub.append({"featured": True})
+            _label_conds.append({"$or": sub})
+
+        if len(_label_conds) == 1:
+            query.setdefault("$and", []).append(_label_conds[0])
+        elif len(_label_conds) > 1:
+            query.setdefault("$and", []).append({"$or": _label_conds})
 
         if offer_name and offer_name != 'all':
             import re
