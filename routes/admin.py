@@ -625,8 +625,8 @@ def _parse_option_groups(raw_json, existing_variants=None):
             if discount_price is None and v.get('discount_price') not in (None, ''):
                 try:
                     discount_price = float(v['discount_price'])
-                    except (ValueError, TypeError):
-                        pass
+                except (ValueError, TypeError):
+                    pass
 
         # Images: prefer images[] array; fall back to legacy image_url
         images = []
