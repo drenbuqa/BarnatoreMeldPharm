@@ -84,8 +84,8 @@
 .status-dropdown { position:relative; display:inline-block; }
 .status-trigger { cursor:pointer; border:none; background:transparent; padding:0; font-family:inherit; }
 .status-trigger.updating { opacity:0.5; pointer-events:none; }
-.status-drop-menu { position:absolute; z-index:300; right:0; top:calc(100% + 4px); background:#fff; border:1px solid #eef0ed; border-radius:10px; box-shadow:0 8px 24px rgba(0,0,0,0.12); min-width:155px; overflow:hidden; }
-.sdd-item { display:flex; align-items:center; gap:0.55rem; padding:0.58rem 0.9rem; font-size:0.8rem; font-weight:600; cursor:pointer; color:#374151; transition:background 0.1s; }
+.status-drop-menu { position:absolute; z-index:300; right:0; top:calc(100% + 4px); background:#fff; border:1px solid #eef0ed; border-radius:12px; box-shadow:0 8px 24px rgba(0,0,0,0.12); min-width:170px; padding:0.35rem; }
+.sdd-item { display:flex; align-items:center; gap:0.6rem; padding:0.6rem 0.85rem; font-size:0.82rem; font-weight:600; cursor:pointer; color:#374151; border-radius:8px; transition:background 0.1s; }
 .sdd-item:hover { background:#f8faf7; }
 .sdd-item .st-dot { flex-shrink:0; }
 .sdd-pending i, .sdd-pending .st-dot { color:#c2410c; background:#c2410c; }
@@ -94,7 +94,7 @@
 .sdd-delivered  i, .sdd-delivered .st-dot  { color:#15803d; background:#15803d; }
 .sdd-anuluar    i, .sdd-anuluar .st-dot    { color:#dc2626; background:#dc2626; }
 .sdd-refuzuar   i, .sdd-refuzuar .st-dot   { color:#9f1239; background:#9f1239; }
-.sdd-divider { height:1px; background:#f3f4f2; }
+.sdd-divider { height:1px; background:#f3f4f2; margin:0.25rem 0; }
 
 /* ── Detail panel ── */
 .ord-panel { background:#fff; border:1px solid #E8E2DA; border-radius:14px; overflow:hidden; height:100%; overflow-y:auto; max-height:calc(100vh - 90px); display:flex; flex-direction:column; }
