@@ -40,8 +40,11 @@ app = Flask(__name__)
 app.config['TEMPLATES_AUTO_RELOAD'] = True
 app.jinja_env.filters['cld'] = cld
 
-# Trust headers from Render's proxy (Crucial for HTTPS)
-if os.getenv('RENDER'):
+# Detect if running behind a reverse-proxy (Render, Fly.io, or any host that sets BEHIND_PROXY)
+_behind_proxy = bool(os.getenv('RENDER') or os.getenv('FLY_APP_NAME') or os.getenv('BEHIND_PROXY'))
+
+# Trust forwarded headers from the proxy so Flask knows the real scheme/host
+if _behind_proxy:
     app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 
 # Security Configuration
@@ -55,11 +58,13 @@ app.config['META_PIXEL_DEBUG'] = os.getenv('META_PIXEL_DEBUG', '').lower() in ('
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=30)
-app.config['SESSION_COOKIE_SECURE'] = os.getenv('RENDER') is not None
+app.config['SESSION_COOKIE_SECURE'] = _behind_proxy
 # Flask-Login remember-me cookie — must be set explicitly or the cookie has no expiry
 app.config['REMEMBER_COOKIE_DURATION'] = timedelta(days=30)
 app.config['REMEMBER_COOKIE_HTTPONLY'] = True
-app.config['REMEMBER_COOKIE_SECURE'] = os.getenv('RENDER') is not None
+app.config['REMEMBER_COOKIE_SECURE'] = _behind_proxy
+# Disable SSL-strict CSRF check so Referer-less requests (e.g. from email links) are not rejected
+app.config['WTF_CSRF_SSL_STRICT'] = False
 app.config['REMEMBER_COOKIE_SAMESITE'] = 'Lax'
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16 MB upload limit
 
@@ -100,7 +105,7 @@ def set_analytics_cookie(response):
     from flask import g
     aid = getattr(g, '_meld_aid_new', None)
     if aid:
-        secure = os.getenv('RENDER') is not None
+        secure = _behind_proxy
         response.set_cookie(
             '_meld_aid', aid,
             max_age=60 * 60 * 24 * 365,
@@ -156,7 +161,7 @@ def set_security_headers(response):
     response.headers['X-Frame-Options'] = 'SAMEORIGIN'
     response.headers['X-XSS-Protection'] = '1; mode=block'
     response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
-    if os.getenv('RENDER'):
+    if _behind_proxy:
         response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
     # Block common scraper/bot user agents
     ua = request.headers.get('User-Agent', '')

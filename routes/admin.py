@@ -597,6 +597,10 @@ def _parse_option_groups(raw_json, existing_variants=None):
 
     value_lists = [og['values'] for og in groups_with_values]
     group_names = [og['name'] for og in groups_with_values]
+    group_types = [og.get('type', 'volume') for og in groups_with_values]
+
+    # dimension_types dict: attr_name → type (stored on every variant for front-end rendering)
+    dimension_types = {group_names[i]: group_types[i] for i in range(len(group_names))}
 
     # Build a lookup from attribute combo → existing variant id so cart links survive edits
     existing_id_map = {}
@@ -607,12 +611,45 @@ def _parse_option_groups(raw_json, existing_variants=None):
 
     variants = []
     for combo in itertools_product(*value_lists):
-        first_val = combo[0]
-        price = first_val.get('price') or None
-        discount_price = first_val.get('discount_price') or None
-        image_url = next((v.get('image_url') for v in combo if v.get('image_url')), None)
-        in_stock = all(v.get('in_stock', True) for v in combo)
         attributes = {group_names[i]: combo[i]['value'] for i in range(len(group_names))}
+
+        # Price: take from first non-size group; size groups never carry their own price
+        price = None
+        discount_price = None
+        for i, v in enumerate(combo):
+            if group_types[i] != 'size':
+                if price is None and v.get('price') not in (None, '', 0):
+                    try:
+                        price = float(v['price'])
+                    except (ValueError, TypeError):
+                        pass
+                if discount_price is None and v.get('discount_price') not in (None, ''):
+                    try:
+                        discount_price = float(v['discount_price'])
+                    except (ValueError, TypeError):
+                        pass
+
+        # Images: prefer images[] array; fall back to legacy image_url
+        images = []
+        for v in combo:
+            v_imgs = [u for u in (v.get('images') or []) if u and str(u).strip()]
+            if not v_imgs and v.get('image_url'):
+                v_imgs = [v['image_url']]
+            if v_imgs:
+                images = v_imgs
+                break
+        image_url = images[0] if images else None
+
+        # color_hex from the first color-type group value
+        color_hex = None
+        for i, v in enumerate(combo):
+            if group_types[i] == 'color' and v.get('color_hex'):
+                color_hex = v['color_hex']
+                break
+
+        variant_name = next((v.get('variant_name') for v in combo if v.get('variant_name')), None)
+        sku = next((v.get('sku') for v in combo if v.get('sku')), None)
+        in_stock = all(v.get('in_stock', True) for v in combo)
 
         combo_key = tuple(sorted(attributes.items()))
         variant_id = existing_id_map.get(combo_key) or str(uuid.uuid4())
@@ -620,10 +657,15 @@ def _parse_option_groups(raw_json, existing_variants=None):
         variants.append({
             'id': variant_id,
             'attributes': attributes,
-            'price': float(price) if price is not None else None,
-            'discount_price': float(discount_price) if discount_price is not None else None,
+            'price': price,
+            'discount_price': discount_price,
             'image_url': image_url,
+            'images': images,
             'in_stock': in_stock,
+            'color_hex': color_hex or None,
+            'variant_name': variant_name or None,
+            'sku': sku or None,
+            'dimension_types': dimension_types,
         })
 
     base_price = next((v['price'] for v in variants if v['price'] is not None), None)
@@ -644,6 +686,7 @@ def _build_product_data(main_img, images, option_groups, variants, base_price, b
 
     return {
         "name": request.form.get('name'),
+        "sku": request.form.get('sku', '').strip() or None,
         "brand": request.form.get('brand'),
         "category": request.form.get('category'),
         "subcategory": request.form.get('subcategory'),

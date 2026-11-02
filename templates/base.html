@@ -1582,7 +1582,7 @@ function hpAddToCart(btn, productId) {
       btn.classList.add('hp-atc--added');
       if (window.updateGlobalBadges) window.updateGlobalBadges(d);
       if (window.animateCartBadges) window.animateCartBadges();
-      if (window.showToast) window.showToast('Produkti u shtua në shportë!', 'success');
+      if (window.showToast) window.showToast('U shtua në shportë!', 'success', 'Shiko shportën', '/cart');
       if (window.refreshMiniCart) window.refreshMiniCart();
       if (window.showMiniCart) window.showMiniCart();
       setTimeout(function() { btn.classList.remove('hp-atc--added'); btn.disabled = false; }, 1800);

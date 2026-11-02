@@ -1113,7 +1113,13 @@ def product_detail(product_id):
     product = Product.get_by_id(product_id)
     if not product:
         return render_template('index.html') # Should be 404
-    
+
+    # If the product-level offer is no longer active, clear stale discount_price
+    # from every variant too — otherwise the JS renders outdated crossed-out prices.
+    if not Product._offer_is_active(product):
+        for v in (product.get('variants') or []):
+            v['discount_price'] = None
+
     # Increment view count and log behaviour event
     try:
         from bson import ObjectId

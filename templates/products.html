@@ -484,10 +484,20 @@
                             <span class="hp-card-name">{{ product.name }}</span>
                             {% if product.variants and product.variants|length > 0 %}
                                 {% set og = (product.option_groups[0]) if product.option_groups and product.option_groups|length > 0 else none %}
-                                {% if og %}{% set vals = og['values'] | map(attribute='value') | list %}{% else %}
-                                {% set attr_types = [] %}{% for v in product.variants %}{% for k in v.get('attributes',{}).keys() %}{% if k not in attr_types %}{% set _ = attr_types.append(k) %}{% endif %}{% endfor %}{% endfor %}
-                                {% set vals = [] %}{% if attr_types %}{% set first_key = attr_types[0] %}{% for v in product.variants %}{% set vv = v.get('attributes',{}).get(first_key) %}{% if vv and vv not in vals %}{% set _ = vals.append(vv) %}{% endif %}{% endfor %}{% endif %}{% endif %}
-                                {% if vals %}<div class="variant-values-row">{% for val in vals[:3] %}<span class="vv-chip">{{ val }}</span>{% endfor %}{% if vals|length > 3 %}<span class="vv-more">+{{ vals|length - 3 }}</span>{% endif %}</div>{% endif %}
+                                {% set og_type = og.get('type', 'volume') if og else 'volume' %}
+                                {% if og_type == 'color' %}
+                                    <div class="hp-card-swatches">
+                                        {% for cv in (og.get('values') or [])[:6] %}
+                                            <span class="hp-swatch" style="background:{{ cv.get('color_hex') or '#cbd5e1' }}" title="{{ cv.get('value','') }}"></span>
+                                        {% endfor %}
+                                        {% if (og.get('values') or [])|length > 6 %}<span class="hp-swatch-more">+{{ (og.get('values') or [])|length - 6 }}</span>{% endif %}
+                                    </div>
+                                {% elif og_type == 'size' %}
+                                    <span class="hp-card-size">{{ (og.get('values') or [])|length }} madhësi</span>
+                                {% else %}
+                                    {% set vcnt = (og.get('values') or [])|length if og else 0 %}
+                                    {% if vcnt > 1 %}<span class="hp-card-size">{{ vcnt }} opsione</span>{% endif %}
+                                {% endif %}
                             {% elif product.size %}<span class="hp-card-size">{{ product.size }}</span>{% endif %}
                             <div class="hp-price-row">
                                 {% if product.offer_type == 'multi_buy' %}

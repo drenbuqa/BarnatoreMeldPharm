@@ -41,7 +41,10 @@
         </div>
 
         <div style="display:flex;gap:0.75rem;flex-wrap:wrap;justify-content:center;">
-            <a href="{{ url_for('main.products') }}" class="btn btn-primary" style="padding:0.85rem 2rem;font-size:1rem;">
+            <a href="{{ url_for('main.order_invoice', order_id=order._id) }}" class="btn btn-primary" style="padding:0.85rem 2rem;font-size:1rem;" target="_blank">
+                <i class="fas fa-file-invoice" style="margin-right:0.5rem;"></i>Shiko Faturën
+            </a>
+            <a href="{{ url_for('main.products') }}" class="btn" style="padding:0.85rem 2rem;font-size:1rem;background:var(--bg-soft,#f1f5f9);color:var(--text-main);border:1.5px solid var(--border-light,#e2e8f0);border-radius:var(--radius-md);font-weight:600;text-decoration:none;">
                 <i class="fas fa-search" style="margin-right:0.5rem;"></i>Shfleto Produktet
             </a>
             <a href="{{ url_for('main.orders') }}" class="btn" style="padding:0.85rem 2rem;font-size:1rem;background:var(--bg-soft,#f1f5f9);color:var(--text-main);border:1.5px solid var(--border-light,#e2e8f0);border-radius:var(--radius-md);font-weight:600;text-decoration:none;">

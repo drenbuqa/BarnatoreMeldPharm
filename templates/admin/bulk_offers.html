@@ -328,13 +328,6 @@
 .pg-btn:disabled { opacity:.35; cursor:not-allowed; }
 
 /* ── Remove section ── */
-.of2-remove-wrap {
-    background:#fff; border:1px solid #fca5a5; border-radius:14px;
-    padding:1rem 1.25rem; display:flex; align-items:center; justify-content:space-between;
-    gap:.75rem; margin-top:1rem;
-}
-.of2-remove-info { font-size:.8rem; color:#6b7280; }
-.of2-remove-info strong { color:#dc2626; }
 
 /* ── Responsive ── */
 @media(max-width:960px) {
@@ -420,11 +413,32 @@
     /* Add bottom padding to product list so sticky bar doesn't cover last item */
     .of2-prod-card { margin-bottom:72px; }
 }
+
+/* ── Variant chips ── */
+.of2-vars {
+    display:flex; flex-wrap:wrap; gap:.35rem;
+    padding:.55rem .75rem .55rem 3rem;
+    background:#f8faf7; border-top:1px solid #eef0ed;
+    grid-column: 1 / -1; box-sizing:border-box;
+    margin:0 -1rem -.55rem; /* bleed to row edges */
+}
+.of2-var-chip {
+    display:inline-flex; align-items:center; gap:.3rem;
+    padding:.22rem .55rem; border-radius:20px; font-size:.71rem; font-weight:700;
+    background:#e8f5e9; color:#2d6a4f; border:1.5px solid #b7d9c3;
+    cursor:pointer; user-select:none; transition:all .14s;
+}
+.of2-var-chip:hover { background:#d0ead8; }
+.of2-var-chip.excl {
+    background:#fef2f2; color:#9b1c1c; border-color:#fca5a5;
+    text-decoration:line-through; opacity:.75;
+}
+.of2-var-chip i { font-size:.6rem; }
 </style>
 
 <!-- Product data for JS -->
 <script>
-const PD = [{% for p in all_products %}{"id":"{{ p._id }}","n":{{ p.name|tojson }},"b":{{ (p.brand or '')|tojson }},"c":{{ p.category|tojson }},"sc":{{ (p.subcategory or '')|tojson }},"p":{{ p.price|float }},"img":{{ (p.image_url or '')|tojson }},"on":{{ (p.offer_name or '')|tojson }},"ot":{{ (p.offer_type or '')|tojson }}}{% if not loop.last %},{% endif %}{% endfor %}];
+const PD = [{% for p in all_products %}{"id":"{{ p._id }}","n":{{ p.name|tojson }},"b":{{ (p.brand or '')|tojson }},"c":{{ p.category|tojson }},"sc":{{ (p.subcategory or '')|tojson }},"p":{{ p.price|float }},"img":{{ (p.image_url or '')|tojson }},"on":{{ (p.offer_name or '')|tojson }},"ot":{{ (p.offer_type or '')|tojson }},"vars":{{ (p.variants or [])|map(attribute='id')|list|tojson }},"varLabels":{{ (p.variants or [])|map(attribute='attributes')|list|tojson }},"varPrices":{{ (p.variants or [])|map(attribute='price')|list|tojson }}}{% if not loop.last %},{% endif %}{% endfor %}];
 const EDIT_OFFER = {{ edit_offer|tojson }};
 </script>
 
@@ -685,16 +699,6 @@ const EDIT_OFFER = {{ edit_offer|tojson }};
             </div>
             <div class="of2-pager" id="p2Pager" style="display:none;"></div>
 
-            <!-- Remove from existing offer -->
-            <div class="of2-remove-wrap" id="p2RemoveWrap" style="display:none;">
-                <div class="of2-remove-info">
-                    Keni zgjedhur produkte. Mund t'i <strong>hiqni ofertën</strong> nga produktet e zgjedhura.
-                </div>
-                <button type="button" class="of-btn danger" onclick="submitRemove()"
-                        style="white-space:nowrap; flex-shrink:0;">
-                    <i class="fas fa-ban"></i> Largo Ofertën
-                </button>
-            </div>
         </div>
 
         <!-- Right: summary -->
@@ -954,6 +958,8 @@ renderCdp('from'); renderCdp('until');
 ════════════════════════════════ */
 const PAGE_SIZE = 80;
 let selIds = new Set();
+// Map<pid, Set<vid>> — variant ids excluded from the offer for that product
+let exclVariants = new Map();
 let filtData = [...PD];
 let catF = '', brandF = new Set(), srchQ = '';
 let pg = 1;
@@ -981,6 +987,19 @@ function renderList() {
     el.innerHTML = slice.map(p => {
         const chk = selIds.has(p.id);
         const tag = p.on ? `<span class="of2-tag"><i class="fas fa-tag" style="font-size:.6rem;"></i> ${esc(p.on)}</span>` : '—';
+        let varHtml = '';
+        if (chk && p.vars && p.vars.length > 0) {
+            const excl = exclVariants.get(p.id) || new Set();
+            varHtml = `<div class="of2-vars" onclick="event.stopPropagation()">` +
+                p.vars.map((vid, i) => {
+                    const attrs = p.varLabels && p.varLabels[i] ? Object.values(p.varLabels[i]).join(' / ') : `Variant ${i+1}`;
+                    const price = p.varPrices && p.varPrices[i] != null ? ` €${parseFloat(p.varPrices[i]).toFixed(2)}` : '';
+                    const isExcl = excl.has(vid);
+                    return `<span class="of2-var-chip${isExcl?' excl':''}" onclick="toggleVariant('${p.id}','${vid}',this)" title="${isExcl?'Klikoni për ta shtuar':'Klikoni për ta përjashtuar'}">
+                        <i class="fas ${isExcl?'fa-times-circle':'fa-check-circle'}"></i>${esc(attrs)}${esc(price)}
+                    </span>`;
+                }).join('') + `</div>`;
+        }
         return `<div class="of2-row${chk?' sel':''}" onclick="toggleRow('${p.id}',this)" data-pid="${p.id}">
             <input type="checkbox" value="${p.id}" ${chk?'checked':''} onclick="event.stopPropagation();" onchange="onCbCh('${p.id}',this)">
             <img class="of2-img" src="${esc(p.img||'/static/img/placeholder.png')}" onerror="this.src='/static/img/placeholder.png'" loading="lazy" alt="">
@@ -991,6 +1010,7 @@ function renderList() {
             </div>
             <div class="of2-col-offer">${tag}</div>
             <span class="of2-price">€${p.p.toFixed(2)}</span>
+            ${varHtml}
         </div>`;
     }).join('');
     renderPager();
@@ -1016,19 +1036,22 @@ function renderPager() {
 function goPg(p) { if(p<1||p>Math.ceil(filtData.length/PAGE_SIZE))return; pg=p; renderList(); document.getElementById('p2List').scrollTop=0; }
 
 function toggleRow(id, row) {
-    if(selIds.has(id)){selIds.delete(id);row.classList.remove('sel');row.querySelector('input').checked=false;}
+    if(selIds.has(id)){selIds.delete(id);exclVariants.delete(id);row.classList.remove('sel');row.querySelector('input').checked=false;}
     else{selIds.add(id);row.classList.add('sel');row.querySelector('input').checked=true;}
-    afterSel();
+    renderList(); afterSel();
 }
 function onCbCh(id,cb) {
     const row=cb.closest('.of2-row');
     if(cb.checked){selIds.add(id);row.classList.add('sel');}
-    else{selIds.delete(id);row.classList.remove('sel');}
-    afterSel();
+    else{selIds.delete(id);exclVariants.delete(id);row.classList.remove('sel');}
+    renderList(); afterSel();
 }
 function toggleAll(cb) {
     const start=(pg-1)*PAGE_SIZE;
-    filtData.slice(start,start+PAGE_SIZE).forEach(p=>{if(cb.checked)selIds.add(p.id);else selIds.delete(p.id);});
+    filtData.slice(start,start+PAGE_SIZE).forEach(p=>{
+        if(cb.checked){selIds.add(p.id);}
+        else{selIds.delete(p.id);exclVariants.delete(p.id);}
+    });
     renderList(); afterSel();
 }
 function syncSelAll() {
@@ -1041,13 +1064,28 @@ function syncSelAll() {
 }
 function afterSel() { syncSelAll(); updateCount(); updateSummary(); }
 
+function toggleVariant(pid, vid, chip) {
+    if (!exclVariants.has(pid)) exclVariants.set(pid, new Set());
+    const excl = exclVariants.get(pid);
+    if (excl.has(vid)) {
+        excl.delete(vid);
+        chip.classList.remove('excl');
+        chip.querySelector('i').className = 'fas fa-check-circle';
+        chip.title = 'Klikoni për ta përjashtuar';
+    } else {
+        excl.add(vid);
+        chip.classList.add('excl');
+        chip.querySelector('i').className = 'fas fa-times-circle';
+        chip.title = 'Klikoni për ta shtuar';
+    }
+}
+
 function updateCount() {
     const n = selIds.size;
     document.getElementById('sumCount').textContent = n;
     const btn = document.getElementById('submitBtn');
     btn.style.opacity = n === 0 ? '.55' : '1';
     document.getElementById('p2BottomInfo').textContent = n===0 ? 'Zgjidhni të paktën 1 produkt' : `${n} produkte të zgjedhura`;
-    document.getElementById('p2RemoveWrap').style.display = n > 0 ? '' : 'none';
     if (n > 0) document.getElementById('warnNoSel').classList.remove('show');
     // Sync sticky bar
     const stickyCount = document.getElementById('stickyCount');
@@ -1147,6 +1185,15 @@ function submitApply() {
         const inp = document.createElement('input');
         inp.type='hidden'; inp.name='selected_products'; inp.value=id; inp.className='sel-hidden';
         document.getElementById('mainForm').appendChild(inp);
+        // Send excluded variant IDs for this product
+        const excl = exclVariants.get(id);
+        if (excl && excl.size) {
+            excl.forEach(vid => {
+                const vi = document.createElement('input');
+                vi.type='hidden'; vi.name=`excl_variants_${id}`; vi.value=vid; vi.className='sel-hidden';
+                document.getElementById('mainForm').appendChild(vi);
+            });
+        }
     });
     const a = document.createElement('input');
     a.type='hidden'; a.name='action'; a.value='apply'; a.className='sel-hidden';
@@ -1154,19 +1201,6 @@ function submitApply() {
     document.getElementById('mainForm').submit();
 }
 
-function submitRemove() {
-    if (!selIds.size) return;
-    document.querySelectorAll('.sel-hidden').forEach(e=>e.remove());
-    selIds.forEach(id => {
-        const inp = document.createElement('input');
-        inp.type='hidden'; inp.name='selected_products'; inp.value=id; inp.className='sel-hidden';
-        document.getElementById('mainForm').appendChild(inp);
-    });
-    const a = document.createElement('input');
-    a.type='hidden'; a.name='action'; a.value='remove'; a.className='sel-hidden';
-    document.getElementById('mainForm').appendChild(a);
-    document.getElementById('mainForm').submit();
-}
 
 /* ════════════════════════════════
    INITIALIZE

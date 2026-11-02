@@ -62,7 +62,25 @@
   <div class="hp-card-body">
     <span class="hp-card-brand">{{ product.brand if product.brand else product.category }}</span>
     <span class="hp-card-name">{{ product.name }}</span>
-    {% if product.size %}<span class="hp-card-size">{{ product.size }}</span>{% endif %}
+    {% if product.variants and product.variants|length > 0 %}
+        {% set og = (product.option_groups[0]) if product.option_groups and product.option_groups|length > 0 else none %}
+        {% set og_type = og.get('type', 'volume') if og else 'volume' %}
+        {% if og_type == 'color' %}
+            <div class="hp-card-swatches">
+                {% for cv in (og.get('values') or [])[:6] %}
+                    <span class="hp-swatch" style="background:{{ cv.get('color_hex') or '#cbd5e1' }}" title="{{ cv.get('value','') }}"></span>
+                {% endfor %}
+                {% if (og.get('values') or [])|length > 6 %}<span class="hp-swatch-more">+{{ (og.get('values') or [])|length - 6 }}</span>{% endif %}
+            </div>
+        {% elif og_type == 'size' %}
+            <span class="hp-card-size">{{ (og.get('values') or [])|length }} madhësi</span>
+        {% else %}
+            {% set vcnt = (og.get('values') or [])|length if og else 0 %}
+            {% if vcnt > 1 %}<span class="hp-card-size">{{ vcnt }} opsione</span>{% endif %}
+        {% endif %}
+    {% elif product.size %}
+        <span class="hp-card-size">{{ product.size }}</span>
+    {% endif %}
     <div class="hp-price-row">
       {% if product.offer_type == 'multi_buy' %}
         <span class="hp-price-main">€{{ "%.2f"|format(product.display_price) }}</span>
@@ -485,56 +503,80 @@
 
       <a href="{{ url_for('main.products', category='Dermokozmetikë') }}" class="hp-cat-card" aria-label="Dermokozmetikë">
         <div class="hp-cat-img">
-          <img src="{{ url_for('static', filename='img/categories/CeraVe, Hyalu B5, and Liftactiv.png') }}" alt="Dermokozmetikë" loading="lazy">
+          <picture>
+            <source srcset="{{ url_for('static', filename='img/categories/CeraVe, Hyalu B5, and Liftactiv.webp') }}" type="image/webp">
+            <img src="{{ url_for('static', filename='img/categories/CeraVe, Hyalu B5, and Liftactiv.png') }}" alt="Dermokozmetikë" width="400" height="400">
+          </picture>
         </div>
         <span class="hp-cat-name">Dermokozmetikë</span>
       </a>
 
       <a href="{{ url_for('main.products', category='Suplemente & Vitamina') }}" class="hp-cat-card" aria-label="Suplemente & Vitamina">
         <div class="hp-cat-img">
-          <img src="{{ url_for('static', filename='img/categories/Wellwoman, Berberine, and B-Complex trio.png') }}" alt="Suplemente & Vitamina" loading="lazy">
+          <picture>
+            <source srcset="{{ url_for('static', filename='img/categories/Wellwoman, Berberine, and B-Complex trio.webp') }}" type="image/webp">
+            <img src="{{ url_for('static', filename='img/categories/Wellwoman, Berberine, and B-Complex trio.png') }}" alt="Suplemente & Vitamina" width="400" height="400">
+          </picture>
         </div>
         <span class="hp-cat-name">Suplemente</span>
       </a>
 
       <a href="{{ url_for('main.products', category='Kujdes Personal & Higjienë') }}" class="hp-cat-card" aria-label="Kujdes Personal & Higjienë">
         <div class="hp-cat-img">
-          <img src="{{ url_for('static', filename='img/categories/Personal care essentials trio.png') }}" alt="Kujdes Personal & Higjienë" loading="lazy">
+          <picture>
+            <source srcset="{{ url_for('static', filename='img/categories/Personal care essentials trio.webp') }}" type="image/webp">
+            <img src="{{ url_for('static', filename='img/categories/Personal care essentials trio.png') }}" alt="Kujdes Personal & Higjienë" width="400" height="400">
+          </picture>
         </div>
         <span class="hp-cat-name">Kujdes personal</span>
       </a>
 
       <a href="{{ url_for('main.products', category='Pajisje Mjekësore') }}" class="hp-cat-card" aria-label="Pajisje Mjekësore">
         <div class="hp-cat-img">
-          <img src="{{ url_for('static', filename='img/categories/Microlife Blood Pressure Cuff and Thermometer.png') }}" alt="Pajisje Mjekësore" loading="lazy">
+          <picture>
+            <source srcset="{{ url_for('static', filename='img/categories/Microlife Blood Pressure Cuff and Thermometer.webp') }}" type="image/webp">
+            <img src="{{ url_for('static', filename='img/categories/Microlife Blood Pressure Cuff and Thermometer.png') }}" alt="Pajisje Mjekësore" width="400" height="400">
+          </picture>
         </div>
         <span class="hp-cat-name">Pajisje mjekësore</span>
       </a>
 
       <a href="{{ url_for('main.products', category='Nënë & Fëmijë') }}" class="hp-cat-card" aria-label="Nënë & Fëmijë">
         <div class="hp-cat-img">
-          <img src="{{ url_for('static', filename='img/categories/Baby bottle, pump, and pacifier.png') }}" alt="Nënë & Fëmijë" loading="lazy">
+          <picture>
+            <source srcset="{{ url_for('static', filename='img/categories/Baby bottle, pump, and pacifier.webp') }}" type="image/webp">
+            <img src="{{ url_for('static', filename='img/categories/Baby bottle, pump, and pacifier.png') }}" alt="Nënë & Fëmijë" width="400" height="400">
+          </picture>
         </div>
         <span class="hp-cat-name">Nënë &amp; fëmijë</span>
       </a>
 
       <a href="{{ url_for('main.products', category='Pajisje Ortopedike') }}" class="hp-cat-card" aria-label="Pajisje Ortopedike">
         <div class="hp-cat-img">
-          <img src="{{ url_for('static', filename='img/categories/Orthopedic footwear trio on white background.png') }}" alt="Pajisje Ortopedike" loading="lazy">
+          <picture>
+            <source srcset="{{ url_for('static', filename='img/categories/Orthopedic footwear trio on white background.webp') }}" type="image/webp">
+            <img src="{{ url_for('static', filename='img/categories/Orthopedic footwear trio on white background.png') }}" alt="Pajisje Ortopedike" width="400" height="400">
+          </picture>
         </div>
         <span class="hp-cat-name">Ortopedi</span>
       </a>
 
       <a href="{{ url_for('main.products', category='Produkte Natyrale & Bimore') }}" class="hp-cat-card" aria-label="Produkte Natyrale & Bimore">
         <div class="hp-cat-img">
-          <img src="{{ url_for('static', filename='img/categories/Chamomile tea pouch and botanical dropper.png') }}" alt="Produkte Natyrale & Bimore" loading="lazy">
+          <picture>
+            <source srcset="{{ url_for('static', filename='img/categories/Chamomile tea pouch and botanical dropper.webp') }}" type="image/webp">
+            <img src="{{ url_for('static', filename='img/categories/Chamomile tea pouch and botanical dropper.png') }}" alt="Produkte Natyrale & Bimore" width="400" height="400">
+          </picture>
         </div>
         <span class="hp-cat-name">Natyrale &amp; bimore</span>
       </a>
 
       <a href="{{ url_for('main.products', discount_only='true') }}" class="hp-cat-card" aria-label="Ofertat">
         <div class="hp-cat-img">
-          <img src="{{ url_for('static', filename='img/categories/Coral-red percent sale tag.png') }}" alt="Ofertat" loading="lazy">
+          <picture>
+            <source srcset="{{ url_for('static', filename='img/categories/Coral-red percent sale tag.webp') }}" type="image/webp">
+            <img src="{{ url_for('static', filename='img/categories/Coral-red percent sale tag.png') }}" alt="Ofertat" width="400" height="400">
+          </picture>
         </div>
         <span class="hp-cat-name">Ofertat</span>
       </a>

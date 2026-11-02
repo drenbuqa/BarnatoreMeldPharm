@@ -57,6 +57,14 @@
                         </div>
 
                         <div class="form-group">
+                            <label for="sku">SKU / Kodi i Produktit <span style="color:#94a3b8;font-weight:400;">(opsionale)</span></label>
+                            <input type="text" id="sku" name="sku" class="form-control premium-input"
+                                value="{{ product.sku if product and product.sku else '' }}"
+                                placeholder="Psh: L0404, EUC-HYA-50 (kodi i brendshëm i produktit)">
+                            <small class="helper-text"><i class="fas fa-info-circle"></i> Kodi unik për të gjetur produktin shpejt. Nuk shfaqet te blerësi.</small>
+                        </div>
+
+                        <div class="form-group">
                             <label for="brand">Marka (Brand)</label>
                             <input type="text" id="brand" name="brand" class="form-control premium-input"
                                 value="{{ product.brand if product else '' }}"
@@ -1086,8 +1094,32 @@
 {{ (product.variants if product and product.variants else []) | tojson | safe }}
 </script>
 
+<style>
+.og-type-pills { display:flex; gap:0.35rem; margin-left:auto; }
+.og-type-pill { display:inline-flex; align-items:center; gap:0.3rem; padding:0.28rem 0.65rem; border-radius:20px; font-size:0.72rem; font-weight:700; border:1.5px solid #e2e8f0; background:#f8fafc; color:#64748b; cursor:pointer; transition:all .15s; }
+.og-type-pill.active { background:#059669; border-color:#059669; color:#fff; }
+.og-type-pill:hover:not(.active) { background:#f0fdf4; border-color:#059669; color:#059669; }
+.og-type-pill i { font-size:0.65rem; }
+.img-count-badge { background:#059669; color:#fff; border-radius:10px; font-size:0.6rem; font-weight:800; padding:1px 5px; margin-left:2px; }
+.btn-img-toggle.has-imgs { background:#e8f5e9; color:#059669; border-color:#b7d9c3; }
+.opt-values-table.color  .opt-table-header,
+.opt-values-table.color  .opt-value-row { grid-template-columns: 1fr 2.5rem 2.5rem 2.5rem 1.6fr; }
+.opt-values-table.size   .opt-table-header,
+.opt-values-table.size   .opt-value-row { grid-template-columns: 1fr 2.5rem; }
+.opt-values-table.volume .opt-table-header,
+.opt-values-table.volume .opt-value-row { grid-template-columns: 1fr 5.5rem 5.5rem 2.5rem 2.5rem 1.6fr; }
+.opt-img-row-multi { display:none; padding:0.4rem 0.6rem 0.5rem; gap:0.4rem; flex-direction:column; background:#f8fafc; border-top:1px solid #f1f5f9; }
+.opt-img-row-multi .img-line { display:flex; gap:0.35rem; align-items:center; }
+.opt-img-row-multi .img-idx { font-size:0.7rem; color:#94a3b8; min-width:1.2rem; text-align:right; }
+.opt-img-row-multi .btn-rm-img { background:none; border:none; color:#94a3b8; cursor:pointer; padding:2px 4px; border-radius:4px; font-size:0.8rem; }
+.opt-img-row-multi .btn-rm-img:hover { color:#ef4444; }
+.btn-add-img { display:inline-flex; align-items:center; gap:0.3rem; padding:0.25rem 0.6rem; border-radius:6px; font-size:0.72rem; font-weight:600; border:1.5px dashed #cbd5e1; background:none; color:#64748b; cursor:pointer; margin-top:0.2rem; }
+.btn-add-img:hover { border-color:#059669; color:#059669; background:#f0fdf4; }
+.variant-name-input { font-size:0.78rem !important; min-width:0; }
+</style>
+
 <script>
-// ── Option Groups Manager (Shopify-style) ────────────────────────────────────
+// ── Option Groups Manager ────────────────────────────────────────────────────
 const PRESET_NAMES = ['Sasia', 'Ngjyra', 'Numri', 'Numri Këpucës', 'Madhësia Rrobave', 'Paketa'];
 const COLOR_MAP = {
     'e kuqe':'#ef4444','kuqe':'#ef4444','red':'#ef4444',
@@ -1105,19 +1137,13 @@ const COLOR_MAP = {
     'e artë':'#d97706','gold':'#d97706','arte':'#d97706',
 };
 
-let optionGroups = []; // [{name, values:[{value,price,discount_price,image_url,in_stock}]}]
+// [{name, type:'volume'|'color'|'size', values:[{value,price,discount_price,images,in_stock,color_hex,variant_name,sku}]}]
+let optionGroups = [];
 
 function escH(s) {
     return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
-
-function colorFor(val) {
-    return COLOR_MAP[val.toLowerCase().trim()] || null;
-}
-
-function isColorGroup(name) {
-    return name.toLowerCase().includes('ngjyr') || name.toLowerCase().includes('color');
-}
+function colorFor(val) { return COLOR_MAP[val.toLowerCase().trim()] || null; }
 
 function renderAllGroups() {
     const container = document.getElementById('option-groups-container');
@@ -1127,101 +1153,131 @@ function renderAllGroups() {
 }
 
 function renderGroup(container, og, gi) {
-    const hasColor = isColorGroup(og.name);
-    const showImg = hasColor || og.values.some(v => v.image_url);
-    const isPrimary = gi === 0; // first group owns price
+    const ogType = og.type || 'volume';
+    const isColor = ogType === 'color';
+    const isSize  = ogType === 'size';
+    const showPrice = !isSize && !isColor && gi === 0; // only first volume group owns price
+    const showImages = !isSize;
 
     const el = document.createElement('div');
     el.className = 'opt-group';
     el.dataset.gi = gi;
 
-    // Header: name selector + remove button
     const nameOptions = PRESET_NAMES.map(n =>
         `<option value="${escH(n)}" ${og.name===n?'selected':''}>${escH(n)}</option>`
     ).join('');
     const isCustom = og.name && !PRESET_NAMES.includes(og.name);
 
+    const typeLabels = { volume: '<i class="fas fa-flask"></i> Vëllim/Sasi', color: '<i class="fas fa-palette"></i> Ngjyrë', size: '<i class="fas fa-ruler"></i> Numër/Masë' };
+
+    const tableHtml = og.values.length > 0 ? (() => {
+        let headerCols = `<span>${isColor?'Ngjyra':'Vlera'}</span>`;
+        if (isColor)      headerCols += `<span title="Swatch">⬤</span>`;
+        else if (!isSize) headerCols += showPrice ? `<span>Çmimi €</span><span>Zbritje €</span>` : `<span></span><span></span>`;
+        headerCols += `<span>Stok</span>`;
+        if (showImages)   headerCols += `<span>Foto</span>`;
+        if (!isSize)      headerCols += `<span>Emri variant.</span>`;
+        return `<div class="opt-values-table ${ogType}">
+            <div class="opt-table-header">${headerCols}</div>
+            ${og.values.map((v,vi) => valueRowHtml(gi,vi,v,ogType,showPrice)).join('')}
+        </div>`;
+    })() : '';
+
     el.innerHTML = `
     <div class="opt-group-header">
-        <select onchange="changeGroupName(${gi}, this)" style="max-width:200px;">
+        <select onchange="changeGroupName(${gi},this)" style="max-width:180px;">
             ${nameOptions}
-            <option value="__custom__" ${isCustom?'selected':''}>Tjetër (shkruaj)…</option>
+            <option value="__custom__" ${isCustom?'selected':''}>Tjetër…</option>
         </select>
-        ${isCustom ? `<input type="text" value="${escH(og.name)}" placeholder="Emri i opsionit" oninput="setGroupName(${gi},this.value)" style="max-width:160px;">` : ''}
-        <span style="font-size:0.75rem;color:#94a3b8;margin-left:auto;margin-right:0.5rem;">
-            ${isPrimary ? '• çmimi vendoset këtu' : '• çmimi nga opsioni i parë'}
-        </span>
+        ${isCustom ? `<input type="text" value="${escH(og.name)}" placeholder="Emri i opsionit" oninput="setGroupName(${gi},this.value)" style="max-width:150px;">` : ''}
+        <div class="og-type-pills">
+            ${['volume','color','size'].map(t => `<button type="button" class="og-type-pill ${ogType===t?'active':''}" onclick="setGroupType(${gi},'${t}')">${typeLabels[t]}</button>`).join('')}
+        </div>
         <button type="button" class="btn-rm-group" onclick="removeGroup(${gi})" title="Hiq opsionin"><i class="fas fa-times"></i></button>
     </div>
-
     <div class="opt-tags-area">
         <label style="font-size:0.72rem;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.4px;display:block;margin-bottom:0.4rem;">
-            Vlerat — shtype dhe shtyp <kbd style="background:#f1f5f9;border:1px solid #e2e8f0;border-radius:3px;padding:1px 4px;font-size:0.7rem;">Enter</kbd> ose <kbd style="background:#f1f5f9;border:1px solid #e2e8f0;border-radius:3px;padding:1px 4px;font-size:0.7rem;">,</kbd> për të shtuar
+            Vlerat — shtype dhe shtyp <kbd style="background:#f1f5f9;border:1px solid #e2e8f0;border-radius:3px;padding:1px 4px;font-size:0.7rem;">Enter</kbd> ose <kbd style="background:#f1f5f9;border:1px solid #e2e8f0;border-radius:3px;padding:1px 4px;font-size:0.7rem;">,</kbd>
         </label>
         <div class="tags-wrap" onclick="this.querySelector('.tag-input').focus()">
-            ${og.values.map((v,vi) => tagChipHtml(gi,vi,v.value,hasColor)).join('')}
+            ${og.values.map((v,vi) => tagChipHtml(gi,vi,v.value,isColor,v.color_hex)).join('')}
             <input class="tag-input" type="text"
-                placeholder="${og.values.length===0 ? (og.name==='Numri'||og.name==='Madhësia Këpucës' ? 'psh: 38, 39, 40, 41' : og.name==='Ngjyra' ? 'psh: E kuqe, E zezë, E bardhë' : 'Shtype vlerën…') : ''}"
-                onkeydown="handleTagInput(event, ${gi})"
-                oninput="this.style.width = Math.max(80, this.value.length*9)+'px'">
+                placeholder="${og.values.length===0 ? (isSize?'psh: 38, 39, 40, 41':isColor?'psh: E kuqe, E zezë':'psh: 50ml, 100ml, 200ml') : ''}"
+                onkeydown="handleTagInput(event,${gi})"
+                oninput="this.style.width=Math.max(80,this.value.length*9)+'px'">
         </div>
-        <div class="tags-hint">Shembull: ${og.name==='Numri'||og.name==='Madhësia Këpucës'?'38, 39, 40, 41, 42':og.name==='Ngjyra'?'E kuqe, E zezë, E bardhë':'25ml, 50ml, 100ml, 200ml'}</div>
+        <div class="tags-hint">${isSize?'Shembull: 38, 39, 40, 41, 42':isColor?'Shembull: E kuqe, E zezë, E bardhë':'Shembull: 25ml, 50ml, 100ml, 200ml'}</div>
     </div>
-
-    ${og.values.length > 0 ? `
-    <div class="opt-values-table">
-        <div class="opt-table-header">
-            <span>Vlera</span>
-            ${isPrimary ? '<span>Çmimi €</span><span>Zbritje €</span>' : '<span></span><span></span>'}
-            <span>Stok</span>
-            <span>${showImg ? 'Foto' : ''}</span>
-        </div>
-        ${og.values.map((v,vi) => valueRowHtml(gi, vi, v, isPrimary, showImg, hasColor)).join('')}
-    </div>` : ''}
-    `;
+    ${tableHtml}`;
     container.appendChild(el);
 }
 
-function tagChipHtml(gi, vi, val, hasColor) {
-    const swatch = hasColor && colorFor(val)
-        ? `<span class="color-swatch" style="background:${colorFor(val)};"></span>`
-        : '';
+function tagChipHtml(gi, vi, val, isColor, colorHex) {
+    let swatch = '';
+    if (isColor) {
+        const hex = colorHex || colorFor(val) || '#cbd5e1';
+        swatch = `<span class="color-swatch" style="background:${hex};border:1px solid rgba(0,0,0,.15);"></span>`;
+    }
     return `<span class="tag-chip">${swatch}${escH(val)}<button type="button" onclick="removeValue(${gi},${vi})" tabindex="-1">×</button></span>`;
 }
 
-function valueRowHtml(gi, vi, v, isPrimary, showImg, hasColor) {
-    const swatch = hasColor && colorFor(v.value)
-        ? `<span class="color-swatch" style="background:${colorFor(v.value)};"></span>`
+function valueRowHtml(gi, vi, v, ogType, showPrice) {
+    const isColor = ogType === 'color';
+    const isSize  = ogType === 'size';
+    const showImages = !isSize;
+
+    const hex = v.color_hex || (isColor ? colorFor(v.value) : null) || '#cbd5e1';
+    const colorPickerCell = isColor
+        ? `<input type="color" value="${escH(hex)}" oninput="updateVal(${gi},${vi},'color_hex',this.value)"
+            style="width:2.2rem;height:2.2rem;padding:2px;border:2px solid #e2e8f0;border-radius:7px;cursor:pointer;"
+            title="Swatch i ngjyrës">`
         : '';
-    const imgPreview = v.image_url
-        ? `<img class="opt-img-preview" src="${escH(v.image_url)}" style="display:block;" onerror="this.style.display='none'">`
-        : `<img class="opt-img-preview">`;
+
+    const imgs = v.images && v.images.length ? v.images : (v.image_url ? [v.image_url] : []);
+    const imgCount = imgs.filter(Boolean).length;
+    const firstImg = imgs[0] || '';
+    const imgCell = showImages ? `<div style="display:flex;align-items:center;gap:0.25rem;">
+        ${firstImg ? `<img class="opt-img-preview" src="${escH(firstImg)}" style="display:block;" onerror="this.style.display='none'">` : `<img class="opt-img-preview" style="display:none;">`}
+        <button type="button" class="btn-img-toggle${imgCount>0?' has-imgs':''}" onclick="toggleImgInput(this,${gi},${vi})"
+            title="${imgCount} foto"><i class="fas fa-image"></i>${imgCount>0?`<span class="img-count-badge">${imgCount}</span>`:''}</button>
+    </div>` : '';
+
+    const nameCell = !isSize
+        ? `<input class="opt-val-input variant-name-input" type="text" placeholder="Emri variant. (opt.)"
+            value="${escH(v.variant_name||'')}" oninput="updateVal(${gi},${vi},'variant_name',this.value)">`
+        : '';
+
+    const priceHtml = isColor || isSize ? ''
+        : showPrice
+            ? `<input class="opt-val-input" type="number" step="0.01" min="0" placeholder="0.00"
+                value="${v.price||''}" oninput="updateVal(${gi},${vi},'price',this.value)">
+               <input class="opt-val-input" type="number" step="0.01" min="0" placeholder="—"
+                value="${v.discount_price||''}" oninput="updateVal(${gi},${vi},'discount_price',this.value)">`
+            : `<span></span><span></span>`; // empty placeholders keep volume 6-col grid aligned
+
+    const imgRows = imgs.length > 0 ? imgs.map((url, ii) => `
+        <div class="img-line">
+            <span class="img-idx">${ii+1}.</span>
+            <input class="opt-val-input" type="url" placeholder="URL e imazhit…" style="flex:1;"
+                value="${escH(url||'')}" oninput="updateImgUrl(${gi},${vi},${ii},this.value)">
+            <button type="button" class="btn-rm-img" onclick="removeImg(${gi},${vi},${ii})" title="Hiq"><i class="fas fa-times"></i></button>
+        </div>`).join('') : '';
 
     return `<div class="opt-value-row" data-gi="${gi}" data-vi="${vi}">
-        <span class="opt-val-label">${swatch}${escH(v.value)}</span>
-        ${isPrimary ? `
-        <input class="opt-val-input" type="number" step="0.01" min="0" placeholder="0.00"
-            value="${v.price||''}" oninput="updateVal(${gi},${vi},'price',this.value)">
-        <input class="opt-val-input" type="number" step="0.01" min="0" placeholder="—"
-            value="${v.discount_price||''}" oninput="updateVal(${gi},${vi},'discount_price',this.value)"
-            title="Çmimi me zbritje (opsionale)">
-        ` : '<span></span><span></span>'}
+        <span class="opt-val-label">${escH(v.value)}</span>
+        ${colorPickerCell}
+        ${priceHtml}
         <label class="stock-toggle-sm" title="${v.in_stock!==false?'Në Stok':'Jashtë Stokut'}">
-            <input type="checkbox" ${v.in_stock!==false?'checked':''}
-                onchange="updateVal(${gi},${vi},'in_stock',this.checked)">
+            <input type="checkbox" ${v.in_stock!==false?'checked':''} onchange="updateVal(${gi},${vi},'in_stock',this.checked)">
             <span class="stock-dot"></span>
         </label>
-        ${showImg ? `
-        <div style="display:flex;align-items:center;gap:0.3rem;">
-            ${imgPreview}
-            <button type="button" class="btn-img-toggle" onclick="toggleImgInput(this,${gi},${vi})"
-                title="URL e imazhit për këtë vlerë"><i class="fas fa-image"></i></button>
-        </div>` : '<span></span>'}
+        ${imgCell}
+        ${nameCell}
     </div>
-    <div class="img-url-row" id="img-row-${gi}-${vi}" style="display:${v.image_url?'flex':'none'};padding:0.3rem 0 0.4rem;gap:0.5rem;align-items:center;">
-        <input class="opt-val-input" type="url" placeholder="URL e imazhit…" style="flex:1;"
-            value="${escH(v.image_url||'')}" oninput="updateVal(${gi},${vi},'image_url',this.value);updateImgPreview(this,${gi},${vi})">
-    </div>`;
+    ${showImages ? `<div class="opt-img-row-multi" id="img-row-${gi}-${vi}" style="display:${firstImg?'flex':'none'};">
+        ${imgRows}
+        <button type="button" class="btn-add-img" onclick="addImg(${gi},${vi})"><i class="fas fa-plus"></i> Shto foto</button>
+    </div>` : ''}`;
 }
 
 function handleTagInput(e, gi) {
@@ -1230,9 +1286,7 @@ function handleTagInput(e, gi) {
         const input = e.target;
         const raw = input.value.replace(/,/g,'').trim();
         if (!raw) return;
-        // Split only on commas — spaces are allowed within a value (e.g. "Nr 40")
-        const parts = raw.split(/[,،]+/).map(s=>s.trim()).filter(Boolean);
-        parts.forEach(p => addValue(gi, p));
+        raw.split(/[,،]+/).map(s=>s.trim()).filter(Boolean).forEach(p => addValue(gi, p));
         input.value = '';
         input.style.width = '80px';
     }
@@ -1241,14 +1295,22 @@ function handleTagInput(e, gi) {
 function addValue(gi, val) {
     if (!val) return;
     const og = optionGroups[gi];
-    if (og.values.some(v => v.value.toLowerCase() === val.toLowerCase())) return; // no duplicates
-    og.values.push({ value: val, price: og.values.length > 0 ? og.values[0].price : 0, discount_price: null, image_url: null, in_stock: true });
+    if (og.values.some(v => v.value.toLowerCase() === val.toLowerCase())) return;
+    const isColor = og.type === 'color';
+    const isSize  = og.type === 'size';
+    const firstPrice = og.values.length > 0 ? og.values[0].price : null;
+    og.values.push({
+        value: val,
+        price: isSize ? null : firstPrice,
+        discount_price: null,
+        images: [],
+        in_stock: true,
+        color_hex: isColor ? (colorFor(val) || null) : null,
+        variant_name: null,
+        sku: null,
+    });
     renderAllGroups();
-    // Restore focus to tag input
-    setTimeout(() => {
-        const el = document.querySelector(`.opt-group[data-gi="${gi}"] .tag-input`);
-        if (el) el.focus();
-    }, 20);
+    setTimeout(() => { const el = document.querySelector(`.opt-group[data-gi="${gi}"] .tag-input`); if (el) el.focus(); }, 20);
 }
 
 function removeValue(gi, vi) {
@@ -1262,19 +1324,51 @@ function updateVal(gi, vi, field, val) {
     else if (field === 'price' || field === 'discount_price') {
         const f = parseFloat(val);
         v[field] = isNaN(f) || val==='' ? null : f;
+    } else if (field === 'color_hex') {
+        v.color_hex = val || null;
+        const chip = document.querySelectorAll(`.opt-group[data-gi="${gi}"] .tag-chip`)[vi];
+        if (chip) { const sw = chip.querySelector('.color-swatch'); if (sw) sw.style.background = val; }
     } else {
         v[field] = val || null;
     }
     syncHidden();
 }
 
-function updateImgPreview(input, gi, vi) {
-    const row = document.getElementById(`img-row-${gi}-${vi}`);
-    const prev = row ? row.previousElementSibling.querySelector('.opt-img-preview') : null;
-    if (prev) {
-        prev.src = input.value;
-        prev.style.display = input.value ? 'block' : 'none';
+function updateImgUrl(gi, vi, ii, url) {
+    const v = optionGroups[gi].values[vi];
+    if (!v.images) v.images = [];
+    v.images[ii] = url.trim() || null;
+    syncHidden();
+    const cnt = v.images.filter(Boolean).length;
+    const btn = document.querySelector(`.opt-value-row[data-gi="${gi}"][data-vi="${vi}"] .btn-img-toggle`);
+    if (btn) {
+        let badge = btn.querySelector('.img-count-badge');
+        if (cnt > 0) {
+            btn.classList.add('has-imgs');
+            if (!badge) { badge = document.createElement('span'); badge.className='img-count-badge'; btn.appendChild(badge); }
+            badge.textContent = cnt;
+        } else {
+            btn.classList.remove('has-imgs');
+            if (badge) badge.remove();
+        }
     }
+}
+
+function removeImg(gi, vi, ii) {
+    const v = optionGroups[gi].values[vi];
+    if (v.images) v.images.splice(ii, 1);
+    renderAllGroups();
+}
+
+function addImg(gi, vi) {
+    const v = optionGroups[gi].values[vi];
+    if (!v.images) v.images = [];
+    v.images.push('');
+    renderAllGroups();
+    setTimeout(() => {
+        const row = document.getElementById(`img-row-${gi}-${vi}`);
+        if (row) { const ins = row.querySelectorAll('input[type="url"]'); if (ins.length) ins[ins.length-1].focus(); }
+    }, 20);
 }
 
 function toggleImgInput(btn, gi, vi) {
@@ -1282,15 +1376,21 @@ function toggleImgInput(btn, gi, vi) {
     if (!row) return;
     const shown = row.style.display !== 'none';
     row.style.display = shown ? 'none' : 'flex';
-    if (!shown) row.querySelector('input').focus();
+    if (!shown) {
+        const v = optionGroups[gi].values[vi];
+        if (!v.images || v.images.length === 0) { addImg(gi, vi); return; }
+        const inp = row.querySelector('input[type="url"]');
+        if (inp) inp.focus();
+    }
+}
+
+function setGroupType(gi, type) {
+    optionGroups[gi].type = type;
+    renderAllGroups();
 }
 
 function changeGroupName(gi, select) {
-    if (select.value === '__custom__') {
-        optionGroups[gi].name = '';
-    } else {
-        optionGroups[gi].name = select.value;
-    }
+    optionGroups[gi].name = select.value === '__custom__' ? '' : select.value;
     renderAllGroups();
 }
 
@@ -1305,19 +1405,15 @@ function removeGroup(gi) {
 }
 
 function addOptionGroup() {
-    optionGroups.push({ name: 'Madhësia', values: [] });
+    optionGroups.push({ name: 'Madhësia', type: 'volume', values: [] });
     renderAllGroups();
-    setTimeout(() => {
-        const inputs = document.querySelectorAll('.tag-input');
-        if (inputs.length) inputs[inputs.length-1].focus();
-    }, 30);
+    setTimeout(() => { const inputs = document.querySelectorAll('.tag-input'); if (inputs.length) inputs[inputs.length-1].focus(); }, 30);
 }
 
 function syncHidden() {
     document.getElementById('option_groups_json').value = JSON.stringify(optionGroups);
 }
 
-// Reconstruct option_groups from variants when option_groups not stored yet
 function optGroupsFromVariants(variants) {
     if (!variants || variants.length === 0) return [];
     const attrKeys = [];
@@ -1325,20 +1421,25 @@ function optGroupsFromVariants(variants) {
     return attrKeys.map((key, ki) => {
         const seen = new Set();
         const values = [];
+        const dimType = (variants[0]?.dimension_types || {})[key] || 'volume';
         variants.forEach(v => {
             const val = (v.attributes||{})[key];
             if (val && !seen.has(val)) {
                 seen.add(val);
+                const imgs = (v.images && v.images.length) ? v.images : (v.image_url ? [v.image_url] : []);
                 values.push({
                     value: val,
-                    price: ki === 0 ? (v.price || 0) : null,
-                    discount_price: ki === 0 ? (v.discount_price || null) : null,
-                    image_url: v.image_url || null,
+                    price: dimType !== 'size' && ki === 0 ? (v.price || null) : null,
+                    discount_price: dimType !== 'size' && ki === 0 ? (v.discount_price || null) : null,
+                    images: imgs,
                     in_stock: v.in_stock !== false,
+                    color_hex: v.color_hex || null,
+                    variant_name: v.variant_name || null,
+                    sku: v.sku || null,
                 });
             }
         });
-        return { name: key, values };
+        return { name: key, type: dimType, values };
     });
 }
 
@@ -1347,9 +1448,10 @@ function optGroupsFromVariants(variants) {
     try {
         let raw = JSON.parse(document.getElementById('existing-option-groups').textContent);
         if (Array.isArray(raw) && raw.length > 0) {
+            // Ensure each group has a type field
+            raw.forEach(og => { if (!og.type) og.type = 'volume'; });
             optionGroups = raw;
         } else {
-            // Fall back: reconstruct from variants
             const variants = JSON.parse(document.getElementById('existing-variants-fallback').textContent);
             optionGroups = optGroupsFromVariants(variants);
         }

@@ -1,6 +1,640 @@
 {% extends "base.html" %}
 
 {% block content %}
+<!-- Mobile floating back button (shown only on mobile) -->
+<a href="#" onclick="history.back(); return false;" class="pd-mobile-back" aria-label="Kthehu">
+    <i class="fas fa-arrow-left"></i>
+</a>
+
+<style>
+/* ══════════════════════════════════════════════════════
+   Mobile Product Detail Redesign
+   ══════════════════════════════════════════════════════ */
+
+/* Base (all screens) — elements that are mobile-only */
+.pd-mobile-back {
+    display: none;
+    position: fixed;
+    top: 14px;
+    left: 14px;
+    z-index: 500;
+    background: rgba(255,255,255,0.92);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-radius: 50%;
+    width: 40px; height: 40px;
+    align-items: center; justify-content: center;
+    box-shadow: 0 2px 14px rgba(0,0,0,0.13);
+    color: var(--text-main);
+    text-decoration: none;
+    border: 1px solid rgba(255,255,255,0.55);
+    font-size: 0.85rem;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.pd-mobile-back:active { transform: scale(0.93); }
+
+/* Desktop: accordion inside pinfo-card — style as normal section */
+@media (min-width: 769px) {
+    .pinfo-accordion-mobile {
+        margin: 1.5rem 0 0 !important;
+        padding: 0 !important;
+        border-top: none !important;
+    }
+}
+
+.pinfo-mobile-social {
+    display: none;
+    gap: 0.75rem;
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1.5px solid #f1f5f9;
+}
+.pinfo-social-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    padding: 0.7rem;
+    border: 1.5px solid #e8edf2;
+    border-radius: 14px;
+    background: #fafafa;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #475569;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.15s cubic-bezier(0.16,1,0.3,1);
+    text-decoration: none;
+}
+.pinfo-social-btn:active { background: #f1f5f9; transform: scale(0.96); }
+.pinfo-social-fav.active {
+    color: #ef4444;
+    border-color: #fecaca;
+    background: #fff5f5;
+}
+
+/* ── Mobile only ──────────────────────────────────────── */
+@media (max-width: 768px) {
+
+  /* Hide header on product detail — image fills full screen */
+  .mobile-header   { display: none !important; }
+  .main-content    { margin-top: 0 !important; }
+
+  /* Container: full-bleed */
+  .product-breadcrumbs { display: none !important; }
+  .product-detail-container {
+      padding-left: 0 !important;
+      padding-right: 0 !important;
+      padding-top: 0 !important;
+      max-width: 100% !important;
+      overflow: visible !important;
+  }
+  .product-detail-container > div:first-child { display: none !important; }
+
+  /* Floating back button — top-left of image, with safe area inset */
+  .pd-mobile-back {
+      display: flex !important;
+      top: calc(env(safe-area-inset-top, 0px) + 14px);
+  }
+
+  /* ── Bottom-sheet layout ───────────────────────────────── */
+  /* Body locked — sheet is the only scroll container */
+  body { overflow: hidden !important; }
+
+  /* Gallery: fixed fullscreen background layer */
+  body { background: #fff !important; }
+  .mobile-header,
+  .mobile-header.scrolled {
+      background: #fff !important;
+      backdrop-filter: none !important;
+      -webkit-backdrop-filter: none !important;
+      box-shadow: none !important;
+  }
+  .product-detail-grid { display: block !important; }
+  .product-gallery {
+      position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
+      right: 0 !important;
+      height: 100vh !important;
+      z-index: 1 !important;
+      overflow: hidden !important;
+      background: #fff !important;
+  }
+
+  /* Dim overlay — sits between gallery and sheet */
+  .pd-gallery-dim {
+      display: block !important;
+      position: fixed !important;
+      inset: 0 !important;
+      background: rgba(0,0,0,0); /* no !important — JS sets this */
+      z-index: 2 !important;
+      pointer-events: none !important;
+  }
+
+  /* Sheet: fixed, full height, controlled by JS transform */
+  .product-info-column {
+      position: fixed !important;
+      left: 0 !important;
+      right: 0 !important;
+      bottom: 0 !important;
+      height: 90vh !important;
+      z-index: 10 !important;
+      margin-top: 0 !important;
+      will-change: transform;
+      /* JS sets initial translateY on DOMContentLoaded */
+  }
+  .product-info-column.pd-snapping {
+      transition: transform 0.42s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  }
+  .detail-carousel-container {
+      height: 100% !important;
+      aspect-ratio: unset !important;
+      border-radius: 0 !important;
+      border: none !important;
+      box-shadow: none !important;
+      background: #fff !important;
+  }
+  /* Remove excessive image padding so product fills the gallery; reserve space for dots at bottom */
+  .detail-carousel-container .product-image {
+      padding: 0.75rem 0.75rem 36px !important;
+  }
+  /* Thumbnail strip — fixed to viewport left edge, never covers the image */
+  .thumbnails-container {
+      position: fixed !important;
+      left: 12px !important;
+      top: 62px !important;
+      transform: none !important;
+      z-index: 8 !important;
+      width: 48px !important;
+      max-height: calc(var(--gallery-vis-h, 38vh) - 76px) !important;
+      display: flex !important;
+      flex-direction: column !important;
+      gap: 7px !important;
+      padding: 0 !important;
+      overflow-y: auto !important;
+      overflow-x: visible !important;
+      scrollbar-width: none !important;
+      background: transparent !important;
+      align-items: center !important;
+  }
+  .thumbnails-container::-webkit-scrollbar { display: none !important; }
+
+  /* Hide arrows on mobile — swipe is the gesture */
+  .detail-carousel-container .carousel-arrow { display: none !important; }
+
+  /* Pill-style dot indicators — fixed to viewport, always just above the sheet */
+  .carousel-indicators {
+      position: fixed !important;
+      left: 50% !important;
+      transform: translateX(-50%) !important;
+      top: calc(var(--gallery-vis-h, 38vh) - 14px) !important;
+      bottom: auto !important;
+      z-index: 10 !important;
+      gap: 5px !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+  }
+  .indicator-dot {
+      width: 6px !important;
+      height: 6px !important;
+      background: rgba(0,0,0,0.22) !important;
+      border-radius: 10px !important;
+      transition: width 0.35s cubic-bezier(0.34,1.56,0.64,1), background 0.3s ease !important;
+      margin: 0 !important;
+  }
+  .indicator-dot.active {
+      width: 22px !important;
+      background: #4F5D4E !important;
+  }
+
+  /* Mobile thumbnail items — vertical strip on left */
+  .product-gallery .thumbnail {
+      min-width: 48px !important;
+      width: 48px !important;
+      height: 48px !important;
+      border-radius: 10px !important;
+      border: 2px solid rgba(200,200,200,0.5) !important;
+      background: rgba(255,255,255,0.90) !important;
+      backdrop-filter: blur(8px) !important;
+      -webkit-backdrop-filter: blur(8px) !important;
+      box-shadow: 0 2px 5px -1px rgba(0,0,0,0.07) !important;
+      opacity: 0.62 !important;
+      transition: opacity 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease !important;
+      overflow: hidden !important;
+      flex-shrink: 0 !important;
+  }
+  .product-gallery .thumbnail.active {
+      border-color: #4F5D4E !important;
+      border-width: 2.5px !important;
+      opacity: 1 !important;
+      box-shadow: 0 2px 14px rgba(79,93,78,0.32) !important;
+  }
+  .product-gallery .thumbnail img {
+      width: 100% !important;
+      height: 100% !important;
+      object-fit: contain !important;
+      padding: 4px !important;
+  }
+
+  /* Hide carousel heart — use inline social row instead */
+  .detail-carousel-container .btn-favorite { display: none !important; }
+
+  /* pinfo-card: scrollable content container within the sheet */
+  .pinfo-card {
+      height: 100% !important;
+      overflow-y: hidden; /* NO !important — JS overrides this to 'auto' when expanded */
+      -webkit-overflow-scrolling: touch !important;
+      overscroll-behavior: none !important;
+      border-radius: 28px 28px 0 0 !important;
+      border: none !important;
+      box-shadow: 0 -6px 24px rgba(0,0,0,0.07) !important;
+      padding: 0 1.25rem 16rem !important;
+      margin: 0 !important;
+      background: #fff !important;
+      scroll-behavior: smooth !important;
+  }
+  /* ::before pill hidden — replaced by .pd-drag-handle created in JS */
+  .pinfo-card::before { display: none !important; }
+
+  /* Drag handle zone — sticky so it stays at the top of the sheet
+     even when the card is scrolled to the bottom */
+  .pd-drag-handle {
+      position: sticky !important;
+      top: 0 !important;
+      z-index: 20 !important;
+      flex-shrink: 0 !important;
+      order: -10 !important;
+      height: 44px !important;
+      display: flex !important;
+      align-items: flex-start !important;
+      justify-content: center !important;
+      padding-top: 12px !important;
+      background: #fff !important;
+      touch-action: none !important;
+      cursor: grab !important;
+      margin: 0 -1.25rem !important; /* edge-to-edge */
+  }
+  .pd-drag-handle::after {
+      content: '' !important;
+      width: 40px !important;
+      height: 4px !important;
+      background: #d1d9e0 !important;
+      border-radius: 2px !important;
+  }
+
+  /* ══════════════════════════════════════════════════════
+     CARD CONTENT LAYOUT — Complete Restart
+     Visual order: stock → brand → title → labels →
+     variants/size → price → expiry → trust → save/share
+     ══════════════════════════════════════════════════════ */
+
+  /* pinfo-card is now a flex column so order: controls sequence */
+  .pinfo-card {
+      display: flex !important;
+      flex-direction: column !important;
+  }
+  /* flex-shrink:0 on every child ensures content overflows the card
+     (not compressed into it) so overflow-y:auto actually scrolls */
+  .pinfo-card > * { flex-shrink: 0 !important; }
+  .pinfo-card::before    { order: 0;  flex-shrink: 0; }
+  .pinfo-fav             { order: -1; }   /* stays hidden */
+  .pinfo-share-wrap      { order: -1; }   /* stays hidden */
+  .pinfo-top-row         { order: 1; }    /* stock badge only */
+  .pinfo-brand           { order: 2; }
+  .pinfo-title           { order: 3; }
+  #product-variants-ui   { order: 4; }
+  .pinfo-size            { order: 4; }
+  .pinfo-labels-row      { order: 5; }
+  .pinfo-price-row       { order: 6; }    /* border-top = visual separator */
+  .pinfo-trust-signals   { order: 8; }
+  .pinfo-mobile-social   { order: 9; }    /* border-top = visual separator */
+  .pinfo-divider         { display: none !important; }
+  #main-action-container { order: 99; }
+
+  /* ── Row 1: Stock badge + expiry ── */
+  .pinfo-category { display: none !important; }
+  .pinfo-top-row {
+      display: flex !important;
+      flex-direction: row !important;
+      flex-wrap: wrap !important;
+      gap: 0.5rem !important;
+      align-items: center !important;
+      margin-bottom: 0 !important;
+      padding-right: 0 !important;
+  }
+  /* Force expiry inline inside top row on iOS Safari */
+  .pinfo-top-row .pinfo-expiry { display: none !important; }
+  .pinfo-top-row .pinfo-expiry.pinfo-expiry--visible {
+      display: flex !important;
+      margin-bottom: 0 !important;
+      width: fit-content !important;
+      flex-shrink: 0 !important;
+  }
+  .pinfo-stock-inline {
+      font-size: 0.72rem !important;
+      font-weight: 600 !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      gap: 0.3rem !important;
+      background: #f0fdf4 !important;
+      border: 1px solid #bbf7d0 !important;
+      border-radius: 20px !important;
+      padding: 0.22rem 0.65rem 0.22rem 0.45rem !important;
+      color: #15803d !important;
+  }
+  .pinfo-stock-inline.stock-out {
+      background: #fef2f2 !important;
+      border-color: #fecaca !important;
+      color: #b91c1c !important;
+  }
+  .pinfo-stock-dot {
+      width: 6px !important;
+      height: 6px !important;
+      border-radius: 50% !important;
+      flex-shrink: 0 !important;
+  }
+  .dot-green { background: #22c55e !important; }
+  .dot-red   { background: #ef4444 !important; }
+
+  /* ── Row 2: Brand ── */
+  .pinfo-brand {
+      font-size: 0.67rem !important;
+      font-weight: 700 !important;
+      letter-spacing: 0.12em !important;
+      text-transform: uppercase !important;
+      color: #94a3b8 !important;
+      margin-top: 0.75rem !important;
+      margin-bottom: 0.15rem !important;
+  }
+
+  /* ── Row 3: Title ── */
+  .pinfo-title {
+      font-size: 1.22rem !important;
+      font-weight: 700 !important;
+      line-height: 1.27 !important;
+      color: var(--text-main, #1e293b) !important;
+      margin-bottom: 0.65rem !important;
+  }
+
+  /* ── Row 4: Labels/Badges ── */
+  .pinfo-labels-row {
+      display: flex !important;
+      flex-wrap: wrap !important;
+      gap: 0.3rem !important;
+      margin-bottom: 0.65rem !important;
+  }
+  .pinfo-labels-row .pinfo-badge {
+      font-size: 0.69rem !important;
+      padding: 0.2rem 0.55rem !important;
+  }
+
+  /* ── Row 5: Variants / Size ── */
+  #product-variants-ui:empty { display: none !important; }
+  #product-variants-ui { margin-bottom: 0.7rem !important; }
+  .pinfo-size {
+      font-size: 0.83rem !important;
+      color: #64748b !important;
+      margin-bottom: 0.7rem !important;
+  }
+  .vpill {
+      min-height: 40px !important;
+      font-size: 0.83rem !important;
+      font-weight: 600 !important;
+      border-radius: 10px !important;
+      border: 1.5px solid #e2e8f0 !important;
+      background: #fff !important;
+      color: #334155 !important;
+      transition: all 0.18s cubic-bezier(0.16,1,0.3,1) !important;
+  }
+  .vpill.vpill-active {
+      border-color: var(--primary) !important;
+      background: var(--primary) !important;
+      color: #fff !important;
+      transform: none !important;
+  }
+  .vpill.vpill-oos {
+      opacity: 0.38 !important;
+      text-decoration: line-through !important;
+  }
+  .vpill:active { transform: scale(0.93) !important; }
+
+  /* ── Row 6: Price (border-top = visual section separator) ── */
+  .pinfo-price-row {
+      border-top: 1px solid #f1f5f9 !important;
+      padding-top: 1rem !important;
+      margin-top: 0 !important;
+      margin-bottom: 0 !important;
+      padding-bottom: 0 !important;
+      display: flex !important;
+      align-items: center !important;
+      flex-wrap: wrap !important;
+      gap: 0.55rem !important;
+  }
+  .pinfo-price-orig {
+      font-size: 0.9rem !important;
+      color: #94a3b8 !important;
+      text-decoration: line-through !important;
+      font-weight: 400 !important;
+      order: 0 !important;
+  }
+  .pinfo-price-main {
+      font-size: 1.65rem !important;
+      font-weight: 800 !important;
+      letter-spacing: -0.02em !important;
+      color: var(--text-main, #1e293b) !important;
+      line-height: 1 !important;
+      order: 1 !important;
+  }
+  .pinfo-price-row .discount-badge {
+      font-size: 0.77rem !important;
+      padding: 0.28rem 0.6rem !important;
+      border-radius: 8px !important;
+      font-weight: 700 !important;
+      order: 2 !important;
+  }
+
+  /* ── Row 7: Expiry (urgency, sits under price) ── */
+  .pinfo-expiry {
+      font-size: 0.75rem !important;
+      font-weight: 600 !important;
+      color: #b45309 !important;
+      display: flex !important;
+      align-items: center !important;
+      gap: 0.35rem !important;
+      margin-top: 0.55rem !important;
+      margin-bottom: 0 !important;
+      background: #fffbeb !important;
+      border: 1px solid #fde68a !important;
+      border-radius: 8px !important;
+      padding: 0.38rem 0.65rem !important;
+  }
+
+  /* ── Row 8: Trust signals (horizontal scroll) ── */
+  .pinfo-trust-signals {
+      display: flex !important;
+      flex-direction: row !important;
+      flex-wrap: nowrap !important;
+      gap: 0.5rem !important;
+      overflow-x: auto !important;
+      scrollbar-width: none !important;
+      margin: 1.5rem -1.25rem 0 !important;
+      padding: 0 1.25rem 0.25rem !important;
+  }
+  .pinfo-trust-signals::-webkit-scrollbar { display: none; }
+  .pinfo-trust-item {
+      flex-shrink: 0 !important;
+      flex-direction: row !important;
+      align-items: center !important;
+      background: rgba(79,93,78,0.08) !important;
+      border: 1px solid rgba(79,93,78,0.25) !important;
+      border-radius: 20px !important;
+      padding: 0.4rem 0.9rem 0.4rem 0.65rem !important;
+      gap: 0.4rem !important;
+      box-shadow: none !important;
+  }
+  .pinfo-trust-item > div > span { display: none !important; }
+  .pinfo-trust-item > div > strong {
+      font-size: 0.78rem !important;
+      font-weight: 700 !important;
+      white-space: nowrap !important;
+      color: #3a4539 !important;
+  }
+  .pinfo-trust-item > i {
+      font-size: 0.8rem !important;
+      color: #4F5D4E !important;
+  }
+
+  /* ── Row 9: Mobile save + share ── */
+  .pinfo-mobile-social {
+      display: flex !important;
+      gap: 0.65rem !important;
+      margin-top: 0.85rem !important;
+      padding-top: 0.85rem !important;
+      border-top: 1.5px solid #f1f5f9 !important;
+  }
+
+  /* Hide overlay fav + share — inline row handles these */
+  .pinfo-card .pinfo-fav        { display: none !important; visibility: hidden !important; }
+  .pinfo-card .pinfo-share-wrap { display: none !important; visibility: hidden !important; }
+
+  /* ── Staggered entrance animations ── */
+  .pinfo-top-row       { animation: pd-fade-up 0.4s cubic-bezier(0.16,1,0.3,1) 0.13s both; }
+  .pinfo-brand         { animation: pd-fade-up 0.4s cubic-bezier(0.16,1,0.3,1) 0.16s both; }
+  .pinfo-title         { animation: pd-fade-up 0.4s cubic-bezier(0.16,1,0.3,1) 0.19s both; }
+  .pinfo-labels-row    { animation: pd-fade-up 0.4s cubic-bezier(0.16,1,0.3,1) 0.22s both; }
+  #product-variants-ui { animation: pd-fade-up 0.4s cubic-bezier(0.16,1,0.3,1) 0.25s both; }
+  .pinfo-size          { animation: pd-fade-up 0.4s cubic-bezier(0.16,1,0.3,1) 0.25s both; }
+  .pinfo-price-row     { animation: pd-fade-up 0.4s cubic-bezier(0.16,1,0.3,1) 0.28s both; }
+  .pinfo-expiry        { animation: pd-fade-up 0.4s cubic-bezier(0.16,1,0.3,1) 0.31s both; }
+  .pinfo-trust-signals { animation: pd-fade-up 0.4s cubic-bezier(0.16,1,0.3,1) 0.34s both; }
+  .pinfo-mobile-social { animation: pd-fade-up 0.4s cubic-bezier(0.16,1,0.3,1) 0.37s both; }
+  @keyframes pd-fade-up {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+      .pinfo-top-row, .pinfo-brand, .pinfo-title, .pinfo-labels-row,
+      #product-variants-ui, .pinfo-size, .pinfo-price-row, .pinfo-expiry,
+      .pinfo-trust-signals, .pinfo-mobile-social { animation: none !important; }
+  }
+
+  /* Sticky bar: frosted glass, refined buttons */
+  #sticky-product-bar {
+      background: rgba(255,255,255,0.93) !important;
+      backdrop-filter: blur(20px) saturate(180%) !important;
+      -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+      border-top: 1px solid rgba(220,228,235,0.6) !important;
+      box-shadow: 0 -2px 16px rgba(0,0,0,0.06) !important;
+      padding: 0.7rem 1rem calc(0.7rem + env(safe-area-inset-bottom, 0px)) !important;
+  }
+  /* Both buttons same height + radius, buy-now gets accent border */
+  .spb-atc-btn {
+      border-radius: 14px !important;
+      height: 48px !important;
+      font-size: 0.9rem !important;
+      font-weight: 700 !important;
+      letter-spacing: 0.01em !important;
+  }
+  .spb-buy-btn {
+      border-radius: 14px !important;
+      height: 48px !important;
+      font-size: 0.9rem !important;
+      font-weight: 600 !important;
+      border: 2px solid var(--primary) !important;
+      color: var(--primary) !important;
+      background: #fff !important;
+  }
+  .spb-buy-btn:active { background: color-mix(in srgb, var(--primary) 8%, white) !important; }
+
+  /* Variant pills: tap micro-interaction */
+  .vpill {
+      min-height: 40px !important;
+      transition: transform 0.15s cubic-bezier(0.16,1,0.3,1),
+                  background 0.2s ease, border-color 0.2s ease !important;
+  }
+  .vpill:active     { transform: scale(0.93) !important; }
+  .vpill.vpill-active { transform: scale(1.03) !important; }
+
+  /* Accordion section: inside card on mobile — full width, flush to card edges */
+  .pinfo-accordion-mobile {
+      order: 20;
+      padding: 0 !important;
+      margin: 1rem -1.25rem 0 !important;
+      border-top: 1.5px solid #f1f5f9 !important;
+      padding-top: 0.25rem !important;
+  }
+  .pinfo-accordion-mobile .accordion-item {
+      border-radius: 0 !important;
+      border-left: none !important;
+      border-right: none !important;
+      margin-bottom: 0 !important;
+      box-shadow: none !important;
+      border-bottom: 1px solid #f1f5f9 !important;
+  }
+  .pinfo-accordion-mobile .accordion-header {
+      padding: 1rem 1.25rem !important;
+  }
+  .pinfo-accordion-mobile .accordion-content > div {
+      padding-left: 1.25rem !important;
+      padding-right: 1.25rem !important;
+  }
+
+  /* Cloned below-fold sections inside the card — must appear after accordion (order:20) */
+  .pd-in-card-clone {
+      order: 30 !important;
+      margin: 0 -1.25rem !important;
+      width: calc(100% + 2.5rem) !important;
+  }
+  /* Related products inside card: tighten heading */
+  .pd-in-card-clone h2 { font-size: 1.25rem !important; }
+  /* Remove heavy outer padding from the contact section when inside card */
+  .pd-in-card-clone.pd-contact-section {
+      padding: 2rem 0 1rem !important;
+      margin: 0 -1.25rem !important;
+  }
+  /* Extra breathing room between contact and related products in card */
+  #relatedProductsSection.pd-in-card-clone {
+      padding-top: 3rem !important;
+  }
+  /* Hide the original sections on mobile (they're cloned into card) */
+  .pd-contact-section:not(.pd-in-card-clone),
+  #relatedProductsSection:not(.pd-in-card-clone) {
+      display: none !important;
+  }
+}
+
+/* Restore originals on desktop and hide clones */
+@media (min-width: 769px) {
+  .pd-contact-section:not(.pd-in-card-clone),
+  #relatedProductsSection:not(.pd-in-card-clone) { display: revert !important; }
+  /* ID specificity can beat class — use both selectors to guarantee clones hide */
+  .pd-in-card-clone,
+  #relatedProductsSection.pd-in-card-clone { display: none !important; }
+}
+</style>
+
 <!-- Product Breadcrumbs -->
 <nav class="product-breadcrumbs" style="margin-bottom: 2rem; font-size: 0.9rem; color: #64748b;">
     <a href="{{ url_for('main.products') }}" style="color: #64748b;">Produktet</a>
@@ -68,19 +702,22 @@
                     <i
                         class="{{ 'fas' if (current_user.is_authenticated and product.favorites and current_user.id in product.favorites) or (not current_user.is_authenticated and product._id|string in session.get('liked_products', [])) else 'far' }} fa-heart"></i>
                 </button>
-            </div>
 
-            {% if product.images and product.images|length > 1 %}
-            <div class="thumbnails-container" style="display: flex; gap: 1rem; overflow-x: auto; padding-top: 1.5rem;">
-                {% for img in product.images %}
-                <div class="thumbnail {{ 'active' if loop.first else '' }}" data-index="{{ loop.index0 }}"
-                    onclick="handleThumbClick(this)">
-                    <img src="{{ img|cld(150) }}" alt="View {{ loop.index }}">
+                {% if product.images and product.images|length > 1 %}
+                <div class="thumbnails-container">
+                    {% for img in product.images %}
+                    <div class="thumbnail {{ 'active' if loop.first else '' }}" data-index="{{ loop.index0 }}"
+                        onclick="handleThumbClick(this)">
+                        <img src="{{ img|cld(150) }}" alt="View {{ loop.index }}">
+                    </div>
+                    {% endfor %}
                 </div>
-                {% endfor %}
+                {% endif %}
             </div>
-            {% endif %}
         </div>
+
+        <!-- Dim overlay for gallery behind sheet -->
+        <div class="pd-gallery-dim" id="pd-gallery-dim"></div>
 
         <!-- Info Section -->
         <div class="product-info-column">
@@ -92,26 +729,46 @@
                     <i class="{{ 'fas' if (current_user.is_authenticated and product.favorites and current_user.id in product.favorites) or (not current_user.is_authenticated and product._id|string in session.get('liked_products', [])) else 'far' }} fa-heart"></i>
                 </button>
 
-                <!-- ① Category + stock on same row -->
+                <!-- Share button — left of favorite -->
+                <div class="pinfo-share-wrap" id="pinfo-share-wrap">
+                    <button class="pinfo-share" onclick="toggleSharePopover(event)" aria-label="Shpërndaj produktin">
+                        <i class="fas fa-share-nodes"></i>
+                    </button>
+                    <div class="pinfo-share-popover" id="sharePopover">
+                        <button class="pshare-opt" onclick="copyProductLink()">
+                            <span class="pshare-opt-icon pshare-icon-link"><i class="fas fa-link"></i></span>
+                            Kopjo linkun
+                        </button>
+                        <a class="pshare-opt" id="shareWhatsapp" href="#" target="_blank" rel="noopener">
+                            <span class="pshare-opt-icon pshare-icon-wa"><i class="fab fa-whatsapp"></i></span>
+                            WhatsApp
+                        </a>
+                        <a class="pshare-opt" id="shareFacebook" href="#" target="_blank" rel="noopener">
+                            <span class="pshare-opt-icon pshare-icon-fb"><i class="fab fa-facebook-f"></i></span>
+                            Facebook
+                        </a>
+                    </div>
+                </div>
+
+                <!-- ① Category + stock + expiry on same row -->
                 <div class="pinfo-top-row">
                     <span class="pinfo-category">{{ product.category }}</span>
                     <span class="pinfo-stock-inline {{ 'stock-in' if product.in_stock != False else 'stock-out' }}">
                         <span class="pinfo-stock-dot {{ 'dot-green' if product.in_stock != False else 'dot-red' }}"></span>
                         {{ 'Në Stok' if product.in_stock != False else 'Jashtë Stokut' }}
                     </span>
+                    {% if product.auto_oct_discount or product.discount_until %}
+                    {% set _pd_deadline = '2026-10-31T23:59:59' if product.auto_oct_discount else (product.discount_until.strftime('%Y-%m-%d') + 'T23:59:59' if product.discount_until else '') %}
+                    <div class="pinfo-expiry" data-deadline="{{ _pd_deadline }}">
+                        <i class="fas fa-clock"></i><span class="pinfo-expiry-text"></span>
+                    </div>
+                    {% endif %}
                 </div>
 
                 <!-- ② All labels on one row -->
-                {% set has_labels = (product.labels and ('set' in product.labels or 'limited' in product.labels or 'sale' in product.labels or 'new_arrival' in product.labels)) or product.is_best_seller or product.is_pharmacist_choice or product.discount_price or product.auto_oct_discount or product.offer_badge_text %}
+                {% set has_labels = (product.labels and ('set' in product.labels or 'limited' in product.labels or 'sale' in product.labels or 'new_arrival' in product.labels)) or product.is_best_seller or product.is_pharmacist_choice %}
                 {% if has_labels %}
                 <div class="pinfo-labels-row">
-                    {% if product.offer_badge_text %}
-                    <span class="pinfo-badge pinfo-badge--red"><i class="fas fa-tag"></i> {{ product.offer_badge_text }}</span>
-                    {% elif product.auto_oct_discount %}
-                    <span class="pinfo-badge pinfo-badge--oct">-5%</span>
-                    {% elif product.discount_price %}
-                    <span class="pinfo-badge pinfo-badge--red"><i class="fas fa-tag"></i> Ofertë</span>
-                    {% endif %}
                     {% if product.labels and 'sale' in product.labels and not product.discount_price %}
                     <span class="pinfo-badge pinfo-badge--red"><i class="fas fa-tag"></i> Ofertë Speciale</span>
                     {% endif %}
@@ -130,12 +787,6 @@
                     {% if product.is_pharmacist_choice %}
                     <span class="pinfo-badge pinfo-badge--olive"><i class="fas fa-user-md"></i> Farmacisti</span>
                     {% endif %}
-                </div>
-                {% endif %}
-                {% if product.auto_oct_discount or product.discount_until %}
-                {% set _pd_deadline = '2026-10-31T23:59:59' if product.auto_oct_discount else (product.discount_until.strftime('%Y-%m-%d') + 'T23:59:59' if product.discount_until else '') %}
-                <div class="pinfo-expiry" data-deadline="{{ _pd_deadline }}">
-                    <i class="fas fa-clock"></i><span class="pinfo-expiry-text"></span>
                 </div>
                 {% endif %}
 
@@ -219,19 +870,22 @@
                     </button>
                 </div>
 
-            </div><!-- /pinfo-card -->
+                <!-- Mobile-only save + share row (desktop: hidden via CSS) -->
+                <div class="pinfo-mobile-social">
+                    <button class="pinfo-social-btn pinfo-social-fav {{ 'active' if (current_user.is_authenticated and product.favorites and current_user.id in product.favorites) or (not current_user.is_authenticated and product._id|string in session.get('liked_products', [])) else '' }}"
+                        onclick="toggleFavorite(this, '{{ product._id }}')" id="pinfo-mobile-fav">
+                        <i class="{{ 'fas' if (current_user.is_authenticated and product.favorites and current_user.id in product.favorites) or (not current_user.is_authenticated and product._id|string in session.get('liked_products', [])) else 'far' }} fa-heart"></i>
+                        <span>Ruaj</span>
+                    </button>
+                    <button class="pinfo-social-btn" onclick="toggleSharePopover(event)">
+                        <i class="fas fa-share-nodes"></i>
+                        <span>Shpërndaj</span>
+                    </button>
+                </div>
 
-            <form id="addToCartForm" action="{{ url_for('cart.add_to_cart', product_id=product._id) }}" method="POST"
-                style="display: none;">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-                <input type="hidden" name="quantity" value="1">
-            </form>
-        </div>
-    </div><!-- /product-detail-grid -->
-
-    <!-- ── Product info accordion — full width below hero ── -->
-    <div class="product-accordion-section">
-        <!-- Description -->
+                <!-- Product info accordion — inside card on mobile so it scrolls with the sheet -->
+                <div class="product-accordion-section pinfo-accordion-mobile">
+                <!-- Description -->
         <div class="accordion-item" style="background:white;border-radius:16px;margin-bottom:1rem;border:1px solid #f1f5f9;box-shadow:0 2px 4px rgba(0,0,0,.02);overflow:hidden;">
             <div class="accordion-header" style="padding:1.25rem 1.5rem;display:flex;justify-content:space-between;align-items:center;cursor:pointer;transition:background .2s;" onclick="toggleAccordion(this)">
                 <h3 style="font-size:1rem;color:var(--text-main);font-weight:700;margin:0;display:flex;align-items:center;gap:.8rem;">
@@ -310,7 +964,17 @@
             </div>
         </div>
         {% endif %}
-    </div>
+                </div><!-- /pinfo-accordion-mobile -->
+
+            </div><!-- /pinfo-card -->
+
+            <form id="addToCartForm" action="{{ url_for('cart.add_to_cart', product_id=product._id) }}" method="POST"
+                style="display: none;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                <input type="hidden" name="quantity" value="1">
+            </form>
+        </div><!-- /product-info-column -->
+    </div><!-- /product-detail-grid -->
 
 </div><!-- /product-detail-container -->
 
@@ -387,68 +1051,82 @@
 {{ (product.variants if product.variants else []) | tojson | safe }}
 </script>
 
+<style>
+.vcolor { width:2.2rem;height:2.2rem;border-radius:50%;border:2.5px solid #e2e8f0;cursor:pointer;transition:transform .12s,border-color .12s;flex-shrink:0; }
+.vcolor:hover { transform:scale(1.12); }
+.vcolor.vcolor-active { border-color:#059669;box-shadow:0 0 0 2px #fff,0 0 0 4px #059669; }
+.vcolor.vcolor-oos { opacity:.38;cursor:default;position:relative; }
+.vcolor.vcolor-oos::after { content:'';position:absolute;inset:0;background:repeating-linear-gradient(-45deg,transparent,transparent 3px,rgba(0,0,0,.25) 3px,rgba(0,0,0,.25) 4px);border-radius:50%; }
+.vsize { padding:0.35rem 0.7rem;border-radius:8px;border:1.5px solid #e2e8f0;background:#f8fafc;font-size:0.88rem;font-weight:700;color:#475569;cursor:pointer;transition:all .12s; }
+.vsize:hover:not(.vsize-oos) { border-color:#059669;color:#059669;background:#f0fdf4; }
+.vsize.vsize-active { border-color:#059669;background:#059669;color:#fff; }
+.vsize.vsize-oos { opacity:.4;cursor:default;text-decoration:line-through; }
+.vattr-color-name { display:inline-block;margin-left:.4rem;font-size:.8rem;font-weight:600;color:var(--text-main);text-transform:none; }
+</style>
 <script>
 // ── Variant selector ─────────────────────────────────────────────────────────
 (function() {
-    const PRODUCT_ID = '{{ product._id }}';
     const BASE_PRICE = {{ product.display_original_price | float }};
     const BASE_DISCOUNT = {{ (product.discount_price | float) if product.discount_price else 'null' }};
-    const BASE_IMAGE = '{{ product.image_url | default("") }}';
 
     let productVariants = [];
-    try {
-        productVariants = JSON.parse(document.getElementById('product-variants-json').textContent) || [];
-    } catch(e) {}
+    try { productVariants = JSON.parse(document.getElementById('product-variants-json').textContent) || []; } catch(e) {}
 
     let selectedVariantId = null;
 
+    // Capture original gallery images at page load for restoration
+    const ORIG_GALLERY = [];
+    (function() {
+        const track = document.querySelector('.carousel-track');
+        if (track) track.querySelectorAll('img').forEach(img => ORIG_GALLERY.push(img.src));
+    })();
+    const ORIG_TITLE = (document.querySelector('.pinfo-title') || {}).textContent || '';
+
     function getAttrTypes() {
         const types = [];
-        productVariants.forEach(v => {
-            Object.keys(v.attributes || {}).forEach(k => {
-                if (!types.includes(k)) types.push(k);
-            });
-        });
+        productVariants.forEach(v => Object.keys(v.attributes||{}).forEach(k => { if (!types.includes(k)) types.push(k); }));
         return types;
     }
 
-    function getValuesForAttr(attrType, currentSelections) {
-        // Return values that are available given what's already selected
+    function getDimType(attrType) {
+        for (const v of productVariants) {
+            if ((v.attributes||{})[attrType] != null) {
+                const dt = (v.dimension_types||{})[attrType];
+                if (dt) return dt;
+            }
+        }
+        return 'volume';
+    }
+
+    function getValuesForAttr(attrType) {
         const values = new Set();
         productVariants.forEach(v => {
-            const attrs = v.attributes || {};
-            // Check if this variant matches all other already-selected attrs
-            let match = true;
-            Object.entries(currentSelections).forEach(([k, val]) => {
-                if (k !== attrType && attrs[k] !== val) match = false;
-            });
-            if (match && attrs[attrType] != null && attrs[attrType] !== '') {
-                values.add(attrs[attrType]);
-            }
+            const attrs = v.attributes||{};
+            const val = attrs[attrType];
+            if (val != null && val !== '') values.add(val);
         });
         return [...values];
     }
 
     function findVariant(selections) {
         return productVariants.find(v => {
-            const attrs = v.attributes || {};
-            return Object.entries(selections).every(([k, val]) => attrs[k] === val);
+            const attrs = v.attributes||{};
+            return Object.entries(selections).every(([k,val]) => attrs[k] === val);
         }) || null;
     }
 
-    // Current selections: { attrType: value }
     const selections = {};
 
     function renderVariantUI() {
         const container = document.getElementById('product-variants-ui');
         if (!container || productVariants.length === 0) return;
-
         const attrTypes = getAttrTypes();
         container.innerHTML = '';
 
         attrTypes.forEach(attrType => {
-            const values = getValuesForAttr(attrType, {});
+            const values = getValuesForAttr(attrType);
             if (values.length === 0) return;
+            const dimType = getDimType(attrType);
 
             const wrapper = document.createElement('div');
             wrapper.style.cssText = 'margin-bottom:1.25rem;';
@@ -456,98 +1134,146 @@
             const label = document.createElement('div');
             label.style.cssText = 'font-size:0.85rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:0.75rem;';
             const selectedVal = selections[attrType];
-            label.textContent = attrType + (selectedVal ? ': ' : ':');
+            label.textContent = attrType + ':';
             if (selectedVal) {
                 const sel = document.createElement('span');
-                sel.style.cssText = 'color:var(--text-main);text-transform:none;font-weight:800;';
-                sel.textContent = selectedVal;
+                if (dimType === 'color') {
+                    sel.className = 'vattr-color-name';
+                } else {
+                    sel.style.cssText = 'color:var(--text-main);text-transform:none;font-weight:800;margin-left:.35rem;';
+                }
+                sel.textContent = ' ' + selectedVal;
                 label.appendChild(sel);
             }
 
-            const pills = document.createElement('div');
-            pills.style.cssText = 'display:flex;flex-wrap:wrap;gap:0.6rem;';
+            const optRow = document.createElement('div');
+            optRow.style.cssText = 'display:flex;flex-wrap:wrap;gap:0.55rem;align-items:center;';
 
             values.forEach(val => {
-                // Check if this value leads to an in-stock variant
                 const testSel = Object.assign({}, selections, {[attrType]: val});
-                const attrTypes2 = getAttrTypes();
-                const isFullySelected = attrTypes2.every(t => testSel[t] != null);
+                const fullySelected = attrTypes.every(t => testSel[t] != null);
                 let inStock = true;
-                if (isFullySelected) {
-                    const v = findVariant(testSel);
-                    inStock = !v || v.in_stock !== false;
-                }
+                if (fullySelected) { const fv = findVariant(testSel); inStock = !fv || fv.in_stock !== false; }
+                const isActive = selections[attrType] === val;
 
-                const pill = document.createElement('button');
-                pill.type = 'button';
-                pill.className = 'vpill' + (selections[attrType] === val ? ' vpill-active' : '') + (!inStock ? ' vpill-oos' : '');
-                pill.textContent = val;
-                if (!inStock) pill.title = 'Jashtë stokut';
-                pill.onclick = () => selectAttr(attrType, val);
-                pills.appendChild(pill);
+                if (dimType === 'color') {
+                    const matchV = productVariants.find(v => (v.attributes||{})[attrType] === val);
+                    const hex = (matchV && matchV.color_hex) || '#cbd5e1';
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.title = val;
+                    btn.className = 'vcolor' + (isActive?' vcolor-active':'') + (!inStock?' vcolor-oos':'');
+                    btn.style.background = hex;
+                    if (!inStock) btn.disabled = true;
+                    btn.onclick = () => selectAttr(attrType, val);
+                    optRow.appendChild(btn);
+                } else if (dimType === 'size') {
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = 'vsize' + (isActive?' vsize-active':'') + (!inStock?' vsize-oos':'');
+                    btn.textContent = val;
+                    if (!inStock) { btn.disabled = true; btn.title = 'Jashtë stokut'; }
+                    btn.onclick = () => selectAttr(attrType, val);
+                    optRow.appendChild(btn);
+                } else {
+                    const pill = document.createElement('button');
+                    pill.type = 'button';
+                    pill.className = 'vpill' + (isActive?' vpill-active':'') + (!inStock?' vpill-oos':'');
+                    pill.textContent = val;
+                    if (!inStock) { pill.disabled = false; pill.title = 'Jashtë stokut'; }
+                    pill.onclick = () => selectAttr(attrType, val);
+                    optRow.appendChild(pill);
+                }
             });
 
             wrapper.appendChild(label);
-            wrapper.appendChild(pills);
+            wrapper.appendChild(optRow);
             container.appendChild(wrapper);
         });
 
-        // Check if we have a full selection
-        const attrTypes2 = getAttrTypes();
-        const fullySelected = attrTypes2.length > 0 && attrTypes2.every(t => selections[t] != null);
-        if (fullySelected) {
-            const v = findVariant(selections);
-            applyVariant(v);
-        } else {
-            applyVariant(null);
-        }
+        const fullySelected = attrTypes.length > 0 && attrTypes.every(t => selections[t] != null);
+        applyVariant(fullySelected ? findVariant(selections) : null);
     }
 
     function selectAttr(attrType, val) {
-        if (selections[attrType] === val) {
-            return;
-        }
+        if (selections[attrType] === val) return;
         selections[attrType] = val;
         if (!findVariant(selections)) {
-            const compatible = productVariants.find(v =>
-                (v.attributes || {})[attrType] === val && v.in_stock !== false
-            ) || productVariants.find(v => (v.attributes || {})[attrType] === val);
-            if (compatible) {
-                getAttrTypes().forEach(type => {
-                    selections[type] = (compatible.attributes || {})[type];
-                });
-            }
+            const compatible = productVariants.find(v => (v.attributes||{})[attrType]===val && v.in_stock!==false)
+                            || productVariants.find(v => (v.attributes||{})[attrType]===val);
+            if (compatible) getAttrTypes().forEach(type => { selections[type] = (compatible.attributes||{})[type]; });
         }
         renderVariantUI();
+        updateURL();
     }
 
     function applyVariant(v) {
         selectedVariantId = v ? v.id : null;
-
-        // Update price display
-        const price = v ? (v.price || BASE_PRICE) : BASE_PRICE;
+        const price    = v ? (v.price || BASE_PRICE) : BASE_PRICE;
         const discount = v ? (v.discount_price || null) : BASE_DISCOUNT;
-
         updatePriceDisplay(price, discount);
-
-        // Sync sticky bar price
         if (window._spbSyncPrice) window._spbSyncPrice(price, discount);
 
-        // Update image if variant has one
-        if (v && v.image_url) {
-            swapMainImage(v.image_url);
+        // Gallery swap
+        const imgs = v ? ((v.images && v.images.length) ? v.images : (v.image_url ? [v.image_url] : [])) : [];
+        if (imgs.length > 0) updateGallery(imgs);
+        else if (ORIG_GALLERY.length > 0) updateGallery(ORIG_GALLERY);
+
+        // Variant name in title
+        const titleEl = document.querySelector('.pinfo-title');
+        if (titleEl) {
+            titleEl.textContent = (v && v.variant_name) ? v.variant_name : ORIG_TITLE;
         }
 
-        // Update stock status
-        const inStock = !v || v.in_stock !== false;
-        updateStockStatus(inStock);
+        updateStockStatus(!v || v.in_stock !== false);
+    }
+
+    function updateGallery(images) {
+        const track = document.querySelector('.carousel-track');
+        if (!track) return;
+        track.innerHTML = images.map((url,i) =>
+            `<img src="${url}" alt="" class="product-image${i===0?' loaded':''}"
+                style="padding:1.5rem;object-fit:contain;cursor:pointer"
+                loading="${i===0?'eager':'lazy'}"
+                onclick="openImageModal && openImageModal(this.src)"
+                onload="this.classList.add('loaded')">`
+        ).join('');
+        // Thumbnails
+        const tc = document.querySelector('.thumbnails-container');
+        if (tc) {
+            if (images.length > 1) {
+                tc.style.display='';
+                tc.innerHTML = images.map((url,i) =>
+                    `<div class="thumbnail${i===0?' active':''}" data-index="${i}" onclick="handleThumbClick && handleThumbClick(this)">
+                        <img src="${url}" alt="" loading="lazy"></div>`
+                ).join('');
+            } else { tc.style.display='none'; }
+        }
+        // Indicators
+        const ic = document.querySelector('.carousel-indicators');
+        if (ic) {
+            ic.innerHTML = images.length > 1
+                ? images.map((_,i) => `<div class="indicator-dot${i===0?' active':''}"></div>`).join('')
+                : '';
+        }
+        // Reset carousel position
+        const cc = document.querySelector('.carousel-container');
+        if (cc) cc.dataset.index = '0';
+    }
+
+    function updateURL() {
+        try {
+            const params = new URLSearchParams();
+            Object.entries(selections).forEach(([k,v]) => { if (v) params.set(k.toLowerCase(), v); });
+            const q = params.toString();
+            history.replaceState({}, '', q ? '?' + q : window.location.pathname);
+        } catch(e) {}
     }
 
     function fmt(n) { return parseFloat(n).toFixed(2); }
 
     function updatePriceDisplay(price, discount) {
-        const containers = document.querySelectorAll('.price-container');
-        containers.forEach(c => {
+        document.querySelectorAll('.price-container').forEach(c => {
             if (discount && parseFloat(discount) > 0) {
                 const pct = Math.round((price - discount) / price * 100);
                 c.innerHTML = `
@@ -558,13 +1284,6 @@
                 c.innerHTML = `<span class="price main-price" style="font-size:1.8rem;color:var(--primary);font-weight:800;line-height:1;">€${fmt(price)}</span>`;
             }
         });
-    }
-
-    function swapMainImage(url) {
-        const track = document.querySelector('.carousel-track');
-        if (!track) return;
-        const imgs = track.querySelectorAll('img');
-        if (imgs.length > 0) imgs[0].src = url;
     }
 
     function updateStockStatus(inStock) {
@@ -578,17 +1297,13 @@
         });
     }
 
-    // Expose selected variant id for cart functions
     window._getSelectedVariantId = () => selectedVariantId;
 
-    // Init — render UI then auto-select the first variant's attributes
     if (productVariants.length > 0) {
         renderVariantUI();
-        // Pre-select every attribute of the first variant so the page loads with price/image applied
         const first = productVariants[0];
-        const attrTypes = getAttrTypes();
-        attrTypes.forEach(t => { selections[t] = (first.attributes || {})[t]; });
-        renderVariantUI(); // re-render with selections applied
+        getAttrTypes().forEach(t => { selections[t] = (first.attributes||{})[t]; });
+        renderVariantUI();
     }
 })();
 
@@ -667,8 +1382,13 @@
 
     function handleThumbClick(btn) {
         const index = parseInt(btn.dataset.index);
-        const gallery = btn.closest('.product-gallery');
-        const container = gallery.querySelector('.carousel-container');
+        const container = btn.closest('.carousel-container');
+        // Sync active class on thumbnails for CSS transitions
+        container.querySelectorAll('.thumbnail').forEach((t, i) => {
+            t.classList.toggle('active', i === index);
+            t.style.borderColor = '';
+            t.style.opacity = '';
+        });
         if (typeof goToSlide === 'function') {
             goToSlide(container, index);
         }
@@ -678,6 +1398,40 @@
     document.addEventListener('DOMContentLoaded', function () {
         document.body.classList.add('has-sticky-bar');
     });
+
+    // ── Offer expiry countdown ────────────────────────────────────────────────────
+    (function() {
+        var el = document.querySelector('.pinfo-expiry[data-deadline]');
+        if (!el) return;
+        var deadline = new Date(el.dataset.deadline);
+        if (isNaN(deadline)) return;
+        var textEl = el.querySelector('.pinfo-expiry-text');
+
+        function update() {
+            var diff = deadline - Date.now();
+            if (diff <= 0) {
+                el.classList.remove('pinfo-expiry--visible');
+                return;
+            }
+            var days  = Math.floor(diff / 86400000);
+            var hours = Math.floor((diff % 86400000) / 3600000);
+            var mins  = Math.floor((diff % 3600000) / 60000);
+            /* Only show when 14 days or less remain */
+            if (days >= 14) {
+                el.classList.remove('pinfo-expiry--visible');
+                return;
+            }
+            var label;
+            if (days > 1)       label = 'Oferta mbaron pas ' + days + ' ditë';
+            else if (days === 1) label = 'Oferta mbaron nesër';
+            else if (hours > 0)  label = 'Oferta mbaron pas ' + hours + 'h ' + mins + 'min';
+            else                 label = 'Oferta mbaron pas ' + mins + ' min';
+            textEl.textContent = label;
+            el.classList.add('pinfo-expiry--visible');
+        }
+        update();
+        setInterval(update, 60000);
+    })();
 
     // ── Sticky product bar ────────────────────────────────────────────────────────
     (function() {
@@ -734,6 +1488,60 @@
     })();
 
     // Sticky gallery removed — layout is now full-width flow
+
+    // ── Share button ─────────────────────────────────────────────────────────
+    (function () {
+        const url   = window.location.href;
+        const title = document.querySelector('.pinfo-title')?.textContent?.trim()
+                      || document.title;
+        const text  = title + ' — Meld Pharm';
+
+        window.toggleSharePopover = function (e) {
+            e.stopPropagation();
+            // Native share on mobile/supported devices
+            if (navigator.share) {
+                navigator.share({ title, text, url }).catch(() => {});
+                return;
+            }
+            // Desktop fallback: popover
+            const popover = document.getElementById('sharePopover');
+            const wa      = document.getElementById('shareWhatsapp');
+            const fb      = document.getElementById('shareFacebook');
+            wa.href = 'https://wa.me/?text=' + encodeURIComponent(text + '\n' + url);
+            fb.href = 'https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(url);
+            popover.classList.toggle('active');
+        };
+
+        window.copyProductLink = function () {
+            const popover = document.getElementById('sharePopover');
+            const doCopy = function () {
+                if (navigator.clipboard) {
+                    navigator.clipboard.writeText(url).catch(() => legacyCopy());
+                } else {
+                    legacyCopy();
+                }
+                popover.classList.remove('active');
+                if (window.showToast) window.showToast('Linku u kopjua!', 'success');
+            };
+            var legacyCopy = function () {
+                const ta = document.createElement('textarea');
+                ta.value = url; ta.style.position = 'fixed'; ta.style.opacity = '0';
+                document.body.appendChild(ta); ta.select();
+                document.execCommand('copy');
+                document.body.removeChild(ta);
+            };
+            doCopy();
+        };
+
+        // Close popover on outside click
+        document.addEventListener('click', function (e) {
+            const wrap    = document.getElementById('pinfo-share-wrap');
+            const popover = document.getElementById('sharePopover');
+            if (popover && wrap && !wrap.contains(e.target)) {
+                popover.classList.remove('active');
+            }
+        });
+    })();
 </script>
 
 {% block footer %}{% endblock %}
@@ -745,9 +1553,7 @@
     .detail-carousel-container .carousel-arrow.prev{left:8px!important}
     .detail-carousel-container .carousel-arrow.next{right:8px!important}
     @media(max-width:768px){
-      .detail-carousel-container .carousel-arrow{width:32px!important;height:32px!important;font-size:0.75rem!important}
-      .detail-carousel-container .carousel-arrow.prev{left:-14px!important}
-      .detail-carousel-container .carousel-arrow.next{right:-14px!important}
+      .detail-carousel-container .carousel-arrow{display:none!important}
     }
     /* ── Quill rendered content ── */
     .ql-content { font-size:.95rem; color:#475569; line-height:1.75; }
@@ -822,6 +1628,79 @@
     }
     .pinfo-fav:hover { color: #ef4444 !important; background: none !important; border: none !important; transform: scale(1.15); }
     .pinfo-fav.active { color: #ef4444 !important; background: none !important; border: none !important; }
+
+    /* Share button */
+    .pinfo-share-wrap {
+        position: absolute;
+        top: 1.1rem;
+        right: 3.25rem;
+        z-index: 10;
+    }
+    .pinfo-share {
+        padding: 6px;
+        background: none;
+        border: none;
+        color: rgba(43,43,43,0.35);
+        font-size: 1.1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: color 0.18s, transform 0.18s;
+        line-height: 1;
+    }
+    .pinfo-share:hover { color: var(--primary, #4F5D4E); transform: scale(1.15); }
+    .pinfo-share-popover {
+        position: absolute;
+        top: calc(100% + 6px);
+        right: -4px;
+        background: #fff;
+        border: 1px solid #e8edf2;
+        border-radius: 14px;
+        box-shadow: 0 8px 28px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.06);
+        padding: 0.35rem;
+        display: none;
+        flex-direction: column;
+        min-width: 168px;
+        z-index: 200;
+        animation: share-pop 0.18s cubic-bezier(0.175,0.885,0.32,1.275);
+    }
+    .pinfo-share-popover.active { display: flex; }
+    @keyframes share-pop {
+        from { opacity: 0; transform: translateY(-6px) scale(0.96); }
+        to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    .pshare-opt {
+        display: flex;
+        align-items: center;
+        gap: 0.65rem;
+        padding: 0.55rem 0.75rem;
+        border-radius: 9px;
+        border: none;
+        background: none;
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: #1e293b;
+        cursor: pointer;
+        text-decoration: none;
+        transition: background 0.15s;
+        width: 100%;
+        text-align: left;
+    }
+    .pshare-opt:hover { background: #f1f5f9; color: #1e293b; }
+    .pshare-opt-icon {
+        width: 30px;
+        height: 30px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.85rem;
+        flex-shrink: 0;
+    }
+    .pshare-icon-link { background: #f1f5f9; color: #475569; }
+    .pshare-icon-wa   { background: #dcfce7; color: #16a34a; }
+    .pshare-icon-fb   { background: #dbeafe; color: #1d4ed8; }
 
     /* Category + stock top row */
     .pinfo-top-row {
@@ -1292,7 +2171,7 @@
         }
         /* Single-row layout */
         .spb-inner {
-            padding: 0.65rem 1rem;
+            padding: 0.65rem 0.5rem 0.65rem 0.5rem;
             flex-wrap: nowrap;
             gap: 0.5rem;
             align-items: center;
@@ -1312,6 +2191,8 @@
             align-items: flex-start;
             justify-content: center;
             padding: 0;
+            margin-left: -0.25rem;
+            margin-right: 0.85rem;
             gap: 0;
         }
         .spb-total-row {
@@ -1320,7 +2201,7 @@
             gap: 0;
         }
         .spb-total-price {
-            font-size: 1.25rem;
+            font-size: 1.4rem;
             font-weight: 800;
             color: #1e293b;
             line-height: 1;
@@ -1500,7 +2381,7 @@
 </style>
 
 {% if related_products %}
-<div id="relatedProductsSection" class="container container-wide" style="padding-top: 3rem; padding-bottom: 3rem;">
+<div id="relatedProductsSection" class="container container-wide" style="padding-top: 5rem; padding-bottom: 3rem;">
     <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1.5rem; flex-wrap:wrap; gap:1rem;">
         <h2 style="font-family:'Cormorant Garamond',serif; font-size:1.75rem; font-weight:700; color:var(--hp-charcoal,#2B2B2B); margin:0;">Produkte të Ngjashme</h2>
         <a href="{{ url_for('main.products') }}" style="font-size:0.85rem; font-weight:600; color:var(--primary); text-decoration:none;">Shiko të gjitha &rarr;</a>
@@ -2056,9 +2937,9 @@
         }
 
         .product-gallery .thumbnail {
-            min-width: 60px !important;
-            width: 60px !important;
-            height: 60px !important;
+            min-width: 48px !important;
+            width: 48px !important;
+            height: 48px !important;
         }
     }
 
@@ -2084,6 +2965,228 @@
     /* Smooth transition on modal content */
     .modal-content { transition: transform 0.25s cubic-bezier(0.16,1,0.3,1), transform-origin 0s; }
 </style>
+
+<script>
+/* ── Mobile bottom-sheet drag ──────────────────────────── */
+(function pdSheet() {
+    if (window.innerWidth > 768) return;
+
+    var sheet = document.querySelector('.product-info-column');
+    var card  = document.querySelector('.pinfo-card');
+    var dim   = document.getElementById('pd-gallery-dim');
+    if (!sheet || !card) return;
+
+    var vh = window.innerHeight;
+    var COLLAPSED = vh * 0.38 - 32;
+    var EXPANDED  = vh * 0.04;
+    var THRESHOLD = vh * 0.16;
+    var EASE      = 'transform 0.42s cubic-bezier(0.16,1,0.3,1)';
+    var pos       = COLLAPSED;
+    var isExpanded = false;
+
+
+    var _carousel = document.querySelector('.detail-carousel-container');
+    function _updateGalleryNav(sheetTranslateY) {
+        /* visible gallery height = viewport - sheet height + sheet translateY */
+        var visH = window.innerHeight - sheet.offsetHeight + sheetTranslateY;
+        var val = visH + 'px';
+        /* set on both carousel (for dots) and root (for fixed thumbnails) */
+        if (_carousel) _carousel.style.setProperty('--gallery-vis-h', val);
+        document.documentElement.style.setProperty('--gallery-vis-h', val);
+    }
+
+    function applyPos(y) {
+        pos = Math.max(EXPANDED, Math.min(COLLAPSED, y));
+        sheet.style.transform = 'translateY(' + pos + 'px)';
+        var t = 1 - (pos - EXPANDED) / (COLLAPSED - EXPANDED);
+        if (dim) dim.style.background = 'rgba(0,0,0,' + (t * 0.45).toFixed(3) + ')';
+        requestAnimationFrame(function() { _updateGalleryNav(pos); });
+    }
+
+    function snapTo(target) {
+        if (target === COLLAPSED) {
+            /* Instant scroll reset before the close animation:
+               1. Override smooth scroll-behavior so the reset is a hard snap
+               2. hidden→auto cancels any active iOS momentum scroll
+               3. scrollTop=0 jumps instantly to top */
+            card.style.setProperty('scroll-behavior', 'auto', 'important');
+            card.style.overflowY = 'hidden';
+            card.style.overflowY = 'auto';
+            card.scrollTop = 0;
+        }
+        sheet.style.transition = EASE;
+        if (dim) dim.style.transition = EASE;
+        applyPos(target);
+        isExpanded = (target === EXPANDED);
+        setTimeout(function() {
+            sheet.style.transition = '';
+            if (dim) dim.style.transition = '';
+            /* Clean up scroll-behavior override after the animation completes.
+               Do NOT touch overflowY here — it is already correct from the
+               synchronous line below and a later snap may have changed it. */
+            card.style.removeProperty('scroll-behavior');
+        }, 450);
+        card.style.overflowY = isExpanded ? 'auto' : 'hidden';
+    }
+
+    applyPos(COLLAPSED);
+    card.style.overflowY = 'hidden';
+
+    /* ── Drag handle zone ────────────────────────────────────────────────────
+       A sticky element at card top with touch-action:none.  Its passive
+       listeners drive the sheet without ever blocking native card scroll. */
+    var handle = document.createElement('div');
+    handle.className = 'pd-drag-handle';
+    card.prepend(handle);
+
+    var hStartY = 0, hActive = false;
+
+    handle.addEventListener('touchstart', function(e) {
+        hStartY = e.touches[0].clientY;
+        hActive = true;
+        sheet.style.transition = '';
+        if (dim) dim.style.transition = '';
+    }, { passive: true });
+
+    handle.addEventListener('touchmove', function(e) {
+        if (!hActive) return;
+        var dy = e.touches[0].clientY - hStartY;
+        if (isExpanded) {
+            if (dy < 0) return;
+            applyPos(EXPANDED + dy * 0.88);
+        } else {
+            if (dy > 0) return;
+            applyPos(COLLAPSED + dy);
+        }
+    }, { passive: true }); /* touch-action:none on handle = no browser pan here */
+
+    handle.addEventListener('touchend', function(e) {
+        if (!hActive) return;
+        hActive = false;
+        var dy = e.changedTouches[0].clientY - hStartY;
+        snapTo(!isExpanded
+            ? (dy < -THRESHOLD ? EXPANDED : COLLAPSED)
+            : (dy >  THRESHOLD ? COLLAPSED : EXPANDED));
+    }, { passive: true });
+
+    /* touchcancel: OS stole the touch (edge swipe, notification, etc.).
+       Snap to the nearest endpoint so state never gets stuck. */
+    handle.addEventListener('touchcancel', function() {
+        if (!hActive) return;
+        hActive = false;
+        snapTo(pos < (EXPANDED + COLLAPSED) / 2 ? EXPANDED : COLLAPSED);
+    }, { passive: true });
+
+    /* ── Card body gestures ──────────────────────────────────────────────────
+       All listeners are passive:true — e.preventDefault() is never called,
+       so native scroll is NEVER blocked. Sheet movement (applyPos) runs
+       alongside the browser's own scroll handling without fighting it. */
+    var bStartY = 0, bStartScroll = 0, bIntent = null;
+    /* bIntent: null | 'drag' | 'scroll' */
+
+    card.addEventListener('touchstart', function(e) {
+        if (handle.contains(e.target)) return;
+        bStartY      = e.touches[0].clientY;
+        bStartScroll = card.scrollTop;
+        bIntent      = null;
+        sheet.style.transition = '';
+        if (dim) dim.style.transition = '';
+    }, { passive: true });
+
+    card.addEventListener('touchmove', function(e) {
+        if (handle.contains(e.target)) return;
+        var dy = e.touches[0].clientY - bStartY;
+
+        if (bIntent === null) {
+            if (Math.abs(dy) < 8) return;
+            if (isExpanded) {
+                var atTop    = bStartScroll === 0 && card.scrollTop === 0;
+                var atBottom = bStartScroll + card.clientHeight >= card.scrollHeight - 2;
+                bIntent = ((atTop || atBottom) && dy > 0) ? 'drag' : 'scroll';
+            } else {
+                bIntent = dy < 0 ? 'drag' : 'scroll';
+            }
+        }
+
+        if (bIntent === 'scroll') return;
+
+        var atScrollBottom = card.scrollTop + card.clientHeight >= card.scrollHeight - 2;
+        if (card.scrollTop > 0 && !atScrollBottom) {
+            bIntent = 'scroll';
+            return;
+        }
+        /* Move the sheet — no e.preventDefault() so native scroll is NEVER blocked */
+        applyPos(isExpanded
+            ? EXPANDED   + dy * 0.75
+            : COLLAPSED  + dy);
+    }, { passive: true });
+
+    card.addEventListener('touchend', function(e) {
+        if (handle.contains(e.target)) return;
+        if (bIntent !== 'drag') { bIntent = null; return; }
+        bIntent = null;
+        var dy = e.changedTouches[0].clientY - bStartY;
+        snapTo(!isExpanded
+            ? (dy < -THRESHOLD ? EXPANDED : COLLAPSED)
+            : (dy >  THRESHOLD ? COLLAPSED : EXPANDED));
+    }, { passive: true });
+
+    /* touchcancel: snap to nearest endpoint and unlock scroll */
+    card.addEventListener('touchcancel', function() {
+        if (bIntent === 'drag') {
+            snapTo(pos < (EXPANDED + COLLAPSED) / 2 ? EXPANDED : COLLAPSED);
+        }
+        bIntent = null;
+    }, { passive: true });
+
+    /* ── Tap gallery area to collapse ───────────────────────────────────── */
+    /* tapZone: invisible overlay covering the visible gallery area above the sheet */
+    if (dim) dim.style.pointerEvents = 'none';
+    var tapZone = document.createElement('div');
+    tapZone.style.cssText =
+        'position:fixed;top:0;left:0;right:0;z-index:5;cursor:pointer;background:transparent;';
+    function refreshTapZone() { tapZone.style.height = Math.max(0, pos) + 'px'; }
+    refreshTapZone();
+    tapZone.addEventListener('click', function() { if (pos < COLLAPSED - 10) snapTo(COLLAPSED); });
+    document.body.appendChild(tapZone);
+    /* Also listen on the dim overlay — tap the gray gallery area to collapse */
+    if (dim) {
+        dim.style.setProperty('pointer-events', 'auto', 'important');
+        dim.addEventListener('click', function() {
+            if (pos < COLLAPSED - 10) snapTo(COLLAPSED);
+        });
+        /* Disable pointer-events on dim while sheet is collapsed so carousel still works */
+        var _snapOrig = snapTo;
+        snapTo = function(target) {
+            _snapOrig(target);
+            if (dim) dim.style.setProperty('pointer-events',
+                target === COLLAPSED ? 'none' : 'auto', 'important');
+        };
+    }
+
+    var _origApply = applyPos;
+    applyPos = function(y) { _origApply(y); refreshTapZone(); };
+    applyPos(COLLAPSED);
+    card.style.overflowY = 'hidden';
+
+    /* ── Bring below-fold sections into the card on mobile ──────────────────
+       The contact section and related products live outside the fixed sheet
+       in normal page flow. On mobile they're permanently hidden behind the
+       sheet. Clone them into the bottom of the card so they're scrollable. */
+    var sectionsToMove = [
+        document.querySelector('.pd-contact-section'),
+        document.getElementById('relatedProductsSection')
+    ];
+    sectionsToMove.forEach(function(src) {
+        if (!src) return;
+        var clone = src.cloneNode(true);
+        clone.classList.add('pd-in-card-clone');
+        card.appendChild(clone);
+        src.style.display = 'none'; /* hide original so it doesn't show on desktop-sized mobile */
+    });
+
+})();
+</script>
 {% endblock %}
 
 {% block pixel_events %}
