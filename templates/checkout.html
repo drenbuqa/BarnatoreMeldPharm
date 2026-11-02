@@ -70,9 +70,9 @@
 
 /* ── Shipping toggle pills ────────────────────────────────────────────────── */
 .co-ship-toggle {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0.6rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
 }
 .co-ship-opt {
     position: relative;
@@ -87,35 +87,43 @@
 .co-ship-pill {
     display: flex;
     align-items: center;
-    gap: 0.6rem;
-    padding: 0.8rem 1rem;
-    border: 2px solid #e5e7eb;
+    gap: 0.85rem;
+    padding: 0.85rem 1rem;
+    border: 1.5px solid #e5e7eb;
     border-radius: 12px;
-    background: #fafafa;
+    background: #fff;
     transition: border-color .18s, background .18s;
     cursor: pointer;
 }
-.co-ship-pill i {
-    font-size: 1rem;
-    color: #94a3b8;
+.co-ship-pill-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 9px;
+    background: #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     flex-shrink: 0;
+    transition: background .18s;
+}
+.co-ship-pill-icon i {
+    font-size: 1rem;
+    color: #64748b;
     transition: color .18s;
-    width: 18px;
-    text-align: center;
 }
 .co-ship-pill-text {
     display: flex;
     flex-direction: column;
-    gap: 1px;
+    gap: 2px;
 }
 .co-ship-pill-label {
-    font-size: 0.82rem;
+    font-size: 0.9rem;
     font-weight: 700;
     color: var(--text-main);
     line-height: 1.2;
 }
 .co-ship-pill-sub {
-    font-size: 0.7rem;
+    font-size: 0.78rem;
     color: #94a3b8;
     font-weight: 500;
 }
@@ -123,7 +131,10 @@
     border-color: var(--primary);
     background: #f0f4ef;
 }
-.co-ship-opt input:checked + .co-ship-pill i {
+.co-ship-opt input:checked + .co-ship-pill .co-ship-pill-icon {
+    background: color-mix(in srgb, var(--primary) 15%, transparent);
+}
+.co-ship-opt input:checked + .co-ship-pill .co-ship-pill-icon i {
     color: var(--primary);
 }
 .co-ship-opt input:checked + .co-ship-pill .co-ship-pill-label {
@@ -477,10 +488,10 @@
                                 <input type="radio" name="shipping_method" value="delivery" checked
                                     onchange="toggleShippingMethod('delivery')">
                                 <div class="co-ship-pill option-content">
-                                    <i class="fas fa-truck"></i>
+                                    <div class="co-ship-pill-icon"><i class="fas fa-truck"></i></div>
                                     <div class="co-ship-pill-text">
-                                        <span class="co-ship-pill-label">Dërgesa</span>
-                                        <span class="co-ship-pill-sub">Në adresën tënde</span>
+                                        <span class="co-ship-pill-label">Dërgim falas mbi €50</span>
+                                        <span class="co-ship-pill-sub">Brenda Kosovës</span>
                                     </div>
                                 </div>
                             </label>
@@ -488,10 +499,10 @@
                                 <input type="radio" name="shipping_method" value="pickup"
                                     onchange="toggleShippingMethod('pickup')">
                                 <div class="co-ship-pill option-content">
-                                    <i class="fas fa-store"></i>
+                                    <div class="co-ship-pill-icon"><i class="fas fa-bolt"></i></div>
                                     <div class="co-ship-pill-text">
-                                        <span class="co-ship-pill-label">Dyqani</span>
-                                        <span class="co-ship-pill-sub">Merr vetë — falas</span>
+                                        <span class="co-ship-pill-label">Dërgim i menjëhershëm</span>
+                                        <span class="co-ship-pill-sub">E njëjta ditë pune</span>
                                     </div>
                                 </div>
                             </label>
