@@ -1129,7 +1129,7 @@ function renderGroup(container, og, gi) {
     const ogType    = og.type || 'volume';
     const isColor   = ogType === 'color';
     const isSize    = ogType === 'size';
-    const showPrice = !isSize && !isColor && gi === 0; // only first volume group shows price
+    const showPrice = gi === 0; // first group always shows price per value, regardless of type
 
     const el = document.createElement('div');
     el.className = 'opt-group';
@@ -1216,7 +1216,7 @@ function valueRowHtml(gi, vi, v, ogType, showPrice) {
             <button type="button" class="btn-rm-img" onclick="removeImg(${gi},${vi},${ii})" title="Hiq"><i class="fas fa-times"></i></button>
         </div>`).join('');
 
-    // Field: color picker
+    // Field: color picker (color type only)
     const colorField = isColor ? `
         <div class="vgvr-field">
             <label>Ngjyra</label>
@@ -1224,7 +1224,7 @@ function valueRowHtml(gi, vi, v, ogType, showPrice) {
                 oninput="updateVal(${gi},${vi},'color_hex',this.value)" title="Klik për ngjyrën">
         </div>` : '';
 
-    // Field: price (only first volume group)
+    // Field: price — shown on first group for all types
     const priceFields = showPrice ? `
         <div class="vgvr-field">
             <label>Çmimi €</label>
@@ -1348,33 +1348,77 @@ function updateImgUrl(gi, vi, ii, url) {
     }
 }
 
+function _refreshImgPanel(gi, vi) {
+    // Re-renders only the image panel in-place (no full re-render)
+    const v   = optionGroups[gi].values[vi];
+    const row = document.getElementById(`img-row-${gi}-${vi}`);
+    if (!row) return;
+    row.querySelectorAll('.img-line').forEach(l => l.remove());
+    const addBtn = row.querySelector('.btn-add-img');
+    (v.images || []).forEach((url, idx) => {
+        const line = document.createElement('div');
+        line.className = 'img-line';
+        line.innerHTML = `<span class="img-idx">${idx+1}.</span>
+            <input class="vgvr-url-input" type="url" placeholder="URL e imazhit…"
+                value="${escH(url||'')}" oninput="updateImgUrl(${gi},${vi},${idx},this.value)">
+            <button type="button" class="btn-rm-img" onclick="removeImg(${gi},${vi},${idx})" title="Hiq"><i class="fas fa-times"></i></button>`;
+        row.insertBefore(line, addBtn);
+    });
+    const cnt = (v.images||[]).filter(Boolean).length;
+    row.style.display = (v.images||[]).length > 0 ? 'flex' : 'none';
+    // update photo button badge
+    const photoBtn = document.querySelector(`.opt-value-row[data-gi="${gi}"][data-vi="${vi}"] .btn-img-toggle`);
+    if (photoBtn) {
+        let badge = photoBtn.querySelector('.img-count-badge');
+        if (cnt > 0) {
+            photoBtn.classList.add('has-imgs');
+            if (!badge) { badge = document.createElement('span'); badge.className='img-count-badge'; photoBtn.appendChild(badge); }
+            badge.textContent = cnt;
+        } else {
+            photoBtn.classList.remove('has-imgs');
+            if (badge) badge.remove();
+            photoBtn.innerHTML = '<i class="fas fa-image"></i>&nbsp;Shto';
+        }
+    }
+}
+
 function removeImg(gi, vi, ii) {
     const v = optionGroups[gi].values[vi];
     if (v.images) v.images.splice(ii, 1);
-    renderAllGroups();
+    _refreshImgPanel(gi, vi);
+    syncHidden();
 }
 
 function addImg(gi, vi) {
     const v = optionGroups[gi].values[vi];
     if (!v.images) v.images = [];
     v.images.push('');
-    renderAllGroups();
-    setTimeout(() => {
-        const row = document.getElementById(`img-row-${gi}-${vi}`);
-        if (row) { const ins = row.querySelectorAll('input[type="url"]'); if (ins.length) ins[ins.length-1].focus(); }
-    }, 20);
+    _refreshImgPanel(gi, vi);
+    // show the panel and focus the new input
+    const row = document.getElementById(`img-row-${gi}-${vi}`);
+    if (row) {
+        row.style.display = 'flex';
+        const ins = row.querySelectorAll('input[type="url"]');
+        if (ins.length) ins[ins.length-1].focus();
+    }
+    syncHidden();
 }
 
 function toggleImgInput(btn, gi, vi) {
     const row = document.getElementById(`img-row-${gi}-${vi}`);
     if (!row) return;
     const shown = row.style.display !== 'none';
-    row.style.display = shown ? 'none' : 'flex';
-    if (!shown) {
+    if (shown) {
+        row.style.display = 'none';
+    } else {
         const v = optionGroups[gi].values[vi];
-        if (!v.images || v.images.length === 0) { addImg(gi, vi); return; }
-        const inp = row.querySelector('input[type="url"]');
-        if (inp) inp.focus();
+        if (!v.images || v.images.length === 0) {
+            addImg(gi, vi); // now safe — no full re-render
+        } else {
+            row.style.display = 'flex';
+            const inp = row.querySelector('input[type="url"]');
+            if (inp) inp.focus();
+        }
     }
 }
 

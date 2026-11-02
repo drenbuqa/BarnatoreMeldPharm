@@ -613,19 +613,18 @@ def _parse_option_groups(raw_json, existing_variants=None):
     for combo in itertools_product(*value_lists):
         attributes = {group_names[i]: combo[i]['value'] for i in range(len(group_names))}
 
-        # Price: take from first non-size group; size groups never carry their own price
+        # Price: take from first group that has one (any type can have a price)
         price = None
         discount_price = None
         for i, v in enumerate(combo):
-            if group_types[i] != 'size':
-                if price is None and v.get('price') not in (None, '', 0):
-                    try:
-                        price = float(v['price'])
-                    except (ValueError, TypeError):
-                        pass
-                if discount_price is None and v.get('discount_price') not in (None, ''):
-                    try:
-                        discount_price = float(v['discount_price'])
+            if price is None and v.get('price') not in (None, '', 0):
+                try:
+                    price = float(v['price'])
+                except (ValueError, TypeError):
+                    pass
+            if discount_price is None and v.get('discount_price') not in (None, ''):
+                try:
+                    discount_price = float(v['discount_price'])
                     except (ValueError, TypeError):
                         pass
 
