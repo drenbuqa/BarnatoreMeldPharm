@@ -49,12 +49,15 @@
 .ord-shell.panel-open .ord-table-area { padding-right:406px; }
 
 /* ── Table card ── */
-.ord-table-card { background:#fff; border:1px solid #eef0ed; border-radius:12px; overflow:hidden; }
+.ord-table-card { background:#fff; border:1px solid #eef0ed; border-radius:12px; overflow:visible; }
 .ord-table { width:100%; border-collapse:collapse; }
 .ord-table thead th { padding:0.7rem 1rem; font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:#8a9186; text-align:left; background:#fafafa; border-bottom:1px solid #eef0ed; white-space:nowrap; }
-.ord-table thead th:first-child { padding-left:0.85rem; width:32px; }
+.ord-table thead th:first-child { padding-left:0.85rem; width:32px; border-top-left-radius:12px; }
+.ord-table thead th:last-child { border-top-right-radius:12px; }
 .ord-table tbody tr.ord-row { border-bottom:1px solid #f3f4f2; cursor:pointer; transition:background 0.1s; }
 .ord-table tbody tr.ord-row:last-child { border-bottom:none; }
+.ord-table tbody tr.ord-row:last-child td:first-child { border-bottom-left-radius:12px; }
+.ord-table tbody tr.ord-row:last-child td:last-child { border-bottom-right-radius:12px; }
 .ord-table tbody tr.ord-row:hover td { background:#f8faf7; }
 .ord-table tbody tr.ord-row.selected td { background:#f0f5f0; }
 .ord-table tbody tr.ord-row.selected td:first-child { border-left:3px solid var(--adm-primary); }
