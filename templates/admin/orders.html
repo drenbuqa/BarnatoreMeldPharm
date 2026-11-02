@@ -16,17 +16,6 @@
 .ord-page-title { font-size:1.6rem; font-weight:800; color:#1a1f18; line-height:1; margin-bottom:0.3rem; letter-spacing:-0.03em; }
 .ord-page-sub { font-size:0.83rem; color:#9aa095; }
 
-/* ── KPI tiles ── */
-.ord-kpi-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:0.75rem; margin-bottom:1.25rem; }
-.ord-kpi { background:#fff; border:1px solid #eef0ed; border-radius:12px; padding:1rem 1.15rem; cursor:pointer; transition:box-shadow 0.18s,transform 0.18s; }
-.ord-kpi-icon { width:34px; height:34px; border-radius:9px; display:flex; align-items:center; justify-content:center; font-size:0.88rem; margin-bottom:0.6rem; }
-.ki-slate { background:#f8fafc; color:#475569; }
-.ki-amber { background:#fffbeb; color:#d97706; }
-.ki-blue  { background:#eff6ff; color:#2563eb; }
-.ki-green { background:#f0fdf4; color:#16a34a; }
-.ki-red   { background:#fef2f2; color:#ef4444; }
-.ord-kpi-num { font-size:1.7rem; font-weight:800; color:#1a1f18; line-height:1; }
-.ord-kpi-lbl { font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.07em; color:#8a9186; margin-top:0.25rem; }
 
 /* ── Toolbar ── */
 .ord-toolbar { background:#fff; border:1px solid #eef0ed; border-radius:12px; padding:0.85rem 1.1rem; margin-bottom:0.85rem; display:flex; align-items:center; gap:0.75rem; flex-wrap:wrap; }
@@ -201,12 +190,10 @@
     .ord-panel-wrap { width:360px; }
 }
 @media(max-width:1100px) {
-    .ord-kpi-grid { grid-template-columns:repeat(2,1fr); }
     .ord-shell.panel-open .ord-table-area { padding-right:0; }
     .ord-panel-wrap.panel-sticky { right:0.5rem !important; width:340px; }
 }
 @media(max-width:768px) {
-    .ord-kpi-grid { grid-template-columns:repeat(2,1fr); gap:0.5rem; }
     .ord-toolbar { flex-direction:column; align-items:stretch; overflow:hidden; }
     .ord-search-wrap { flex:none; width:100%; }
     .ord-tabs { overflow-x:auto; flex-wrap:nowrap; scrollbar-width:none; min-width:0; max-width:100%; }
@@ -227,30 +214,6 @@
     .st-dot { width:5px; height:5px; }
 }
 </style>
-
-<!-- KPI tiles -->
-<div class="ord-kpi-grid">
-    <div class="ord-kpi" onclick="location.href='{{ url_for('admin.orders') }}'">
-        <div class="ord-kpi-icon ki-slate"><i class="fas fa-shopping-bag"></i></div>
-        <div class="ord-kpi-num">{{ counts.total }}</div>
-        <div class="ord-kpi-lbl">Gjithsej Porosi</div>
-    </div>
-    <div class="ord-kpi" onclick="location.href='{{ url_for('admin.orders', status='pending') }}'">
-        <div class="ord-kpi-icon ki-amber"><i class="fas fa-clock"></i></div>
-        <div class="ord-kpi-num">{{ counts.pending }}</div>
-        <div class="ord-kpi-lbl">Në Pritje</div>
-    </div>
-    <div class="ord-kpi" onclick="location.href='{{ url_for('admin.orders', status='dergese') }}'">
-        <div class="ord-kpi-icon ki-blue"><i class="fas fa-truck"></i></div>
-        <div class="ord-kpi-num">{{ counts.dergese }}</div>
-        <div class="ord-kpi-lbl">Në Dërgesë</div>
-    </div>
-    <div class="ord-kpi" onclick="location.href='{{ url_for('admin.orders', status='dorezuar') }}'">
-        <div class="ord-kpi-icon ki-green"><i class="fas fa-check-circle"></i></div>
-        <div class="ord-kpi-num">{{ counts.dorezuar }}</div>
-        <div class="ord-kpi-lbl">Dorëzuar</div>
-    </div>
-</div>
 
 <!-- Toolbar: search + status tabs -->
 <div class="ord-toolbar">
