@@ -28,6 +28,7 @@ class Order:
             "shipping_cost": order_data.get('shipping_cost'),
             "grand_total": order_data.get('grand_total'),
             "user_id": order_data.get('user_id'), # Optional, if logged in
+            "notes": order_data.get('notes') or None,
             "status": order_data.get('status', 'Pending'),
             "confirmation_email_sent": order_data.get('confirmation_email_sent', False),
             "confirmation_email_sent_at": order_data.get('confirmation_email_sent_at'),
