@@ -689,7 +689,8 @@ function toggleStatusDrop(e, btn, orderId) {
     const r = btn.getBoundingClientRect();
     menu.style.display = 'block';
     const mw = menu.offsetWidth;
-    let left = r.left - mw + 32;
+    let left = r.right - mw;
+    if (left + mw > window.innerWidth - 8) left = window.innerWidth - mw - 8;
     if (left < 8) left = 8;
     menu.style.top  = (r.bottom + 4) + 'px';
     menu.style.left = left + 'px';
