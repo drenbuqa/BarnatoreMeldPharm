@@ -319,6 +319,7 @@
                     data-fullname="{{ order.fullname|lower }}"
                     data-city="{{ (order.city or '')|lower }}"
                     data-status="{{ st }}"
+                    data-notes="{{ order.notes or '' }}"
                     data-order='{{ {
                         "id": order._id|string,
                         "id_short": (order._id|string)[:8]|upper,
@@ -327,7 +328,6 @@
                         "email": order.email or "",
                         "city": order.city or "",
                         "address": order.address or "",
-                        "notes": order.notes or "",
                         "status": order.status or "",
                         "st": st,
                         "admin_note": order.admin_note or "",
@@ -525,6 +525,7 @@ function openPanel(orderId) {
     if (_openOrderId === orderId) { closePanel(); return; }
 
     const data = JSON.parse(row.dataset.order);
+    data.notes = row.dataset.notes || '';   // read from dedicated attribute — avoids JSON escaping issues
     _openOrderId = orderId;
     _openOrderData = data;
 
