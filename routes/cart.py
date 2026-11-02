@@ -570,6 +570,7 @@ def place_order():
     country = request.form.get('country')
     phone = request.form.get('phone')
     save_details = request.form.get('save_details') == '1'
+    notes = request.form.get('notes', '').strip()[:400]
 
     # If pickup, we don't need address details
     if shipping_method == 'pickup':
@@ -665,7 +666,8 @@ def place_order():
         "shipping_cost": shipping_cost,
         "grand_total": grand_total,
         "user_id": current_user.get_id() if current_user.is_authenticated else None,
-        "status": "Pending"
+        "status": "Pending",
+        "notes": notes or None
     })
         
     # Increment total_sold per product

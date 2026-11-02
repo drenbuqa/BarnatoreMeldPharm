@@ -209,6 +209,79 @@
 }
 .co-save-check input { width: 15px; height: 15px; accent-color: var(--primary); cursor: pointer; }
 
+/* ── Order note toggle ───────────────────────────────────────────────────── */
+.co-note-wrap {
+    margin-bottom: 0.85rem;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 12px;
+    background: #fff;
+    overflow: hidden;
+    transition: border-color .18s;
+}
+.co-note-wrap:focus-within {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(79,93,78,0.08);
+}
+.co-note-toggle {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    padding: 0.75rem 1rem;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #475569;
+    text-align: left;
+    transition: color .15s;
+}
+.co-note-toggle:hover { color: var(--primary); }
+.co-note-toggle > i:first-child { color: #94a3b8; font-size: 0.8rem; flex-shrink:0; }
+.co-note-toggle > span { flex: 1; }
+.co-note-chevron {
+    font-size: 0.7rem;
+    color: #94a3b8;
+    transition: transform .22s;
+    flex-shrink: 0;
+}
+.co-note-chevron.open { transform: rotate(180deg); }
+.co-note-body {
+    display: none;
+    padding: 0 1rem 0.85rem;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+.co-note-body.open { display: flex; }
+.co-note-textarea {
+    width: 100%;
+    min-height: 80px;
+    max-height: 160px;
+    resize: vertical;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 9px;
+    padding: 0.65rem 0.85rem;
+    font-size: 0.88rem;
+    font-family: inherit;
+    color: var(--text-main);
+    background: #fafafa;
+    outline: none;
+    transition: border-color .18s;
+    box-sizing: border-box;
+}
+.co-note-textarea:focus {
+    border-color: var(--primary);
+    background: #fff;
+}
+.co-note-counter {
+    font-size: 0.72rem;
+    color: #94a3b8;
+    text-align: right;
+    font-weight: 500;
+}
+
 /* payment pill */
 .co-payment-pill {
     display: flex;
@@ -511,6 +584,21 @@
                 </div>
 
                 <!-- Payment -->
+                <!-- ── Order note ── -->
+                <div class="co-note-wrap" id="coNoteWrap">
+                    <button type="button" class="co-note-toggle" id="coNoteToggle" onclick="toggleOrderNote()">
+                        <i class="fas fa-pen-alt"></i>
+                        <span id="coNoteToggleText">Shto një shënim për porosinë</span>
+                        <i class="fas fa-chevron-down co-note-chevron" id="coNoteChevron"></i>
+                    </button>
+                    <div class="co-note-body" id="coNoteBody">
+                        <textarea id="orderNote" name="notes" class="co-note-textarea"
+                            maxlength="400"
+                            placeholder="p.sh. Lëreni te porta, ora e preferuar e dorëzimit, alergjitë…"></textarea>
+                        <div class="co-note-counter"><span id="coNoteCount">0</span>/400</div>
+                    </div>
+                </div>
+
                 <input type="hidden" name="payment_method" value="cash">
                 <div class="co-payment-pill" style="margin-bottom:1rem;">
                     <i class="fas fa-money-bill-wave"></i>
@@ -575,6 +663,31 @@
 </div>
 
 <script>
+    function toggleOrderNote() {
+        const body    = document.getElementById('coNoteBody');
+        const chevron = document.getElementById('coNoteChevron');
+        const label   = document.getElementById('coNoteToggleText');
+        const isOpen  = body.classList.contains('open');
+        body.classList.toggle('open', !isOpen);
+        chevron.classList.toggle('open', !isOpen);
+        if (!isOpen) {
+            document.getElementById('orderNote').focus();
+            label.textContent = 'Shënim për porosinë';
+        } else {
+            const val = document.getElementById('orderNote').value.trim();
+            label.textContent = val ? 'Shënim për porosinë ✓' : 'Shto një shënim për porosinë';
+        }
+    }
+    document.addEventListener('DOMContentLoaded', function() {
+        const ta = document.getElementById('orderNote');
+        const counter = document.getElementById('coNoteCount');
+        if (ta && counter) {
+            ta.addEventListener('input', function() {
+                counter.textContent = this.value.length;
+            });
+        }
+    });
+
     function toggleShippingMethod(method) {
         const addressContainer = document.getElementById('address-fields-container');
         const addressInput = document.getElementById('address');

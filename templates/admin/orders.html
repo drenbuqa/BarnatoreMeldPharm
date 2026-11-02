@@ -141,6 +141,39 @@
 .panel-total-row:last-child { border-bottom:none; border-top:2px solid #eef0ed; font-weight:800; font-size:0.9rem; color:#1a1f18; background:#fafafa; }
 .panel-total-row.discount .val { color:#16a34a; }
 
+/* Note indicator on row */
+.ord-note-dot { display:inline-flex; align-items:center; margin-left:0.35rem; color:#d97706; font-size:0.65rem; vertical-align:middle; }
+
+/* Customer note in panel */
+.cust-note-block {
+    background: linear-gradient(135deg, #fffbeb 0%, #fef9ec 100%);
+    border: 1.5px solid #fde68a;
+    border-radius: 10px;
+    overflow: hidden;
+}
+.cust-note-header {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.5rem 0.75rem;
+    background: rgba(253,230,138,0.4);
+    border-bottom: 1px solid #fde68a;
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: #92400e;
+}
+.cust-note-header i { font-size: 0.72rem; color: #d97706; }
+.cust-note-body {
+    padding: 0.6rem 0.75rem;
+    font-size: 0.84rem;
+    color: #78350f;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
 /* Admin note in panel */
 .panel-note-textarea { width:100%; padding:0.55rem 0.75rem; border:1.5px solid #e2e8f0; border-radius:8px; font-size:0.82rem; font-family:inherit; resize:vertical; outline:none; box-sizing:border-box; color:#1a1f18; min-height:60px; }
 .panel-note-textarea:focus { border-color:var(--adm-primary); }
@@ -312,6 +345,7 @@
                     <td onclick="openPanel('{{ order._id }}')">
                         <span class="ord-id">#MP-{{ (order._id|string)[:8]|upper }}</span>
                         <span class="ord-date">{{ order.created_at.strftime('%d %b, %H:%M') }}</span>
+                        {% if order.notes %}<span class="ord-note-dot" title="Ka shënim nga klienti"><i class="fas fa-comment-dots"></i></span>{% endif %}
                     </td>
                     <td onclick="openPanel('{{ order._id }}')">
                         <span class="cust-name">{{ order.fullname }}</span>
@@ -578,9 +612,12 @@ function renderPanel(d) {
 
     // Customer note
     if (d.notes) {
-        html += `<div>
-            <div class="panel-section-label"><i class="fas fa-comment-alt"></i> Shënim i Klientit</div>
-            <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:0.6rem 0.75rem;font-size:0.82rem;color:#78350f;">${escHtml(d.notes)}</div>
+        html += `<div class="cust-note-block">
+            <div class="cust-note-header">
+                <i class="fas fa-comment-dots"></i>
+                <span>Shënim i Klientit</span>
+            </div>
+            <div class="cust-note-body">${escHtml(d.notes)}</div>
         </div>`;
     }
 
