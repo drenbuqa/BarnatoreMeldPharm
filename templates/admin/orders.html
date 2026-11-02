@@ -87,7 +87,7 @@
 .status-dropdown { position:relative; display:inline-block; }
 .status-trigger { cursor:pointer; border:none; background:transparent; padding:0; font-family:inherit; }
 .status-trigger.updating { opacity:0.5; pointer-events:none; }
-.status-drop-menu { position:absolute; z-index:300; right:0; top:calc(100% + 4px); background:#fff; border:1px solid #eef0ed; border-radius:12px; box-shadow:0 8px 24px rgba(0,0,0,0.12); min-width:170px; padding:0.35rem; }
+.status-drop-menu { position:fixed; z-index:9999; background:#fff; border:1px solid #eef0ed; border-radius:12px; box-shadow:0 8px 24px rgba(0,0,0,0.15); min-width:170px; padding:0.35rem; }
 .sdd-item { display:flex; align-items:center; gap:0.6rem; padding:0.6rem 0.85rem; font-size:0.82rem; font-weight:600; cursor:pointer; color:#374151; border-radius:8px; transition:background 0.1s; }
 .sdd-item:hover { background:#f8faf7; }
 .sdd-item .st-dot { flex-shrink:0; }
@@ -685,7 +685,14 @@ function toggleStatusDrop(e, btn, orderId) {
     const menu = document.getElementById('sdd-' + orderId);
     const isOpen = menu.style.display !== 'none';
     document.querySelectorAll('.status-drop-menu').forEach(m => m.style.display = 'none');
-    menu.style.display = isOpen ? 'none' : 'block';
+    if (isOpen) return;
+    const r = btn.getBoundingClientRect();
+    menu.style.display = 'block';
+    const mw = menu.offsetWidth;
+    let left = r.right - mw;
+    if (left < 8) left = 8;
+    menu.style.top  = (r.bottom + 4) + 'px';
+    menu.style.left = left + 'px';
 }
 document.addEventListener('click', () => document.querySelectorAll('.status-drop-menu').forEach(m => m.style.display = 'none'));
 
