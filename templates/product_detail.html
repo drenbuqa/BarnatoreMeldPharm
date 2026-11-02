@@ -474,36 +474,38 @@
   /* ── Row 8: Trust signals (horizontal scroll) ── */
   .pinfo-trust-signals {
       display: flex !important;
-      flex-direction: row !important;
+      flex-direction: column !important;
       flex-wrap: nowrap !important;
-      gap: 0.5rem !important;
-      overflow-x: auto !important;
-      scrollbar-width: none !important;
-      margin: 1.5rem -1.25rem 0 !important;
-      padding: 0 1.25rem 0.25rem !important;
+      gap: 0.55rem !important;
+      overflow-x: visible !important;
+      margin: 1.25rem 0 0 !important;
+      padding: 0 !important;
   }
-  .pinfo-trust-signals::-webkit-scrollbar { display: none; }
   .pinfo-trust-item {
       flex-shrink: 0 !important;
       flex-direction: row !important;
       align-items: center !important;
-      background: rgba(79,93,78,0.08) !important;
-      border: 1px solid rgba(79,93,78,0.25) !important;
-      border-radius: 20px !important;
-      padding: 0.4rem 0.9rem 0.4rem 0.65rem !important;
-      gap: 0.4rem !important;
-      box-shadow: none !important;
+      background: #fff !important;
+      border: 1.5px solid #e8edf2 !important;
+      border-radius: 14px !important;
+      padding: 0.75rem 1rem !important;
+      gap: 0.75rem !important;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04) !important;
   }
-  .pinfo-trust-item > div > span { display: none !important; }
+  .pinfo-trust-item > div > span { display: block !important; font-size: 0.78rem !important; color: #64748b !important; margin-top: 1px !important; }
   .pinfo-trust-item > div > strong {
-      font-size: 0.78rem !important;
+      font-size: 0.88rem !important;
       font-weight: 700 !important;
-      white-space: nowrap !important;
-      color: #3a4539 !important;
+      white-space: normal !important;
+      color: #1e293b !important;
+      display: block !important;
   }
   .pinfo-trust-item > i {
-      font-size: 0.8rem !important;
+      font-size: 1.1rem !important;
       color: #4F5D4E !important;
+      width: 22px !important;
+      text-align: center !important;
+      flex-shrink: 0 !important;
   }
 
   /* ── Row 9: Mobile save + share ── */
