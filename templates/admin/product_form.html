@@ -1378,8 +1378,14 @@ function toggleImgInput(btn, gi, vi) {
     }
 }
 
+const TYPE_DEFAULT_NAMES = { volume: 'Sasia', color: 'Ngjyra', size: 'Numri' };
+
 function setGroupType(gi, type) {
-    optionGroups[gi].type = type;
+    const og = optionGroups[gi];
+    og.type = type;
+    // Auto-fill the name only if it is still a default type name or empty
+    const currentIsDefault = Object.values(TYPE_DEFAULT_NAMES).includes(og.name) || !og.name;
+    if (currentIsDefault) og.name = TYPE_DEFAULT_NAMES[type] || og.name;
     renderAllGroups();
 }
 
@@ -1399,7 +1405,7 @@ function removeGroup(gi) {
 }
 
 function addOptionGroup() {
-    optionGroups.push({ name: 'Madhësia', type: 'volume', values: [] });
+    optionGroups.push({ name: 'Sasia', type: 'volume', values: [] });
     renderAllGroups();
     setTimeout(() => { const inputs = document.querySelectorAll('.tag-input'); if (inputs.length) inputs[inputs.length-1].focus(); }, 30);
 }
