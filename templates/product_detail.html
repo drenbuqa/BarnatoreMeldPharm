@@ -1451,14 +1451,16 @@
     }
 
     document.addEventListener('DOMContentLoaded', () => {
-        // Ensure all accordions start collapsed
-        document.querySelectorAll('.accordion-item').forEach(function(item) {
-            var content = item.querySelector('.accordion-content');
-            var icon = item.querySelector('.accordion-icon');
-            if (content) content.style.maxHeight = '0';
-            if (icon) icon.style.transform = 'rotate(0deg)';
-            item.classList.remove('open');
-        });
+        // Open all desktop accordions by default (mobile ones stay closed inside sheet)
+        if (window.innerWidth > 768) {
+            document.querySelectorAll('.pinfo-accordion-desktop .accordion-item').forEach(function(item) {
+                var content = item.querySelector('.accordion-content');
+                var icon = item.querySelector('.accordion-icon');
+                if (content) content.style.maxHeight = '3000px';
+                if (icon) icon.style.transform = 'rotate(180deg)';
+                item.classList.add('open');
+            });
+        }
 
         // Initialize detail carousel arrow states
         document.querySelectorAll('.detail-carousel-container').forEach(container => {
@@ -2003,6 +2005,21 @@
         /* Reduce image padding to match mobile's larger/more-filled look */
         .detail-carousel-container .product-image {
             padding: 0.5rem !important;
+        }
+
+        /* Bigger carousel indicator dots on desktop */
+        .detail-carousel-container .carousel-indicators {
+            gap: 6px !important;
+            bottom: 14px !important;
+        }
+        .detail-carousel-container .indicator-dot {
+            width: 8px !important;
+            height: 8px !important;
+        }
+        .detail-carousel-container .indicator-dot.active {
+            width: 26px !important;
+            height: 8px !important;
+            border-radius: 10px !important;
         }
 
         /* Force 2-column layout — auto-fit can create 3 cols on wide screens */
