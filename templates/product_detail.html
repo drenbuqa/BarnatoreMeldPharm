@@ -167,6 +167,7 @@
       transform: none !important;
       z-index: 8 !important;
       width: 48px !important;
+      height: calc(var(--gallery-vis-h, 38vh) - 76px) !important;
       max-height: calc(var(--gallery-vis-h, 38vh) - 76px) !important;
       display: flex !important;
       flex-direction: column !important;
@@ -177,6 +178,7 @@
       scrollbar-width: none !important;
       background: transparent !important;
       align-items: center !important;
+      justify-content: safe center !important;
   }
   .thumbnails-container::-webkit-scrollbar { display: none !important; }
 
@@ -705,17 +707,18 @@
                         class="{{ 'fas' if (current_user.is_authenticated and product.favorites and current_user.id in product.favorites) or (not current_user.is_authenticated and product._id|string in session.get('liked_products', [])) else 'far' }} fa-heart"></i>
                 </button>
 
-                {% if product.images and product.images|length > 1 %}
-                <div class="thumbnails-container">
-                    {% for img in product.images %}
-                    <div class="thumbnail {{ 'active' if loop.first else '' }}" data-index="{{ loop.index0 }}"
-                        onclick="handleThumbClick(this)">
-                        <img src="{{ img|cld(150) }}" alt="View {{ loop.index }}">
-                    </div>
-                    {% endfor %}
-                </div>
-                {% endif %}
             </div>
+
+            {% if product.images and product.images|length > 1 %}
+            <div class="thumbnails-container">
+                {% for img in product.images %}
+                <div class="thumbnail {{ 'active' if loop.first else '' }}" data-index="{{ loop.index0 }}"
+                    onclick="handleThumbClick(this)">
+                    <img src="{{ img|cld(150) }}" alt="View {{ loop.index }}">
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
         </div>
 
         <!-- Dim overlay for gallery behind sheet -->
@@ -1451,16 +1454,17 @@
     }
 
     document.addEventListener('DOMContentLoaded', () => {
-        // Open all desktop accordions by default (mobile ones stay closed inside sheet)
-        if (window.innerWidth > 768) {
-            document.querySelectorAll('.pinfo-accordion-desktop .accordion-item').forEach(function(item) {
-                var content = item.querySelector('.accordion-content');
-                var icon = item.querySelector('.accordion-icon');
-                if (content) content.style.maxHeight = '3000px';
-                if (icon) icon.style.transform = 'rotate(180deg)';
-                item.classList.add('open');
-            });
-        }
+        // Open all accordions by default on both desktop and mobile
+        var accordionSelector = window.innerWidth > 768
+            ? '.pinfo-accordion-desktop .accordion-item'
+            : '.pinfo-accordion-mobile .accordion-item';
+        document.querySelectorAll(accordionSelector).forEach(function(item) {
+            var content = item.querySelector('.accordion-content');
+            var icon = item.querySelector('.accordion-icon');
+            if (content) content.style.maxHeight = '3000px';
+            if (icon) icon.style.transform = 'rotate(180deg)';
+            item.classList.add('open');
+        });
 
         // Initialize detail carousel arrow states
         document.querySelectorAll('.detail-carousel-container').forEach(container => {
@@ -1473,9 +1477,12 @@
 
     function handleThumbClick(btn) {
         const index = parseInt(btn.dataset.index);
-        const container = btn.closest('.carousel-container');
-        // Sync active class on thumbnails for CSS transitions
-        container.querySelectorAll('.thumbnail').forEach((t, i) => {
+        const gallery = btn.closest('.product-gallery');
+        const container = (gallery && gallery.querySelector('.carousel-container'))
+            || btn.closest('.carousel-container');
+        if (!container) return;
+        // Sync active class on thumbnails
+        (gallery || container).querySelectorAll('.thumbnail').forEach((t, i) => {
             t.classList.toggle('active', i === index);
             t.style.borderColor = '';
             t.style.opacity = '';
@@ -2006,6 +2013,23 @@
         .detail-carousel-container .product-image {
             padding: 0.5rem !important;
         }
+
+        /* Thumbnail strip — horizontal row below the carousel image */
+        .product-gallery .thumbnails-container {
+            position: static !important;
+            display: flex !important;
+            flex-direction: row !important;
+            gap: 8px !important;
+            padding: 12px 4px 0 !important;
+            justify-content: center !important;
+            width: 100% !important;
+            overflow-x: auto !important;
+            scrollbar-width: none !important;
+            background: transparent !important;
+            flex-wrap: nowrap !important;
+            max-height: none !important;
+        }
+        .product-gallery .thumbnails-container::-webkit-scrollbar { display: none !important; }
 
         /* Bigger carousel indicator dots on desktop */
         .detail-carousel-container .carousel-indicators {
@@ -3167,6 +3191,7 @@
        listeners drive the sheet without ever blocking native card scroll. */
     var handle = document.createElement('div');
     handle.className = 'pd-drag-handle';
+    handle.style.pointerEvents = 'auto';
     card.prepend(handle);
 
     var hStartY = 0, hActive = false;
@@ -3274,30 +3299,41 @@
     if (dim) dim.style.pointerEvents = 'none';
     var tapZone = document.createElement('div');
     tapZone.style.cssText =
-        'position:fixed;top:0;left:0;right:0;z-index:5;cursor:pointer;background:transparent;';
-    function refreshTapZone() { tapZone.style.height = Math.max(0, pos) + 'px'; }
+        'position:fixed;top:0;left:0;right:0;z-index:5;cursor:pointer;background:transparent;pointer-events:none;';
+    function refreshTapZone() {
+        tapZone.style.height = Math.max(0, pos) + 'px';
+        tapZone.style.pointerEvents = (pos >= COLLAPSED - 5) ? 'none' : 'auto';
+    }
     refreshTapZone();
     tapZone.addEventListener('click', function() { if (pos < COLLAPSED - 10) snapTo(COLLAPSED); });
     document.body.appendChild(tapZone);
-    /* Also listen on the dim overlay — tap the gray gallery area to collapse */
+    /* Also listen on the dim overlay — tap the gray gallery area to collapse.
+       pointer-events start as none (set above); the snapTo wrapper enables them when expanded. */
     if (dim) {
-        dim.style.setProperty('pointer-events', 'auto', 'important');
         dim.addEventListener('click', function() {
             if (pos < COLLAPSED - 10) snapTo(COLLAPSED);
         });
-        /* Disable pointer-events on dim while sheet is collapsed so carousel still works */
-        var _snapOrig = snapTo;
-        snapTo = function(target) {
-            _snapOrig(target);
-            if (dim) dim.style.setProperty('pointer-events',
-                target === COLLAPSED ? 'none' : 'auto', 'important');
-        };
     }
+    /* Unconditional snapTo wrapper — updates pointer-events on sheet, dim, tapZone */
+    var _snapOrig = snapTo;
+    snapTo = function(target) {
+        _snapOrig(target);
+        var collapsed = (target === COLLAPSED);
+        if (dim) dim.style.setProperty('pointer-events', collapsed ? 'none' : 'auto', 'important');
+        tapZone.style.pointerEvents = collapsed ? 'none' : 'auto';
+        /* The sheet element (height:90vh) covers the gallery when collapsed.
+           pointer-events:none lets carousel swipes reach the gallery.
+           Card and handle have explicit auto so drag still works. */
+        sheet.style.pointerEvents = collapsed ? 'none' : 'auto';
+    };
 
     var _origApply = applyPos;
     applyPos = function(y) { _origApply(y); refreshTapZone(); };
     applyPos(COLLAPSED);
     card.style.overflowY = 'hidden';
+    /* Ensure sheet starts with pointer-events:none (collapsed) so gallery is touchable */
+    sheet.style.pointerEvents = 'none';
+    card.style.pointerEvents = 'auto';
 
     /* ── Bring below-fold sections into the card on mobile ──────────────────
        The contact section and related products live outside the fixed sheet
