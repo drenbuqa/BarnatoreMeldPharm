@@ -1909,6 +1909,20 @@
     @media (min-width: 769px) {
         .product-info-column { display: flex; flex-direction: column; }
         .pinfo-card { flex: 1; }
+
+        /* Force 2-column layout — auto-fit can create 3 cols on wide screens */
+        .product-detail-grid {
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+            gap: 3rem !important;
+        }
+    }
+
+    @media (min-width: 1100px) {
+        /* On large screens give gallery slightly more room */
+        .product-detail-grid {
+            grid-template-columns: 1.1fr 1fr !important;
+            gap: 3.5rem !important;
+        }
     }
     /* Full-width accordion section below the grid */
     .product-accordion-section {
