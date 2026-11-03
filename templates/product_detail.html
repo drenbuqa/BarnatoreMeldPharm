@@ -1912,6 +1912,7 @@
 
         /* Force 2-column layout — auto-fit can create 3 cols on wide screens */
         .product-detail-grid {
+            display: grid !important;
             grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
             gap: 3rem !important;
         }
@@ -1920,6 +1921,7 @@
     @media (min-width: 1100px) {
         /* On large screens give gallery slightly more room */
         .product-detail-grid {
+            display: grid !important;
             grid-template-columns: 1.1fr 1fr !important;
             gap: 3.5rem !important;
         }
