@@ -33,13 +33,13 @@
 }
 .pd-mobile-back:active { transform: scale(0.93); }
 
-/* Desktop: accordion inside pinfo-card — style as normal section */
+/* Desktop: accordion lives below the grid, not inside the card */
 @media (min-width: 769px) {
-    .pinfo-accordion-mobile {
-        margin: 1.5rem 0 0 !important;
-        padding: 0 !important;
-        border-top: none !important;
-    }
+    .pinfo-accordion-mobile { display: none !important; }
+    .pinfo-accordion-desktop { display: block; }
+}
+@media (max-width: 768px) {
+    .pinfo-accordion-desktop { display: none !important; }
 }
 
 .pinfo-mobile-social {
@@ -977,6 +977,89 @@
             </form>
         </div><!-- /product-info-column -->
     </div><!-- /product-detail-grid -->
+
+    <!-- Desktop-only: accordion below the grid, spanning full width -->
+    <div class="pinfo-accordion-desktop" style="margin-top:2rem;">
+        <!-- Description -->
+        <div class="accordion-item" style="background:white;border-radius:16px;margin-bottom:1rem;border:1px solid #f1f5f9;box-shadow:0 2px 4px rgba(0,0,0,.02);overflow:hidden;">
+            <div class="accordion-header" style="padding:1.25rem 1.5rem;display:flex;justify-content:space-between;align-items:center;cursor:pointer;transition:background .2s;" onclick="toggleAccordion(this)">
+                <h3 style="font-size:1rem;color:var(--text-main);font-weight:700;margin:0;display:flex;align-items:center;gap:.8rem;">
+                    <i class="fas fa-align-left" style="color:var(--primary);width:22px;text-align:center;"></i> Përshkrimi i Produktit
+                </h3>
+                <i class="fas fa-chevron-down accordion-icon" style="transition:transform .3s cubic-bezier(.4,0,.2,1);color:#94a3b8;"></i>
+            </div>
+            <div class="accordion-content" style="max-height:0;overflow:hidden;transition:all .4s cubic-bezier(.4,0,.2,1);">
+                <div class="product-desc-body ql-content" style="padding:0 1.5rem 1.5rem;font-size:.95rem;color:#475569;line-height:1.8;">
+                    {% if '<' in product.description %}
+                        {{ product.description | safe }}
+                    {% else %}
+                        {% set lines2 = product.description.split('\n') %}
+                        {% set in_list2 = namespace(val=false) %}
+                        {% for line in lines2 %}
+                          {% set stripped = line.strip() %}
+                          {% if stripped %}
+                            {% if stripped[:1] in ['•', '-', '*'] or stripped[:2] == '- ' %}
+                              {% set item = stripped.lstrip('•*- ').strip() %}
+                              {% if not in_list2.val %}
+                                <ul style="margin:.5rem 0 .75rem 1.1rem;padding:0;list-style:none;">
+                                {% set in_list2.val = true %}
+                              {% endif %}
+                              <li style="position:relative;padding-left:1.2rem;margin-bottom:.45rem;">
+                                <span style="position:absolute;left:0;top:.55em;width:6px;height:6px;background:var(--primary);border-radius:50%;display:inline-block;"></span>
+                                {{ item }}
+                              </li>
+                            {% else %}
+                              {% if in_list2.val %}</ul>{% set in_list2.val = false %}{% endif %}
+                              <p style="margin-bottom:.75rem;">{{ stripped }}</p>
+                            {% endif %}
+                          {% endif %}
+                        {% endfor %}
+                        {% if in_list2.val %}</ul>{% endif %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        {% if product.how_to_use and product.how_to_use | striptags | trim %}
+        <div class="accordion-item" style="background:white;border-radius:16px;margin-bottom:1rem;border:1px solid #f1f5f9;box-shadow:0 2px 4px rgba(0,0,0,.02);overflow:hidden;">
+            <div class="accordion-header" style="padding:1.25rem 1.5rem;display:flex;justify-content:space-between;align-items:center;cursor:pointer;transition:background .2s;" onclick="toggleAccordion(this)">
+                <h3 style="font-size:1rem;color:var(--text-main);font-weight:700;margin:0;display:flex;align-items:center;gap:.8rem;">
+                    <i class="fas fa-hand-sparkles" style="color:var(--primary);width:22px;text-align:center;"></i> Si të përdoret
+                </h3>
+                <i class="fas fa-chevron-down accordion-icon" style="transition:transform .3s cubic-bezier(.4,0,.2,1);color:#94a3b8;"></i>
+            </div>
+            <div class="accordion-content" style="max-height:0;overflow:hidden;transition:all .4s cubic-bezier(.4,0,.2,1);">
+                <div class="ql-content" style="padding:0 1.5rem 1.5rem;font-size:.95rem;color:#475569;line-height:1.7;">
+                    {% if '<' in product.how_to_use %}
+                        {{ product.how_to_use | safe }}
+                    {% else %}
+                        {{ product.how_to_use | e | replace('\n', '<br>') | safe }}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if product.key_ingredients and product.key_ingredients | striptags | trim %}
+        <div class="accordion-item" style="background:white;border-radius:16px;margin-bottom:1rem;border:1px solid #f1f5f9;box-shadow:0 2px 4px rgba(0,0,0,.02);overflow:hidden;">
+            <div class="accordion-header" style="padding:1.25rem 1.5rem;display:flex;justify-content:space-between;align-items:center;cursor:pointer;transition:background .2s;" onclick="toggleAccordion(this)">
+                <h3 style="font-size:1rem;color:var(--text-main);font-weight:700;margin:0;display:flex;align-items:center;gap:.8rem;">
+                    <i class="fas fa-vial" style="color:var(--primary);width:22px;text-align:center;"></i> Përbërësit Kryesorë
+                </h3>
+                <i class="fas fa-chevron-down accordion-icon" style="transition:transform .3s cubic-bezier(.4,0,.2,1);color:#94a3b8;"></i>
+            </div>
+            <div class="accordion-content" style="max-height:0;overflow:hidden;transition:all .4s cubic-bezier(.4,0,.2,1);">
+                <div class="ql-content" style="padding:0 1.5rem 1.5rem;font-size:.95rem;color:#475569;line-height:1.7;">
+                    {% if '<' in product.key_ingredients %}
+                        {{ product.key_ingredients | safe }}
+                    {% else %}
+                        {{ product.key_ingredients | e | replace('\n', '<br>') | safe }}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div><!-- /pinfo-accordion-desktop -->
 
 </div><!-- /product-detail-container -->
 
