@@ -1451,11 +1451,6 @@
     }
 
     document.addEventListener('DOMContentLoaded', () => {
-        const firstHeader = document.querySelector('.accordion-header');
-        if (firstHeader) {
-            // Slight timeout to ensure layout is ready for scrollHeight calculation
-            setTimeout(() => toggleAccordion(firstHeader), 100);
-        }
         // Initialize detail carousel arrow states
         document.querySelectorAll('.detail-carousel-container').forEach(container => {
             const images = container.querySelectorAll('.carousel-track img');
