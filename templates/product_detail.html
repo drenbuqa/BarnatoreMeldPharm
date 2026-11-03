@@ -1910,6 +1910,9 @@
         .product-info-column { display: flex; flex-direction: column; }
         .pinfo-card { flex: 1; }
 
+        /* dim overlay is mobile-only — hide it so it doesn't consume a grid column */
+        .pd-gallery-dim { display: none !important; }
+
         /* Force 2-column layout — auto-fit can create 3 cols on wide screens */
         .product-detail-grid {
             display: grid !important;
