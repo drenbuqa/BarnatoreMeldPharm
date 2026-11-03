@@ -1451,6 +1451,15 @@
     }
 
     document.addEventListener('DOMContentLoaded', () => {
+        // Ensure all accordions start collapsed
+        document.querySelectorAll('.accordion-item').forEach(function(item) {
+            var content = item.querySelector('.accordion-content');
+            var icon = item.querySelector('.accordion-icon');
+            if (content) content.style.maxHeight = '0';
+            if (icon) icon.style.transform = 'rotate(0deg)';
+            item.classList.remove('open');
+        });
+
         // Initialize detail carousel arrow states
         document.querySelectorAll('.detail-carousel-container').forEach(container => {
             const images = container.querySelectorAll('.carousel-track img');
