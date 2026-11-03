@@ -411,10 +411,11 @@
       transition: all 0.18s cubic-bezier(0.16,1,0.3,1) !important;
   }
   .vpill.vpill-active {
-      border-color: var(--primary) !important;
-      background: var(--primary) !important;
+      border-color: #1e3a2f !important;
+      background: #1e3a2f !important;
       color: #fff !important;
       transform: none !important;
+      box-shadow: 0 2px 8px rgba(30,58,47,0.22) !important;
   }
   .vpill.vpill-oos {
       opacity: 0.38 !important;
@@ -1145,10 +1146,10 @@
 .vcolor.vcolor-active { border-color:#059669;box-shadow:0 0 0 2px #fff,0 0 0 4px #059669; }
 .vcolor.vcolor-oos { opacity:.38;cursor:default;position:relative; }
 .vcolor.vcolor-oos::after { content:'';position:absolute;inset:0;background:repeating-linear-gradient(-45deg,transparent,transparent 3px,rgba(0,0,0,.25) 3px,rgba(0,0,0,.25) 4px);border-radius:50%; }
-.vsize { padding:0.35rem 0.7rem;border-radius:8px;border:1.5px solid #e2e8f0;background:#f8fafc;font-size:0.88rem;font-weight:700;color:#475569;cursor:pointer;transition:all .12s; }
-.vsize:hover:not(.vsize-oos) { border-color:#059669;color:#059669;background:#f0fdf4; }
-.vsize.vsize-active { border-color:#059669;background:#059669;color:#fff; }
-.vsize.vsize-oos { opacity:.4;cursor:default;text-decoration:line-through; }
+.vsize { padding:0.35rem 0.7rem;border-radius:8px;border:1.5px solid #dde1e7;background:#fff;font-size:0.88rem;font-weight:600;color:#4a5568;cursor:pointer;transition:border-color .15s,background .15s,color .15s,box-shadow .15s; }
+.vsize:hover:not(.vsize-oos):not(.vsize-active) { border-color:#4a7c59;background:#f2f7f4;color:#1e3a2f; }
+.vsize.vsize-active { border-color:#1e3a2f;background:#1e3a2f;color:#fff;box-shadow:0 2px 8px rgba(30,58,47,0.22); }
+.vsize.vsize-oos { opacity:.38;cursor:default;text-decoration:line-through; }
 .vattr-color-name { display:inline-block;margin-left:.4rem;font-size:.8rem;font-weight:600;color:var(--text-main);text-transform:none; }
 </style>
 <script>
@@ -1260,6 +1261,7 @@
                     btn.type = 'button';
                     btn.className = 'vsize' + (isActive?' vsize-active':'') + (!inStock?' vsize-oos':'');
                     btn.textContent = val;
+                    btn.style.cssText = 'flex:0 0 calc((100% - 6*0.55rem)/7);text-align:center;box-sizing:border-box;';
                     if (!inStock) { btn.disabled = true; btn.title = 'Jashtë stokut'; }
                     btn.onclick = () => selectAttr(attrType, val);
                     optRow.appendChild(btn);
@@ -2091,8 +2093,8 @@
         cursor: pointer;
         transition: all 0.2s;
     }
-    .vpill:hover { border-color: var(--primary); color: var(--primary); }
-    .vpill-active { background: var(--primary) !important; border-color: var(--primary) !important; color: white !important; }
+    .vpill:hover:not(.vpill-active) { border-color: #4a7c59; color: #1e3a2f; background: #f2f7f4; }
+    .vpill-active { background: #1e3a2f !important; border-color: #1e3a2f !important; color: white !important; box-shadow: 0 2px 8px rgba(30,58,47,0.22) !important; }
     .vpill-oos { opacity: 0.45; text-decoration: line-through; cursor: not-allowed; }
 
     /* Product Card Link Fix for Detail Page Related Products */
