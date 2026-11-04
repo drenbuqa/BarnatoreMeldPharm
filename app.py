@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 from flask import Flask, render_template, request, jsonify, session
 from flask_bcrypt import Bcrypt
 from flask_login import LoginManager, current_user
-from flask_wtf.csrf import CSRFProtect
+from flask_wtf.csrf import CSRFProtect, CSRFError
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from werkzeug.middleware.proxy_fix import ProxyFix
@@ -136,7 +136,7 @@ with app.app_context():
 bcrypt = Bcrypt(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'auth.login'
-login_manager.login_message_category = 'info'
+login_manager.login_message = None
 
 # Initialize OAuth once — must happen after app config is set
 oauth.init_app(app)
@@ -301,6 +301,12 @@ app.register_blueprint(cart_bp)
 app.register_blueprint(admin)
 app.register_blueprint(feed_bp)
 
+# Login/register don't need CSRF — exempting them prevents "Bad Request" when
+# navigating from external links (email, bookmarks) where the browser may not
+# carry a valid CSRF token from a previous GET.
+csrf.exempt(app.view_functions['auth.login'])
+csrf.exempt(app.view_functions['auth.register'])
+
 # Error Handlers
 @app.errorhandler(404)
 def page_not_found(e):
@@ -309,6 +315,11 @@ def page_not_found(e):
 @app.errorhandler(500)
 def internal_server_error(e):
     return render_template('errors/500.html'), 500
+
+@app.errorhandler(CSRFError)
+def handle_csrf_error(e):
+    flash('Sesioni skadoi. Ju lutemi provoni përsëri.', 'warning')
+    return redirect(url_for('auth.login'))
 
 if __name__ == '__main__':
     port = int(os.getenv('PORT', '5001'))
