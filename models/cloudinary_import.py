@@ -1,8 +1,8 @@
 """
 Secure image importer: downloads an external image URL, converts it to a
-1000×1000 JPG with white background, and uploads it to Cloudinary.
+1000×1000 JPG with white background, and uploads it to Cloudflare R2.
 
-Returns (cloudinary_url, public_id) on success, raises ImportError on failure.
+Returns (r2_public_url, object_key) on success, raises ImportError on failure.
 """
 
 import io
@@ -19,14 +19,13 @@ log = logging.getLogger(__name__)
 
 # ── Constants ────────────────────────────────────────────────────────────────
 
-_CLOUDINARY_HOST = "res.cloudinary.com"
 _MAX_DOWNLOAD_BYTES = 20 * 1024 * 1024   # 20 MB
 _CONNECT_TIMEOUT = 10                     # seconds
 _READ_TIMEOUT = 20                        # seconds
 _MIN_DIMENSION = 500                      # warn if either axis is below this
 _TARGET_SIZE = 1000
 _JPEG_QUALITY = 83
-_FOLDER = "meld-pharm/products"
+_FOLDER = "products"
 
 # Headers that mimic a real browser so fewer sites block the download
 _HEADERS = {
@@ -83,27 +82,18 @@ def _validate_url(url: str) -> str:
     if not host:
         raise ValueError("URL nuk ka host të vlefshëm.")
 
-    # Block bare numeric IP addresses immediately (no DNS lookup needed)
     try:
         ipaddress.ip_address(host)
-        # If we get here, host IS an IP literal
         if _is_private_ip(host):
             raise ValueError(f"URL me adresë IP private nuk lejohet: {host}")
     except ValueError as e:
         if "private" in str(e):
             raise
-        # host is a domain name — DNS validation happens in _resolve_and_check
 
     return url
 
 
 def _resolve_to_safe_ip(host: str) -> str:
-    """
-    DNS-resolve *host* and return one validated public IP string.
-    Raises ValueError if all resolved addresses are private/reserved.
-    This single resolved IP is used for the actual connection, eliminating
-    the DNS-rebinding race between check and connect.
-    """
     try:
         infos = socket.getaddrinfo(host, None, type=socket.SOCK_STREAM)
     except socket.gaierror as e:
@@ -115,9 +105,8 @@ def _resolve_to_safe_ip(host: str) -> str:
     for info in infos:
         ip = info[4][0]
         if not _is_private_ip(ip):
-            return ip   # first public IP wins
+            return ip
 
-    # Every resolved address was private
     private_ips = [info[4][0] for info in infos]
     raise ValueError(
         f"Hosti '{host}' zgjidhet vetëm në adresa private ({', '.join(private_ips)}). "
@@ -126,25 +115,16 @@ def _resolve_to_safe_ip(host: str) -> str:
 
 
 def _download_image(url: str) -> bytes:
-    """
-    Download bytes from a validated public HTTPS URL.
-
-    DNS rebinding protection: resolve hostname once, validate the IP, then
-    connect *directly* to that IP by overriding HTTPSConnection.connect().
-    No second DNS lookup is made by the underlying socket layer.
-    """
     import http.client as _http
 
     parsed = urllib.parse.urlparse(url)
     host = parsed.hostname
     port = parsed.port or 443
 
-    # Resolve once and validate — this IP is used for the actual connection
     safe_ip = _resolve_to_safe_ip(host)
 
     ssl_ctx = ssl.create_default_context(cafile=certifi.where())
 
-    # Subclass HTTPSConnection so connect() dials safe_ip instead of re-resolving host
     class _PinnedHTTPSConnection(_http.HTTPSConnection):
         def connect(self):
             raw = socket.create_connection(
@@ -157,7 +137,6 @@ def _download_image(url: str) -> bytes:
         def https_open(self, req):
             return self.do_open(_PinnedHTTPSConnection, req)
 
-    # Redirect handler: re-validate each hop before following
     class _SafeRedirectHandler(urllib.request.HTTPRedirectHandler):
         def redirect_request(self, req, fp, code, msg, headers, newurl):
             rp = urllib.parse.urlparse(newurl)
@@ -199,21 +178,17 @@ def _process_image(data: bytes) -> io.BytesIO:
 
     try:
         img = Image.open(io.BytesIO(data))
-        # Decompression bomb guard (Pillow raises DecompressionBombError by default at 178 MP)
-        img.verify()   # closes the file object
+        img.verify()
     except Exception as e:
         raise ValueError(f"Skedari nuk është imazh i vlefshëm: {e}")
 
-    # Re-open after verify() (it closes the stream)
     img = Image.open(io.BytesIO(data))
 
-    # Apply EXIF orientation
     try:
         img = ImageOps.exif_transpose(img)
     except Exception:
         pass
 
-    # Warn on tiny source images
     w, h = img.size
     if w < _MIN_DIMENSION or h < _MIN_DIMENSION:
         log.warning(
@@ -222,18 +197,15 @@ def _process_image(data: bytes) -> io.BytesIO:
             w, h, _MIN_DIMENSION, _MIN_DIMENSION,
         )
 
-    # Convert to RGBA so we can composite on a white background
     if img.mode in ("P", "LA"):
         img = img.convert("RGBA")
     elif img.mode != "RGBA":
         img = img.convert("RGBA")
 
-    # Fit inside 1000×1000, then paste on a white square
     img.thumbnail((_TARGET_SIZE, _TARGET_SIZE), Image.LANCZOS)
     canvas = Image.new("RGB", (_TARGET_SIZE, _TARGET_SIZE), (255, 255, 255))
     offset_x = (_TARGET_SIZE - img.width) // 2
     offset_y = (_TARGET_SIZE - img.height) // 2
-    # Use alpha channel as mask if present
     mask = img.split()[3] if img.mode == "RGBA" else None
     canvas.paste(img.convert("RGB"), (offset_x, offset_y), mask)
 
@@ -243,77 +215,81 @@ def _process_image(data: bytes) -> io.BytesIO:
     return buf
 
 
-def _upload_to_cloudinary(buf: io.BytesIO, public_id: str) -> tuple[str, str]:
-    """Upload a JPEG buffer to Cloudinary. Returns (secure_url, public_id)."""
+def _upload_to_r2(buf: io.BytesIO, object_key: str) -> str:
+    """Upload a JPEG buffer to Cloudflare R2. Returns the public URL."""
     try:
-        import cloudinary
-        import cloudinary.uploader
+        import boto3
+        from botocore.config import Config
     except ImportError:
-        raise RuntimeError("cloudinary nuk është instaluar. Shto 'cloudinary' te requirements.txt.")
+        raise RuntimeError("boto3 nuk është instaluar. Shto 'boto3' te requirements.txt.")
 
-    cloud_name = os.environ.get("CLOUDINARY_CLOUD_NAME", "")
-    api_key = os.environ.get("CLOUDINARY_API_KEY", "")
-    api_secret = os.environ.get("CLOUDINARY_API_SECRET", "")
+    access_key = os.environ.get("R2_ACCESS_KEY_ID", "")
+    secret_key = os.environ.get("R2_SECRET_ACCESS_KEY", "")
+    endpoint = os.environ.get("R2_ENDPOINT", "")
+    bucket = os.environ.get("R2_BUCKET", "meldpharm-images")
+    public_url_base = os.environ.get("R2_PUBLIC_URL", "").rstrip("/")
 
-    if not (cloud_name and api_key and api_secret):
+    if not (access_key and secret_key and endpoint):
         raise RuntimeError(
-            "CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY dhe CLOUDINARY_API_SECRET "
+            "R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY dhe R2_ENDPOINT "
             "duhet të konfigurohen te variablat e mjedisit."
         )
 
-    cloudinary.config(
-        cloud_name=cloud_name,
-        api_key=api_key,
-        api_secret=api_secret,
-        secure=True,
+    s3 = boto3.client(
+        "s3",
+        endpoint_url=endpoint,
+        aws_access_key_id=access_key,
+        aws_secret_access_key=secret_key,
+        config=Config(signature_version="s3v4"),
+        region_name="auto",
     )
 
-    result = cloudinary.uploader.upload(
+    buf.seek(0)
+    s3.upload_fileobj(
         buf,
-        public_id=public_id,
-        folder=_FOLDER,
-        resource_type="image",
-        format="jpg",
-        overwrite=False,          # never silently overwrite an existing asset
-        unique_filename=False,
-        use_filename=True,
+        bucket,
+        object_key,
+        ExtraArgs={"ContentType": "image/jpeg"},
     )
-    return result["secure_url"], result["public_id"]
+
+    return f"{public_url_base}/{object_key}"
 
 
 # ── Public API ────────────────────────────────────────────────────────────────
 
 def is_cloudinary_url(url: str) -> bool:
-    """Return True if the URL is already hosted on this Cloudinary account."""
+    """Return True if the URL is hosted on Cloudinary."""
     if not url:
         return False
-    cloud_name = os.environ.get("CLOUDINARY_CLOUD_NAME", "drljgepgy")
-    return (
-        _CLOUDINARY_HOST in url
-        and f"/{cloud_name}/" in url
-    )
+    return "res.cloudinary.com" in url
+
+
+def is_r2_url(url: str) -> bool:
+    """Return True if the URL is already hosted on our R2 bucket."""
+    if not url:
+        return False
+    public_url_base = os.environ.get("R2_PUBLIC_URL", "images.barnatoremeldpharm.com")
+    return public_url_base.replace("https://", "") in url
 
 
 def import_product_image(image_url: str, public_id_hint: str = "") -> tuple[str, str]:
     """
-    Download *image_url*, process it into a 1000×1000 JPG, upload to Cloudinary.
+    Download *image_url*, process it into a 1000×1000 JPG, upload to R2.
 
-    Returns (cloudinary_secure_url, cloudinary_public_id).
-    Raises ValueError for user-facing errors (bad URL, blocked host, invalid image, etc.)
+    Returns (public_url, object_key).
+    Raises ValueError for user-facing errors.
     Raises RuntimeError for configuration errors.
     """
-    if is_cloudinary_url(image_url):
-        # Already on our Cloudinary — extract existing public_id and return as-is
-        # (public_id is the path after /upload/vXXXX/ up to the extension)
-        import re
-        m = re.search(r"/upload/(?:v\d+/)?(.+?)(?:\.\w+)?$", image_url)
-        existing_pid = m.group(1) if m else ""
-        return image_url, existing_pid
+    if is_r2_url(image_url):
+        # Already on our R2 — extract key and return as-is
+        public_url_base = os.environ.get("R2_PUBLIC_URL", "").rstrip("/")
+        key = image_url.replace(public_url_base + "/", "")
+        return image_url, key
 
     # 1. Validate URL structure
     url = _validate_url(image_url)
 
-    # 2. Download (includes SSRF DNS check + redirect validation + size limit)
+    # 2. Download
     log.info("Shkarkimi i imazhit: %s", url)
     data = _download_image(url)
 
@@ -321,19 +297,20 @@ def import_product_image(image_url: str, public_id_hint: str = "") -> tuple[str,
     log.info("Përpunimi i imazhit (%d bytes)…", len(data))
     buf = _process_image(data)
 
-    # 4. Derive a stable public_id from the hint or from the URL path
+    # 4. Derive a stable object key
     if not public_id_hint:
         path = urllib.parse.urlparse(url).path
         basename = path.rstrip("/").rsplit("/", 1)[-1]
-        # strip extension and sanitise
         name = basename.rsplit(".", 1)[0] if "." in basename else basename
         import re
         name = re.sub(r"[^a-zA-Z0-9_-]", "_", name)[:60] or "product"
         import uuid
         public_id_hint = f"{name}_{uuid.uuid4().hex[:8]}"
 
+    object_key = f"{_FOLDER}/{public_id_hint}.jpg"
+
     # 5. Upload
-    log.info("Ngarkimi te Cloudinary: %s/%s", _FOLDER, public_id_hint)
-    cld_url, cld_pid = _upload_to_cloudinary(buf, public_id_hint)
-    log.info("Ngarkimi u krye: %s", cld_url)
-    return cld_url, cld_pid
+    log.info("Ngarkimi te R2: %s", object_key)
+    public_url = _upload_to_r2(buf, object_key)
+    log.info("Ngarkimi u krye: %s", public_url)
+    return public_url, object_key

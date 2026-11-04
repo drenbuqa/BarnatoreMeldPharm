@@ -1,15 +1,19 @@
 import re
+import os
 
 _CLOUDINARY_UPLOAD_RE = re.compile(r"(res\.cloudinary\.com/[^/]+/image/upload/)(?!.*\bf_auto\b)")
 
 
 def cld(url, width=None):
-    """Inject Cloudinary auto-format/auto-quality (and optional width) transforms
-    into a raw Cloudinary upload URL, so images are served resized/compressed
-    instead of at full original resolution. Non-Cloudinary URLs pass through untouched."""
-    if not url or "res.cloudinary.com" not in url:
+    """Pass R2 URLs through unchanged; inject Cloudinary transforms for legacy Cloudinary URLs."""
+    if not url:
         return url
 
+    # R2 / any non-Cloudinary URL — already a processed JPEG, serve as-is
+    if "res.cloudinary.com" not in url:
+        return url
+
+    # Legacy Cloudinary URL — inject auto-format/quality transforms
     transform = "f_auto,q_auto"
     if width:
         transform += f",w_{width}"

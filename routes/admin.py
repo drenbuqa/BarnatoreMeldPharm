@@ -5,7 +5,7 @@ from models.db import mongo
 from models.banner import Banner
 from models.order import Order
 from models.user import User
-from models.cloudinary_import import import_product_image, is_cloudinary_url
+from models.cloudinary_import import import_product_image, is_cloudinary_url, is_r2_url
 from models.email_utils import (
     send_order_confirmation_email,
     send_order_shipped_email,
@@ -718,7 +718,7 @@ def _try_import(url: str) -> tuple[str | None, str | None]:
     import logging as _log
     if not url:
         return url, None
-    if is_cloudinary_url(url):
+    if is_cloudinary_url(url) or is_r2_url(url):
         return url, None
     try:
         cld_url, _pid = import_product_image(url)
@@ -787,7 +787,7 @@ def edit_product(product_id):
         # ── Main image ───────────────────────────────────────────────────────
         # If the URL hasn't changed and it's already on Cloudinary: keep it.
         # If it's a new URL: import it; on failure fall back to the existing saved image.
-        if main_img_raw == saved_main and is_cloudinary_url(saved_main):
+        if main_img_raw == saved_main and (is_cloudinary_url(saved_main) or is_r2_url(saved_main)):
             main_img = saved_main
         else:
             main_img, main_err = _try_import(main_img_raw)
@@ -1683,7 +1683,7 @@ def _build_newsletter_html(template, headline, intro_text, products, base_url,
     header = f"""
     <div style="background:{accent_color};height:5px;"></div>
     <div style="background:#ffffff;padding:22px 40px;text-align:center;border-bottom:1px solid #eef0ed;">
-      <img src="https://res.cloudinary.com/drljgepgy/image/upload/v1788282469/ChatGPT_Image_Sep_1_2026_at_07_06_44_PM_kluztv.png"
+      <img src="https://images.barnatoremeldpharm.com/static/ChatGPT_Image_Sep_1_2026_at_07_06_44_PM_.jpg"
            alt="Barnatore Meld Pharm" width="310"
            style="display:inline-block;max-width:310px;height:auto;">
     </div>

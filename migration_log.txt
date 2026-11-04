@@ -1,0 +1,2596 @@
+13:33:56  INFO     ── Products: 880 to process ──
+13:33:56  INFO     [1/880] Papuqe Ortopedike DrLuigi Ngjyrë e Gjelbër
+13:33:56  INFO       main already OK
+13:33:57  INFO     [2/880] Papuqe Verore Nallan të Zeza
+13:33:57  INFO       main already OK
+13:33:57  INFO     [3/880] La Roche-Posay Mela B3 Eyes Cream 
+13:33:57  INFO       main already OK
+13:33:57  INFO     [4/880] La Roche-Posay Mela B3 Double Dose L.4618
+13:33:58  INFO       main ✓
+13:33:58  INFO       image[0] ✓
+13:33:59  INFO       image[1] ✓
+13:33:59  INFO       → saved
+13:33:59  INFO     [5/880] La Roche-Posay Hyalu B5 Suractivated Serum L.0582
+13:34:01  INFO       main ✓
+13:34:02  INFO       image[0] ✓
+13:34:03  INFO       image[1] ✓
+13:34:03  INFO       image[2] ✓
+13:34:04  INFO       image[3] ✓
+13:34:04  INFO       image[4] ✓
+13:34:05  INFO       image[5] ✓
+13:34:05  INFO       → saved
+13:34:05  INFO     [6/880] La Roche-Posay Hyalu B5 Suractivated Cream SPF30 L
+13:34:07  INFO       main ✓
+13:34:08  INFO       image[0] ✓
+13:34:09  INFO       image[1] ✓
+13:34:10  INFO       image[2] ✓
+13:34:10  INFO       image[3] ✓
+13:34:10  INFO       → saved
+13:34:11  INFO     [7/880] La Roche-Posay Hyalu B5 Suractivated Cream L.0698
+13:34:11  INFO       main ✓
+13:34:11  INFO       image[0] ✓
+13:34:12  INFO       image[1] ✓
+13:34:13  INFO       image[2] ✓
+13:34:13  INFO       image[3] ✓
+13:34:14  INFO       image[4] ✓
+13:34:15  INFO       image[5] ✓
+13:34:15  INFO       → saved
+13:34:15  INFO     [8/880] Vichy Dercos Collagen Filler 17 Ultra-Repairing Pr
+13:34:16  INFO       main ✓
+13:34:17  INFO       image[0] ✓
+13:34:18  INFO       image[1] ✓
+13:34:19  INFO       image[2] ✓
+13:34:19  INFO       image[3] ✓
+13:34:19  INFO       → saved
+13:34:20  INFO     [9/880] Vichy Dercos Collagen Filler 17 Ultra-Repairing Co
+13:34:20  INFO       main ✓
+13:34:20  INFO       image[0] ✓
+13:34:21  INFO       image[1] ✓
+13:34:21  INFO       image[2] ✓
+13:34:21  INFO       image[3] ✓
+13:34:21  INFO       → saved
+13:34:22  INFO     [10/880] Vichy Dercos Collagen Filler 17 Ultra-Repairing Sh
+13:34:23  INFO       main ✓
+13:34:24  INFO       image[0] ✓
+13:34:25  INFO       image[1] ✓
+13:34:25  INFO       → saved
+13:34:25  INFO     [11/880] Vichy Dercos Energisant AMP Women A21 V.2786
+13:34:27  INFO       main ✓
+13:34:29  INFO       image[0] ✓
+13:34:31  INFO       image[1] ✓
+13:34:32  INFO       image[2] ✓
+13:34:33  INFO       image[3] ✓
+13:34:33  INFO       → saved
+13:34:34  INFO     [12/880] Vichy Dercos Energisant AMP Men A21 V.2748
+13:34:36  INFO       main ✓
+13:34:38  INFO       image[0] ✓
+13:34:38  INFO       → saved
+13:34:38  INFO     [13/880] Vichy Dercos Aminexil Hair Renewing Serum 1.5% V.2
+13:34:38  INFO       main ✓
+13:34:39  INFO       image[0] ✓
+13:34:39  INFO       image[1] ✓
+13:34:40  INFO       image[2] ✓
+13:34:40  INFO       image[3] ✓
+13:34:41  INFO       image[4] ✓
+13:34:41  INFO       → saved
+13:34:41  INFO     [14/880] Vichy Dercos Energy+ Shampo Refill V.2823
+13:34:42  INFO       main ✓
+13:34:42  INFO       image[0] ✓
+13:34:43  INFO       image[1] ✓
+13:34:43  INFO       image[2] ✓
+13:34:43  INFO       → saved
+13:34:44  INFO     [15/880] Vichy Dercos Energy+ Shampo kundër rënies së flokë
+13:34:45  INFO       main ✓
+13:34:46  INFO       image[0] ✓
+13:34:47  INFO       image[1] ✓
+13:34:48  INFO       image[2] ✓
+13:34:48  INFO       → saved
+13:34:48  INFO     [16/880] Imuno Forte EFF
+13:34:49  INFO       main ✓
+13:34:51  INFO       image[0] ✓
+13:34:51  INFO       image[1] ✓
+13:34:51  INFO       → saved
+13:34:52  INFO     [17/880] Eucerin Pigment Control SPF 50+ Sun Fluid 87997
+13:34:53  INFO       main ✓
+13:34:54  INFO       image[0] ✓
+13:34:54  INFO       → saved
+13:34:55  INFO     [18/880] Set Hyaluron-Filler 3x Effect – Krem Dite SPF 30 +
+13:34:56  INFO       main ✓
+13:34:58  INFO       image[0] ✓
+13:34:58  INFO       image[1] ✓
+13:35:00  INFO       image[2] ✓
+13:35:00  INFO       → saved
+13:35:00  INFO     [19/880] Set Hyaluron-Filler Elasticity – Krem Dite Rosé SP
+13:35:02  INFO       main ✓
+13:35:04  INFO       image[0] ✓
+13:35:06  INFO       image[1] ✓
+13:35:08  INFO       image[2] ✓
+13:35:08  INFO       → saved
+13:35:08  INFO     [20/880] Set Hyaluron-Filler Elasticity – Krem Dite SPF 30 
+13:35:10  INFO       main ✓
+13:35:11  INFO       image[0] ✓
+13:35:12  INFO       image[1] ✓
+13:35:14  INFO       image[2] ✓
+13:35:14  INFO       → saved
+13:35:14  INFO     [21/880] Cerave SA Smoothing Cleanser 236ml
+13:35:15  INFO       main ✓
+13:35:15  INFO       image[0] ✓
+13:35:15  INFO       → saved
+13:35:15  INFO     [22/880] Amalfi Dental Care Menta Mint
+13:35:17  INFO       main ✓
+13:35:18  INFO       image[0] ✓
+13:35:18  INFO       → saved
+13:35:18  INFO     [23/880] Kllompe ortopedike LEON V260
+13:35:19  INFO       main ✓
+13:35:19  INFO       image[0] ✓
+13:35:20  INFO       image[1] ✓
+13:35:20  INFO       image[2] ✓
+13:35:21  INFO       image[3] ✓
+13:35:21  INFO       → saved
+13:35:21  INFO     [24/880]  Kllompe Ortopedike LEON 2022
+13:35:22  INFO       main ✓
+13:35:22  INFO       image[0] ✓
+13:35:23  INFO       image[1] ✓
+13:35:24  INFO       image[2] ✓
+13:35:24  INFO       image[3] ✓
+13:35:24  INFO       → saved
+13:35:25  INFO     [25/880] Vitamins D3 & K2 SWANSON 
+13:35:26  INFO       main ✓
+13:35:27  INFO       image[0] ✓
+13:35:27  INFO       → saved
+13:35:28  INFO     [26/880] ROYAL SUPERIOR Jelly 10x10ml
+13:35:28  INFO       main already OK
+13:35:28  INFO     [27/880] ROYAL ReVITA Jelly 10x10ml
+13:35:30  INFO       main ✓
+13:35:32  INFO       image[0] ✓
+13:35:32  INFO       → saved
+13:35:32  INFO     [28/880] ROYAL KINDER Jelly 10x10ml
+13:35:32  INFO       main already OK
+13:35:32  INFO     [29/880] Immunity Vitamin Shots Triggy
+13:35:34  INFO       main ✓
+13:35:35  INFO       image[0] ✓
+13:35:35  INFO       → saved
+13:35:35  INFO     [30/880] CeraVe Hydrating Cleanser Refill C.5602
+13:35:35  INFO       main already OK
+13:35:36  INFO     [31/880] CeraVe Hydrating Cleanser + Refill C.1572
+13:35:37  INFO       main ✓
+13:35:39  INFO       image[0] ✓
+13:35:39  INFO       image[1] ✓
+13:35:40  INFO       image[2] ✓
+13:35:41  INFO       image[3] ✓
+13:35:41  INFO       image[4] ✓
+13:35:42  INFO       image[5] ✓
+13:35:42  INFO       image[6] ✓
+13:35:42  INFO       → saved
+13:35:43  INFO     [32/880] CeraVe Foaming Cleanser Refill C.5596
+13:35:43  INFO       main already OK
+13:35:43  INFO     [33/880] CeraVe Foaming Cleanser + Refill C.1619
+13:35:45  INFO       main ✓
+13:35:46  INFO       image[0] ✓
+13:35:47  INFO       image[1] ✓
+13:35:47  INFO       image[2] ✓
+13:35:48  INFO       image[3] ✓
+13:35:48  INFO       → saved
+13:35:48  INFO     [34/880] EUCERIN DERMOPURE HYDRA REPAIR SOOTHING CREAM 9930
+13:35:48  INFO       main already OK
+13:35:49  INFO     [35/880] EUCERIN OIL CONTROL SPF 50 69767
+13:35:49  INFO       main already OK
+13:35:49  INFO     [36/880] EUCERIN Hyaluron-Filler +3X EFFECT Eye Contour SPF
+13:35:49  INFO       main already OK
+13:35:49  INFO     [37/880] MJALTE ACACIA 
+13:35:49  INFO       main already OK
+13:35:50  INFO     [38/880] Mjaltë me Chestnut 
+13:35:51  INFO       main ✓
+13:35:53  INFO       image[0] ✓
+13:35:53  INFO       → saved
+13:35:53  INFO     [39/880] Mjaltë Mountain
+13:35:55  INFO       main ✓
+13:35:56  INFO       image[0] ✓
+13:35:56  INFO       → saved
+13:35:57  INFO     [40/880] Mjaltë Wild 
+13:35:59  INFO       main ✓
+13:36:00  INFO       image[0] ✓
+13:36:00  INFO       → saved
+13:36:01  INFO     [41/880] MJALTE ALMOND BLOSSOM
+13:36:01  INFO       main already OK
+13:36:01  INFO     [42/880] Mjaltë me Eucalyptus Alemany
+13:36:03  INFO       main ✓
+13:36:04  INFO       image[0] ✓
+13:36:04  INFO       → saved
+13:36:05  INFO     [43/880] Mjaltë, Pollen, Royal Jelly dhe Propolis 
+13:36:05  INFO       main ✓
+13:36:05  INFO       image[0] ✓
+13:36:06  INFO       → saved
+13:36:06  INFO     [44/880] Mjaltë dhe Hazelnuts 
+13:36:06  INFO       main ✓
+13:36:07  INFO       image[0] ✓
+13:36:07  INFO       → saved
+13:36:07  INFO     [45/880] Mjaltë dhe Ginger 
+13:36:09  INFO       main ✓
+13:36:11  INFO       image[0] ✓
+13:36:11  INFO       → saved
+13:36:11  INFO     [46/880] PH5 Cream Dry Sensitive Skin 63022
+13:36:12  INFO       main ✓
+13:36:12  INFO       image[0] ✓
+13:36:12  INFO       → saved
+13:36:12  INFO     [47/880] HYALURON-FILLER 3X EFFECT FIRMING SERUM 99125
+13:36:12  INFO       main already OK
+13:36:12  INFO     [48/880] Lipikar AP+M Creme Light L0338
+13:36:14  INFO       main ✓
+13:36:15  INFO       image[0] ✓
+13:36:16  INFO       image[1] ✓
+13:36:16  INFO       → saved
+13:36:16  INFO     [49/880] Lipikar Syndet AP+ L7315
+13:36:16  INFO       main ✓
+13:36:17  INFO       image[0] ✓
+13:36:17  INFO       → saved
+13:36:17  INFO     [50/880] Berberine Glucose Support NOW
+13:36:17  INFO       main already OK
+13:36:17  INFO     [51/880] Effaclar Gel Moussant Purifiant Refill 3963
+13:36:18  INFO       main ✓
+13:36:18  INFO       image[0] ✓
+13:36:19  INFO       image[1] ✓
+13:36:19  INFO       → saved
+13:36:20  INFO     [52/880] EUCERIN Hyaluron-Filler+ Elasticity Ultra-light Da
+13:36:20  INFO       main already OK
+13:36:20  INFO     [53/880] EUCERIN Hyaluron-Filler+ Elasticity Ultra-light Da
+13:36:20  INFO       main already OK
+13:36:20  INFO     [54/880] Swanson Berberine Complex
+13:36:20  INFO       main ✓
+13:36:21  INFO       image[0] ✓
+13:36:21  INFO       → saved
+13:36:21  INFO     [55/880] Nature’s Truth Berberine Advanced HCI 
+13:36:21  INFO       main already OK
+13:36:21  INFO     [56/880] Liftactiv NUIT 50ML V.2502
+13:36:21  INFO       main already OK
+13:36:22  INFO     [57/880] Liftactiv Hyaluronic Specialist H.A Dry Skin V.880
+13:36:23  INFO       main ✓
+13:36:25  INFO       image[0] ✓
+13:36:25  INFO       → saved
+13:36:25  INFO     [58/880] Liftactiv Hyaluronic Specialist H.A DAY V.8795
+13:36:25  INFO       main already OK
+13:36:25  INFO     [59/880] Liftactiv SUPREME 16% VITAMIN C SERUM 20ML V.6583
+13:36:25  INFO       main already OK
+13:36:26  INFO     [60/880] Liftactiv Specialist B3 Serum V.4905
+13:36:27  INFO       main ✓
+13:36:28  INFO       image[0] ✓
+13:36:29  INFO       image[1] ✓
+13:36:29  INFO       → saved
+13:36:29  INFO     [61/880] Liftactiv SUPREME SPF 30 50ML V.9124
+13:36:29  INFO       main already OK
+13:36:29  INFO     [62/880] Liftactiv Supreme 1,5% Acid Hyaluronic V.9209
+13:36:31  INFO       main ✓
+13:36:32  INFO       image[0] ✓
+13:36:32  INFO       → saved
+13:36:32  INFO     [63/880] Liftactiv Rreth syve 15ML V.3332
+13:36:32  INFO       main already OK
+13:36:33  INFO     [64/880] Liftactiv B3 ANTI-DARK SPOTS PEELING WASH 125ML V.
+13:36:33  INFO       main already OK
+13:36:33  INFO     [65/880] Liftactiv B3 PIGMENT SPECIALIST EYE SPF50+ 15ML V.
+13:36:33  INFO       main already OK
+13:36:33  INFO     [66/880] Liftactiv B3 + RETINOL ANTI-DARK SPOTS NIGHT V.308
+13:36:33  INFO       main already OK
+13:36:34  INFO     [67/880] Liftactiv Retinol Specialist Serum V.1636
+13:36:35  INFO       main ✓
+13:36:36  INFO       image[0] ✓
+13:36:37  INFO       image[1] ✓
+13:36:37  INFO       → saved
+13:36:37  INFO     [68/880] Liftactiv B3 Anti-Dark Spots SPF 50 V.2724
+13:36:39  INFO       main ✓
+13:36:40  INFO       image[0] ✓
+13:36:41  INFO       image[1] ✓
+13:36:41  INFO       → saved
+13:36:41  INFO     [69/880] Liftactiv Collagen Specialist 16 Eye Serum 15ML V.
+13:36:41  INFO       main already OK
+13:36:41  INFO     [70/880] Liftactiv Collagen Specialist Glow Gel V.5851
+13:36:43  INFO       main ✓
+13:36:44  INFO       image[0] ✓
+13:36:46  INFO       image[1] ✓
+13:36:46  INFO       → saved
+13:36:46  INFO     [71/880] Liftactiv Collagen Specialist 16 Eye 15ML V.3048
+13:36:48  INFO       main ✓
+13:36:49  INFO       image[0] ✓
+13:36:49  INFO       image[1] ✓
+13:36:49  INFO       → saved
+13:36:50  INFO     [72/880] Liftactiv Collagen Specialist 16  SPF50 CREAM 50ML
+13:36:50  INFO       main already OK
+13:36:50  INFO     [73/880] Liftactiv Collagen Specialist 16 Serum V.2600
+13:36:52  INFO       main ✓
+13:36:53  INFO       image[0] ✓
+13:36:53  INFO       image[1] ✓
+13:36:53  INFO       → saved
+13:36:54  INFO     [74/880] Liftactiv Collagen Specialist 16 CREAM 50ml V.7254
+13:36:54  INFO       main already OK
+13:36:54  INFO     [75/880] CeraVe Resurfacing Retinol Serum
+13:36:54  INFO       main already OK
+13:36:54  INFO     [76/880] CeraVe Blemish Control Cleanser C4054
+13:36:56  INFO       main ✓
+13:36:57  INFO       image[0] ✓
+13:36:57  INFO       → saved
+13:36:57  INFO     [77/880] SETI - Eucerin Spray Kids spf 50 + Eucerin ph5 Vaj
+13:36:59  INFO       main ✓
+13:37:01  INFO       image[0] ✓
+13:37:01  INFO       → saved
+13:37:01  INFO     [78/880] SETI -Eucerin Sun Allergy + Eucerin After Sun
+13:37:03  INFO       main ✓
+13:37:05  INFO       image[0] ✓
+13:37:05  INFO       → saved
+13:37:05  INFO     [79/880] SETI- Eucerin Sun allergy + Eucerin After Sun 
+13:37:07  INFO       main ✓
+13:37:09  INFO       image[0] ✓
+13:37:09  INFO       → saved
+13:37:09  INFO     [80/880] SETI - Eucerin Oil Control spf 50 + Eucerin Sun Sp
+13:37:11  INFO       main ✓
+13:37:13  INFO       image[0] ✓
+13:37:13  INFO       → saved
+13:37:13  INFO     [81/880] SETI - Eucerin Hydroprotect spf50 + Eucerin Spray 
+13:37:15  INFO       main ✓
+13:37:17  INFO       image[0] ✓
+13:37:17  INFO       → saved
+13:37:17  INFO     [82/880] SETI - Eucerin Pigment Control spf50 + Dry touch O
+13:37:19  INFO       main ✓
+13:37:21  INFO       image[0] ✓
+13:37:21  INFO       → saved
+13:37:21  INFO     [83/880] Papuqe verore Nallan
+13:37:21  INFO       main already OK
+13:37:21  INFO     [84/880] Papuqe verore Nallan
+13:37:21  INFO       main already OK
+13:37:22  INFO     [85/880] Papuqe verore Nallan
+13:37:22  INFO       main already OK
+13:37:22  INFO     [86/880] Benzolait AB 5 Emulgel
+13:37:23  INFO       main ✓
+13:37:25  INFO       image[0] ✓
+13:37:25  INFO       → saved
+13:37:25  INFO     [87/880] Benzolait AZ 10 Emulgel
+13:37:25  INFO       main already OK
+13:37:25  INFO     [88/880] Pangel 5% Gel 30g
+13:37:25  INFO       main already OK
+13:37:25  INFO     [89/880] Papuqe verore Nallan Ngjyre e Kafte
+13:37:25  INFO       main already OK
+13:37:26  INFO     [90/880] Papuqe Ortopedike Nallan Ngjyrë e Bardhë
+13:37:26  INFO       main ✓
+13:37:27  INFO       image[0] ✓
+13:37:27  INFO       image[1] ✓
+13:37:27  INFO       image[2] ✓
+13:37:28  INFO       image[3] ✓
+13:37:28  INFO       → saved
+13:37:28  INFO     [91/880] Papuqe Ortopedike Nallan Ngjyrë Krem me Rryp
+13:37:29  INFO       main ✓
+13:37:29  INFO       image[0] ✓
+13:37:30  INFO       image[1] ✓
+13:37:30  INFO       image[2] ✓
+13:37:31  INFO       image[3] ✓
+13:37:31  INFO       → saved
+13:37:31  INFO     [92/880] Papuqe Ortopedike Nallan Ngjyrë Teget
+13:37:32  INFO       main ✓
+13:37:32  INFO       image[0] ✓
+13:37:33  INFO       image[1] ✓
+13:37:34  INFO       image[2] ✓
+13:37:34  INFO       → saved
+13:37:34  INFO     [93/880] Papuqe Ortopedike Nallan Ngjyrë e Zezë
+13:37:34  INFO       main ✓
+13:37:35  INFO       image[0] ✓
+13:37:35  INFO       image[1] ✓
+13:37:36  INFO       image[2] ✓
+13:37:36  INFO       → saved
+13:37:36  INFO     [94/880] Papuqe Ortopedike Nallan Ngjyrë e Kaftë
+13:37:37  INFO       main ✓
+13:37:37  INFO       image[0] ✓
+13:37:38  INFO       image[1] ✓
+13:38:33  INFO       image[2] ✓
+13:38:33  INFO       → saved
+13:38:34  INFO     [95/880] Papuqe Ortopedike Nallan Ngjyrë Vjollce
+13:38:34  INFO       main ✓
+13:38:35  INFO       image[0] ✓
+13:38:36  INFO       image[1] ✓
+13:38:36  INFO       image[2] ✓
+13:38:36  INFO       → saved
+13:38:37  INFO     [96/880] Kllompe ortopedike LEON
+13:38:37  INFO       main already OK
+13:38:37  INFO     [97/880] Papuqe Ortopedike DrLuigi Ngjyrë e Kaftë
+13:38:37  INFO       main ✓
+13:38:38  INFO       image[0] ✓
+13:38:38  INFO       image[1] ✓
+13:38:39  INFO       image[2] ✓
+13:38:40  INFO       image[3] ✓
+13:38:40  INFO       → saved
+13:38:41  INFO     [98/880] Papuqe Ortopedike DrLuigi Ngjyrë e Zezë
+13:38:41  INFO       main ✓
+13:38:42  INFO       image[0] ✓
+13:38:42  INFO       image[1] ✓
+13:38:43  INFO       image[2] ✓
+13:38:44  INFO       image[3] ✓
+13:38:44  INFO       → saved
+13:38:44  INFO     [99/880] Papuqe Ortopedike DrLuigi Ngjyrë Teget
+13:38:44  INFO       main ✓
+13:38:44  INFO       image[0] ✓
+13:38:45  INFO       image[1] ✓
+13:38:46  INFO       image[2] ✓
+13:38:46  INFO       → saved
+13:38:46  INFO     [100/880] Papuqe Ortopedike DrLuigi Ngjyrë e Kuqe
+13:38:47  INFO       main ✓
+13:38:48  INFO       image[0] ✓
+13:38:49  INFO       image[1] ✓
+13:38:50  INFO       image[2] ✓
+13:38:51  INFO       image[3] ✓
+13:38:51  INFO       → saved
+13:38:51  INFO     [101/880] Papuqe Ortopedike DrLuigi Ngjyrë e Pembe
+13:38:52  INFO       main ✓
+13:38:52  INFO       image[0] ✓
+13:38:53  INFO       image[1] ✓
+13:38:53  INFO       image[2] ✓
+13:38:53  INFO       → saved
+13:38:54  INFO     [102/880] Papuqe Ortopedike DrLuigi Ngjyrë Hiri
+13:38:54  INFO       main ✓
+13:38:55  INFO       image[0] ✓
+13:38:55  INFO       image[1] ✓
+13:38:56  INFO       image[2] ✓
+13:38:56  INFO       → saved
+13:38:56  INFO     [103/880] La Roche-Posay Effaclar Serum L.2827
+13:38:57  INFO       main ✓
+13:38:57  INFO       image[0] ✓
+13:38:57  INFO       → saved
+13:38:57  INFO     [104/880] Kllompe Ortopedike LEON
+13:38:59  INFO       main ✓
+13:39:03  INFO       image[0] ✓
+13:39:03  INFO       → saved
+13:39:03  INFO     [105/880] Penje dental per dhembe LACALUT
+13:39:03  INFO       main already OK
+13:39:04  INFO     [106/880] King's Honey Kraljevski med
+13:39:04  INFO       main ✓
+13:39:04  INFO       image[0] ✓
+13:39:04  INFO       → saved
+13:39:05  INFO     [107/880] C-Vitamin+D3+Zinc
+13:39:06  INFO       main ✓
+13:39:08  INFO       image[0] ✓
+13:39:08  INFO       → saved
+13:39:08  INFO     [108/880] Collagen Peptides Adastra
+13:39:10  INFO       main ✓
+13:39:11  INFO       image[0] ✓
+13:39:11  INFO       → saved
+13:39:12  INFO     [109/880] Amalfi Dental Care Total White
+13:39:12  INFO       main ✓
+13:39:12  INFO       image[0] ✓
+13:39:12  INFO       → saved
+13:39:13  INFO     [110/880] Golden Vita D3+K2 2000 IU
+13:39:14  INFO       main ✓
+13:39:16  INFO       image[0] ✓
+13:39:16  INFO       → saved
+13:39:16  INFO     [111/880] Omega 3-6-9 SYNERGY
+13:39:18  INFO       main ✓
+13:39:20  INFO       image[0] ✓
+13:39:20  INFO       → saved
+13:39:21  INFO     [112/880] Lëng Organik me Shegë Aronia Bio
+13:39:22  INFO       main ✓
+13:39:24  INFO       image[0] ✓
+13:39:24  INFO       → saved
+13:39:24  INFO     [113/880] Lëng Organik Aronia Bio
+13:39:25  INFO       main ✓
+13:39:27  INFO       image[0] ✓
+13:39:27  INFO       → saved
+13:39:27  INFO     [114/880] Bioblas Liquid Conditioner Argan 
+13:39:27  INFO       main already OK
+13:39:27  INFO     [115/880] Bioblas Liquid Conditioner Collagen & Keratin 
+13:39:27  INFO       main already OK
+13:39:28  INFO     [116/880] Bioblas Conditioner Argan 
+13:39:28  INFO       main already OK
+13:39:28  INFO     [117/880] Bioblas Conditioner Collagen & Keratin 
+13:39:29  INFO       main ✓
+13:39:29  INFO       image[0] ✓
+13:39:29  INFO       image[1] ✓
+13:39:29  INFO       → saved
+13:39:30  INFO     [118/880] Bioblas Shampoo Collagen + Keratin 
+13:39:30  INFO       main ✓
+13:39:31  INFO       image[0] ✓
+13:39:31  INFO       image[1] ✓
+13:39:31  INFO       → saved
+13:39:32  INFO     [119/880] Bioblas Shampoo Forte Complex B19
+13:39:32  INFO       main ✓
+13:39:32  INFO       image[0] ✓
+13:39:32  INFO       → saved
+13:39:33  INFO     [120/880] Bioblas Shampoo Zinc + Menthol 
+13:39:33  INFO       main ✓
+13:39:33  INFO       image[0] ✓
+13:39:34  INFO       → saved
+13:39:34  INFO     [121/880] Bioblas Shampoo Ivy Plant Extract 
+13:39:34  INFO       main already OK
+13:39:34  INFO     [122/880] Bioblas Shampoo Argan Oil 
+13:39:35  INFO       main ✓
+13:39:35  INFO       image[0] ✓
+13:39:35  INFO       → saved
+13:39:35  INFO     [123/880] Bioblas Shampoo Complex B19 Procyanidin + Biotin 
+13:39:37  INFO       main ✓
+13:39:39  INFO       image[0] ✓
+13:39:40  INFO       image[1] ✓
+13:39:40  INFO       image[2] ✓
+13:39:40  INFO       → saved
+13:39:40  INFO     [124/880] Bioblas Shampoo Complex B19 Procyanidin 
+13:39:42  INFO       main ✓
+13:39:44  INFO       image[0] ✓
+13:39:44  INFO       → saved
+13:39:44  INFO     [125/880] Bioblas Shampoo Probiotic + Panthenol
+13:39:46  INFO       main ✓
+13:39:48  INFO       image[0] ✓
+13:39:48  INFO       → saved
+13:39:48  INFO     [126/880] Bioblas Shampoo Garlic
+13:39:48  INFO       main already OK
+13:39:48  INFO     [127/880] Restorex Hair Mask Keratin & Argan 
+13:39:49  INFO       main ✓
+13:39:49  INFO       image[0] ✓
+13:39:49  INFO       → saved
+13:39:49  INFO     [128/880] Restorex Hair Care Oil 7 Besleyici Yag
+13:39:51  INFO       main ✓
+13:39:53  INFO       image[0] ✓
+13:39:53  INFO       → saved
+13:39:53  INFO     [129/880] Restorex Liquid Conditioner Hyaluronic & Glycolic 
+13:39:54  INFO       main ✓
+13:39:56  INFO       image[0] ✓
+13:39:56  INFO       → saved
+13:39:56  INFO     [130/880] Restorex Liquid Conditioner 7 Besleyici Yag 
+13:39:58  INFO       main ✓
+13:39:59  INFO       image[0] ✓
+13:39:59  INFO       → saved
+13:39:59  INFO     [131/880] Restorex Liquid Conditioner Speed & Strong 
+13:40:01  INFO       main ✓
+13:40:02  INFO       image[0] ✓
+13:40:02  INFO       → saved
+13:40:02  INFO     [132/880] Restorex Conditioner Collagen & Biotin 
+13:40:04  INFO       main ✓
+13:40:06  INFO       image[0] ✓
+13:40:06  INFO       → saved
+13:40:06  INFO     [133/880] Restorex Conditioner 7 Besleyici Yag 
+13:40:07  INFO       main ✓
+13:40:07  INFO       image[0] ✓
+13:40:07  INFO       → saved
+13:40:07  INFO     [134/880] Restorex Conditioner Speed & Strong 
+13:40:09  INFO       main ✓
+13:40:10  INFO       image[0] ✓
+13:40:10  INFO       → saved
+13:40:10  INFO     [135/880] Restorex Shampoo Speed&Strong All Hair Types
+13:40:10  INFO       main already OK
+13:40:11  INFO     [136/880] Restorex Shampoo Speed&Strong Oily Hair
+13:40:11  INFO       main ✓
+13:40:12  INFO       image[0] ✓
+13:40:12  INFO       → saved
+13:40:12  INFO     [137/880] Restorex Shampoo Speed&Strong Dry & Damaged Hair
+13:40:14  INFO       main ✓
+13:40:15  INFO       image[0] ✓
+13:40:15  INFO       → saved
+13:40:15  INFO     [138/880] Restorex Shampoo Speed & Strong Anti-Dandruff
+13:40:17  INFO       main ✓
+13:40:18  INFO       image[0] ✓
+13:40:18  INFO       → saved
+13:40:19  INFO     [139/880] Restorex Shampoo Speed & Strong Normal Hair 
+13:40:20  INFO       main ✓
+13:40:22  INFO       image[0] ✓
+13:40:22  INFO       → saved
+13:40:22  INFO     [140/880] Restorex Shampoo Keratin & Argan
+13:40:23  INFO       main ✓
+13:40:23  INFO       image[0] ✓
+13:40:23  INFO       → saved
+13:40:23  INFO     [141/880] Restorex Shampoo Hyaluronic&Glycolic Acid
+13:40:23  INFO       main already OK
+13:40:24  INFO     [142/880] Bioblas Shampoo Phytokeratin
+13:40:24  INFO       main already OK
+13:40:24  INFO     [143/880] Bioblas Shampoo Black Garlic Extract
+13:40:24  INFO       main already OK
+13:40:24  INFO     [144/880] Pro Restoraderm Skin Restoring Body Moisturizer L0
+13:40:24  INFO       main already OK
+13:40:25  INFO     [145/880] Moisturizing Lotion L3384
+13:40:25  INFO       main already OK
+13:40:25  INFO     [146/880]  Zinc Picolinate 22 mg 
+13:40:25  INFO       main already OK
+13:40:25  INFO     [147/880] Zinc Citrate 50 mg
+13:40:25  INFO       main already OK
+13:40:26  INFO     [148/880] Zinc Citrate 30 mg
+13:40:26  INFO       main already OK
+13:40:26  INFO     [149/880] Zinc Carnosine 
+13:40:26  INFO       main already OK
+13:40:26  INFO     [150/880] Triple Magnesium Complex Powder 400 mg
+13:40:26  INFO       main already OK
+13:40:27  INFO     [151/880] Triple Magnesium Complex 400 mg 
+13:40:27  INFO       main already OK
+13:40:27  INFO     [152/880] Scottish Kelp 750 mg
+13:40:27  INFO       main already OK
+13:40:27  INFO     [153/880] Mineral Citrate Complex
+13:40:27  INFO       main already OK
+13:40:27  INFO     [154/880] Magnesium Taurate 100 mg 
+13:40:27  INFO       main already OK
+13:40:28  INFO     [155/880] Magnesium Marin B6+
+13:40:30  INFO       main ✓
+13:40:31  INFO       image[0] ✓
+13:40:31  INFO       → saved
+13:40:31  INFO     [156/880] Magnesium Malate 1000 mg 
+13:40:31  INFO       main already OK
+13:40:32  INFO     [157/880] Magnesium L-Threonate
+13:40:32  INFO       main already OK
+13:40:32  INFO     [158/880] Magnesium Citrate
+13:40:32  INFO       main already OK
+13:40:32  INFO     [159/880] Kalcium, Magnezium, Zink, D3 Jutavit
+13:40:34  INFO       main ✓
+13:40:35  INFO       image[0] ✓
+13:40:35  INFO       → saved
+13:40:36  INFO     [160/880] Chromium Picolinate 200 mcg
+13:40:36  INFO       main already OK
+13:40:36  INFO     [161/880] Calcium Citrate 200 mg
+13:40:36  INFO       main already OK
+13:40:36  INFO     [162/880] Albion Zinc 30 mg
+13:40:36  INFO       main already OK
+13:40:37  INFO     [163/880] Albion Selenium 200 mcg
+13:40:37  INFO       main already OK
+13:40:37  INFO     [164/880] Albion Magnesium Glycinate with Activated B Vitami
+13:40:37  INFO       main already OK
+13:40:37  INFO     [165/880] Albion Magnesium Glycinate Powder
+13:40:39  INFO       main ✓
+13:40:41  INFO       image[0] ✓
+13:40:41  INFO       → saved
+13:40:41  INFO     [166/880] Albion Magnesium Glycinate 133 mg
+13:40:41  INFO       main already OK
+13:40:42  INFO     [167/880] Albion Calcium & Magnesium
+13:40:42  INFO       main already OK
+13:40:42  INFO     [168/880] Appetit Tonus
+13:40:43  INFO       main ✓
+13:40:43  INFO       image[0] ✓
+13:40:43  INFO       → saved
+13:40:43  INFO     [169/880] 5-HTP 50 mg 
+13:40:43  INFO       main already OK
+13:40:44  INFO     [170/880] Dercos Energisant Hair Loss L1292
+13:40:45  INFO       main ✓
+13:40:47  INFO       image[0] ✓
+13:40:47  INFO       → saved
+13:40:47  INFO     [171/880] Dercos Anti-Dandruff Promo Normal to Oil Hair L129
+13:40:48  INFO       main ✓
+13:40:50  INFO       image[0] ✓
+13:40:50  INFO       → saved
+13:40:50  INFO     [172/880] Capital Soleil Milk for Kids SPF 50+ L3639
+13:40:52  INFO       main ✓
+13:40:53  INFO       image[0] ✓
+13:40:54  INFO       image[1] ✓
+13:40:54  INFO       → saved
+13:40:54  INFO     [173/880] Capital Soleil Protective Milk spf 50 L2694
+13:40:54  INFO       main already OK
+13:40:54  INFO     [174/880] Capital Soleil Cell Protect Oil SPF 30 L5915
+13:40:56  INFO       main ✓
+13:40:57  INFO       image[0] ✓
+13:40:57  INFO       → saved
+13:40:57  INFO     [175/880] Capital Soleil UV-Age Daily 50 spf L2298
+13:40:57  INFO       main already OK
+13:40:57  INFO     [176/880] Capital Soleil UV-Clear 50 spf L7149
+13:40:57  INFO       main already OK
+13:40:58  INFO     [177/880] DermaBlend 3D Corretion no.45 Gold L2327
+13:40:58  INFO       main already OK
+13:40:58  INFO     [178/880] DermaBlend no.25 L6600
+13:40:58  INFO       main already OK
+13:40:58  INFO     [179/880] DermaBlend 3D Correction no.25 L2303
+13:40:58  INFO       main already OK
+13:40:59  INFO     [180/880] Mineral 89 L3248
+13:40:59  INFO       main already OK
+13:40:59  INFO     [181/880] Micellar Water Ultra Reactive Skin L8108
+13:41:00  INFO       main ✓
+13:41:00  INFO       image[0] ✓
+13:41:00  INFO       → saved
+13:41:00  INFO     [182/880] Eua Micellaire Ultra L1595
+13:41:00  INFO       main already OK
+13:41:01  INFO     [183/880] Redermic Retinol Eyes L4039
+13:41:01  INFO       main already OK
+13:41:01  INFO     [184/880] Redermic Retinol Concentre L0549
+13:41:01  INFO       main already OK
+13:41:01  INFO     [185/880] Thermale Spring Water L4403
+13:41:01  INFO       main already OK
+13:41:02  INFO     [186/880] Toleriane Rosaliac AR Concentrate L7043
+13:41:02  INFO       main already OK
+13:41:02  INFO     [187/880] Toleriane Sensitive Fluide L8676
+13:41:02  INFO       main already OK
+13:41:02  INFO     [188/880] Toleriane Caring Wash Innovation
+13:41:03  INFO       main ✓
+13:41:03  INFO       image[0] ✓
+13:41:03  INFO       → saved
+13:41:03  INFO     [189/880] Toleriane Rosaliac AR Spf 30 L6961
+13:41:03  INFO       main already OK
+13:41:04  INFO     [190/880] Toleriane Dermallergo Ultra Fluid L7669
+13:41:04  INFO       main already OK
+13:41:04  INFO     [191/880] Toleriane Dermallergo Cream L7614
+13:41:05  INFO       main ✓
+13:41:07  INFO       image[0] ✓
+13:41:07  INFO       → saved
+13:41:07  INFO     [192/880] Toleriane Dermallergo Eyes L7515
+13:41:07  INFO       main already OK
+13:41:07  INFO     [193/880] Hyalu B5 Water Gel L0728
+13:41:07  INFO       main already OK
+13:41:08  INFO     [194/880] Hyalu B5 Eye Serum L6923
+13:41:08  INFO       main already OK
+13:41:08  INFO     [195/880] Hyalu B5 Eye Cream L3668
+13:41:08  INFO       main already OK
+13:41:08  INFO     [196/880] Hyalu B5 Cream L3589
+13:41:08  INFO       main already OK
+13:41:09  INFO     [197/880] Lipikar Lait Urea 10% L2333
+13:41:09  INFO       main already OK
+13:41:09  INFO     [198/880] Lipikar Lait/Lotion L9615
+13:41:09  INFO       main already OK
+13:41:09  INFO     [199/880] Lipikar Syndet AP+ L7308
+13:41:09  INFO       main already OK
+13:41:09  INFO     [200/880] Effaclar Mat Cream L3025
+13:41:09  INFO       main already OK
+13:41:10  INFO     [201/880] Effaclar H ISO-Biome Krem Hidratues L7797
+13:41:12  INFO       main ✓
+13:41:13  INFO       image[0] ✓
+13:41:13  INFO       → saved
+13:41:13  INFO     [202/880] Effaclar H ISO-Biome krem pastrues L7759
+13:41:13  INFO       main already OK
+13:41:14  INFO     [203/880] Gel Purifiant  L8265
+13:41:14  INFO       main already OK
+13:41:14  INFO     [204/880] Vitamin C12 Serum L9235
+13:41:14  INFO       main already OK
+13:41:14  INFO     [205/880] Vitamin C Cleanser L3613
+13:41:16  INFO       main ✓
+13:41:17  INFO       image[0] ✓
+13:41:17  INFO       → saved
+13:41:17  INFO     [206/880] Pure Vitamin C YEUX/Eyes L3735
+13:41:17  INFO       main already OK
+13:41:17  INFO     [207/880] Pure vitamin C cream L.3704
+13:41:17  INFO       main already OK
+13:41:18  INFO     [208/880] EFFACLAR PURIFYING FOAMING GEL L1083
+13:41:18  INFO       main already OK
+13:41:18  INFO     [209/880] ANTHELIOS SPREJ FAMILJAR SPF 50 L9348
+13:41:18  INFO       main already OK
+13:41:18  INFO     [210/880] ANTHELIOS UVMUNE 400 PEDIATRIC LOTION L8851
+13:41:18  INFO       main already OK
+13:41:19  INFO     [211/880] ANTHELIOS UVMUNE 400 PEDIATRIC SPRAY L6055
+13:41:19  INFO       main already OK
+13:41:19  INFO     [212/880] ANTHELIOS PEDIATRIC LOTION WET SKIN SPF50 L5489
+13:41:19  INFO       main already OK
+13:41:19  INFO     [213/880] Anthelios UVmune 400 Pedriatic Fluid L6307
+13:41:21  INFO       main ✓
+13:41:22  INFO       image[0] ✓
+13:41:23  INFO       image[1] ✓
+13:41:23  INFO       image[2] ✓
+13:41:23  INFO       → saved
+13:41:23  INFO     [214/880] ANTHELIOS AGE CORRECT COLOR SPF50 L4353
+13:41:23  INFO       main already OK
+13:41:24  INFO     [215/880] ANTHELIOS AGE CORRECT SPF50 CREAM L1031
+13:41:24  INFO       main already OK
+13:41:24  INFO     [216/880] ANTHELIOS PIGMENT-CORRECT SPF50 LIGHT L7764
+13:41:24  INFO       main already OK
+13:41:24  INFO     [217/880] ANTHELIOS OIL CORRECT SPF 50+ L7467
+13:41:24  INFO       main already OK
+13:41:25  INFO     [218/880] Anthelios Anti-shine SPF 50 Spray L9530
+13:41:26  INFO       main ✓
+13:41:27  INFO       image[0] ✓
+13:41:27  INFO       → saved
+13:41:28  INFO     [219/880] ANTHELIOS UVMUNE 400 SPF50 FLUID L7597
+13:41:28  INFO       main already OK
+13:41:28  INFO     [220/880] ANTHELIOS UVMUNE 400 SPF50 TINTED FLUID L7641
+13:41:28  INFO       main already OK
+13:41:28  INFO     [221/880] ANTHELIOS UVMUNE 400 ANTIDARK-SPOTS FLUID SPF50 L7
+13:41:28  INFO       main already OK
+13:41:29  INFO     [222/880] ANTHELIOS OIL CONTROL SPF50 L7292
+13:41:29  INFO       main already OK
+13:41:29  INFO     [223/880] Anthelios Invisible Spray SPF 50 L6838
+13:41:31  INFO       main ✓
+13:41:32  INFO       image[0] ✓
+13:41:32  INFO       → saved
+13:41:32  INFO     [224/880] EUCERIN Anti-Pigment Cleansing Gel 99288
+13:41:34  INFO       main ✓
+13:41:35  INFO       image[0] ✓
+13:41:36  INFO       image[1] ✓
+13:41:36  INFO       image[2] ✓
+13:41:37  INFO       image[3] ✓
+13:41:37  INFO       image[4] ✓
+13:41:38  INFO       image[5] ✓
+13:41:38  INFO       → saved
+13:41:38  INFO     [225/880] Eucerin Hydro Protect Medium SPF50+ 99282
+13:41:40  INFO       main ✓
+13:41:41  INFO       image[0] ✓
+13:41:41  INFO       image[1] ✓
+13:41:42  INFO       image[2] ✓
+13:41:43  INFO       image[3] ✓
+13:41:43  INFO       → saved
+13:41:43  INFO     [226/880] EUCERIN Hyaluron-Filler Epigenetic Serum 99122
+13:41:43  INFO       main already OK
+13:41:43  INFO     [227/880] EUCERIN Krem i ditës Hyaluron filler spf30 89769
+13:41:43  INFO       main already OK
+13:41:43  INFO     [228/880] EUCERIN Krem për sipërfaqen rreth syve Hyaluron-Fi
+13:41:43  INFO       main already OK
+13:41:44  INFO     [229/880] EUCERIN Krem nate Hyaluron-Filler 89763
+13:41:44  INFO       main already OK
+13:41:44  INFO     [230/880] EUCERIN Krem për lëkurë normale në kombinim Hyalur
+13:41:44  INFO       main already OK
+13:41:44  INFO     [231/880] EUCERIN Krem për lekurë të thatë Hyaluron-Filler 8
+13:41:44  INFO       main already OK
+13:41:45  INFO     [232/880] EUCERIN Roll-on deodorant 48H 88786
+13:41:45  INFO       main already OK
+13:41:45  INFO     [233/880] Eucerin Losion Anti-Rrudhë Spf 50+ 87934
+13:41:46  INFO       main ✓
+13:41:48  INFO       image[0] ✓
+13:41:48  INFO       → saved
+13:41:48  INFO     [234/880] EUCERIN Losion Urea repair plus 83562
+13:41:48  INFO       main already OK
+13:41:48  INFO     [235/880] EUCERIN Xhel hidratues Hyaluron-Filler 83524
+13:41:48  INFO       main already OK
+13:41:49  INFO     [236/880] EUCERIN Krem riparuese Aquaphor 220ml 69787
+13:41:49  INFO       main already OK
+13:41:49  INFO     [237/880] EUCERIN Krem mbrojtës fytyre spf 50+ 69767
+13:41:49  INFO       main already OK
+13:41:49  INFO     [238/880] EUCERIN Krem kundër skuqjes 50ml, 69744
+13:41:49  INFO       main already OK
+13:41:50  INFO     [239/880] EUCERIN Kujdes ditor kundër skuqjes SPF 30 69743
+13:41:50  INFO       main already OK
+13:41:50  INFO     [240/880] Eucerin Hyaluron-Filler Elasticity Lift Krem e Nat
+13:41:51  INFO       main ✓
+13:41:53  INFO       image[0] ✓
+13:41:54  INFO       image[1] ✓
+13:41:54  INFO       → saved
+13:41:54  INFO     [241/880] EUCERIN Shampo kundër zbokthit të thatë DermoCapil
+13:41:54  INFO       main already OK
+13:41:54  INFO     [242/880] EUCERIN SHAMPO KUNDER ZBOKTHIT TE YNDYRSHEM 69654
+13:41:54  INFO       main already OK
+13:41:55  INFO     [243/880] EUCERIN Losion repair plus me 10% urea 69618
+13:41:55  INFO       main already OK
+13:41:55  INFO     [244/880] EUCERIN Sun pigment control spf50+ 66870 Medium
+13:41:55  INFO       main already OK
+13:41:55  INFO     [245/880] EUCERIN Aquaphor Krem rigjineruese 63976
+13:41:55  INFO       main already OK
+13:41:55  INFO     [246/880] Eucerin Sensitive Protect Cream SPF50+ 63842
+13:41:57  INFO       main ✓
+13:41:58  INFO       image[0] ✓
+13:41:59  INFO       image[1] ✓
+13:41:59  INFO       image[2] ✓
+13:42:00  INFO       image[3] ✓
+13:42:00  INFO       → saved
+13:42:01  INFO     [247/880] EUCERIN Balsam buzësh 63641
+13:42:01  INFO       main already OK
+13:42:01  INFO     [248/880] EUCERIN Krem për fytyrë Atopi Control 63614
+13:42:01  INFO       main already OK
+13:42:01  INFO     [249/880] EUCERIN Krem Hyaluron-Filler për lëkurë të thatë s
+13:42:01  INFO       main already OK
+13:42:02  INFO     [250/880] EUCERIN Vaj dushi pH5, 63121
+13:42:02  INFO       main already OK
+13:42:02  INFO     [251/880] EUCERIN 3 Hyaluron-Filler + Elasticity Day Cream S
+13:42:02  INFO       main already OK
+13:42:02  INFO     [252/880] EUCERIN 63924 Hyaluron-Filler krem e ditës për lëk
+13:42:02  INFO       main already OK
+13:42:03  INFO     [253/880] Eucerin Hyaluron-Filler krem për zonën rreth syve 
+13:42:03  INFO       main already OK
+13:42:03  INFO     [254/880] Eucerin Hyaluron-Filler + Elasticity krem i ditës 
+13:42:03  INFO       main already OK
+13:42:03  INFO     [255/880] CeraVe BALANCING AIR FOAM CLEANSER C5341
+13:42:03  INFO       main already OK
+13:42:03  INFO     [256/880] CeraVe BLEMISH CONTROL CLEANSER GEL C3859
+13:42:03  INFO       main already OK
+13:42:04  INFO     [257/880] CeraVe Renewing SA Cleanser Gel C4118
+13:42:05  INFO       main ✓
+13:42:07  INFO       image[0] ✓
+13:42:07  INFO       image[1] ✓
+13:42:07  INFO       → saved
+13:42:08  INFO     [258/880] CeraVe FOAMING CLEANSER C8774
+13:42:08  INFO       main already OK
+13:42:08  INFO     [259/880] CeraVe FOAMING CLEANSER C7357
+13:42:08  INFO       main already OK
+13:42:08  INFO     [260/880] CeraVe FOAMING CLEANSER C7197
+13:42:08  INFO       main already OK
+13:42:08  INFO     [261/880] CeraVe Hydrating Foaming Oil Cleanser C3430
+13:42:09  INFO       main ✓
+13:42:10  INFO       image[0] ✓
+13:42:10  INFO       image[1] ✓
+13:42:10  INFO       → saved
+13:42:11  INFO     [262/880] CeraVe Hydrating Cream-to-Foam Cleanser C3563
+13:42:12  INFO       main ✓
+13:42:14  INFO       image[0] ✓
+13:42:14  INFO       image[1] ✓
+13:42:14  INFO       → saved
+13:42:15  INFO     [263/880] CeraVe HYDRATING CLEANSER- NORMAL TO DRY C8767
+13:42:15  INFO       main already OK
+13:42:15  INFO     [264/880] CeraVe HYDRATING CLEANSING-NORMAL TO DRY C7333
+13:42:15  INFO       main already OK
+13:42:15  INFO     [265/880] CeraVe HYDRATING CLEANSING-NORMAL TO DRY C7180
+13:42:15  INFO       main already OK
+13:42:16  INFO     [266/880] CeraVe Eye Repair Cream C.7272
+13:42:17  INFO       main ✓
+13:42:19  INFO       image[0] ✓
+13:42:19  INFO       → saved
+13:42:19  INFO     [267/880] CeraVe Moisturising Cream C8996
+13:42:21  INFO       main ✓
+13:42:22  INFO       image[0] ✓
+13:42:22  INFO       → saved
+13:42:23  INFO     [268/880] CreaVe SA SMOOTHING CREAM C4101
+13:42:23  INFO       main already OK
+13:42:23  INFO     [269/880] CeraVe MOISTURIZING CREAM FOR DRY SKIN C7227
+13:42:23  INFO       main already OK
+13:42:23  INFO     [270/880] CeraVe INTENSIVE MOISTURIZING LOTION C4315
+13:42:23  INFO       main already OK
+13:42:24  INFO     [271/880] CeraVe INTENSIVE MOISTURIZING LOTION C4285
+13:42:24  INFO       main already OK
+13:42:24  INFO     [272/880] CeraVe MOISTURISING LOTION FOR DRY SKIN C8750
+13:42:24  INFO       main already OK
+13:42:24  INFO     [273/880] CeraVe MOISTURISING LOTION FOR DRY SKIN C7395
+13:42:24  INFO       main already OK
+13:42:24  INFO     [274/880] CeraVe MOISTURISING LOTION FOR DRY SKIN C7210
+13:42:24  INFO       main already OK
+13:42:25  INFO     [275/880] OIL CONTROL MOISTURIZING GEL C4513
+13:42:25  INFO       main already OK
+13:42:25  INFO     [276/880] AM FACIAL MOISTURIZING CREAM SPF50 C4652
+13:42:25  INFO       main already OK
+13:42:25  INFO     [277/880] EUCERIN pH5 Lotion 63028
+13:42:25  INFO       main already OK
+13:42:26  INFO     [278/880] AM FACIAL MOISTURISING LOTION SPF30 C0620
+13:42:26  INFO       main already OK
+13:42:26  INFO     [279/880] FACIAL MOISTURIZING LOTION PM C7449
+13:42:26  INFO       main already OK
+13:42:26  INFO     [280/880] EUCERIN pH5 Losion Për Trup 63003
+13:42:26  INFO       main already OK
+13:42:27  INFO     [281/880] Q10 KREM I NATËS 63416
+13:42:27  INFO       main already OK
+13:42:27  INFO     [282/880] Q10 ACTIVE KREM I DITËS PËR LËKURË TË THATË 63413
+13:42:27  INFO       main already OK
+13:42:27  INFO     [283/880] AQUAporin ACTIVE KREM I PASUR HIDRATUES 69780
+13:42:27  INFO       main already OK
+13:42:28  INFO     [284/880] AQUAporin ACTIVE KREM I BUTË HIDRATUES 69779
+13:42:28  INFO       main already OK
+13:42:28  INFO     [285/880] Eucerin Anti-Pigment Dual Serum 66883
+13:42:28  INFO       main ✓
+13:42:29  INFO       image[0] ✓
+13:42:30  INFO       image[1] ✓
+13:42:30  INFO       → saved
+13:42:30  INFO     [286/880] Anti-Pigment Krem i Natës 83506
+13:42:32  INFO       main ✓
+13:42:33  INFO       image[0] ✓
+13:42:34  INFO       image[1] ✓
+13:42:34  INFO       → saved
+13:42:34  INFO     [287/880] Anti-Pigment Krem i Ditës SPF30 83505
+13:42:35  INFO       main ✓
+13:42:37  INFO       image[0] ✓
+13:42:37  INFO       image[1] ✓
+13:42:37  INFO       → saved
+13:42:38  INFO     [288/880] Eucerin DermoPure Fluid Mbrojtës SPF 30 66868
+13:42:39  INFO       main ✓
+13:42:41  INFO       image[0] ✓
+13:42:41  INFO       → saved
+13:42:41  INFO     [289/880] EUCERIN Serum DermoPure Efekt të trefisht 66862
+13:42:41  INFO       main already OK
+13:42:41  INFO     [290/880] DermoPURE KORREKTOR PËR LËKURË TË YNDYRSHME 88965
+13:42:42  INFO       main ✓
+13:42:42  INFO       image[0] ✓
+13:42:42  INFO       → saved
+13:42:42  INFO     [291/880] DermoPURE TRAJTIM RIGJENERATIV 87925
+13:42:42  INFO       main already OK
+13:42:43  INFO     [292/880] DermoPURE GELL PËR PILING 88984
+13:42:43  INFO       main already OK
+13:42:43  INFO     [293/880] DermoPURE TONIK 88983
+13:42:43  INFO       main already OK
+13:42:43  INFO     [294/880] DermoPure Gell për Pastrim të Lëkurës 88982
+13:42:45  INFO       main ✓
+13:42:46  INFO       image[0] ✓
+13:42:46  INFO       → saved
+13:42:46  INFO     [295/880] ANTHELIOS SPF50 LOTION L1123
+13:42:46  INFO       main already OK
+13:42:46  INFO     [296/880] Anthelios XL Transparent Spray SPF 50+ L0153
+13:42:48  INFO       main ✓
+13:42:49  INFO       image[0] ✓
+13:42:49  INFO       → saved
+13:42:49  INFO     [297/880] ANTHELIOS WET SKIN LOTION SPF 50 L5434
+13:42:49  INFO       main already OK
+13:42:50  INFO     [298/880] ANTH. FACE&BODY HYDRATING MILK SPF50 L7872
+13:42:50  INFO       main already OK
+13:42:50  INFO     [299/880] CICAPLAST SPRAY B5 L5742
+13:42:50  INFO       main already OK
+13:42:50  INFO     [300/880] DermatoCLEAN 3 në 1 FLUID MICELAR PËR PASTRIM 6399
+13:42:51  INFO       main ✓
+13:42:51  INFO       image[0] ✓
+13:42:51  INFO       → saved
+13:42:52  INFO     [301/880] DermatoCLEAN 3 në 1 FLUID MICELAR PËR PASTRIM 6975
+13:42:52  INFO       main already OK
+13:42:52  INFO     [302/880] DermatoCLEAN TONIK 63995
+13:42:52  INFO       main already OK
+13:42:52  INFO     [303/880] CICAPLAST MAINS HAND REPAIRING CREAM L4145
+13:42:52  INFO       main already OK
+13:42:53  INFO     [304/880] CICAPLAST B5 SERUM L7804
+13:42:53  INFO       main already OK
+13:42:53  INFO     [305/880] CICAPLAST GEL B5 L6269
+13:42:53  INFO       main already OK
+13:42:53  INFO     [306/880] ANTHELIOS UVMUNE 400 SPF50 CREAM L7719
+13:42:53  INFO       main already OK
+13:42:53  INFO     [307/880] CICAPLAST LEVRES BALM L6659
+13:42:53  INFO       main already OK
+13:42:54  INFO     [308/880] Shkopinjë Dental për Pastrim DenTek
+13:42:54  INFO       main ✓
+13:42:55  INFO       image[0] ✓
+13:42:55  INFO       → saved
+13:42:55  INFO     [309/880] Shkopinjë Dental për Pastrim 
+13:42:57  INFO       main ✓
+13:42:59  INFO       image[0] ✓
+13:42:59  INFO       → saved
+13:42:59  INFO     [310/880] Brushe per dhembe VITIS per te rritur
+13:42:59  INFO       main already OK
+13:43:00  INFO     [311/880] Brushë Interdental ELINA DENT
+13:43:01  INFO       main ✓
+13:43:03  INFO       image[0] ✓
+13:43:03  INFO       → saved
+13:43:03  INFO     [312/880] Brushe interdentale LACALUT
+13:43:03  INFO       main already OK
+13:43:04  INFO     [313/880] Brushë për dhëmbë për Fëmijë
+13:43:05  INFO       main ✓
+13:43:07  INFO       image[0] ✓
+13:43:07  INFO       → saved
+13:43:07  INFO     [314/880] Penje Dental për Dhëmbë Waxed & MINT
+13:43:09  INFO       main ✓
+13:43:10  INFO       image[0] ✓
+13:43:10  INFO       → saved
+13:43:11  INFO     [315/880] Pastë dhëmbësh për të rritur PARODONTAX
+13:43:12  INFO       main ✓
+13:43:14  INFO       image[0] ✓
+13:43:14  INFO       → saved
+13:43:14  INFO     [316/880] Pastë dhëmbësh për të rritur PARODONTAX 2x
+13:43:15  INFO       main ✓
+13:43:15  INFO       image[0] ✓
+13:43:15  INFO       → saved
+13:43:15  INFO     [317/880] Kuti per proteza
+13:43:15  INFO       main already OK
+13:43:16  INFO     [318/880] Paste dhembesh per femije CHICCO Strawberry
+13:43:16  INFO       main already OK
+13:43:16  INFO     [319/880] Paste dhembesh per femije BEBBLE Banana
+13:43:16  INFO       main already OK
+13:43:16  INFO     [320/880] Paste dhembesh per femije BEBBLE Strawberry
+13:43:16  INFO       main already OK
+13:43:17  INFO     [321/880] Pastrues gjuhe CURAPROX 
+13:43:17  INFO       main already OK
+13:43:17  INFO     [322/880] Brushë ndërdhëmbore CURAPROX  06
+13:43:19  INFO       main ✓
+13:43:20  INFO       image[0] ✓
+13:43:21  INFO       image[1] ✓
+13:43:21  INFO       → saved
+13:43:21  INFO     [323/880] Brushe nderdhembore  CURAPROX  1009 single
+13:43:21  INFO       main already OK
+13:43:22  INFO     [324/880] Brushe per dhembe CURAPROX Ortho ultra soft
+13:43:22  INFO       main already OK
+13:43:22  INFO     [325/880] Brusha per dhembe CURAPROX per bebi
+13:43:22  INFO       main already OK
+13:43:22  INFO     [326/880] Brushë për dhëmbë CURAPROX për bebi
+13:43:23  INFO       main ✓
+13:43:23  INFO       image[0] ✓
+13:43:23  INFO       → saved
+13:43:23  INFO     [327/880] Brushe per dhembe CURAPROX per femije 
+13:43:23  INFO       main already OK
+13:43:24  INFO     [328/880] Brusha per dhembe CURAPROX 5460 ultra soft
+13:43:24  INFO       main already OK
+13:43:24  INFO     [329/880] Brushë për dhëmbë CURAPROX Ultra Soft 5460
+13:43:25  INFO       main ✓
+13:43:25  INFO       image[0] ✓
+13:43:25  INFO       → saved
+13:43:25  INFO     [330/880] Brushë për Dhëmbë CURAPROX Super Soft 3960
+13:43:27  INFO       main ✓
+13:43:28  INFO       image[0] ✓
+13:43:28  INFO       → saved
+13:43:29  INFO     [331/880] Brusha për Dhëmbë CURAPROX Super Soft 3960
+13:43:30  INFO       main ✓
+13:43:32  INFO       image[0] ✓
+13:43:32  INFO       → saved
+13:43:32  INFO     [332/880] Butifar 
+13:43:32  INFO       main already OK
+13:43:32  INFO     [333/880] Hepafar Forte 
+13:43:32  INFO       main already OK
+13:43:33  INFO     [334/880] Silimarin Articoka 
+13:43:33  INFO       main already OK
+13:43:33  INFO     [335/880] Silymarin Forte 
+13:43:33  INFO       main already OK
+13:43:33  INFO     [336/880] Silymarin
+13:43:33  INFO       main already OK
+13:43:34  INFO     [337/880] Carvaxyl 
+13:43:36  INFO       main ✓
+13:43:37  INFO       image[0] ✓
+13:43:37  INFO       → saved
+13:43:37  INFO     [338/880] Magnekom 
+13:43:37  INFO       main already OK
+13:43:38  INFO     [339/880] Multibetix 
+13:43:39  INFO       main ✓
+13:43:41  INFO       image[0] ✓
+13:43:41  INFO       → saved
+13:43:41  INFO     [340/880] Marathon Vitamin + Mineral Complex
+13:43:43  INFO       main ✓
+13:43:45  INFO       image[0] ✓
+13:43:45  INFO       → saved
+13:43:45  INFO     [341/880] Ferro Pocket Liposomiale
+13:43:45  INFO       main already OK
+13:43:45  INFO     [342/880] Thyro Balance
+13:43:45  INFO       main already OK
+13:43:46  INFO     [343/880] Tiroid Formula
+13:43:48  INFO       main ✓
+13:43:49  INFO       image[0] ✓
+13:43:49  INFO       → saved
+13:43:50  INFO     [344/880] Cartesia
+13:43:50  INFO       main already OK
+13:43:50  INFO     [345/880] Vita-Tyr Food Supplement
+13:43:52  INFO       main ✓
+13:43:54  INFO       image[0] ✓
+13:43:54  INFO       → saved
+13:43:54  INFO     [346/880] Mecobalamin 1000 mcg
+13:43:54  INFO       main already OK
+13:43:54  INFO     [347/880] NeuroRX
+13:43:54  INFO       main already OK
+13:43:54  INFO     [348/880] Neurospin
+13:43:54  INFO       main already OK
+13:43:55  INFO     [349/880] Mentesan
+13:43:55  INFO       main already OK
+13:43:55  INFO     [350/880] Neurotynox D
+13:43:57  INFO       main ✓
+13:43:58  INFO       image[0] ✓
+13:43:58  INFO       → saved
+13:43:58  INFO     [351/880] Ribovit
+13:44:00  INFO       main ✓
+13:44:02  INFO       image[0] ✓
+13:44:02  INFO       → saved
+13:44:02  INFO     [352/880]  Advancis Energy Vitamins
+13:44:02  INFO       main already OK
+13:44:03  INFO     [353/880] Forvita B-complex
+13:44:04  INFO       main ✓
+13:44:06  INFO       image[0] ✓
+13:44:06  INFO       → saved
+13:44:06  INFO     [354/880] Neurocomplex B
+13:44:06  INFO       main already OK
+13:44:06  INFO     [355/880] Vitamin E 200
+13:44:06  INFO       main already OK
+13:44:07  INFO     [356/880] B-Complex Tableta
+13:44:09  INFO       main ✓
+13:44:10  INFO       image[0] ✓
+13:44:10  INFO       → saved
+13:44:11  INFO     [357/880] B-Complex Forte
+13:44:11  INFO       main already OK
+13:44:11  INFO     [358/880] Noglic
+13:44:11  INFO       main already OK
+13:44:11  INFO     [359/880] Neuroben
+13:44:11  INFO       main already OK
+13:44:12  INFO     [360/880] Multi 45
+13:44:12  INFO       main already OK
+13:44:12  INFO     [361/880] Neuroxon
+13:44:14  INFO       main ✓
+13:44:15  INFO       image[0] ✓
+13:44:15  INFO       → saved
+13:44:16  INFO     [362/880] A-Z Vitamine 
+13:44:16  INFO       main already OK
+13:44:16  INFO     [363/880] Etinerv 
+13:44:16  INFO       main already OK
+13:44:16  INFO     [364/880] Dr.Slim Pluhur + Kapsula
+13:44:16  INFO       main already OK
+13:44:17  INFO     [365/880] Reumil A.D
+13:44:17  INFO       main already OK
+13:44:17  INFO     [366/880] ProxArt
+13:44:19  INFO       main ✓
+13:44:20  INFO       image[0] ✓
+13:44:20  INFO       → saved
+13:44:21  INFO     [367/880] Kollagen 3000mg
+13:44:21  INFO       main already OK
+13:44:21  INFO     [368/880] Dias Collagen
+13:44:21  INFO       main already OK
+13:44:21  INFO     [369/880] Alpha Peptide Collagen Solugel Bioactive
+13:44:21  INFO       main already OK
+13:44:22  INFO     [370/880] Artilane Forte Bustina
+13:44:23  INFO       main ✓
+13:44:25  INFO       image[0] ✓
+13:44:25  INFO       → saved
+13:44:26  INFO     [371/880] Artilane Classic
+13:44:28  INFO       main ✓
+13:44:29  INFO       image[0] ✓
+13:44:29  INFO       → saved
+13:44:30  INFO     [372/880] 4 Mobile 
+13:44:30  INFO       main already OK
+13:44:30  INFO     [373/880] Citrag Plus 
+13:44:32  INFO       main ✓
+13:44:34  INFO       image[0] ✓
+13:44:34  INFO       → saved
+13:44:34  INFO     [374/880] NeuroVital Forte
+13:44:34  INFO       main already OK
+13:44:35  INFO     [375/880] Haemovit Plus
+13:44:35  INFO       main already OK
+13:44:35  INFO     [376/880] Alpha Peptide Collagen 11000 mg Plus
+13:44:35  INFO       main already OK
+13:44:35  INFO     [377/880] Magnestick
+13:44:35  INFO       main already OK
+13:44:36  INFO     [378/880] Nutra Mag
+13:44:36  INFO       main already OK
+13:44:36  INFO     [379/880] Nutra Iron
+13:44:36  INFO       main already OK
+13:44:36  INFO     [380/880] Brainvit
+13:44:36  INFO       main already OK
+13:44:37  INFO     [381/880] Neuroforte 
+13:44:37  INFO       main already OK
+13:44:37  INFO     [382/880] Selenium 200 mcg
+13:44:37  INFO       main already OK
+13:44:37  INFO     [383/880] Maca 1600 mg
+13:44:37  INFO       main already OK
+13:44:38  INFO     [384/880] Magnesium Citrate Softgels 250 mg
+13:44:38  INFO       main ✓
+13:44:38  INFO       image[0] ✓
+13:44:38  INFO       → saved
+13:44:39  INFO     [385/880] Magnesium Glycinate
+13:44:39  INFO       main already OK
+13:44:39  INFO     [386/880] Vitamin B-6 100 mg
+13:44:39  INFO       main already OK
+13:44:39  INFO     [387/880] Calcium Magnesium Zinc
+13:44:39  INFO       main already OK
+13:44:39  INFO     [388/880] Alpha Lipoic Acid 600 mg
+13:44:39  INFO       main already OK
+13:44:40  INFO     [389/880] Ashwagandha Root 920mg
+13:44:40  INFO       main already OK
+13:44:40  INFO     [390/880] Liquid Vitamin D3 2500 IU
+13:44:40  INFO       main already OK
+13:44:40  INFO     [391/880] Folacin
+13:44:40  INFO       main already OK
+13:44:41  INFO     [392/880] Magnesium Complex
+13:44:41  INFO       main already OK
+13:44:41  INFO     [393/880] Komksm-66 Ashwagandha
+13:44:41  INFO       main already OK
+13:44:41  INFO     [394/880] Flexonorm
+13:44:43  INFO       main ✓
+13:44:44  INFO       image[0] ✓
+13:44:44  INFO       → saved
+13:44:44  INFO     [395/880] QuatrePure
+13:44:44  INFO       main already OK
+13:44:45  INFO     [396/880] Super Collagen Beauty+C
+13:44:45  INFO       main already OK
+13:44:45  INFO     [397/880] Super Collagen Beauty
+13:44:45  INFO       main already OK
+13:44:45  INFO     [398/880] Elina Pferdebalsam Chili Gel
+13:44:45  INFO       main already OK
+13:44:46  INFO     [399/880] Elina Pferdebalsam Aktiv Gel
+13:44:46  INFO       main already OK
+13:44:46  INFO     [400/880] Corega Versiegelung
+13:44:46  INFO       main already OK
+13:44:46  INFO     [401/880] Corega Frische
+13:44:47  INFO       main ✓
+13:44:47  INFO       image[0] ✓
+13:44:47  INFO       → saved
+13:44:48  INFO     [402/880] Listerine Cool Mint
+13:44:48  INFO       main already OK
+13:44:48  INFO     [403/880] Listerine Fresh Burst
+13:44:48  INFO       main already OK
+13:44:48  INFO     [404/880] Vitamin D3 4000IU
+13:44:48  INFO       main already OK
+13:44:49  INFO     [405/880] Swiss Ovit Vitamin D3 4000IU + K2
+13:44:50  INFO       main ✓
+13:44:52  INFO       image[0] ✓
+13:44:52  INFO       → saved
+13:44:52  INFO     [406/880] Strongvit D3 200IU
+13:44:52  INFO       main already OK
+13:44:52  INFO     [407/880] Babytol Dha Omega 
+13:44:52  INFO       main already OK
+13:44:53  INFO     [408/880] Babytol D3 + K1
+13:44:54  INFO       main ✓
+13:44:56  INFO       image[0] ✓
+13:44:56  INFO       → saved
+13:44:56  INFO     [409/880] Daily D 4000IU
+13:44:56  INFO       main already OK
+13:44:56  INFO     [410/880] Sundovit D3+K2
+13:44:56  INFO       main already OK
+13:44:57  INFO     [411/880] Vitamin D3 2000 IU 
+13:44:57  INFO       main already OK
+13:44:57  INFO     [412/880] Witamina D3 2000
+13:44:59  INFO       main ✓
+13:45:00  INFO       image[0] ✓
+13:45:00  INFO       → saved
+13:45:01  INFO     [413/880] Witamina D3 4000 IU
+13:45:01  INFO       main already OK
+13:45:01  INFO     [414/880] CalciCare
+13:45:01  INFO       main already OK
+13:45:01  INFO     [415/880] Chela-Mag B6+D3
+13:45:01  INFO       main already OK
+13:45:02  INFO     [416/880] Osteovit K2D3
+13:45:02  INFO       main already OK
+13:45:02  INFO     [417/880] Gold Vit D3+K2 4000IU
+13:45:02  INFO       main already OK
+13:45:02  INFO     [418/880] Gold Vit D3+K2 2000IU
+13:45:02  INFO       main already OK
+13:45:02  INFO     [419/880] Golden Vita D3+K2 4000 IU
+13:45:04  INFO       main ✓
+13:45:06  INFO       image[0] ✓
+13:45:06  INFO       → saved
+13:45:06  INFO     [420/880] Iron Strong Haem-Life
+13:45:08  INFO       main ✓
+13:45:10  INFO       image[0] ✓
+13:45:10  INFO       → saved
+13:45:10  INFO     [421/880] Joint-Life
+13:45:10  INFO       main already OK
+13:45:11  INFO     [422/880] Calcinov 
+13:45:13  INFO       main ✓
+13:45:14  INFO       image[0] ✓
+13:45:14  INFO       → saved
+13:45:15  INFO     [423/880] Ovunorm Sensilab
+13:45:17  INFO       main ✓
+13:45:18  INFO       image[0] ✓
+13:45:18  INFO       → saved
+13:45:19  INFO     [424/880] Livercare prolonged release
+13:45:19  INFO       main already OK
+13:45:19  INFO     [425/880] Tumeric Tablets
+13:45:21  INFO       main ✓
+13:45:23  INFO       image[0] ✓
+13:45:23  INFO       → saved
+13:45:23  INFO     [426/880] Magnesium 400
+13:45:25  INFO       main ✓
+13:45:27  INFO       image[0] ✓
+13:45:27  INFO       → saved
+13:45:27  INFO     [427/880] Diabetiker
+13:45:27  INFO       main already OK
+13:45:27  INFO     [428/880] Osteofit Synergy
+13:45:29  INFO       main ✓
+13:45:31  INFO       image[0] ✓
+13:45:31  INFO       → saved
+13:45:31  INFO     [429/880] Betaimune Antioxidants
+13:45:31  INFO       main already OK
+13:45:32  INFO     [430/880] Ocean ExtraMag 250mg Magnez
+13:45:33  INFO       main ✓
+13:45:35  INFO       image[0] ✓
+13:45:35  INFO       → saved
+13:45:36  INFO     [431/880] Ocean Daily One Energy
+13:45:36  INFO       main already OK
+13:45:36  INFO     [432/880] Ocean D3 K2
+13:45:38  INFO       main ✓
+13:45:40  INFO       image[0] ✓
+13:45:40  INFO       → saved
+13:45:40  INFO     [433/880] Ocean ExtraMag 200mg Magnez
+13:45:42  INFO       main ✓
+13:45:44  INFO       image[0] ✓
+13:45:45  INFO       → saved
+13:45:45  INFO     [434/880] Ocean Vitamin D3 1000 IU
+13:45:47  INFO       main ✓
+13:45:48  INFO       image[0] ✓
+13:45:48  INFO       → saved
+13:45:49  INFO     [435/880] Ocean Methyl B12 
+13:45:49  INFO       main already OK
+13:45:49  INFO     [436/880] Cosakondrin Plus
+13:45:49  INFO       main already OK
+13:45:49  INFO     [437/880] Ocean B Complex
+13:45:49  INFO       main already OK
+13:45:50  INFO     [438/880] Ocean Picozinc
+13:45:51  INFO       main ✓
+13:45:53  INFO       image[0] ✓
+13:45:53  INFO       → saved
+13:45:53  INFO     [439/880] Ocean OsteoFine
+13:45:55  INFO       main ✓
+13:45:57  INFO       image[0] ✓
+13:45:57  INFO       → saved
+13:45:57  INFO     [440/880] Ocean Selenium 
+13:45:59  INFO       main ✓
+13:46:01  INFO       image[0] ✓
+13:46:01  INFO       → saved
+13:46:01  INFO     [441/880] Relax Shot
+13:46:03  INFO       main ✓
+13:46:04  INFO       image[0] ✓
+13:46:04  INFO       → saved
+13:46:05  INFO     [442/880] Libidoshot
+13:46:05  INFO       main already OK
+13:46:05  INFO     [443/880] Defense Shot
+13:46:05  INFO       main already OK
+13:46:05  INFO     [444/880] Energy Shot
+13:46:07  INFO       main ✓
+13:46:08  INFO       image[0] ✓
+13:46:09  INFO       → saved
+13:46:09  INFO     [445/880] Detox Shot
+13:46:11  INFO       main ✓
+13:46:12  INFO       image[0] ✓
+13:46:12  INFO       → saved
+13:46:13  INFO     [446/880] Electrovit Orange and Watermelon
+13:46:13  INFO       main already OK
+13:46:13  INFO     [447/880] Hangover Shot
+13:46:15  INFO       main ✓
+13:46:17  INFO       image[0] ✓
+13:46:17  INFO       → saved
+13:46:17  INFO     [448/880] Arko Levure 250 mg
+13:46:17  INFO       main already OK
+13:46:17  INFO     [449/880] Arko Royal 2500 mg
+13:46:17  INFO       main already OK
+13:46:17  INFO     [450/880] Arko Royal 1500 mg
+13:46:17  INFO       main already OK
+13:46:18  INFO     [451/880] Arko Royal Junior 500 mg
+13:46:18  INFO       main already OK
+13:46:18  INFO     [452/880] Inofem
+13:46:18  INFO       main already OK
+13:46:18  INFO     [453/880] Cytofem
+13:46:20  INFO       main ✓
+13:46:22  INFO       image[0] ✓
+13:46:22  INFO       → saved
+13:46:22  INFO     [454/880] Trawelin 
+13:46:22  INFO       main already OK
+13:46:23  INFO     [455/880] N-Oxyal Amsal
+13:46:25  INFO       main ✓
+13:46:26  INFO       image[0] ✓
+13:46:26  INFO       → saved
+13:46:27  INFO     [456/880] Cysturo Junior
+13:46:28  INFO       main ✓
+13:46:30  INFO       image[0] ✓
+13:46:30  INFO       → saved
+13:46:30  INFO     [457/880] Prosturo Neo
+13:46:33  INFO       main ✓
+13:46:34  INFO       image[0] ✓
+13:46:34  INFO       → saved
+13:46:35  INFO     [458/880] Cysturo C
+13:46:37  INFO       main ✓
+13:46:38  INFO       image[0] ✓
+13:46:39  INFO       → saved
+13:46:39  INFO     [459/880] Aftalip Gel Amsal
+13:46:41  INFO       main ✓
+13:46:42  INFO       image[0] ✓
+13:46:42  INFO       → saved
+13:46:43  INFO     [460/880] Vitabiotics Superdog Health+Vitality
+13:46:43  INFO       main already OK
+13:46:43  INFO     [461/880] Vitabiotics Superdog Joints+Bones
+13:46:43  INFO       main already OK
+13:46:43  INFO     [462/880] Vitabiotics Wellwoman Gummies
+13:46:43  INFO       main already OK
+13:46:43  INFO     [463/880] Vitabiotics Wellman Gummies
+13:46:45  INFO       main ✓
+13:46:47  INFO       image[0] ✓
+13:46:47  INFO       → saved
+13:46:47  INFO     [464/880] Vitabiotics Wellkid Omega-3
+13:46:49  INFO       main ✓
+13:46:50  INFO       image[0] ✓
+13:46:50  INFO       → saved
+13:46:51  INFO     [465/880] Vitabiotics Ultra Ashwagandha
+13:46:51  INFO       main already OK
+13:46:51  INFO     [466/880] Vitabiotics Ultra Vitamin C
+13:46:51  INFO       main already OK
+13:46:51  INFO     [467/880] Vitabiotics Ultra Omega-3
+13:46:51  INFO       main already OK
+13:46:52  INFO     [468/880] Vitabiotics Ultra Magnesium
+13:46:52  INFO       main already OK
+13:46:52  INFO     [469/880] Vitabiotics Ultra Garlic
+13:46:52  INFO       main already OK
+13:46:52  INFO     [470/880] Vitabiotics Ultra Selenium
+13:46:52  INFO       main already OK
+13:46:52  INFO     [471/880] Vitabiotics Ultra Zinc
+13:46:52  INFO       main already OK
+13:46:53  INFO     [472/880] Vitabiotics Ultra Omega 3-6-9
+13:46:53  INFO       main already OK
+13:46:53  INFO     [473/880] Vitabiotics Ultra Folic Acid
+13:46:53  INFO       main already OK
+13:46:53  INFO     [474/880] Vitabiotics Ultra Vitamin D 2000IU
+13:46:53  INFO       main already OK
+13:46:54  INFO     [475/880] Vitabiotics Ultra Turmeric
+13:46:54  INFO       main already OK
+13:46:54  INFO     [476/880] Vitabiotics Ultra Cod Liver Oil Plus Omega-3
+13:46:55  INFO       main ✓
+13:46:55  INFO       image[0] ✓
+13:46:55  INFO       → saved
+13:46:55  INFO     [477/880] Vitabiotics Liverel
+13:46:55  INFO       main already OK
+13:46:55  INFO     [478/880] Vitabiotics Wellbio
+13:46:57  INFO       main ✓
+13:47:00  INFO       image[0] ✓
+13:47:00  INFO       → saved
+13:47:00  INFO     [479/880] Vitabiotics Wellzyme
+13:47:01  INFO       main ✓
+13:47:01  INFO       image[0] ✓
+13:47:01  INFO       → saved
+13:47:02  INFO     [480/880] VItabiotics Wellman Conception
+13:47:04  INFO       main ✓
+13:47:05  INFO       image[0] ✓
+13:47:05  INFO       → saved
+13:47:06  INFO     [481/880] Vitabiotics Wellman Prostace
+13:47:06  INFO       main ✓
+13:47:07  INFO       image[0] ✓
+13:47:07  INFO       → saved
+13:47:07  INFO     [482/880] VItabiotics Wellman Original
+13:47:07  INFO       main already OK
+13:47:07  INFO     [483/880] Vitabiotics Wellwoman Original
+13:47:09  INFO       main ✓
+13:47:11  INFO       image[0] ✓
+13:47:11  INFO       → saved
+13:47:11  INFO     [484/880] Vitabiotics Wellteen Her Plus
+13:47:12  INFO       main ✓
+13:47:12  INFO       image[0] ✓
+13:47:12  INFO       → saved
+13:47:12  INFO     [485/880] Vitabiotics Wellteen Him Plus
+13:47:12  INFO       main already OK
+13:47:13  INFO     [486/880] Vitabiotics Wellkid Soft Jelly Strawberry and Oran
+13:47:15  INFO       main ✓
+13:47:16  INFO       image[0] ✓
+13:47:17  INFO       image[1] ✓
+13:47:17  INFO       → saved
+13:47:17  INFO     [487/880] Vitabiotics Wellkid Multi-Vitamin  Liquid 
+13:47:19  INFO       main ✓
+13:47:21  INFO       image[0] ✓
+13:47:21  INFO       → saved
+13:47:21  INFO     [488/880] Vitabiotics Wellbaby Vit. D drops
+13:47:21  INFO       main ✓
+13:47:22  INFO       image[0] ✓
+13:47:22  INFO       → saved
+13:47:22  INFO     [489/880] Vitabiotics Feroglobin Baby drops
+13:47:22  INFO       main already OK
+13:47:23  INFO     [490/880] Vitabiotics Wellbaby Multi-Vitamin drops
+13:47:23  INFO       main ✓
+13:47:23  INFO       image[0] ✓
+13:47:23  INFO       → saved
+13:47:24  INFO     [491/880] Vitabiotics Pregnacare New Mum
+13:47:24  INFO       main already OK
+13:47:24  INFO     [492/880] Vitabiotics Pregnacare Stretch Mark Cream
+13:47:24  INFO       main already OK
+13:47:24  INFO     [493/880] Vitabiotics Pregnacare Breast-Feeding 
+13:47:25  INFO       main ✓
+13:47:25  INFO       image[0] ✓
+13:47:25  INFO       → saved
+13:47:26  INFO     [494/880] Vitabiotics Pregnacare Max
+13:47:26  INFO       main already OK
+13:47:26  INFO     [495/880] Vitabiotics Pregnacare Plus Omega 3
+13:47:26  INFO       main already OK
+13:47:26  INFO     [496/880] WS-1 Single Head Stethoscope 
+13:47:28  INFO       main ✓
+13:47:30  INFO       image[0] ✓
+13:47:30  INFO       → saved
+13:47:30  INFO     [497/880] Vitabiotics Pregnacare Original 
+13:47:30  INFO       main already OK
+13:47:31  INFO     [498/880] Vitabiotics Pregnacare Conception 
+13:47:33  INFO       main ✓
+13:47:35  INFO       image[0] ✓
+13:47:35  INFO       → saved
+13:47:35  INFO     [499/880] Vitabiotics Visionace Plus
+13:47:35  INFO       main already OK
+13:47:36  INFO     [500/880] Vitabiotics Visionace Original 
+13:47:36  INFO       main already OK
+13:47:36  INFO     [501/880] Vitabiotics Perfectil Collagen Skin
+13:47:38  INFO       main ✓
+13:47:40  INFO       image[0] ✓
+13:47:40  INFO       → saved
+13:47:40  INFO     [502/880] Vitabiotics Perfectil Body Oil 
+13:47:40  INFO       main already OK
+13:47:40  INFO     [503/880] Vitabiotics Perfectil Collagen Hair 
+13:47:40  INFO       main already OK
+13:47:41  INFO     [504/880] Vitabiotics Perfectil Max
+13:47:41  INFO       main already OK
+13:47:41  INFO     [505/880] Diabetone Original Vitabiotics
+13:47:43  INFO       main ✓
+13:47:44  INFO       image[0] ✓
+13:47:44  INFO       → saved
+13:47:45  INFO     [506/880] Vitabiotics Cardioace 
+13:47:45  INFO       main already OK
+13:47:45  INFO     [507/880] Vitabiotics Osteocare Chewable
+13:47:45  INFO       main already OK
+13:47:45  INFO     [508/880] Vitabiotics Osteocare Liquid Original
+13:47:46  INFO       main ✓
+13:47:46  INFO       image[0] ✓
+13:47:46  INFO       → saved
+13:47:46  INFO     [509/880] Vitabiotics Jointace Gel
+13:47:47  INFO       main ✓
+13:47:47  INFO       image[0] ✓
+13:47:48  INFO       image[1] ✓
+13:47:48  INFO       → saved
+13:47:48  INFO     [510/880] Vitabiotics Jointace Sport
+13:47:48  INFO       main already OK
+13:47:49  INFO     [511/880] Vitabiotics Feroglobin Sirup
+13:47:49  INFO       main already OK
+13:47:49  INFO     [512/880] Vitabiotics Neurozan Plus OMEGA-3
+13:47:51  INFO       main ✓
+13:47:53  INFO       image[0] ✓
+13:47:53  INFO       → saved
+13:47:54  INFO     [513/880] Vitabiotics Osteocare Original
+13:47:54  INFO       main already OK
+13:47:54  INFO     [514/880] Vitabiotics Jointace Omega-3
+13:47:54  INFO       main already OK
+13:47:54  INFO     [515/880] Vitabiotics Immunace Extra Protection 
+13:47:56  INFO       main ✓
+13:47:58  INFO       image[0] ✓
+13:47:58  INFO       → saved
+13:47:58  INFO     [516/880] Vitabiotics Ultra Vitamin D 4000 IU
+13:47:58  INFO       main already OK
+13:47:58  INFO     [517/880] Vitabiotics Ultra Vitamin D 1000 IU
+13:47:58  INFO       main already OK
+13:47:59  INFO     [518/880] Vitabiotics Osteocare Original
+13:47:59  INFO       main already OK
+13:47:59  INFO     [519/880] Vitabiotics Menopace Original 
+13:47:59  INFO       main already OK
+13:47:59  INFO     [520/880] Vitabiotics Feroglobin 
+13:48:00  INFO       main ✓
+13:48:00  INFO       image[0] ✓
+13:48:00  INFO       → saved
+13:48:01  INFO     [521/880] Vitabiotics Menopace Night
+13:48:01  INFO       main already OK
+13:48:01  INFO     [522/880] Vitabiotics Jointace Rose Hip
+13:48:01  INFO       main already OK
+13:48:01  INFO     [523/880] Vitabiotics Ultra Vitamin B Complex
+13:48:03  INFO       main ✓
+13:48:05  INFO       image[0] ✓
+13:48:05  INFO       → saved
+13:48:05  INFO     [524/880] Vitabiotics Neurozan Original 
+13:48:06  INFO       main ✓
+13:48:06  INFO       image[0] ✓
+13:48:06  INFO       → saved
+13:48:07  INFO     [525/880] Vitabiotics Immunace 
+13:48:09  INFO       main ✓
+13:48:11  INFO       image[0] ✓
+13:48:11  INFO       → saved
+13:48:11  INFO     [526/880] Vitabiotics Perfectil Triple Active 
+13:48:11  INFO       main already OK
+13:48:11  INFO     [527/880] Vitabiotics Jointace Collagen
+13:48:11  INFO       main already OK
+13:48:11  INFO     [528/880] Vitabiotics Liverel 
+13:48:11  INFO       main already OK
+13:48:12  INFO     [529/880] Restorex Shampoo Collagen & Biotin 
+13:48:14  INFO       main ✓
+13:48:15  INFO       image[0] ✓
+13:48:15  INFO       → saved
+13:48:15  INFO     [530/880] Restorex Shampoo 7 Besleyici Yag
+13:48:15  INFO       main already OK
+13:48:16  INFO     [531/880] Nebulizer Mask 
+13:48:17  INFO       main ✓
+13:48:19  INFO       image[0] ✓
+13:48:19  INFO       → saved
+13:48:19  INFO     [532/880] Atomizing Mask 
+13:48:19  INFO       main already OK
+13:48:19  INFO     [533/880] Doreza Sterile Nr. 7.5
+13:48:20  INFO       main ✓
+13:48:20  INFO       image[0] ✓
+13:48:20  INFO       → saved
+13:48:21  INFO     [534/880] Doreza Sterile Nr. 7
+13:48:23  INFO       main ✓
+13:48:25  INFO       image[0] ✓
+13:48:25  INFO       → saved
+13:48:25  INFO     [535/880] Disposable Face Mask
+13:48:28  INFO       main ✓
+13:48:30  INFO       image[0] ✓
+13:48:30  INFO       → saved
+13:48:30  INFO     [536/880] Doreza Wicromed Latex Glove Nr.S
+13:48:32  INFO       main ✓
+13:48:34  INFO       image[0] ✓
+13:48:34  INFO       → saved
+13:48:34  INFO     [537/880] Doreza Wicromed Latex Glove Nr.M
+13:48:36  INFO       main ✓
+13:48:38  INFO       image[0] ✓
+13:48:38  INFO       → saved
+13:48:38  INFO     [538/880] Doreza Optimal Powdered Nr.S
+13:48:40  INFO       main ✓
+13:48:42  INFO       image[0] ✓
+13:48:42  INFO       → saved
+13:48:42  INFO     [539/880] Doreza Latex Powdered Nr.L
+13:48:44  INFO       main ✓
+13:48:45  INFO       image[0] ✓
+13:48:45  INFO       → saved
+13:48:45  INFO     [540/880] Doreza Latex Powdered Nr.M
+13:48:47  INFO       main ✓
+13:48:48  INFO       image[0] ✓
+13:48:48  INFO       → saved
+13:48:49  INFO     [541/880] Doreza Setino Powdered Nr.S
+13:48:51  INFO       main ✓
+13:48:52  INFO       image[0] ✓
+13:48:52  INFO       → saved
+13:48:52  INFO     [542/880] Acplast Doreza Powder Free Nr.S
+13:48:54  INFO       main ✓
+13:48:56  INFO       image[0] ✓
+13:48:56  INFO       → saved
+13:48:56  INFO     [543/880] Doreza Setino Powder Free Nr.M 
+13:48:56  INFO       main already OK
+13:48:56  INFO     [544/880] Doreza Latex Powder Free Nr.S
+13:48:58  INFO       main ✓
+13:48:59  INFO       image[0] ✓
+13:48:59  INFO       → saved
+13:49:00  INFO     [545/880] Doreza Latex Powder Free Nr.L 
+13:49:01  INFO       main ✓
+13:49:03  INFO       image[0] ✓
+13:49:03  INFO       → saved
+13:49:03  INFO     [546/880] Thermoval Kids Digital Thermometer
+13:49:05  INFO       main ✓
+13:49:06  INFO       image[0] ✓
+13:49:06  INFO       → saved
+13:49:07  INFO     [547/880] Thermoval Standard Digital Thermometer
+13:49:08  INFO       main ✓
+13:49:09  INFO       image[0] ✓
+13:49:09  INFO       → saved
+13:49:10  INFO     [548/880] Digital Thermometer
+13:49:11  INFO       main ✓
+13:49:13  INFO       image[0] ✓
+13:49:15  INFO       image[1] ✓
+13:49:15  INFO       → saved
+13:49:15  INFO     [549/880] Freely Digital Thermometer 
+13:49:17  INFO       main ✓
+13:49:18  INFO       image[0] ✓
+13:49:18  INFO       → saved
+13:49:19  INFO     [550/880] Armpit Clinical Thermometer
+13:49:20  INFO       main ✓
+13:49:22  INFO       image[0] ✓
+13:49:22  INFO       → saved
+13:49:22  INFO     [551/880] Aique Infrared Forehead Thermometer
+13:49:22  INFO       main already OK
+13:49:23  INFO     [552/880] Rina Check AP10 Blood Glucose Monitoring System
+13:49:24  INFO       main ✓
+13:49:26  INFO       image[0] ✓
+13:49:26  INFO       → saved
+13:49:26  INFO     [553/880] On Call Plus Blood Glucose Meter
+13:49:28  INFO       main ✓
+13:49:30  INFO       image[0] ✓
+13:49:30  INFO       → saved
+13:49:30  INFO     [554/880] Kompresor Nebulizator Steamy
+13:49:30  INFO       main already OK
+13:49:31  INFO     [555/880] Compact Smart Compressor Nebulizer
+13:49:33  INFO       main ✓
+13:49:34  INFO       image[0] ✓
+13:49:34  INFO       → saved
+13:49:35  INFO     [556/880] Armo Line AL-50 Piston Compressor Nebulizer
+13:49:37  INFO       main ✓
+13:49:38  INFO       image[0] ✓
+13:49:38  INFO       → saved
+13:49:39  INFO     [557/880] Oral-B Electic Brush Vitality Pro
+13:49:39  INFO       main already OK
+13:49:39  INFO     [558/880] Rabir Chamber Nebulizator
+13:49:41  INFO       main ✓
+13:49:43  INFO       image[0] ✓
+13:49:43  INFO       → saved
+13:49:43  INFO     [559/880] Automatic Upper Arm Blood Pressure Monitor M6 Comf
+13:49:45  INFO       main ✓
+13:49:47  INFO       image[0] ✓
+13:49:47  INFO       → saved
+13:49:47  INFO     [560/880] Classic Stetho Med
+13:49:49  INFO       main ✓
+13:49:51  INFO       image[0] ✓
+13:49:51  INFO       → saved
+13:49:51  INFO     [561/880] Alphamed Wrist Electronic Blood Pressure Monitor
+13:49:51  INFO       main already OK
+13:49:52  INFO     [562/880] Microlife Aneroid Blood Pressure Kit Basic
+13:49:54  INFO       main ✓
+13:50:24  INFO       image[0] ✓
+13:50:25  INFO       → saved
+13:50:25  INFO     [563/880] Redness Control - Daily Facial Moisturizer Cream S
+13:50:27  INFO       main ✓
+13:50:29  INFO       image[0] ✓
+13:50:29  INFO       → saved
+13:50:29  INFO     [564/880] Pro Redness Control Moisturizing Night Cream L0597
+13:50:29  INFO       main already OK
+13:50:29  INFO     [565/880] Pro Spotcontrol Matting Moisturizer SPF 30 L9614
+13:50:29  INFO       main already OK
+13:50:30  INFO     [566/880] Daily Facial Cleanser L4519
+13:50:30  INFO       main already OK
+13:50:30  INFO     [567/880] Pro Oil Control Foam Wash L9249
+13:50:32  INFO       main ✓
+13:50:34  INFO       image[0] ✓
+13:50:34  INFO       → saved
+13:50:34  INFO     [568/880] Albion Copper 2 mg
+13:50:34  INFO       main already OK
+13:50:34  INFO     [569/880] Vitamin K2 Max 200 mcg
+13:50:35  INFO       main ✓
+13:50:35  INFO       image[0] ✓
+13:50:35  INFO       → saved
+13:50:36  INFO     [570/880] Calcium with Vitamins D & K 
+13:50:36  INFO       main ✓
+13:50:37  INFO       image[0] ✓
+13:50:37  INFO       → saved
+13:50:37  INFO     [571/880] Boron 6 mg
+13:50:38  INFO       main ✓
+13:50:39  INFO       image[0] ✓
+13:50:39  INFO       → saved
+13:50:39  INFO     [572/880] Ultimate Immune Defense
+13:50:40  INFO       main ✓
+13:50:41  INFO       image[0] ✓
+13:50:41  INFO       → saved
+13:50:41  INFO     [573/880] Triple Mushroom Complex
+13:50:41  INFO       main already OK
+13:50:41  INFO     [574/880] Spiruline 500 mg
+13:50:41  INFO       main already OK
+13:50:42  INFO     [575/880] Shark Liver Oil 550 mg
+13:50:42  INFO       main already OK
+13:50:42  INFO     [576/880] Shark Liver Oil 550 mg
+13:50:42  INFO       main already OK
+13:50:42  INFO     [577/880] Reishi Mushroom 
+13:50:42  INFO       main already OK
+13:50:42  INFO     [578/880] Quercetin 475 mg 
+13:50:43  INFO       main ✓
+13:50:44  INFO       image[0] ✓
+13:50:44  INFO       → saved
+13:50:44  INFO     [579/880]  Graviola 530 mg 
+13:50:45  INFO       main ✓
+13:50:45  INFO       image[0] ✓
+13:50:45  INFO       → saved
+13:50:46  INFO     [580/880] Extra Strength Zinc Picolinate 50 mg
+13:50:46  INFO       main ✓
+13:50:47  INFO       image[0] ✓
+13:50:47  INFO       → saved
+13:50:47  INFO     [581/880] Echinacea 400 mg
+13:50:47  INFO       main already OK
+13:50:48  INFO     [582/880] Black Cumin Seed 400 mg 
+13:50:48  INFO       main ✓
+13:50:49  INFO       image[0] ✓
+13:50:49  INFO       → saved
+13:50:49  INFO     [583/880] Ultimate Ashwagandha KSM-66 250 mg 
+13:50:50  INFO       main ✓
+13:50:50  INFO       image[0] ✓
+13:50:50  INFO       → saved
+13:50:51  INFO     [584/880] Rhodiola Rosea Root 400 mg 100 
+13:50:51  INFO       main already OK
+13:50:51  INFO     [585/880] L-Tyrosine 500 mg 
+13:50:52  INFO       main ✓
+13:50:52  INFO       image[0] ✓
+13:50:52  INFO       → saved
+13:50:52  INFO     [586/880] Glycine 500 mg
+13:50:53  INFO       main ✓
+13:50:53  INFO       image[0] ✓
+13:50:53  INFO       → saved
+13:50:54  INFO     [587/880] Ginseng Gelée Royale
+13:50:56  INFO       main ✓
+13:50:58  INFO       image[0] ✓
+13:50:58  INFO       → saved
+13:50:58  INFO     [588/880] Adaptogenic Herbal Complex 
+13:50:58  INFO       main ✓
+13:50:59  INFO       image[0] ✓
+13:50:59  INFO       → saved
+13:50:59  INFO     [589/880] Psyllium Husks 610 mg
+13:51:00  INFO       main ✓
+13:51:00  INFO       image[0] ✓
+13:51:00  INFO       → saved
+13:51:01  INFO     [590/880] Biotin with Silica Conditioner 
+13:51:01  INFO       main ✓
+13:51:02  INFO       image[0] ✓
+13:51:02  INFO       → saved
+13:51:02  INFO     [591/880] Vegan Collagen Builder
+13:51:03  INFO       main ✓
+13:51:03  INFO       image[0] ✓
+13:51:03  INFO       → saved
+13:51:03  INFO     [592/880] Marine Collagen Peptides Type I 500 mg 
+13:51:04  INFO       main ✓
+13:51:05  INFO       image[0] ✓
+13:51:05  INFO       → saved
+13:51:05  INFO     [593/880] Joint Cream 
+13:51:06  INFO       main ✓
+13:51:06  INFO       image[0] ✓
+13:51:06  INFO       → saved
+13:51:06  INFO     [594/880] Hialuron Forte
+13:51:06  INFO       main already OK
+13:51:07  INFO     [595/880] Glucosamine & Collagen Type II 
+13:51:07  INFO       main ✓
+13:51:08  INFO       image[0] ✓
+13:51:08  INFO       → saved
+13:51:08  INFO     [596/880] Devil’s Claw 500 mg 
+13:51:09  INFO       main ✓
+13:51:09  INFO       image[0] ✓
+13:51:09  INFO       → saved
+13:51:09  INFO     [597/880] Boswellia
+13:51:10  INFO       main ✓
+13:51:10  INFO       image[0] ✓
+13:51:10  INFO       → saved
+13:51:11  INFO     [598/880] Artrogenol Gel 
+13:51:12  INFO       main ✓
+13:51:14  INFO       image[0] ✓
+13:51:14  INFO       → saved
+13:51:14  INFO     [599/880] Probiotiques Dynamises
+13:51:14  INFO       main already OK
+13:51:14  INFO     [600/880] Mafloril ISN
+13:51:16  INFO       main ✓
+13:51:18  INFO       image[0] ✓
+13:51:18  INFO       → saved
+13:51:18  INFO     [601/880] Laktaz Enzim 
+13:51:18  INFO       main already OK
+13:51:18  INFO     [602/880] Lactobacillus Acidophilus
+13:51:19  INFO       main ✓
+13:51:19  INFO       image[0] ✓
+13:51:19  INFO       → saved
+13:51:20  INFO     [603/880] L. Reuteri Plus
+13:51:20  INFO       main ✓
+13:51:21  INFO       image[0] ✓
+13:51:21  INFO       → saved
+13:51:21  INFO     [604/880] Glucomannan 665 mg
+13:51:22  INFO       main ✓
+13:51:22  INFO       image[0] ✓
+13:51:22  INFO       → saved
+13:51:23  INFO     [605/880] Ginger & Turmeric 
+13:51:23  INFO       main ✓
+13:51:24  INFO       image[0] ✓
+13:51:24  INFO       → saved
+13:51:24  INFO     [606/880] Fennel Seed 480 mg
+13:51:25  INFO       main ✓
+13:51:25  INFO       image[0] ✓
+13:51:25  INFO       → saved
+13:51:26  INFO     [607/880] ColonDetox 
+13:51:28  INFO       main ✓
+13:51:29  INFO       image[0] ✓
+13:51:29  INFO       → saved
+13:51:29  INFO     [608/880] Artichoke Leaves 500 mg
+13:51:29  INFO       main already OK
+13:51:30  INFO     [609/880] Transit Doux 
+13:51:30  INFO       main already OK
+13:51:30  INFO     [610/880] Toux Seche & Grasse
+13:51:30  INFO       main already OK
+13:51:30  INFO     [611/880] Phytovermil
+13:51:30  INFO       main already OK
+13:51:31  INFO     [612/880] Oti-Protect 
+13:51:31  INFO       main already OK
+13:51:31  INFO     [613/880] Nervosite
+13:51:31  INFO       main already OK
+13:51:31  INFO     [614/880] Nez-Gorge
+13:51:31  INFO       main already OK
+13:51:32  INFO     [615/880] Mal Des Transports
+13:51:32  INFO       main already OK
+13:51:32  INFO     [616/880] Krem për Bebe NANA
+13:51:34  INFO       main ✓
+13:51:35  INFO       image[0] ✓
+13:51:35  INFO       → saved
+13:51:36  INFO     [617/880] Krem për Bebe NANA
+13:51:38  INFO       main ✓
+13:51:39  INFO       image[0] ✓
+13:51:39  INFO       → saved
+13:51:39  INFO     [618/880] Immuno-Fort
+13:51:39  INFO       main already OK
+13:51:40  INFO     [619/880] Immuno-Fort
+13:51:40  INFO       main already OK
+13:51:40  INFO     [620/880] Gommes Transit 
+13:51:40  INFO       main already OK
+13:51:40  INFO     [621/880] Gommes Sommeil 
+13:51:40  INFO       main already OK
+13:51:40  INFO     [622/880] Gommes Immunite
+13:51:40  INFO       main already OK
+13:51:41  INFO     [623/880] Fer + Vitamin B 
+13:51:41  INFO       main already OK
+13:51:41  INFO     [624/880] Bouclier Insect Spray
+13:51:43  INFO       main ✓
+13:51:44  INFO       image[0] ✓
+13:51:44  INFO       → saved
+13:51:45  INFO     [625/880] Balepou Spray
+13:51:46  INFO       main ✓
+13:51:48  INFO       image[0] ✓
+13:51:48  INFO       → saved
+13:51:48  INFO     [626/880] Red Clover Blossom
+13:51:48  INFO       main already OK
+13:51:48  INFO     [627/880] Evening Primrose Oil 500 mg 
+13:51:48  INFO       main already OK
+13:51:49  INFO     [628/880] Cranberry Complex
+13:51:49  INFO       main already OK
+13:51:49  INFO     [629/880] Chasteberry Fruit 400 mg
+13:51:49  INFO       main already OK
+13:51:49  INFO     [630/880] Black Cohosh
+13:51:49  INFO       main already OK
+13:51:50  INFO     [631/880] Specific Homme
+13:51:50  INFO       main already OK
+13:51:50  INFO     [632/880] Just One Multi with Iron
+13:51:50  INFO       main already OK
+13:51:50  INFO     [633/880] White Willow Bark
+13:51:50  INFO       main already OK
+13:51:51  INFO     [634/880] Magnesium Orotate 654 mg 
+13:51:51  INFO       main already OK
+13:51:51  INFO     [635/880] Magnesium Lactate 84 mg
+13:51:51  INFO       main already OK
+13:51:51  INFO     [636/880] L-Glutamine 500 mg 
+13:51:51  INFO       main already OK
+13:51:51  INFO     [637/880] Albion Manganese 40 mg
+13:51:51  INFO       main already OK
+13:51:52  INFO     [638/880] Albion Magnesium & Calcium with D3 & K2
+13:51:52  INFO       main already OK
+13:51:52  INFO     [639/880] Lutein 10 mg 
+13:51:52  INFO       main already OK
+13:51:52  INFO     [640/880] VitaCholine Choline Bitartrate 
+13:51:52  INFO       main already OK
+13:51:53  INFO     [641/880] Shilajit Extract 100 mg
+13:51:53  INFO       main already OK
+13:51:53  INFO     [642/880] L-Theanine 200 mg
+13:51:53  INFO       main already OK
+13:51:53  INFO     [643/880] L-Lysine 500 mg 
+13:51:53  INFO       main already OK
+13:51:54  INFO     [644/880] Korean Red Ginseng Root 400 mg
+13:51:54  INFO       main already OK
+13:51:54  INFO     [645/880] Inositol 650 mg
+13:51:54  INFO       main already OK
+13:51:54  INFO     [646/880] Gotu Kola 435 mg
+13:51:54  INFO       main already OK
+13:51:54  INFO     [647/880] Ginkgo with Vinpocetine
+13:51:54  INFO       main already OK
+13:51:55  INFO     [648/880] Ginkgo with Vinpocetine
+13:51:55  INFO       main already OK
+13:51:55  INFO     [649/880] Choline & Inositol
+13:51:55  INFO       main already OK
+13:51:55  INFO     [650/880] Cervotonus 
+13:51:55  INFO       main already OK
+13:51:56  INFO     [651/880] Cafeine + Energie Instant
+13:51:56  INFO       main already OK
+13:51:56  INFO     [652/880] Brain Essentials 
+13:51:56  INFO       main already OK
+13:51:56  INFO     [653/880] Ubiquinol 
+13:51:56  INFO       main already OK
+13:51:57  INFO     [654/880] Triple Strength Super EPA & DHA
+13:51:57  INFO       main already OK
+13:51:57  INFO     [655/880] Pumpkin Seed Oil 1.000 mg
+13:51:57  INFO       main already OK
+13:51:57  INFO     [656/880] Pristine Norwegian Cod Liver Oil 1 gr 
+13:51:57  INFO       main already OK
+13:51:58  INFO     [657/880] Krill Oil with Pure Coconut Oil 
+13:51:58  INFO       main already OK
+13:51:58  INFO     [658/880] Garlic 400 mg 
+13:51:58  INFO       main already OK
+13:51:58  INFO     [659/880] D3-Vitamin 4000 NE
+13:51:58  INFO       main already OK
+13:51:58  INFO     [660/880] D3-Vitamin 2000 NE
+13:51:58  INFO       main already OK
+13:51:59  INFO     [661/880] Berberine 400 mg
+13:52:01  INFO       main ✓
+13:52:02  INFO       image[0] ✓
+13:52:02  INFO       → saved
+13:52:02  INFO     [662/880] Super Stress B Complex
+13:52:02  INFO       main already OK
+13:52:03  INFO     [663/880] St. John’s Wort 375 mg
+13:52:03  INFO       main already OK
+13:52:03  INFO     [664/880] Lithium Orotate 5 mg 
+13:52:03  INFO       main already OK
+13:52:03  INFO     [665/880] Lion’s Mane Mushroom 500 mg
+13:52:03  INFO       main already OK
+13:52:04  INFO     [666/880] L-Theanine 100 mg
+13:52:04  INFO       main already OK
+13:52:04  INFO     [667/880] Ginkgo Biloba Extract 60 mg
+13:52:04  INFO       main already OK
+13:52:04  INFO     [668/880] GABA 500 mg
+13:52:04  INFO       main already OK
+13:52:05  INFO     [669/880] Bacopa Monnieri 
+13:52:05  INFO       main already OK
+13:52:05  INFO     [670/880] Ashwagandha 450 mg
+13:52:05  INFO       main already OK
+13:52:05  INFO     [671/880] Yohimbe 500 mg 
+13:52:05  INFO       main already OK
+13:52:06  INFO     [672/880] Tongkat Ali 400 mg
+13:52:06  INFO       main already OK
+13:52:06  INFO     [673/880] Mega Tribulus Extract 250 mg
+13:52:06  INFO       main already OK
+13:52:06  INFO     [674/880] Maca 500 mg 
+13:52:06  INFO       main already OK
+13:52:06  INFO     [675/880] Maca 500 mg 
+13:52:06  INFO       main already OK
+13:52:07  INFO     [676/880] Maca 1000 
+13:52:07  INFO       main already OK
+13:52:07  INFO     [677/880] Instant Erect 
+13:52:09  INFO       main ✓
+13:52:10  INFO       image[0] ✓
+13:52:11  INFO       → saved
+13:52:11  INFO     [678/880] Horny Goat Weed Complex
+13:52:11  INFO       main already OK
+13:52:11  INFO     [679/880] DHEA 50 mg
+13:52:11  INFO       main already OK
+13:52:11  INFO     [680/880] DHEA 25 mg 
+13:52:11  INFO       main already OK
+13:52:12  INFO     [681/880] Water Pills
+13:52:12  INFO       main already OK
+13:52:12  INFO     [682/880] Uva Ursi Leaf 
+13:52:12  INFO       main already OK
+13:52:12  INFO     [683/880] Uva Ursi Leaf 450 mg
+13:52:12  INFO       main already OK
+13:52:13  INFO     [684/880] Saw Palmetto 540 mg
+13:52:13  INFO       main already OK
+13:52:13  INFO     [685/880] Prostagenol
+13:52:13  INFO       main already OK
+13:52:13  INFO     [686/880] Olioseptil Voies-Urinaires
+13:52:13  INFO       main already OK
+13:52:14  INFO     [687/880] Herbal Urinary Care
+13:52:14  INFO       main already OK
+13:52:14  INFO     [688/880] Cranberry Whole Fruit Concentrate 
+13:52:14  INFO       main already OK
+13:52:14  INFO     [689/880] Vegan Prenatal Multi 
+13:52:14  INFO       main already OK
+13:52:14  INFO     [690/880] Folate 
+13:52:14  INFO       main already OK
+13:52:15  INFO     [691/880] Vitamin E-400 with Selenium
+13:52:15  INFO       main already OK
+13:52:15  INFO     [692/880] Turmeric 720 mg
+13:52:15  INFO       main already OK
+13:52:15  INFO     [693/880] Spearmint Leaf 400 mg
+13:52:15  INFO       main already OK
+13:52:16  INFO     [694/880] SelenoExcell Selenium 200 mcg 
+13:52:16  INFO       main already OK
+13:52:16  INFO     [695/880] Resveratrol 250 mg
+13:52:16  INFO       main already OK
+13:52:16  INFO     [696/880] Resveratrol 100 mg
+13:52:16  INFO       main already OK
+13:52:17  INFO     [697/880] L-Glutathione 100 mg
+13:52:17  INFO       main already OK
+13:52:17  INFO     [698/880] Green Tea 500 mg 
+13:52:17  INFO       main already OK
+13:52:17  INFO     [699/880] Chia Seed 400 mg
+13:52:17  INFO       main already OK
+13:52:18  INFO     [700/880] Alpha Lipoic Acid 600 mg
+13:52:18  INFO       main already OK
+13:52:18  INFO     [701/880] Alpha Lipoic Acid 300 mg
+13:52:18  INFO       main already OK
+13:52:18  INFO     [702/880] Daily B-Complex
+13:52:18  INFO       main already OK
+13:52:18  INFO     [703/880] Biotin 5.000 mcg 
+13:52:18  INFO       main already OK
+13:52:19  INFO     [704/880] Biotin 5.000 mcg 
+13:52:19  INFO       main already OK
+13:52:19  INFO     [705/880] Biotin 10.000 mcg
+13:52:19  INFO       main already OK
+13:52:19  INFO     [706/880] Niacin-Bound Chromium 200 mcg 
+13:52:19  INFO       main already OK
+13:52:20  INFO     [707/880] CoQ10 30 mg
+13:52:20  INFO       main already OK
+13:52:20  INFO     [708/880] CoQ10 200 mg
+13:52:20  INFO       main already OK
+13:52:20  INFO     [709/880] CoQ10 100 mg
+13:52:20  INFO       main already OK
+13:52:21  INFO     [710/880] Glucosamine, Chondroitin & MSM 
+13:52:21  INFO       main already OK
+13:52:21  INFO     [711/880] Marine Collagen Peptides 400 mg
+13:52:21  INFO       main already OK
+13:52:21  INFO     [712/880] Collagen Peptides 
+13:52:21  INFO       main already OK
+13:52:21  INFO     [713/880] Triple Strength Melatonin 10 mg
+13:52:21  INFO       main already OK
+13:52:22  INFO     [714/880] Sleep Essentials
+13:52:22  INFO       main already OK
+13:52:22  INFO     [715/880] Melatonin 3 mg 
+13:52:22  INFO       main already OK
+13:52:22  INFO     [716/880] Extra Strength Melatonin 5 mg
+13:52:22  INFO       main already OK
+13:52:23  INFO     [717/880] 5-HTP & Melatonin
+13:52:23  INFO       main already OK
+13:52:23  INFO     [718/880] Gommes Multivitamines
+13:52:23  INFO       main already OK
+13:52:23  INFO     [719/880] 22 Vitamines & Oligo-Elements
+13:52:23  INFO       main already OK
+13:52:24  INFO     [720/880] Omega 3 Fish Oil with Vitamin D
+13:52:24  INFO       main already OK
+13:52:24  INFO     [721/880] Omega 3 
+13:52:24  INFO       main already OK
+13:52:24  INFO     [722/880] Gommes Omega 3 
+13:52:24  INFO       main already OK
+13:52:24  INFO     [723/880] Flaxseed Oil 1 gr
+13:52:24  INFO       main already OK
+13:52:25  INFO     [724/880] Cod Liver Oil 700 mg
+13:52:25  INFO       main already OK
+13:52:25  INFO     [725/880] Women’s Daily Probiotic + Prebiotic FOS 
+13:52:25  INFO       main already OK
+13:52:25  INFO     [726/880] Ultimate 16 Strain Probiotic with FOS
+13:52:27  INFO       main ✓
+13:52:29  INFO       image[0] ✓
+13:52:29  INFO       → saved
+13:52:29  INFO     [727/880] Probiotiques 10-M
+13:52:31  INFO       main ✓
+13:52:33  INFO       image[0] ✓
+13:52:33  INFO       → saved
+13:52:33  INFO     [728/880] Probiotic with Digestive Enzymes 
+13:52:33  INFO       main already OK
+13:52:33  INFO     [729/880] Men’s Daily Probiotic + Prebiotic FOS
+13:52:33  INFO       main already OK
+13:52:34  INFO     [730/880] Lactobacillus Rhamnosus with FOS 
+13:52:34  INFO       main already OK
+13:52:34  INFO     [731/880] Lactobacillus Gasseri
+13:52:34  INFO       main already OK
+13:52:34  INFO     [732/880] Gommes P’tit Biotic 
+13:52:34  INFO       main already OK
+13:52:35  INFO     [733/880] FemFlora Probiotic 
+13:52:35  INFO       main already OK
+13:52:35  INFO     [734/880] Epic Pro 25-Strain Probiotic 
+13:52:35  INFO       main already OK
+13:52:35  INFO     [735/880] Diarea 
+13:52:35  INFO       main already OK
+13:52:36  INFO     [736/880] Cranberry Plus Probiotics
+13:52:36  INFO       main already OK
+13:52:36  INFO     [737/880] Colicillus Bebe
+13:52:36  INFO       main already OK
+13:52:36  INFO     [738/880] Vitamin B12 500 mcg 
+13:52:36  INFO       main already OK
+13:52:36  INFO     [739/880] Vitamin B12 500 mcg
+13:52:36  INFO       main already OK
+13:52:37  INFO     [740/880] Gommes Vitamine D3
+13:52:37  INFO       main already OK
+13:52:37  INFO     [741/880] Folic Acid & B12
+13:52:37  INFO       main already OK
+13:52:37  INFO     [742/880] Vitamin B6 100 mg
+13:52:37  INFO       main already OK
+13:52:38  INFO     [743/880] Vitamin B6 100 mg
+13:52:38  INFO       main already OK
+13:52:38  INFO     [744/880] P-5-P 40 mg
+13:52:38  INFO       main already OK
+13:52:38  INFO     [745/880] Daily B-Complex
+13:52:38  INFO       main already OK
+13:52:39  INFO     [746/880] Vitamin C-500 Rose Hips
+13:52:39  INFO       main already OK
+13:52:39  INFO     [747/880] Vitamin C-1000 Rose Hips
+13:52:39  INFO       main already OK
+13:52:39  INFO     [748/880] Vitamin C-1000 Rose Hips
+13:52:39  INFO       main already OK
+13:52:40  INFO     [749/880] Gommes Vitamine C 
+13:52:40  INFO       main already OK
+13:52:40  INFO     [750/880] Vitamin D3 Coconut Oil 5000 IU
+13:52:40  INFO       main already OK
+13:52:40  INFO     [751/880] Vitamin D3 Coconut Oil 2000 IU 
+13:52:40  INFO       main already OK
+13:52:40  INFO     [752/880] Vitamin D3 5000 IU 
+13:52:40  INFO       main already OK
+13:52:41  INFO     [753/880] Vitamin D3 4000 IU 
+13:52:41  INFO       main already OK
+13:52:41  INFO     [754/880] Vitamin D3
+13:52:41  INFO       main already OK
+13:52:41  INFO     [755/880] Vitamin D3 2000 IU 
+13:52:41  INFO       main already OK
+13:52:42  INFO     [756/880] Vitamin D3 1000 IU 
+13:52:42  INFO       main already OK
+13:52:42  INFO     [757/880] Vitamin D3 1000 IU 
+13:52:42  INFO       main already OK
+13:52:42  INFO     [758/880] Vitamin D2 & D3
+13:52:42  INFO       main already OK
+13:52:43  INFO     [759/880] Vitamin E-400
+13:52:43  INFO       main already OK
+13:52:43  INFO     [760/880] Vitamin E-200 
+13:52:43  INFO       main already OK
+13:52:43  INFO     [761/880] Vitamin E Cream 
+13:52:43  INFO       main already OK
+13:52:43  INFO     [762/880] ACES
+13:52:43  INFO       main already OK
+13:52:44  INFO     [763/880] Vitamin K1 100 mcg
+13:52:44  INFO       main already OK
+13:52:44  INFO     [764/880] Vitamin K2 50 mcg
+13:52:44  INFO       main already OK
+13:52:44  INFO     [765/880] Vitamin K2 100 mcg 
+13:52:44  INFO       main already OK
+13:52:45  INFO     [766/880] Retinol Facial Serum Skin Anti-Aging L9158
+13:52:47  INFO       main ✓
+13:52:48  INFO       image[0] ✓
+13:52:48  INFO       → saved
+13:52:48  INFO     [767/880] Retinol L0404
+13:52:48  INFO       main already OK
+13:52:49  INFO     [768/880] Retinol`E + Vitamin E SuperSerum L0852
+13:52:50  INFO       main ✓
+13:52:52  INFO       image[0] ✓
+13:52:52  INFO       → saved
+13:52:52  INFO     [769/880] Vitamin A Retinol Anti-Aging Night Cream L3568
+13:52:52  INFO       main already OK
+13:52:53  INFO     [770/880] Hyaluronic Acid Instant Hydration Essence Gel Crea
+13:52:53  INFO       main already OK
+13:52:53  INFO     [771/880] Hyaluronic Acid Water-Infused Serum L0734
+13:52:53  INFO       main already OK
+13:52:53  INFO     [772/880] Hyaluronic Acid 3% + Panthenol 5% Serum L2559
+13:52:54  INFO       main ✓
+13:52:54  INFO       image[0] ✓
+13:52:54  INFO       → saved
+13:52:55  INFO     [773/880] Vitamin C 15% + Niacinamide 2% Serum L2818
+13:52:55  INFO       main ✓
+13:52:56  INFO       image[0] ✓
+13:52:56  INFO       image[1] ✓
+13:52:56  INFO       → saved
+13:52:57  INFO     [774/880] Vitamin C +Hyaluronic Acid Serum L1028
+13:52:57  INFO       main already OK
+13:52:57  INFO     [775/880] Pure Vitamin C & Acido L-Absorbic 10% SuperSerum L
+13:52:59  INFO       main ✓
+13:53:00  INFO       image[0] ✓
+13:53:00  INFO       → saved
+13:53:01  INFO     [776/880] Vitamin C Eye Cream & Glycerin L9486
+13:53:01  INFO       main ✓
+13:53:02  INFO       image[0] ✓
+13:53:02  INFO       → saved
+13:53:02  INFO     [777/880] Vitamin C + Hyaluronic Acid Serum L9326
+13:53:02  INFO       main already OK
+13:53:02  INFO     [778/880] Vitamin C 20 % + E & Hyaluronic Acid L5398
+13:53:02  INFO       main already OK
+13:53:03  INFO     [779/880] Beauty Recipe Bianca for normal skin L2405
+13:53:03  INFO       main already OK
+13:53:03  INFO     [780/880] Clear & Radiant Moisturiser L7785
+13:53:05  INFO       main ✓
+13:53:06  INFO       image[0] ✓
+13:53:06  INFO       → saved
+13:53:07  INFO     [781/880] Clear&Defend 0.5% Salicylic Acid Moisturiser L2581
+13:53:07  INFO       main already OK
+13:57:12  INFO     [782/880] Clear&Soothe Mousse Cleanser With Turmeric L7086
+13:57:12  INFO       main already OK
+13:57:12  INFO     [783/880] Clear&Defend+Facial Wash L0760
+13:57:12  INFO       main already OK
+13:57:12  INFO     [784/880] Blackhead Eliminating 0.5% Salicylic Acid Cleansin
+13:57:12  INFO       main already OK
+13:57:13  INFO     [785/880] Blackhead Eliminating 2% Salicylic Acid Face Scrub
+13:57:13  INFO       main already OK
+13:57:13  INFO     [786/880] Clear&Defend 1% Salicylic acid 2in1 Wash-Mask L966
+13:57:13  INFO       main already OK
+13:57:13  INFO     [787/880] Sebum Regulating Moisturizing Cream L8743
+13:57:13  INFO       main already OK
+13:57:14  INFO     [788/880] Rilastil Sun System Velvet Touch SPF 30 Cream L745
+13:57:15  INFO       main ✓
+13:57:17  INFO       image[0] ✓
+13:57:38  INFO       → saved
+13:57:39  INFO     [789/880] Set Aqua Cleanser + Water Touch SPF 50 L4385
+13:57:40  INFO       main ✓
+13:57:42  INFO       image[0] ✓
+13:57:42  INFO       → saved
+13:57:42  INFO     [790/880] Set Acnestil Gel+Micropeeling +Attiva Cream L6570
+13:57:42  INFO       main already OK
+13:57:43  INFO     [791/880] Set Acnestil SPF 50+ Acnestil Gel L9636
+13:57:44  INFO       main ✓
+13:57:46  INFO       image[0] ✓
+13:57:46  INFO       → saved
+13:57:46  INFO     [792/880] Set Acnestil Cleansing Gel +Attiva Cream L4408
+13:57:46  INFO       main already OK
+13:57:47  INFO     [793/880] Xerolact PB L8226
+13:57:47  INFO       main already OK
+13:57:47  INFO     [794/880] Acnestil Attiva Anti-Blemish Cream L0189
+13:57:47  INFO       main ✓
+13:57:48  INFO       image[0] ✓
+13:57:48  INFO       → saved
+13:57:48  INFO     [795/880] Xerolact Cleansing Oil L0295
+13:57:48  INFO       main already OK
+13:57:48  INFO     [796/880] Acnestil Cleansing gel L8592
+13:57:48  INFO       main already OK
+13:57:49  INFO     [797/880] Acnestil Cleansing Mousse L2637
+13:57:49  INFO       main already OK
+13:57:49  INFO     [798/880] Hyaluronic Acid 2% L3490
+13:57:49  INFO       main already OK
+13:57:49  INFO     [799/880] Argireline Solution 10% L0946
+13:57:51  INFO       main ✓
+13:57:52  INFO       image[0] ✓
+13:57:52  INFO       → saved
+13:57:53  INFO     [800/880] Niacinamide 10 % + Zinc 1% L4951
+13:57:53  INFO       main already OK
+13:57:53  INFO     [801/880] Azelaic Acid Suspension 10 % L0588
+13:57:53  INFO       main already OK
+13:57:53  INFO     [802/880] Glycolic Acid 7% Toner L4060
+13:57:55  INFO       main ✓
+13:57:56  INFO       image[0] ✓
+13:57:56  INFO       → saved
+13:57:57  INFO     [803/880] Deodorant Clinical Control 98 H for women 1+1 Prom
+13:57:57  INFO       main already OK
+13:57:57  INFO     [804/880] Antipespirant Deodorant Rll on 48 H L0300
+13:57:57  INFO       main already OK
+13:57:57  INFO     [805/880] Deodorant Clinical Control 98 H for man L5025
+13:57:57  INFO       main already OK
+13:57:58  INFO     [806/880] Liftactive Collagen Specialist 16 Night Cream L252
+13:57:58  INFO       main already OK
+13:57:58  INFO     [807/880] Capital Soleil Self Tanning Milk L0714
+13:57:58  INFO       main already OK
+13:57:58  INFO     [808/880] Capital Soleil Anti-Sand Mist for children spf 50 
+13:57:58  INFO       main already OK
+13:57:58  INFO     [809/880] Capital Soleil UV Aqua SPF 50 Spray L0139
+13:58:00  INFO       main ✓
+13:58:01  INFO       image[0] ✓
+13:58:02  INFO       image[1] ✓
+13:58:02  INFO       → saved
+13:58:02  INFO     [810/880] Pharmaceris Mineral Mattifying Fluid Foundation SP
+13:58:03  INFO       main ✓
+13:58:03  INFO       image[0] ✓
+13:58:03  INFO       → saved
+13:58:03  INFO     [811/880] Pharmaceris Mineral Mattifying Fluid Dermo-Foundat
+13:58:04  INFO       main ✓
+13:58:05  INFO       image[0] ✓
+13:58:05  INFO       → saved
+13:58:05  INFO     [812/880] Pharmaceris Protective-Corrective Fluid Foundation
+13:58:06  INFO       main ✓
+13:58:06  INFO       image[0] ✓
+13:58:06  INFO       → saved
+13:58:06  INFO     [813/880] Pharmaceris Protective-Corrective Fluid Foundation
+13:58:07  INFO       main ✓
+13:58:07  INFO       image[0] ✓
+13:58:07  INFO       → saved
+13:58:08  INFO     [814/880] Pharmaceris Intense Coverage Foundation SPF20 IVOR
+13:58:08  INFO       main ✓
+13:58:09  INFO       image[0] ✓
+13:58:09  INFO       → saved
+13:58:09  INFO     [815/880] Pharmaceris Intense Coverage Foundation SPF20 BRON
+13:58:10  INFO       main ✓
+13:58:10  INFO       image[0] ✓
+13:58:10  INFO       → saved
+13:58:11  INFO     [816/880] Pharmaceris Intense Coverage Foundation SPF20 SAND
+13:58:11  INFO       main ✓
+13:58:12  INFO       image[0] ✓
+13:58:12  INFO       → saved
+13:58:12  INFO     [817/880] Pharmaceris VITI-MELO Night Cream For Vitiligo V71
+13:58:12  INFO       main ✓
+13:58:13  INFO       image[0] ✓
+13:58:13  INFO       → saved
+13:58:13  INFO     [818/880] Pharmaceris Viti-Melo Day Cream For Vitiligo SPF50
+13:58:14  INFO       main ✓
+13:58:14  INFO       image[0] ✓
+13:58:14  INFO       → saved
+13:58:14  INFO     [819/880] Pharmaceris Psoritar Intensive Multifunctional Cre
+13:58:15  INFO       main ✓
+13:58:15  INFO       image[0] ✓
+13:58:15  INFO       → saved
+13:58:16  INFO     [820/880] Pharmaceris Ichtilix-Forte Psoriatic Reducing Kera
+13:58:16  INFO       main ✓
+13:58:16  INFO       image[0] ✓
+13:58:17  INFO       → saved
+13:58:17  INFO     [821/880] Pharmaceris Puri-Ichtilium Body & Scalp Cleansing 
+13:58:18  INFO       main ✓
+13:58:18  INFO       image[0] ✓
+13:58:18  INFO       → saved
+13:58:18  INFO     [822/880] Pharmaceris X-Ray Liposubtilium Soothing and Regen
+13:58:19  INFO       main ✓
+13:58:19  INFO       image[0] ✓
+13:58:19  INFO       → saved
+13:58:19  INFO     [823/880] Pharmaceris M Foliacti Stretch Marks Preventing Cr
+13:58:20  INFO       main ✓
+13:58:21  INFO       image[0] ✓
+13:58:21  INFO       → saved
+13:58:21  INFO     [824/880] Pharmaceris M Tocoreduct Stretch Marks Reducing Ba
+13:58:21  INFO       main ✓
+13:58:22  INFO       image[0] ✓
+13:58:22  INFO       → saved
+13:58:22  INFO     [825/880] Pharmaceris Octopirox Soothing Face Cream DS1711
+13:58:23  INFO       main ✓
+13:58:23  INFO       image[0] ✓
+13:58:23  INFO       → saved
+13:58:23  INFO     [826/880] Pharmaceris Octopirox DS Scalp Tonicum DS0127
+13:58:25  INFO       main ✓
+13:58:26  INFO       image[0] ✓
+13:58:27  INFO       image[1] ✓
+13:58:27  INFO       image[2] ✓
+13:58:28  INFO       image[3] ✓
+13:58:29  INFO       image[4] ✓
+13:58:29  INFO       → saved
+13:58:29  INFO     [827/880] Retinol B3 Serum L4469
+13:58:29  INFO       main already OK
+13:58:29  INFO     [828/880] Serozinc Spray L6728
+13:58:29  INFO       main already OK
+13:58:29  INFO     [829/880] Thermale Spring Water L4397
+13:58:29  INFO       main already OK
+13:58:30  INFO     [830/880] Toleriane Dermo-Cleanser L6599
+13:58:30  INFO       main already OK
+13:58:30  INFO     [831/880] Toleriane Sensitive Riche Cream L8348
+13:58:30  INFO       main already OK
+13:58:30  INFO     [832/880] Toleriane Sensitive Cream L8486
+13:58:30  INFO       main already OK
+13:58:31  INFO     [833/880] Lipikar Gel Urea 30% L9792
+13:58:31  INFO       main already OK
+13:58:31  INFO     [834/880] Lipikar Baume AP+M Triple Action Balsam L3790
+13:58:33  INFO       main ✓
+13:58:34  INFO       image[0] ✓
+13:58:34  INFO       → saved
+13:58:35  INFO     [835/880] Lipikar Surgras Sapun L4533
+13:58:35  INFO       main already OK
+13:58:35  INFO     [836/880] Lipikar Xerand Krem per duar L2684
+13:58:35  INFO       main already OK
+13:58:35  INFO     [837/880] Lipikar Baume Light AP+M L3786
+13:58:35  INFO       main already OK
+13:58:36  INFO     [838/880] Lipikar Cleansing Oil AP+ L6764
+13:58:37  INFO       main ✓
+13:58:39  INFO       image[0] ✓
+13:58:39  INFO       → saved
+13:58:39  INFO     [839/880] Lipikar Gel Lavant L8785
+13:58:39  INFO       main already OK
+13:58:39  INFO     [840/880] Mela B3 Care Cream SPF 30 L0113
+13:58:40  INFO       main ✓
+13:58:40  INFO       image[0] ✓
+13:58:41  INFO       image[1] ✓
+13:58:41  INFO       → saved
+13:58:41  INFO     [841/880] Mela B3 Micro-Peeling Gel L0069
+13:58:43  INFO       main ✓
+13:58:44  INFO       image[0] ✓
+13:58:44  INFO       → saved
+13:58:45  INFO     [842/880] Mela B3 Serum L0021
+13:58:45  INFO       main already OK
+13:58:45  INFO     [843/880] Hydraphase HA UV SPF25 Light L6110
+13:58:45  INFO       main already OK
+13:58:45  INFO     [844/880] Hydraphase HA UV SPF25 Rich L6097
+13:58:47  INFO       main ✓
+13:58:48  INFO       image[0] ✓
+13:58:48  INFO       → saved
+13:58:49  INFO     [845/880] Effaclar Duo+M Patch L4887
+13:58:49  INFO       main already OK
+13:58:49  INFO     [846/880] Effaclar Duo+M Unifiant Medium L9280
+13:58:49  INFO       main already OK
+13:58:49  INFO     [847/880] Effaclar Duo+M Unifiant Light L9303
+13:58:49  INFO       main already OK
+13:58:49  INFO     [848/880] Effaclar Duo+M Cream L3377
+13:58:49  INFO       main already OK
+13:58:50  INFO     [849/880] Effaclar Duo + Spf 30 Cream L9493
+13:58:50  INFO       main already OK
+13:58:50  INFO     [850/880] A.Z Gel-Creme L0742
+13:58:51  INFO       main ✓
+13:58:51  INFO       image[0] ✓
+13:58:51  INFO       → saved
+13:58:51  INFO     [851/880] 22 Vitamines & Oligo-Elements 125 ml
+13:58:52  INFO       main ✓
+13:58:52  INFO       image[0] ✓
+13:58:52  INFO       → saved
+13:58:53  INFO     [852/880] Eucerin SUN Dry Touch Gel-Krem SPF 30+ 83556
+13:58:53  INFO       main already OK
+13:58:53  INFO     [853/880] Eucerin Oil Control Sprej Transparent për Trup SPF
+13:58:54  INFO       main ✓
+13:58:56  INFO       image[0] ✓
+13:58:56  INFO       image[1] ✓
+13:58:57  INFO       image[2] ✓
+13:58:57  INFO       image[3] ✓
+13:58:58  INFO       image[4] ✓
+13:58:58  INFO       → saved
+13:58:58  INFO     [854/880] EUCERIN SUN Allergy Protection Afer Sun Krem-Gel 8
+13:58:58  INFO       main already OK
+13:58:59  INFO     [855/880] EUCERIN SUN krem-gel për mbrojtje nga alergjitë SP
+13:58:59  INFO       main already OK
+13:58:59  INFO     [856/880] Eucerin Sun për femijë Dry Touch Gel-Cream 63040
+13:58:59  INFO       main already OK
+13:58:59  INFO     [857/880] EUCERIN SUN Oil Control Gel-Krem Tonifikues SPF 50
+13:58:59  INFO       main already OK
+13:59:00  INFO     [858/880] EUCERIN SUN Oil Control Gel-Krem Tonifikues SPF 50
+13:59:00  INFO       main already OK
+13:59:00  INFO     [859/880] EUCERIN Serum Hyaluron-Filler + Elasticity 3D 8356
+13:59:00  INFO       main already OK
+13:59:00  INFO     [860/880] EUCERIN Krem për lëkurë të yndyrshme SPF 50+ 83555
+13:59:00  INFO       main already OK
+13:59:01  INFO     [861/880] EUCERIN Hyaluron Serum-Filler me vitaminë C 83508
+13:59:01  INFO       main already OK
+13:59:01  INFO     [862/880] EUCERIN Shampon ekstra i butë 69653
+13:59:01  INFO       main already OK
+13:59:01  INFO     [863/880] EUCERIN Sun Hydro-protect Ultra Light Fluid SPF 50
+13:59:01  INFO       main already OK
+13:59:01  INFO     [864/880] Eucerin Oil Control Sprej Transparent për Trup SPF
+13:59:03  INFO       main ✓
+13:59:04  INFO       image[0] ✓
+13:59:05  INFO       image[1] ✓
+13:59:05  INFO       image[2] ✓
+13:59:06  INFO       image[3] ✓
+13:59:07  INFO       image[4] ✓
+13:59:07  INFO       → saved
+13:59:07  INFO     [865/880] Eucerin Sprej për Fëmijë SPF 50+ 63853
+13:59:08  INFO       main ✓
+13:59:10  INFO       image[0] ✓
+13:59:10  INFO       image[1] ✓
+13:59:11  INFO       image[2] ✓
+13:59:11  INFO       image[3] ✓
+13:59:11  INFO       → saved
+13:59:12  INFO     [866/880] Eucerin Losion për Mbrojtje nga Dielli SPF 50+ 638
+13:59:13  INFO       main ✓
+13:59:14  INFO       image[0] ✓
+13:59:15  INFO       image[1] ✓
+13:59:15  INFO       → saved
+13:59:15  INFO     [867/880] EUCERIN Krem nate Hyaluron-Filler 50ml, 63486
+13:59:15  INFO       main already OK
+13:59:16  INFO     [868/880] EUCERIN Krem këmbësh urea 10% 63300
+13:59:16  INFO       main already OK
+13:59:16  INFO     [869/880] EUCERIN Krem kujdesi akut Atopi Control 63174
+13:59:16  INFO       main already OK
+13:59:16  INFO     [870/880] EUCERIN Vaj dushi Atopi Control 63173
+13:59:16  INFO       main already OK
+13:59:17  INFO     [871/880] Eucerin Balsam Buzësh SPF 15 63170
+13:59:18  INFO       main ✓
+13:59:19  INFO       image[0] ✓
+13:59:19  INFO       → saved
+13:59:20  INFO     [872/880] EUCERIN Larës për zonë intime, 63095
+13:59:20  INFO       main already OK
+13:59:20  INFO     [873/880] EUCERIN 63071 PH 5 LOSION PER LARJE
+13:59:20  INFO       main already OK
+13:59:20  INFO     [874/880] EUCERIN Atopi Control Losion trupi 63366
+13:59:20  INFO       main already OK
+13:59:20  INFO     [875/880] EUCERIN pH5 Krem Për Fytyrë 63022
+13:59:20  INFO       main already OK
+13:59:21  INFO     [876/880] DermoPURE FLUID MATIFIKUES 69691
+13:59:21  INFO       main already OK
+13:59:21  INFO     [877/880] Cicaplast Baume B5+ Balm L6809
+13:59:21  INFO       main already OK
+13:59:21  INFO     [878/880] Cicaplast Baume B5+ Balm L6847
+13:59:21  INFO       main already OK
+13:59:22  INFO     [879/880] CICAPLAST BAUME B5 SPF 50 L6940
+13:59:22  INFO       main already OK
+13:59:22  INFO     [880/880] Dermato Clean Gell Freskues për Pastrim 63993
+13:59:23  INFO       main ✓
+13:59:25  INFO       image[0] ✓
+13:59:25  INFO       image[1] ✓
+13:59:25  INFO       → saved
+13:59:26  INFO     Products done — updated: 323, skipped: 557, failed: 0
+13:59:26  INFO     ── Banners: 15 to process ──
+13:59:26  INFO     [1/15] Banner 6a3afaa26b93e31cfb5aa376
+13:59:26  INFO       image_url ✓
+13:59:26  INFO       → saved
+13:59:27  INFO     [2/15] Banner 6a3c555766875d767a544bc8
+13:59:29  INFO       image_url ✓
+13:59:29  INFO       → saved
+13:59:29  INFO     [3/15] Banner 6a3c556566875d767a544bc9
+13:59:31  INFO       image_url ✓
+13:59:31  INFO       → saved
+13:59:31  INFO     [4/15] Banner 6a3c557166875d767a544bca
+13:59:33  INFO       image_url ✓
+13:59:33  INFO       → saved
+13:59:34  INFO     [5/15] Banner 6a3c557e66875d767a544bcb
+13:59:35  INFO       image_url ✓
+13:59:35  INFO       → saved
+13:59:36  INFO     [6/15] Banner 6a3c558b66875d767a544bcc
+13:59:38  INFO       image_url ✓
+13:59:38  INFO       → saved
+13:59:38  INFO     [7/15] Banner 6a3c559566875d767a544bcd
+13:59:40  INFO       image_url ✓
+13:59:40  INFO       → saved
+13:59:40  INFO     [8/15] Banner 6a44682bfaa0955305fb6a4f
+13:59:42  INFO       image_url ✓
+13:59:42  INFO       → saved
+13:59:42  INFO     [9/15] Banner 6a4468cafaa0955305fb6a50
+13:59:44  INFO       image_url ✓
+13:59:44  INFO       → saved
+13:59:44  INFO     [10/15] Banner 6a4469dcfaa0955305fb6a51
+13:59:46  INFO       image_url ✓
+13:59:47  INFO       → saved
+13:59:47  INFO     [11/15] Banner 6a96c13d68ba87b19e146c5d
+13:59:49  INFO       image_url ✓
+13:59:49  INFO       → saved
+13:59:49  INFO     [12/15] Banner 6a96c16868ba87b19e146c5e
+13:59:51  INFO       image_url ✓
+13:59:51  INFO       → saved
+13:59:51  INFO     [13/15] Banner 6ac3a1418a749bcfe6b06048
+13:59:53  INFO       image_url ✓
+13:59:53  INFO       → saved
+13:59:54  INFO     [14/15] Banner 6ad0b6c13082e41d32e0c02b
+13:59:56  INFO       image_url ✓
+13:59:56  INFO       → saved
+13:59:56  INFO     [15/15] Banner 6ae8b7adb15e21c6be6f51fc
+13:59:58  INFO       image_url ✓
+13:59:58  INFO       → saved
+13:59:59  INFO     Banners done — updated: 15, failed: 0
+13:59:59  INFO     Migration complete — no failures.

@@ -125,7 +125,7 @@ def _order_items_html(items):
     return f'<table cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:collapse;">{rows}</table>'
 
 
-LOGO_URL = "https://res.cloudinary.com/drljgepgy/image/upload/v1788282469/ChatGPT_Image_Sep_1_2026_at_07_06_44_PM_kluztv.png"
+LOGO_URL = "https://images.barnatoremeldpharm.com/static/ChatGPT_Image_Sep_1_2026_at_07_06_44_PM_.jpg"
 
 def _email_html(title, body_html, cfg):
     """Branded email shell with logo header, consistent footer."""
@@ -457,11 +457,11 @@ def _promo_blocks_html(base, offer_products=None, cat_images=None):
     # Hardcoded category images (same as home page)
     _CAT_META = [
         ('Dermokozmetikë',        'Kujdes profesional për lëkurën',   f'{base}/products?category=Dermokozmetik%C3%AB',               '#eef5ee', '#2d5a2d',
-         'https://res.cloudinary.com/drljgepgy/image/upload/v1782338006/ChatGPT_Image_Jun_24_2026_at_11_23_35_PM_uqsw1l.png'),
+         'https://images.barnatoremeldpharm.com/static/ChatGPT_Image_Jun_24_2026_at_11_23_35_PM.jpg'),
         ('Suplemente & Vitamina', 'Shëndeti fillon nga brenda',        f'{base}/products?category=Suplemente+%26+Vitamina',           '#eef2ff', '#3730a3',
-         'https://res.cloudinary.com/drljgepgy/image/upload/v1782338009/ChatGPT_Image_Jun_24_2026_at_11_25_37_PM_wpohzj.png'),
+         'https://images.barnatoremeldpharm.com/static/ChatGPT_Image_Jun_24_2026_at_11_25_37_PM.jpg'),
         ('Kujdes Personal & Higjienë', 'Produkte të përditshme',      f'{base}/products?category=Kujdes+Personal+%26+Higjiën%C3%AB', '#fff7ed', '#92400e',
-         'https://res.cloudinary.com/drljgepgy/image/upload/v1782338009/ChatGPT_Image_Jun_24_2026_at_11_27_26_PM_om9wnq.png'),
+         'https://images.barnatoremeldpharm.com/static/ChatGPT_Image_Jun_24_2026_at_11_27_26_PM.jpg'),
     ]
 
     html = ''

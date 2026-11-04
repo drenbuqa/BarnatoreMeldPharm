@@ -14,15 +14,15 @@
 } %}
 
 {% set cat_img_overrides = {
-  'Dermokozmetikë':            'https://res.cloudinary.com/drljgepgy/image/upload/v1782338006/ChatGPT_Image_Jun_24_2026_at_11_23_35_PM_uqsw1l.png',
-  'Suplemente & Vitamina':     'https://res.cloudinary.com/drljgepgy/image/upload/v1782338009/ChatGPT_Image_Jun_24_2026_at_11_25_37_PM_wpohzj.png',
-  'Kujdes Personal & Higjienë':'https://res.cloudinary.com/drljgepgy/image/upload/v1782338009/ChatGPT_Image_Jun_24_2026_at_11_27_26_PM_om9wnq.png',
-  'Pajisje Mjekësore':         'https://res.cloudinary.com/drljgepgy/image/upload/v1782338007/ChatGPT_Image_Jun_24_2026_at_11_28_26_PM_f0hrmo.png',
-  'Nënë & Fëmijë':             'https://res.cloudinary.com/drljgepgy/image/upload/v1782338006/ChatGPT_Image_Jun_24_2026_at_11_29_30_PM_qdp9gv.png',
-  'Pajisje Ortopedike':        'https://res.cloudinary.com/drljgepgy/image/upload/v1782338010/ChatGPT_Image_Jun_24_2026_at_11_30_24_PM_aoqjts.png',
-  'Produkte Natyrale & Bimore':'https://res.cloudinary.com/drljgepgy/image/upload/v1782338006/ChatGPT_Image_Jun_24_2026_at_11_32_07_PM_jjuugv.png'
+  'Dermokozmetikë':            'https://images.barnatoremeldpharm.com/static/ChatGPT_Image_Jun_24_2026_at_11_23_35_PM.jpg',
+  'Suplemente & Vitamina':     'https://images.barnatoremeldpharm.com/static/ChatGPT_Image_Jun_24_2026_at_11_25_37_PM.jpg',
+  'Kujdes Personal & Higjienë':'https://images.barnatoremeldpharm.com/static/ChatGPT_Image_Jun_24_2026_at_11_27_26_PM.jpg',
+  'Pajisje Mjekësore':         'https://images.barnatoremeldpharm.com/static/ChatGPT_Image_Jun_24_2026_at_11_28_26_PM.jpg',
+  'Nënë & Fëmijë':             'https://images.barnatoremeldpharm.com/static/ChatGPT_Image_Jun_24_2026_at_11_29_30_PM.jpg',
+  'Pajisje Ortopedike':        'https://images.barnatoremeldpharm.com/static/ChatGPT_Image_Jun_24_2026_at_11_30_24_PM.jpg',
+  'Produkte Natyrale & Bimore':'https://images.barnatoremeldpharm.com/static/ChatGPT_Image_Jun_24_2026_at_11_32_07_PM.jpg'
 } %}
-{% set _cat_all_img = 'https://res.cloudinary.com/drljgepgy/image/upload/v1782338009/ChatGPT_Image_Jun_24_2026_at_11_43_12_PM_rrrvxq.png' %}
+{% set _cat_all_img = 'https://images.barnatoremeldpharm.com/static/ChatGPT_Image_Jun_24_2026_at_11_43_12_PM.jpg' %}
 
 {# ── Reusable carousel product card macro ── #}
 {% macro hp_card(product, idx) %}
@@ -186,7 +186,7 @@
           {% if not offer_banners %}
           <a href="{{ url_for('main.products') }}" class="hero-slide active">
             <div class="hero-content-wrapper banner-only">
-              <img src="https://res.cloudinary.com/drljgepgy/image/upload/v1770659727/IMG_4312_ul0exk.jpg" alt="Banner" class="hero-img-full">
+              <img src="https://images.barnatoremeldpharm.com/static/IMG_4312_ul0exk.jpg" alt="Banner" class="hero-img-full">
             </div>
           </a>
           {% endif %}
@@ -235,7 +235,7 @@
   <div class="hp-needs-grid">
 
     <a href="{{ url_for('main.products', category='Dermokozmetikë', subcategory='Kundër Akneve') }}" class="hp-need-card">
-      <img src="https://res.cloudinary.com/drljgepgy/image/upload/q_auto,f_auto/v1792095613/Gentle_care_for_acne-prone_skin_zrehe7.png" alt="Akne" class="hp-need-img">
+      <img src="https://images.barnatoremeldpharm.com/static/Gentle_care_for_acne-prone_skin_zrehe7.jpg" alt="Akne" class="hp-need-img">
       <span class="hp-need-badge"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"><g stroke="#315F4A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.7c4.3 0 7.2 3.4 7.2 8.6 0 5.7-3.1 10-7.2 10s-7.2-4.3-7.2-10c0-5.2 2.9-8.6 7.2-8.6Z"/><path d="M6.5 7.7c1.9-.3 3.7-1.3 5-3 1.2 1.5 3 2.5 5.6 2.9"/><path d="M7.9 10.7h2.2M13.9 10.7h2.2M11.3 14.1h1.2M10.1 17.2h3.8"/></g><g fill="#315F4A"><circle cx="15.7" cy="12.9" r="0.52"/><circle cx="16.2" cy="15" r="0.52"/><circle cx="14.3" cy="15.2" r="0.52"/></g></svg></span>
       <div class="hp-need-foot">
         <span class="hp-need-label">Akne &amp; papastërti</span>
@@ -244,7 +244,7 @@
     </a>
 
     <a href="{{ url_for('main.products', category='Dermokozmetikë', subcategory='Hidratues') }}" class="hp-need-card">
-      <img src="https://res.cloudinary.com/drljgepgy/image/upload/q_auto,f_auto/v1792095614/Hydrating_Cream_Swipe_on_Icy_Blue-1_kz7qvc.png" alt="Lëkurë e thatë" class="hp-need-img">
+      <img src="https://images.barnatoremeldpharm.com/static/Hydrating_Cream_Swipe_on_Icy_Blue-1_kz7q.jpg" alt="Lëkurë e thatë" class="hp-need-img">
       <span class="hp-need-badge"><span class="iconify" data-icon="lucide:droplet" data-width="20" data-height="20" style="color:#315F4A"></span></span>
       <div class="hp-need-foot">
         <span class="hp-need-label">Lëkurë e thatë</span>
@@ -253,7 +253,7 @@
     </a>
 
     <a href="{{ url_for('main.products', category='Dermokozmetikë', subcategory='Anti-Age') }}" class="hp-need-card">
-      <img src="https://res.cloudinary.com/drljgepgy/image/upload/q_auto,f_auto/v1792095617/Warm_studio_portrait_with_natural_freckles-2_iknny0.png" alt="Pigmentim" class="hp-need-img">
+      <img src="https://images.barnatoremeldpharm.com/static/Warm_studio_portrait_with_natural_freckl.jpg" alt="Pigmentim" class="hp-need-img">
       <span class="hp-need-badge"><span class="iconify" data-icon="lucide:sparkles" data-width="20" data-height="20" style="color:#315F4A"></span></span>
       <div class="hp-need-foot">
         <span class="hp-need-label">Pigmentim &amp; njolla</span>
@@ -262,7 +262,7 @@
     </a>
 
     <a href="{{ url_for('main.products', category='Dermokozmetikë', subcategory='Kremra Dielli (SPF)') }}" class="hp-need-card">
-      <img src="https://res.cloudinary.com/drljgepgy/image/upload/q_auto,f_auto/v1792095616/Straw_hat_in_golden_sunlight-3_nl4jhv.png" alt="Mbrojtje nga dielli" class="hp-need-img">
+      <img src="https://images.barnatoremeldpharm.com/static/Straw_hat_in_golden_sunlight-3_nl4jhv.jpg" alt="Mbrojtje nga dielli" class="hp-need-img">
       <span class="hp-need-badge"><span class="iconify" data-icon="lucide:sun" data-width="20" data-height="20" style="color:#315F4A"></span></span>
       <div class="hp-need-foot">
         <span class="hp-need-label">Mbrojtje nga dielli</span>
@@ -407,8 +407,8 @@
           <span>Eucerin</span>
         </div>
         <picture>
-          <source media="(max-width: 639px)" srcset="https://res.cloudinary.com/drljgepgy/image/upload/f_auto,q_auto,w_600,c_limit/v1782389810/ChatGPT_Image_Jun_25_2026_at_12_49_37_PM_lwqrqv.png">
-          <img src="https://res.cloudinary.com/drljgepgy/image/upload/f_auto,q_auto,w_900,c_limit/v1782389827/ChatGPT_Image_Jun_25_2026_at_12_49_31_PM_axfvpl.png" alt="Eucerin" class="hp-brand-img" loading="lazy">
+          <source media="(max-width: 639px)" srcset="https://images.barnatoremeldpharm.com/static/ChatGPT_Image_Jun_25_2026_at_12_49_37_PM.jpg">
+          <img src="https://images.barnatoremeldpharm.com/static/ChatGPT_Image_Jun_25_2026_at_12_49_31_PM.jpg" alt="Eucerin" class="hp-brand-img" loading="lazy">
         </picture>
         <div class="hp-brand-arrow"><i class="fas fa-arrow-right"></i></div>
       </a>
@@ -419,8 +419,8 @@
           <span>La Roche-Posay</span>
         </div>
         <picture>
-          <source media="(max-width: 639px)" srcset="https://res.cloudinary.com/drljgepgy/image/upload/f_auto,q_auto,w_600,c_limit/v1782389810/ChatGPT_Image_Jun_25_2026_at_12_52_28_PM_txctpu.png">
-          <img src="https://res.cloudinary.com/drljgepgy/image/upload/f_auto,q_auto,w_900,c_limit/v1782389810/ChatGPT_Image_Jun_25_2026_at_12_52_23_PM_ogbuch.png" alt="La Roche-Posay" class="hp-brand-img" loading="lazy">
+          <source media="(max-width: 639px)" srcset="https://images.barnatoremeldpharm.com/static/ChatGPT_Image_Jun_25_2026_at_12_52_28_PM.jpg">
+          <img src="https://images.barnatoremeldpharm.com/static/ChatGPT_Image_Jun_25_2026_at_12_52_23_PM.jpg" alt="La Roche-Posay" class="hp-brand-img" loading="lazy">
         </picture>
         <div class="hp-brand-arrow"><i class="fas fa-arrow-right"></i></div>
       </a>
@@ -431,8 +431,8 @@
           <span>CeraVe</span>
         </div>
         <picture>
-          <source media="(max-width: 639px)" srcset="https://res.cloudinary.com/drljgepgy/image/upload/f_auto,q_auto,w_600,c_limit/v1782389810/ChatGPT_Image_Jun_25_2026_at_12_58_51_PM_i8dlyi.png">
-          <img src="https://res.cloudinary.com/drljgepgy/image/upload/f_auto,q_auto,w_900,c_limit/v1782389810/ChatGPT_Image_Jun_25_2026_at_12_58_49_PM_fi3e6l.png" alt="CeraVe" class="hp-brand-img" loading="lazy">
+          <source media="(max-width: 639px)" srcset="https://images.barnatoremeldpharm.com/static/ChatGPT_Image_Jun_25_2026_at_12_58_51_PM.jpg">
+          <img src="https://images.barnatoremeldpharm.com/static/ChatGPT_Image_Jun_25_2026_at_12_58_49_PM.jpg" alt="CeraVe" class="hp-brand-img" loading="lazy">
         </picture>
         <div class="hp-brand-arrow"><i class="fas fa-arrow-right"></i></div>
       </a>
@@ -443,8 +443,8 @@
           <span>Vichy</span>
         </div>
         <picture>
-          <source media="(max-width: 639px)" srcset="https://res.cloudinary.com/drljgepgy/image/upload/f_auto,q_auto,w_600,c_limit/v1782389813/ChatGPT_Image_Jun_25_2026_at_01_17_18_PM_onymh0.png">
-          <img src="https://res.cloudinary.com/drljgepgy/image/upload/f_auto,q_auto,w_900,c_limit/v1782389809/ChatGPT_Image_Jun_25_2026_at_01_17_16_PM_ysi7sm.png" alt="Vichy" class="hp-brand-img" loading="lazy">
+          <source media="(max-width: 639px)" srcset="https://images.barnatoremeldpharm.com/static/ChatGPT_Image_Jun_25_2026_at_01_17_18_PM.jpg">
+          <img src="https://images.barnatoremeldpharm.com/static/ChatGPT_Image_Jun_25_2026_at_01_17_16_PM.jpg" alt="Vichy" class="hp-brand-img" loading="lazy">
         </picture>
         <div class="hp-brand-arrow"><i class="fas fa-arrow-right"></i></div>
       </a>
