@@ -164,7 +164,7 @@
       padding: 0.20rem 0.20rem 44px !important;
       display: block !important;
       object-fit: contain !important;
-      object-position: center 85% !important;
+      object-position: center 80% !important;
   }
   /* Thumbnail strip — fixed to viewport left edge, never covers the image */
   .thumbnails-container {
@@ -281,7 +281,7 @@
       justify-content: center !important;
       padding-top: 8px !important;
       background: #fff !important;
-      touch-action: none !important;
+      touch-action: none; /* toggled to pan-y when collapsed via JS */
       cursor: grab !important;
       margin: 0 -1.25rem !important; /* edge-to-edge */
   }
@@ -3172,7 +3172,7 @@
     var COLLAPSED = vh * 0.43 - 32;
     var EXPANDED  = vh * 0.04;
     var THRESHOLD = vh * 0.16;
-    var EASE      = 'transform 0.42s cubic-bezier(0.16,1,0.3,1)';
+    var EASE      = 'transform 0.15s cubic-bezier(0.16,1,0.3,1)';
     var pos       = COLLAPSED;
     var isExpanded = false;
 
@@ -3195,12 +3195,14 @@
         requestAnimationFrame(function() { _updateGalleryNav(pos); });
     }
 
+    /* On mobile the contact section and related products are cloned into the
+       card, so there is nothing meaningful left to page-scroll. Disabling page
+       scroll permanently removes the competing scroll context that confuses
+       iOS Safari and causes the ~2s freeze on fast swipes. */
+    document.body.style.overflow = 'hidden';
+
     function snapTo(target) {
         if (target === COLLAPSED) {
-            /* Instant scroll reset before the close animation:
-               1. Override smooth scroll-behavior so the reset is a hard snap
-               2. hidden→auto cancels any active iOS momentum scroll
-               3. scrollTop=0 jumps instantly to top */
             card.style.setProperty('scroll-behavior', 'auto', 'important');
             card.style.overflowY = 'hidden';
             card.style.overflowY = 'auto';
@@ -3213,12 +3215,10 @@
         setTimeout(function() {
             sheet.style.transition = '';
             if (dim) dim.style.transition = '';
-            /* Clean up scroll-behavior override after the animation completes.
-               Do NOT touch overflowY here — it is already correct from the
-               synchronous line below and a later snap may have changed it. */
             card.style.removeProperty('scroll-behavior');
-        }, 450);
+        }, 170);
         card.style.overflowY = isExpanded ? 'auto' : 'hidden';
+        handle.style.touchAction = isExpanded ? 'none' : 'pan-y';
     }
 
     applyPos(COLLAPSED);
@@ -3243,31 +3243,35 @@
 
     handle.addEventListener('touchmove', function(e) {
         if (!hActive) return;
+        /* When collapsed, touch-action:pan-y passes scroll to iOS.
+           Cancel any drag state so we don't also move the sheet. */
+        if (!isExpanded) { hActive = false; return; }
         var dy = e.touches[0].clientY - hStartY;
-        if (isExpanded) {
-            if (dy < 0) return;
-            applyPos(EXPANDED + dy * 0.88);
-        } else {
-            if (dy > 0) return;
-            applyPos(COLLAPSED + dy);
-        }
-    }, { passive: true }); /* touch-action:none on handle = no browser pan here */
+        if (dy < 0) return;
+        applyPos(EXPANDED + dy * 0.88);
+    }, { passive: true });
 
     handle.addEventListener('touchend', function(e) {
         if (!hActive) return;
         hActive = false;
         var dy = e.changedTouches[0].clientY - hStartY;
-        snapTo(!isExpanded
-            ? (dy < -THRESHOLD ? EXPANDED : COLLAPSED)
-            : (dy >  THRESHOLD ? COLLAPSED : EXPANDED));
+        if (!isExpanded) {
+            /* Collapsed: tap the handle to expand. Drags go to iOS page scroll. */
+            if (Math.abs(dy) < 15) snapTo(EXPANDED);
+            return;
+        }
+        snapTo(dy > THRESHOLD ? COLLAPSED : EXPANDED);
     }, { passive: true });
 
-    /* touchcancel: OS stole the touch (edge swipe, notification, etc.).
-       Snap to the nearest endpoint so state never gets stuck. */
+    /* touchcancel: OS claimed the gesture (edge swipe, notification, scroll).
+       When collapsed, iOS took it for page scroll — do nothing.
+       When expanded, snap to nearest endpoint so state never gets stuck. */
     handle.addEventListener('touchcancel', function() {
         if (!hActive) return;
         hActive = false;
-        snapTo(pos < (EXPANDED + COLLAPSED) / 2 ? EXPANDED : COLLAPSED);
+        if (isExpanded) {
+            snapTo(pos < (EXPANDED + COLLAPSED) / 2 ? EXPANDED : COLLAPSED);
+        }
     }, { passive: true });
 
     /* ── Card body gestures ──────────────────────────────────────────────────
@@ -3359,9 +3363,6 @@
         var collapsed = (target === COLLAPSED);
         if (dim) dim.style.setProperty('pointer-events', collapsed ? 'none' : 'auto', 'important');
         tapZone.style.pointerEvents = collapsed ? 'none' : 'auto';
-        /* The sheet element (height:90vh) covers the gallery when collapsed.
-           pointer-events:none lets carousel swipes reach the gallery.
-           Card and handle have explicit auto so drag still works. */
         sheet.style.pointerEvents = collapsed ? 'none' : 'auto';
     };
 
@@ -3372,6 +3373,10 @@
     /* Ensure sheet starts with pointer-events:none (collapsed) so gallery is touchable */
     sheet.style.pointerEvents = 'none';
     card.style.pointerEvents = 'auto';
+    handle.style.touchAction = 'pan-y'; /* collapsed initially */
+    card.style.touchAction = 'pan-y';
+    card.style.overscrollBehaviorY = 'contain';
+
 
     /* Expose a refresh hook so external code (e.g. lightbox close) can re-sync
        --gallery-vis-h after a viewport change (iOS browser chrome show/hide). */
