@@ -190,6 +190,16 @@
                         </div>
                     </div>
 
+                    {% if order.notes %}
+                    <div style="margin-top:0.75rem;background:#fffbeb;border:1.5px solid #fde68a;border-radius:10px;overflow:hidden;">
+                        <div style="display:flex;align-items:center;gap:0.45rem;padding:0.5rem 0.75rem;background:rgba(253,230,138,0.4);border-bottom:1px solid #fde68a;font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#92400e;">
+                            <i class="fas fa-comment-dots" style="color:#d97706;font-size:0.72rem;"></i>
+                            <span>Shënimi Juaj</span>
+                        </div>
+                        <div style="padding:0.6rem 0.75rem;font-size:0.84rem;color:#78350f;line-height:1.5;white-space:pre-wrap;word-break:break-word;">{{ order.notes }}</div>
+                    </div>
+                    {% endif %}
+
                     {% if not is_cancelled and not is_delivered %}
                     <div class="support-hint">
                         <i class="fas fa-headset"></i>

@@ -312,8 +312,14 @@
                 <!-- Image URL -->
                 <div>
                     <label class="bn-field-label"><i class="fas fa-image"></i> URL e Imazhit të Banerit</label>
-                    <input type="url" name="image_url" id="bnImageUrl" class="bn-input"
-                           placeholder="https://..." required oninput="previewBnImg(this.value)">
+                    <div style="display:flex;gap:0.5rem;align-items:center;">
+                        <input type="url" name="image_url" id="bnImageUrl" class="bn-input"
+                               placeholder="https://..." required oninput="previewBnImg(this.value)" style="flex:1;">
+                        <button type="button" class="bn-upload-btn" onclick="document.getElementById('bnFileInput').click()" title="Ngarko nga kompjuteri">
+                            <i class="fas fa-upload"></i> Ngarko
+                        </button>
+                        <input type="file" id="bnFileInput" accept="image/*" style="display:none" onchange="bnDoUpload(this)">
+                    </div>
                     <img id="bnImgPreview" class="bn-img-preview" alt="Preview">
                 </div>
 
@@ -738,5 +744,48 @@ function saveOrder() {
 
 initCdp2();
 initDrag();
+</script>
+
+<style>
+.bn-upload-btn {
+    display:inline-flex; align-items:center; gap:0.35rem;
+    padding:0.45rem 0.85rem; font-size:0.82rem; font-weight:600;
+    background:#4F5D4E; color:#fff; border:none; border-radius:7px;
+    cursor:pointer; white-space:nowrap; flex-shrink:0;
+    transition:background 0.15s;
+}
+.bn-upload-btn:hover { background:#3d4a3c; }
+.bn-upload-btn:disabled { background:#94a3b8; cursor:not-allowed; }
+</style>
+
+<script>
+const _BN_UPLOAD_URL = "{{ url_for('admin.upload_image') }}";
+
+async function bnDoUpload(input) {
+    if (!input.files.length) return;
+    const btn = document.querySelector('.bn-upload-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Duke ngarkuar…';
+    try {
+        const fd = new FormData();
+        fd.append('file', input.files[0]);
+        fd.append('type', 'banner');
+        fd.append('csrf_token', document.querySelector('input[name=csrf_token]').value);
+        const res = await fetch(_BN_UPLOAD_URL, { method:'POST', body:fd });
+        const data = await res.json();
+        if (data.url) {
+            const urlInput = document.getElementById('bnImageUrl');
+            urlInput.value = data.url;
+            previewBnImg(data.url);
+        } else {
+            alert('Gabim: ' + (data.error || 'E panjohur'));
+        }
+    } catch(e) { alert('Gabim gjatë ngarkimit: ' + e); }
+    finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-upload"></i> Ngarko';
+        input.value = '';
+    }
+}
 </script>
 {% endblock %}

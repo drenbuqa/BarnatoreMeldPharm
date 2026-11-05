@@ -242,12 +242,19 @@
                     <div class="card-body">
                         <div class="form-group">
                             <label for="image_url">Imazhi Kryesor (URL)</label>
-                            <input type="url" id="image_url" name="image_url" class="form-control premium-input"
-                                value="{{ product.image_url if product else '' }}" required
-                                placeholder="https://example.com/image.jpg">
+                            <div style="display:flex;gap:0.5rem;align-items:center;">
+                                <input type="url" id="image_url" name="image_url" class="form-control premium-input"
+                                    value="{{ product.image_url if product else '' }}" required
+                                    placeholder="https://example.com/image.jpg" style="flex:1;">
+                                <button type="button" class="btn-r2-upload" onclick="r2PickFile('image_url','product')" title="Ngarko nga kompjuteri">
+                                    <i class="fas fa-upload"></i> Ngarko
+                                </button>
+                                <input type="file" id="r2-file-image_url" accept="image/*" style="display:none"
+                                    onchange="r2DoUpload(this,'image_url','product')">
+                            </div>
                             <small class="form-text text-muted" style="margin-top:4px;display:block;">
                                 <i class="fas fa-cloud-upload-alt"></i>
-                                Nëse URL-ja nuk është tashmë në Cloudinary, imazhi do të importohet automatikisht kur të ruani.
+                                Ngarko nga kompjuteri ose ngjit URL-në. Imazhi ruhet automatikisht në Cloudflare R2.
                             </small>
                         </div>
 
@@ -265,7 +272,14 @@
                         </div>
 
                         <div class="form-group mt-large">
-                            <label for="additional_images">Imazhe Shtesë (Një për rresht - URL)</label>
+                            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+                                <label for="additional_images" style="margin:0;">Imazhe Shtesë (Një për rresht - URL)</label>
+                                <button type="button" class="btn-r2-upload" onclick="r2PickFile('additional_images','product')" title="Ngarko nga kompjuteri">
+                                    <i class="fas fa-upload"></i> Ngarko
+                                </button>
+                                <input type="file" id="r2-file-additional_images" accept="image/*" style="display:none"
+                                    onchange="r2DoUploadAppend(this,'additional_images','product')">
+                            </div>
                             <textarea id="additional_images" name="additional_images" class="form-control premium-input"
                                 rows="4"
                                 placeholder="https://example.com/image2.jpg&#10;https://example.com/image3.jpg">{% if product and product.images %}{% for img in product.images %}{% if img != product.image_url %}{{ img }}&#10;{% endif %}{% endfor %}{% endif %}</textarea>
@@ -1213,6 +1227,7 @@ function valueRowHtml(gi, vi, v, ogType, showPrice) {
             <span class="img-idx">${ii+1}.</span>
             <input class="vgvr-url-input" type="url" placeholder="URL e imazhit…"
                 value="${escH(url||'')}" oninput="updateImgUrl(${gi},${vi},${ii},this.value)">
+            <button type="button" class="btn-r2-upload btn-r2-upload-sm" onclick="r2PickVariant(${gi},${vi},${ii})" title="Ngarko"><i class="fas fa-upload"></i></button>
             <button type="button" class="btn-rm-img" onclick="removeImg(${gi},${vi},${ii})" title="Hiq"><i class="fas fa-times"></i></button>
         </div>`).join('');
 
@@ -1361,6 +1376,7 @@ function _refreshImgPanel(gi, vi) {
         line.innerHTML = `<span class="img-idx">${idx+1}.</span>
             <input class="vgvr-url-input" type="url" placeholder="URL e imazhit…"
                 value="${escH(url||'')}" oninput="updateImgUrl(${gi},${vi},${idx},this.value)">
+            <button type="button" class="btn-r2-upload btn-r2-upload-sm" onclick="r2PickVariant(${gi},${vi},${idx})" title="Ngarko"><i class="fas fa-upload"></i></button>
             <button type="button" class="btn-rm-img" onclick="removeImg(${gi},${vi},${idx})" title="Hiq"><i class="fas fa-times"></i></button>`;
         row.insertBefore(line, addBtn);
     });
@@ -1545,6 +1561,122 @@ document.querySelectorAll('.label-badge-btn').forEach(btn => {
     if (activeLabels.has(btn.dataset.key)) btn.classList.add('label-active');
 });
 syncLabels();
+</script>
+
+<style>
+.btn-r2-upload {
+    display:inline-flex; align-items:center; gap:0.35rem;
+    padding:0.4rem 0.75rem; font-size:0.82rem; font-weight:600;
+    background:#4F5D4E; color:#fff; border:none; border-radius:6px;
+    cursor:pointer; white-space:nowrap; flex-shrink:0;
+    transition:background 0.15s;
+}
+.btn-r2-upload:hover { background:#3d4a3c; }
+.btn-r2-upload:disabled { background:#94a3b8; cursor:not-allowed; }
+.btn-r2-upload-sm { padding:0.25rem 0.45rem; font-size:0.75rem; }
+</style>
+
+<script>
+/* ── R2 direct upload helpers ───────────────────────────────────────── */
+const _R2_UPLOAD_URL = "{{ url_for('admin.upload_image') }}";
+
+function r2PickFile(fieldId, type) {
+    document.getElementById('r2-file-' + fieldId).click();
+}
+
+async function r2DoUpload(input, fieldId, type) {
+    if (!input.files.length) return;
+    const btn = input.previousElementSibling;
+    const urlField = document.getElementById(fieldId);
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Duke ngarkuar…';
+    try {
+        const fd = new FormData();
+        fd.append('file', input.files[0]);
+        fd.append('type', type);
+        fd.append('csrf_token', document.querySelector('input[name=csrf_token]').value);
+        const res = await fetch(_R2_UPLOAD_URL, { method:'POST', body:fd });
+        const data = await res.json();
+        if (data.url) {
+            urlField.value = data.url;
+            urlField.dispatchEvent(new Event('input'));
+        } else {
+            alert('Gabim: ' + (data.error || 'E panjohur'));
+        }
+    } catch(e) { alert('Gabim gjatë ngarkimit: ' + e); }
+    finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-upload"></i> Ngarko';
+        input.value = '';
+    }
+}
+
+async function r2DoUploadAppend(input, fieldId, type) {
+    if (!input.files.length) return;
+    const btn = input.previousElementSibling;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Duke ngarkuar…';
+    try {
+        const fd = new FormData();
+        fd.append('file', input.files[0]);
+        fd.append('type', type);
+        fd.append('csrf_token', document.querySelector('input[name=csrf_token]').value);
+        const res = await fetch(_R2_UPLOAD_URL, { method:'POST', body:fd });
+        const data = await res.json();
+        if (data.url) {
+            const ta = document.getElementById(fieldId);
+            ta.value = (ta.value.trim() ? ta.value.trim() + '\n' : '') + data.url;
+            ta.dispatchEvent(new Event('input'));
+        } else {
+            alert('Gabim: ' + (data.error || 'E panjohur'));
+        }
+    } catch(e) { alert('Gabim gjatë ngarkimit: ' + e); }
+    finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-upload"></i> Ngarko';
+        input.value = '';
+    }
+}
+
+// Hidden file input reused for variant image uploads
+const _variantFileInput = (() => {
+    const inp = document.createElement('input');
+    inp.type = 'file'; inp.accept = 'image/*'; inp.style.display = 'none';
+    document.body.appendChild(inp);
+    return inp;
+})();
+
+function r2PickVariant(gi, vi, ii) {
+    _variantFileInput.onchange = () => r2DoUploadVariant(_variantFileInput, gi, vi, ii);
+    _variantFileInput.click();
+}
+
+async function r2DoUploadVariant(input, gi, vi, ii) {
+    if (!input.files.length) return;
+    // Find the upload button for this line to show loading state
+    const row = document.getElementById(`img-row-${gi}-${vi}`);
+    const lines = row ? row.querySelectorAll('.img-line') : [];
+    const btn = lines[ii] ? lines[ii].querySelector('.btn-r2-upload-sm') : null;
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; }
+    try {
+        const fd = new FormData();
+        fd.append('file', input.files[0]);
+        fd.append('type', 'product');
+        fd.append('csrf_token', document.querySelector('input[name=csrf_token]').value);
+        const res = await fetch(_R2_UPLOAD_URL, { method:'POST', body:fd });
+        const data = await res.json();
+        if (data.url) {
+            updateImgUrl(gi, vi, ii, data.url);
+            _refreshImgPanel(gi, vi);
+        } else {
+            alert('Gabim: ' + (data.error || 'E panjohur'));
+        }
+    } catch(e) { alert('Gabim gjatë ngarkimit: ' + e); }
+    finally {
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-upload"></i>'; }
+        input.value = '';
+    }
+}
 </script>
 </div>
 {% endblock %}

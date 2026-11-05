@@ -155,14 +155,21 @@
       box-shadow: none !important;
       background: #fff !important;
   }
-  /* Remove excessive image padding so product fills the gallery; reserve space for dots at bottom */
+  /* Constrain image element to exactly the gallery visible area; padding included via border-box */
   .detail-carousel-container .product-image {
-      padding: 0.75rem 0.75rem 36px !important;
+      width: 100% !important;
+      height: var(--gallery-vis-h, 38vh) !important;
+      max-height: var(--gallery-vis-h, 38vh) !important;
+      box-sizing: border-box !important;
+      padding: 0.20rem 0.20rem 44px !important;
+      display: block !important;
+      object-fit: contain !important;
+      object-position: center 85% !important;
   }
   /* Thumbnail strip — fixed to viewport left edge, never covers the image */
   .thumbnails-container {
       position: fixed !important;
-      left: 12px !important;
+      left: 9px !important;
       top: 62px !important;
       transform: none !important;
       z-index: 8 !important;
@@ -190,7 +197,7 @@
       position: fixed !important;
       left: 50% !important;
       transform: translateX(-50%) !important;
-      top: calc(var(--gallery-vis-h, 38vh) - 14px) !important;
+      top: calc(var(--gallery-vis-h, 38vh) - 20px) !important;
       bottom: auto !important;
       z-index: 10 !important;
       gap: 5px !important;
@@ -268,11 +275,11 @@
       z-index: 20 !important;
       flex-shrink: 0 !important;
       order: -10 !important;
-      height: 44px !important;
+      height: 28px !important;
       display: flex !important;
       align-items: flex-start !important;
       justify-content: center !important;
-      padding-top: 12px !important;
+      padding-top: 8px !important;
       background: #fff !important;
       touch-action: none !important;
       cursor: grab !important;
@@ -335,25 +342,24 @@
       flex-shrink: 0 !important;
   }
   .pinfo-stock-inline {
-      font-size: 0.72rem !important;
-      font-weight: 600 !important;
+      font-size: 0.65rem !important;
+      font-weight: 500 !important;
       display: inline-flex !important;
       align-items: center !important;
-      gap: 0.3rem !important;
-      background: #f0fdf4 !important;
-      border: 1px solid #bbf7d0 !important;
-      border-radius: 20px !important;
-      padding: 0.22rem 0.65rem 0.22rem 0.45rem !important;
-      color: #15803d !important;
+      gap: 0.28rem !important;
+      background: none !important;
+      border: none !important;
+      border-radius: 0 !important;
+      padding: 0 !important;
+      color: #16a34a !important;
+      letter-spacing: 0.01em !important;
   }
   .pinfo-stock-inline.stock-out {
-      background: #fef2f2 !important;
-      border-color: #fecaca !important;
-      color: #b91c1c !important;
+      color: #dc2626 !important;
   }
   .pinfo-stock-dot {
-      width: 6px !important;
-      height: 6px !important;
+      width: 5px !important;
+      height: 5px !important;
       border-radius: 50% !important;
       flex-shrink: 0 !important;
   }
@@ -756,13 +762,9 @@
                     </div>
                 </div>
 
-                <!-- ① Category + stock + expiry on same row -->
+                <!-- ① Category + expiry row (stock moved inline with brand) -->
                 <div class="pinfo-top-row">
                     <span class="pinfo-category">{{ product.category }}</span>
-                    <span class="pinfo-stock-inline {{ 'stock-in' if product.in_stock != False else 'stock-out' }}">
-                        <span class="pinfo-stock-dot {{ 'dot-green' if product.in_stock != False else 'dot-red' }}"></span>
-                        {{ 'Në Stok' if product.in_stock != False else 'Jashtë Stokut' }}
-                    </span>
                     {% if product.auto_oct_discount or product.discount_until %}
                     {% set _pd_deadline = '2026-10-31T23:59:59' if product.auto_oct_discount else (product.discount_until.strftime('%Y-%m-%d') + 'T23:59:59' if product.discount_until else '') %}
                     <div class="pinfo-expiry" data-deadline="{{ _pd_deadline }}">
@@ -798,7 +800,21 @@
 
                 <!-- ③ Brand -->
                 {% if product.brand %}
-                <div class="pinfo-brand">{{ product.brand }}</div>
+                <div class="pinfo-brand" style="display:flex;align-items:center;gap:0.4rem;">
+                    <span>{{ product.brand }}</span>
+                    <span style="color:#cbd5e1;font-weight:400;letter-spacing:0;">·</span>
+                    <span class="pinfo-stock-inline {{ 'stock-in' if product.in_stock != False else 'stock-out' }}" style="text-transform:none;letter-spacing:0;font-weight:500;">
+                        <span class="pinfo-stock-dot {{ 'dot-green' if product.in_stock != False else 'dot-red' }}"></span>
+                        {{ 'Në Stok' if product.in_stock != False else 'Jashtë Stokut' }}
+                    </span>
+                </div>
+                {% else %}
+                <div class="pinfo-brand" style="display:flex;align-items:center;">
+                    <span class="pinfo-stock-inline {{ 'stock-in' if product.in_stock != False else 'stock-out' }}" style="text-transform:none;letter-spacing:0;font-weight:500;">
+                        <span class="pinfo-stock-dot {{ 'dot-green' if product.in_stock != False else 'dot-red' }}"></span>
+                        {{ 'Në Stok' if product.in_stock != False else 'Jashtë Stokut' }}
+                    </span>
+                </div>
                 {% endif %}
 
                 <!-- ④ Title -->
@@ -1648,8 +1664,8 @@
 
 <style>
     /* Detail carousel arrows — inline to bypass CSS file caching */
-    .detail-carousel-container .carousel-arrow{opacity:1!important;background:#4F5D4E!important;color:#fff!important;width:36px!important;height:36px!important;border:none!important;box-shadow:0 2px 8px rgba(0,0,0,0.25)!important;z-index:20!important}
-    .detail-carousel-container .carousel-arrow:hover{background:#3a4539!important;color:#fff!important}
+    .detail-carousel-container .carousel-arrow{opacity:1!important;background:rgba(255,255,255,0.92)!important;color:#1e293b!important;width:36px!important;height:36px!important;border:none!important;box-shadow:0 2px 12px rgba(0,0,0,0.18),0 1px 3px rgba(0,0,0,0.12)!important;z-index:20!important;backdrop-filter:blur(6px)!important}
+    .detail-carousel-container .carousel-arrow:hover{background:#fff!important;color:#0f172a!important;box-shadow:0 4px 16px rgba(0,0,0,0.22)!important;transform:translateY(-50%) scale(1.08)!important}
     .detail-carousel-container .carousel-arrow.prev{left:8px!important}
     .detail-carousel-container .carousel-arrow.next{right:8px!important}
     @media(max-width:768px){
@@ -2610,36 +2626,40 @@
 
 <!-- Premium Product Lightbox -->
 <div id="imageModal" class="image-modal">
-    <div class="modal-overlay" onclick="closeImageModal()"></div>
-
-    <div class="modal-controls">
-        <button class="modal-btn zoom-btn" id="zoomInBtn" onclick="adjustZoom(0.5)" title="Zmadho">
-            <i class="fas fa-plus"></i>
-        </button>
-        <button class="modal-btn zoom-btn" id="zoomOutBtn" onclick="adjustZoom(-0.5)" title="Zvogëlo">
-            <i class="fas fa-minus"></i>
-        </button>
-        <button class="modal-btn close-btn" onclick="closeImageModal()" title="Mbyll">
-            <i class="fas fa-times"></i>
-        </button>
+    <!-- Top bar -->
+    <div class="lbx-topbar">
+        <div class="lbx-counter" id="lbxCounter">1 / 1</div>
+        <div class="lbx-actions">
+            <button class="lbx-btn" id="zoomInBtn" onclick="adjustZoom(0.5)" title="Zmadho">
+                <i class="fas fa-plus"></i>
+            </button>
+            <button class="lbx-btn" id="zoomOutBtn" onclick="adjustZoom(-0.5)" title="Zvogëlo">
+                <i class="fas fa-minus"></i>
+            </button>
+            <button class="lbx-btn lbx-close" onclick="closeImageModal()" title="Mbyll">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
     </div>
 
-    <div class="modal-main-container">
-        <button class="modal-nav-arrow prev" onclick="navigateModal(-1)" id="modalPrev">
+    <!-- Main image area -->
+    <div class="lbx-stage">
+        <button class="lbx-arrow lbx-arrow-prev" onclick="navigateModal(-1)" id="modalPrev">
             <i class="fas fa-chevron-left"></i>
         </button>
 
-        <div class="modal-image-wrapper" id="modalImageWrapper">
-            <img class="modal-content" id="modalImg" src="" alt="Product view">
+        <div class="lbx-img-wrap" id="modalImageWrapper">
+            <img class="lbx-img" id="modalImg" src="" alt="Product view">
         </div>
 
-        <button class="modal-nav-arrow next" onclick="navigateModal(1)" id="modalNext">
+        <button class="lbx-arrow lbx-arrow-next" onclick="navigateModal(1)" id="modalNext">
             <i class="fas fa-chevron-right"></i>
         </button>
     </div>
 
-    <div class="modal-thumbnails-wrapper">
-        <div class="modal-thumbnails" id="modalThumbnails">
+    <!-- Thumbnail strip -->
+    <div class="lbx-thumbs-wrap" id="lbxThumbsWrap">
+        <div class="lbx-thumbs" id="modalThumbnails">
             <!-- Thumbnails injected by JS -->
         </div>
     </div>
@@ -2676,22 +2696,27 @@
         modal.classList.add('active');
         document.body.style.overflow = "hidden";
         resetZoom();
+        requestAnimationFrame(_positionArrows);
     }
 
     function setModalImage(index) {
         currentModalIndex = index;
         updateModalDisplay();
         resetZoom();
+        requestAnimationFrame(_positionArrows);
     }
 
     function updateModalDisplay() {
         const modalImg = document.getElementById("modalImg");
         const prevBtn = document.getElementById("modalPrev");
         const nextBtn = document.getElementById("modalNext");
-        const thumbWrapper = document.querySelector('.modal-thumbnails-wrapper');
+        const thumbWrapper = document.getElementById('lbxThumbsWrap');
+        const counter = document.getElementById('lbxCounter');
         const thumbs = document.querySelectorAll('.modal-thumb');
 
         modalImg.src = currentImages[currentModalIndex];
+
+        if (counter) counter.textContent = `${currentModalIndex + 1} / ${currentImages.length}`;
 
         // Update active thumbnail
         thumbs.forEach((t, i) => {
@@ -2737,9 +2762,16 @@
         isZoomed = currentZoom > 1;
         wrapper.classList.toggle('zoomed', isZoomed);
         wrapper.style.touchAction = isZoomed ? 'none' : 'auto';
-        wrapper.style.cursor = isZoomed ? 'grab' : 'default';
+        wrapper.style.cursor = isZoomed ? 'grab' : 'zoom-in';
         document.getElementById('zoomOutBtn').disabled = currentZoom <= MIN_ZOOM;
         document.getElementById('zoomInBtn').disabled = currentZoom >= MAX_ZOOM;
+        // Hide nav arrows while zoomed — panning and navigation conflict
+        const prev = document.getElementById('modalPrev');
+        const next = document.getElementById('modalNext');
+        const opacity = isZoomed ? '0' : '1';
+        const pointer = isZoomed ? 'none' : 'auto';
+        if (prev) { prev.style.opacity = opacity; prev.style.pointerEvents = pointer; }
+        if (next) { next.style.opacity = opacity; next.style.pointerEvents = pointer; }
     }
 
     // Mouse pan when zoomed
@@ -2757,13 +2789,25 @@
         });
     });
 
+    // Double-tap to zoom on mobile
+    let lastTap = 0;
+    document.getElementById('modalImageWrapper').addEventListener('touchend', function(e) {
+        if (isZoomed) return;
+        const now = Date.now();
+        if (now - lastTap < 300) {
+            adjustZoom(1);
+            e.preventDefault();
+        }
+        lastTap = now;
+    }, { passive: false });
+
     function resetZoom() {
         currentZoom = 1;
         isZoomed = false;
         const img = document.getElementById('modalImg');
         const wrapper = document.getElementById('modalImageWrapper');
         if (img) { img.style.transform = ''; img.style.transformOrigin = 'center center'; }
-        if (wrapper) { wrapper.classList.remove('zoomed'); wrapper.style.cursor = 'default'; }
+        if (wrapper) { wrapper.classList.remove('zoomed'); wrapper.style.cursor = 'zoom-in'; }
         if (document.getElementById('zoomOutBtn')) document.getElementById('zoomOutBtn').disabled = true;
         if (document.getElementById('zoomInBtn')) document.getElementById('zoomInBtn').disabled = false;
     }
@@ -2773,7 +2817,36 @@
         modal.classList.remove('active');
         document.body.style.overflow = "";
         resetZoom();
+        // Re-sync gallery height after viewport settles (iOS browser chrome may have shifted)
+        requestAnimationFrame(function() {
+            if (typeof window._pdGalleryRefresh === 'function') window._pdGalleryRefresh();
+        });
     }
+
+    // Position desktop arrows flush beside the actual rendered image bounds
+    function _positionArrows() {
+        if (window.innerWidth <= 768) return;
+        const img  = document.getElementById('modalImg');
+        const prev = document.getElementById('modalPrev');
+        const next = document.getElementById('modalNext');
+        if (!img || !prev || !next) return;
+        const r    = img.getBoundingClientRect();
+        const GAP  = 10; // px gap between arrow edge and image card
+        const W    = prev.offsetWidth || 44;
+        const minEdge = 8; // never closer than 8px to viewport edge
+        const leftPos  = Math.max(minEdge, r.left  - W - GAP);
+        const rightPos = Math.max(minEdge, window.innerWidth - r.right - W - GAP);
+        prev.style.left  = leftPos  + 'px';
+        prev.style.right = 'auto';
+        next.style.right = rightPos + 'px';
+        next.style.left  = 'auto';
+    }
+
+    // Re-position after each image swap (image may have different aspect ratio)
+    document.getElementById('modalImg').addEventListener('load', function() {
+        requestAnimationFrame(_positionArrows);
+    });
+    window.addEventListener('resize', _positionArrows);
 
     // Keyboard navigation
     document.addEventListener('keydown', function (e) {
@@ -2823,199 +2896,198 @@
 </script>
 
 <style>
-    /* Premium Lightbox Styles */
+    /* ── Lightbox ── */
     .image-modal {
         position: fixed;
         inset: 0;
         z-index: 99999;
         display: flex;
         flex-direction: column;
-        align-items: center;
-        justify-content: center;
         opacity: 0;
         visibility: hidden;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        background: rgba(15, 23, 42, 0.95);
-        backdrop-filter: blur(8px);
+        transition: opacity 0.25s ease, visibility 0.25s ease;
+        background: #0a0a0f;
     }
-
     .image-modal.active {
         opacity: 1;
         visibility: visible;
     }
 
-    .modal-overlay {
-        position: absolute;
-        inset: 0;
-        z-index: -1;
-    }
-
-    .modal-controls {
-        position: absolute;
-        top: 2rem;
-        right: 2rem;
-        display: flex;
-        gap: 1rem;
-        z-index: 100000;
-        /* Higher than image */
-    }
-
-    .modal-btn {
-        background: rgba(15, 23, 42, 0.6) !important;
-        /* Darker background for visibility */
-        border: 1px solid rgba(255, 255, 255, 0.3);
-        color: white;
-        width: 54px;
-        /* Slightly bigger */
-        height: 54px;
-        border-radius: 50%;
-        /* Circular looks more premium */
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.4rem;
-        cursor: pointer;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        backdrop-filter: blur(8px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-    }
-
-    .modal-btn:hover {
-        background: var(--primary) !important;
-        border-color: var(--primary);
-        transform: scale(1.1);
-        box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4);
-    }
-
-    .modal-main-container {
-        flex: 1;
-        width: 100%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+    /* Top bar */
+    .lbx-topbar {
         position: relative;
-        padding: 2rem;
-        max-height: calc(100vh - 150px);
+        z-index: 10;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 1.25rem;
+        height: 56px;
+        flex-shrink: 0;
+        border-bottom: 1px solid rgba(255,255,255,0.07);
     }
-
-    .modal-image-wrapper {
-        width: 100%;
-        height: 100%;
+    .lbx-counter {
+        font-size: 0.8rem;
+        font-weight: 500;
+        color: rgba(255,255,255,0.45);
+        letter-spacing: 0.08em;
+    }
+    .lbx-actions {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .lbx-btn {
+        background: rgba(255,255,255,0.07);
+        border: 1px solid rgba(255,255,255,0.1);
+        color: rgba(255,255,255,0.75);
+        width: 38px;
+        height: 38px;
+        border-radius: 10px;
         display: flex;
         align-items: center;
         justify-content: center;
-        transition: transform 0.3s ease;
-        overflow: hidden;
+        font-size: 0.85rem;
+        cursor: pointer;
+        transition: background 0.15s, color 0.15s, border-color 0.15s;
     }
-
-    .modal-image-wrapper.zoomed {
-        cursor: grab;
-        touch-action: none;
+    .lbx-btn:hover {
+        background: rgba(255,255,255,0.14);
+        color: #fff;
+        border-color: rgba(255,255,255,0.2);
     }
-
-    .modal-btn:disabled {
-        opacity: 0.35;
+    .lbx-btn.lbx-close:hover {
+        background: rgba(239,68,68,0.18);
+        color: #f87171;
+        border-color: rgba(239,68,68,0.3);
+    }
+    .lbx-btn:disabled {
+        opacity: 0.25;
         cursor: not-allowed;
         pointer-events: none;
     }
 
-    .modal-content {
-        max-width: 90%;
-        max-height: 85vh;
+    /* Stage */
+    .lbx-stage {
+        flex: 1;
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        min-height: 0;
+    }
+    .lbx-img-wrap {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        /* 3rem horizontal inset gives arrows breathing room on both sides */
+        padding: 1.5rem 3rem;
+    }
+    .lbx-img-wrap.zoomed { cursor: grab; touch-action: none; }
+    .lbx-img {
+        max-width: 100%;
+        max-height: 100%;
         object-fit: contain;
-        border-radius: 12px;
-        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-        background: white;
-        transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        border-radius: 10px;
         user-select: none;
+        transition: transform 0.35s cubic-bezier(0.16,1,0.3,1);
         transform-origin: center center;
         will-change: transform, transform-origin;
+        background: #fff;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.5);
     }
+    .lbx-img.panning { transition: none !important; }
 
-    .modal-content.panning {
-        transition: none !important;
-    }
-
-    .modal-nav-arrow {
+    /* Nav arrows — always in dark margin, never over the image */
+    .lbx-arrow {
         position: absolute;
         top: 50%;
         transform: translateY(-50%);
-        background: rgba(0, 0, 0, 0.4);
-        /* Darker background for visibility */
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        color: white !important;
-        width: 60px;
-        height: 60px;
+        background: rgba(255,255,255,0.14);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1.5px solid rgba(255,255,255,0.5);
+        color: #fff;
+        width: 36px;
+        height: 36px;
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 1.5rem;
+        font-size: 0.75rem;
         cursor: pointer;
-        transition: all 0.2s ease;
-        z-index: 10;
+        transition: background 0.15s, transform 0.15s, opacity 0.2s;
+        z-index: 5;
+    }
+    .lbx-arrow:hover {
+        background: rgba(255,255,255,0.26);
+        transform: translateY(-50%) scale(1.08);
+    }
+    .lbx-arrow:active { transform: translateY(-50%) scale(0.94); }
+    /* Arrows centered in the 3rem dark margin beside the image */
+    .lbx-arrow-prev { left: 0.4rem; }
+    .lbx-arrow-next { right: 0.4rem; }
+
+    /* Desktop — arrows sized up; JS positions them beside the actual image bounds */
+    @media (min-width: 769px) {
+        .lbx-arrow { width: 44px; height: 44px; font-size: 0.88rem; }
     }
 
-    .modal-nav-arrow:hover {
-        background: #4F5D4E;
-        color: white;
-        border-color: #4F5D4E;
-        transform: translateY(-50%) scale(1.1);
-    }
-
-    .modal-nav-arrow.prev {
-        left: 2rem;
-    }
-
-    .modal-nav-arrow.next {
-        right: 2rem;
-    }
-
-    .modal-thumbnails-wrapper {
-        width: 100%;
-        padding: 1.5rem;
+    /* Thumbnail strip */
+    .lbx-thumbs-wrap {
+        flex-shrink: 0;
         display: flex;
         justify-content: center;
-        background: rgba(0, 0, 0, 0.3);
+        padding: 1rem 1.5rem;
+        border-top: 1px solid rgba(255,255,255,0.07);
+        background: rgba(255,255,255,0.03);
     }
-
-    .modal-thumbnails {
+    .lbx-thumbs {
         display: flex;
-        gap: 1rem;
-        max-width: 90%;
+        gap: 0.6rem;
         overflow-x: auto;
-        padding: 4px;
         scrollbar-width: none;
+        padding: 2px;
+        max-width: 100%;
     }
-
-    .modal-thumbnails::-webkit-scrollbar {
-        display: none;
-    }
-
+    .lbx-thumbs::-webkit-scrollbar { display: none; }
     .modal-thumb {
-        width: 64px;
-        height: 64px;
+        width: 58px;
+        height: 58px;
         border-radius: 8px;
         overflow: hidden;
-        border: 2px solid transparent;
+        border: 1.5px solid rgba(255,255,255,0.1);
         cursor: pointer;
-        opacity: 0.5;
-        transition: all 0.2s ease;
+        opacity: 0.45;
+        transition: opacity 0.2s, border-color 0.2s, transform 0.2s;
         flex-shrink: 0;
-        background: white;
+        background: #fff;
     }
-
     .modal-thumb img {
         width: 100%;
         height: 100%;
         object-fit: contain;
-        padding: 4px;
+        padding: 3px;
     }
-
     .modal-thumb.active {
         opacity: 1;
-        border-color: var(--primary);
-        transform: scale(1.1);
+        border-color: var(--primary, #16a34a);
+        transform: scale(1.06);
+    }
+    .modal-thumb:hover:not(.active) {
+        opacity: 0.75;
+        border-color: rgba(255,255,255,0.3);
+    }
+
+    /* Desktop — more padding & bigger thumbs */
+    @media (min-width: 769px) {
+        .lbx-topbar { padding: 0 2rem; height: 60px; }
+        .lbx-img-wrap { padding: 2.5rem 5rem; }
+        .lbx-thumbs-wrap { padding: 1.25rem 2rem; }
+        .modal-thumb { width: 68px; height: 68px; }
     }
 
     /* Detailed Page Thumbnails */
@@ -3059,39 +3131,6 @@
     }
 
     @media (max-width: 768px) {
-        .modal-controls {
-            top: 1rem;
-            right: 1rem;
-        }
-
-        .modal-nav-arrow {
-            width: 44px;
-            height: 44px;
-            font-size: 1.1rem;
-        }
-
-        .modal-nav-arrow.prev {
-            left: 0.5rem;
-        }
-
-        .modal-nav-arrow.next {
-            right: 0.5rem;
-        }
-
-        .modal-content {
-            max-width: 100%;
-            border-radius: 0;
-        }
-
-        .modal-main-container {
-            padding: 1rem;
-        }
-
-        .modal-btn {
-            width: 44px;
-            height: 44px;
-        }
-
         .product-gallery .thumbnail {
             min-width: 48px !important;
             width: 48px !important;
@@ -3117,9 +3156,6 @@
     #relatedProductsSection .hp-card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,.1); }
     /* Last card snaps to right edge so it's always fully visible */
     #relatedProductsSection .hp-carousel .hp-card:last-child { scroll-snap-align: end !important; }
-
-    /* Smooth transition on modal content */
-    .modal-content { transition: transform 0.25s cubic-bezier(0.16,1,0.3,1), transform-origin 0s; }
 </style>
 
 <script>
@@ -3133,7 +3169,7 @@
     if (!sheet || !card) return;
 
     var vh = window.innerHeight;
-    var COLLAPSED = vh * 0.38 - 32;
+    var COLLAPSED = vh * 0.43 - 32;
     var EXPANDED  = vh * 0.04;
     var THRESHOLD = vh * 0.16;
     var EASE      = 'transform 0.42s cubic-bezier(0.16,1,0.3,1)';
@@ -3336,6 +3372,10 @@
     /* Ensure sheet starts with pointer-events:none (collapsed) so gallery is touchable */
     sheet.style.pointerEvents = 'none';
     card.style.pointerEvents = 'auto';
+
+    /* Expose a refresh hook so external code (e.g. lightbox close) can re-sync
+       --gallery-vis-h after a viewport change (iOS browser chrome show/hide). */
+    window._pdGalleryRefresh = function() { applyPos(pos); };
 
     /* ── Bring below-fold sections into the card on mobile ──────────────────
        The contact section and related products live outside the fixed sheet

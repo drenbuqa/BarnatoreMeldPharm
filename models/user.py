@@ -73,7 +73,7 @@ class User(UserMixin):
         update_data = {}
         
         # Only add fields that are provided in profile_data
-        fields = ['address', 'city', 'country', 'phone', 'first_name', 'last_name', 'specifikat']
+        fields = ['address', 'city', 'country', 'phone', 'first_name', 'last_name', 'specifikat', 'fullname']
         for field in fields:
             if field in profile_data:
                 update_data[field] = profile_data[field]

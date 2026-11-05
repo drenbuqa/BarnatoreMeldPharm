@@ -17,19 +17,23 @@
   html,body{min-height:0!important;height:auto!important}
   .main-content,.admin-shell,.admin-main{min-height:0!important;height:auto!important}
   .admin-content-body{flex:none!important}
+  .admin-sidebar{width:78vw!important;max-width:300px!important;z-index:9001!important;height:100dvh!important;}
+  .sidebar-overlay{z-index:9000!important;pointer-events:all!important;position:fixed!important;inset:0!important;display:none;}
+  .sidebar-overlay.open{display:block!important;}
 }
 .admin-topbar{min-height:64px;}
 </style>
 
+<!-- Sidebar Overlay (mobile) — outside admin-shell so position:fixed covers full viewport -->
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
 <div class="admin-shell">
-    <!-- Sidebar Overlay (mobile) -->
-    <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
 
     <!-- LEFT SIDEBAR -->
     <aside class="admin-sidebar" id="adminSidebar">
         <a href="{{ url_for('admin.dashboard') }}" class="sidebar-brand">
             <div class="sidebar-brand-icon" style="background:none;padding:0;border-radius:0;">
-                <img src="https://images.barnatoremeldpharm.com/static/ChatGPT_Image_Sep_1_2026_at_04_10_19_PM_.jpg" alt="" style="width:34px;height:34px;object-fit:contain;border-radius:6px;">
+                <img src="https://images.barnatoremeldpharm.com/static/logo-icon.png" alt="" style="width:34px;height:34px;object-fit:contain;border-radius:6px;">
             </div>
             <div class="sidebar-brand-text">
                 <strong>Meld Pharm</strong>
@@ -138,13 +142,27 @@
 
 <script>
 /* ── Sidebar ── */
+function _sidebarOutsideHandler(e) {
+    var sidebar = document.getElementById('adminSidebar');
+    if (sidebar && !sidebar.contains(e.target)) {
+        e.stopPropagation();
+        e.preventDefault();
+        closeSidebar();
+    }
+}
 function openSidebar() {
     document.getElementById('adminSidebar').classList.add('open');
     document.getElementById('sidebarOverlay').classList.add('open');
+    document.body.style.overflow = 'hidden';
+    document.addEventListener('click', _sidebarOutsideHandler, true);
+    document.addEventListener('touchstart', _sidebarOutsideHandler, true);
 }
 function closeSidebar() {
     document.getElementById('adminSidebar').classList.remove('open');
     document.getElementById('sidebarOverlay').classList.remove('open');
+    document.body.style.overflow = '';
+    document.removeEventListener('click', _sidebarOutsideHandler, true);
+    document.removeEventListener('touchstart', _sidebarOutsideHandler, true);
 }
 
 /* ── Toast system ── */

@@ -1683,9 +1683,9 @@ def _build_newsletter_html(template, headline, intro_text, products, base_url,
     header = f"""
     <div style="background:{accent_color};height:5px;"></div>
     <div style="background:#ffffff;padding:22px 40px;text-align:center;border-bottom:1px solid #eef0ed;">
-      <img src="https://images.barnatoremeldpharm.com/static/ChatGPT_Image_Sep_1_2026_at_07_06_44_PM_.jpg"
-           alt="Barnatore Meld Pharm" width="310"
-           style="display:inline-block;max-width:310px;height:auto;">
+      <img src="https://images.barnatoremeldpharm.com/static/logo-email.png"
+           alt="Meld Pharm" width="260"
+           style="display:inline-block;max-width:260px;height:auto;">
     </div>
     """
 
@@ -2159,6 +2159,77 @@ def analytics_page():
                            newsletter_period=newsletter_period,
                            newsletter_recent=newsletter_recent,
                            pending_orders_count=pending_orders_count)
+
+
+@admin.route('/upload-image', methods=['POST'])
+@login_required
+@admin_required
+def upload_image():
+    """Upload a local image file to R2 and return its public URL."""
+    import io, os, uuid
+    from PIL import Image, ImageOps
+    import boto3
+    from botocore.config import Config as BotoConfig
+
+    file = request.files.get('file')
+    if not file or not file.filename:
+        return jsonify(error='Nuk u ngarkua asnjë skedar.'), 400
+
+    image_type = request.form.get('type', 'product')  # 'product' or 'banner'
+
+    allowed = {'image/jpeg', 'image/png', 'image/webp', 'image/gif'}
+    if file.content_type not in allowed:
+        return jsonify(error='Lloji i skedarit nuk mbështetet. Përdorni JPG, PNG ose WebP.'), 400
+
+    try:
+        data = file.read()
+        img = Image.open(io.BytesIO(data))
+        try:
+            img = ImageOps.exif_transpose(img)
+        except Exception:
+            pass
+
+        if image_type == 'banner':
+            # Banners: preserve landscape ratio, max 1600px wide
+            img = img.convert('RGB')
+            img.thumbnail((1600, 1600), Image.LANCZOS)
+        else:
+            # Products: 1000×1000 white square canvas
+            if img.mode not in ('RGBA', 'RGB'):
+                img = img.convert('RGBA')
+            img.thumbnail((1000, 1000), Image.LANCZOS)
+            canvas = Image.new('RGB', (1000, 1000), (255, 255, 255))
+            ox = (1000 - img.width) // 2
+            oy = (1000 - img.height) // 2
+            mask = img.split()[3] if img.mode == 'RGBA' else None
+            canvas.paste(img.convert('RGB'), (ox, oy), mask)
+            img = canvas
+
+        buf = io.BytesIO()
+        img.save(buf, format='JPEG', quality=88, optimize=True)
+        buf.seek(0)
+
+        prefix = 'banners' if image_type == 'banner' else 'products'
+        key = f"{prefix}/{uuid.uuid4().hex[:16]}.jpg"
+
+        r2_endpoint = os.environ.get('R2_ENDPOINT', '')
+        r2_bucket   = os.environ.get('R2_BUCKET', '')
+        r2_pub_url  = os.environ.get('R2_PUBLIC_URL', '').rstrip('/')
+
+        s3 = boto3.client(
+            's3',
+            endpoint_url=r2_endpoint,
+            aws_access_key_id=os.environ.get('R2_ACCESS_KEY_ID', ''),
+            aws_secret_access_key=os.environ.get('R2_SECRET_ACCESS_KEY', ''),
+            config=BotoConfig(signature_version='s3v4'),
+            region_name='auto',
+        )
+        s3.upload_fileobj(buf, r2_bucket, key, ExtraArgs={'ContentType': 'image/jpeg'})
+
+        return jsonify(url=f"{r2_pub_url}/{key}")
+
+    except Exception as e:
+        return jsonify(error=f'Gabim gjatë ngarkimit: {str(e)}'), 500
 
 
 @admin.route('/recent-events')

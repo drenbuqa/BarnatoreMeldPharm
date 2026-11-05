@@ -220,52 +220,7 @@
 }
 .co-save-check input { width: 15px; height: 15px; accent-color: var(--primary); cursor: pointer; }
 
-/* ── Order note toggle ───────────────────────────────────────────────────── */
-.co-note-wrap {
-    margin-bottom: 0.85rem;
-    border: 1.5px solid #e2e8f0;
-    border-radius: 12px;
-    background: #fff;
-    overflow: hidden;
-    transition: border-color .18s;
-}
-.co-note-wrap:focus-within {
-    border-color: var(--primary);
-    box-shadow: 0 0 0 3px rgba(79,93,78,0.08);
-}
-.co-note-toggle {
-    width: 100%;
-    display: flex;
-    align-items: center;
-    gap: 0.55rem;
-    padding: 0.75rem 1rem;
-    background: none;
-    border: none;
-    cursor: pointer;
-    font-family: inherit;
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: #475569;
-    text-align: left;
-    transition: color .15s;
-}
-.co-note-toggle:hover { color: var(--primary); }
-.co-note-toggle > i:first-child { color: #94a3b8; font-size: 0.8rem; flex-shrink:0; }
-.co-note-toggle > span { flex: 1; }
-.co-note-chevron {
-    font-size: 0.7rem;
-    color: #94a3b8;
-    transition: transform .22s;
-    flex-shrink: 0;
-}
-.co-note-chevron.open { transform: rotate(180deg); }
-.co-note-body {
-    display: none;
-    padding: 0 1rem 0.85rem;
-    flex-direction: column;
-    gap: 0.35rem;
-}
-.co-note-body.open { display: flex; }
+/* ── Order note ──────────────────────────────────────────────────────────── */
 .co-note-textarea {
     width: 100%;
     min-height: 80px;
@@ -490,8 +445,8 @@
                                 <div class="co-ship-pill option-content">
                                     <div class="co-ship-pill-icon"><i class="fas fa-truck"></i></div>
                                     <div class="co-ship-pill-text">
-                                        <span class="co-ship-pill-label">Dërgim falas mbi €50</span>
-                                        <span class="co-ship-pill-sub">Brenda Kosovës</span>
+                                        <span class="co-ship-pill-label">Dërgim në Shtëpi</span>
+                                        <span class="co-ship-pill-sub" id="delivery-price-sub">{% if shipping_cost == 0 %}Falas{% else %}€{{ "%.2f"|format(shipping_cost) }}{% endif %}</span>
                                     </div>
                                 </div>
                             </label>
@@ -499,10 +454,10 @@
                                 <input type="radio" name="shipping_method" value="pickup"
                                     onchange="toggleShippingMethod('pickup')">
                                 <div class="co-ship-pill option-content">
-                                    <div class="co-ship-pill-icon"><i class="fas fa-bolt"></i></div>
+                                    <div class="co-ship-pill-icon"><i class="fas fa-store"></i></div>
                                     <div class="co-ship-pill-text">
-                                        <span class="co-ship-pill-label">Dërgim i menjëhershëm</span>
-                                        <span class="co-ship-pill-sub">E njëjta ditë pune</span>
+                                        <span class="co-ship-pill-label">Marrja në Dyqan</span>
+                                        <span class="co-ship-pill-sub">Falas — 72 Eqrem Çabej, Prishtinë</span>
                                     </div>
                                 </div>
                             </label>
@@ -533,33 +488,28 @@
                     <div class="co-card-body">
                         <div class="co-fields">
                             <div class="form-group" style="margin:0">
-                                <label class="co-label" for="fullname">Emri dhe Mbiemri</label>
+                                <label class="co-label" for="fullname">Emri dhe Mbiemri <span style="color:#ef4444">*</span></label>
                                 <input type="text" id="fullname" name="fullname" class="co-input form-control" required
                                     value="{{ current_user.fullname if current_user.is_authenticated else '' }}">
                             </div>
                             <div class="co-field-row">
                                 <div class="form-group" style="margin:0">
-                                    <label class="co-label" for="email">Email</label>
+                                    <label class="co-label" for="email">Email <span style="color:#ef4444">*</span></label>
                                     <input type="email" id="email" name="email" class="co-input form-control" required
                                         value="{{ current_user.email if current_user.is_authenticated else '' }}">
                                 </div>
                                 <div class="form-group" style="margin:0">
-                                    <label class="co-label" for="phone">Telefoni</label>
+                                    <label class="co-label" for="phone">Telefoni <span style="color:#ef4444">*</span></label>
                                     <input type="tel" id="phone" name="phone" class="co-input form-control" required
                                         value="{{ current_user.phone if current_user.is_authenticated else '' }}">
                                 </div>
                             </div>
-                            {% if current_user.is_authenticated %}
-                            <label class="co-save-check">
-                                <input type="checkbox" name="save_details" value="1">
-                                Ruaj të dhënat për herën tjetër
-                            </label>
-                            {% endif %}
                         </div>
                     </div>
                 </div>
 
                 <!-- Step 3: Address (hidden when pickup) -->
+
                 <div class="co-card" id="address-fields-container">
                     <div class="co-card-head">
                         <span class="co-step-num">3</span>
@@ -568,13 +518,13 @@
                     <div class="co-card-body">
                         <div class="co-fields">
                             <div class="form-group" style="margin:0">
-                                <label class="co-label" for="address">Adresa</label>
+                                <label class="co-label" for="address">Adresa <span style="color:#ef4444">*</span></label>
                                 <input type="text" id="address" name="address" class="co-input form-control" required
                                     value="{{ current_user.address if current_user.is_authenticated else '' }}">
                             </div>
                             <div class="co-field-row">
                                 <div class="form-group" style="margin:0">
-                                    <label class="co-label" for="country">Shteti</label>
+                                    <label class="co-label" for="country">Shteti <span style="color:#ef4444">*</span></label>
                                     <div class="co-select-wrap">
                                         <select id="country" name="country" class="co-input co-select form-control" required
                                             onchange="updateShipping(this.value)">
@@ -585,7 +535,7 @@
                                     </div>
                                 </div>
                                 <div class="form-group" style="margin:0">
-                                    <label class="co-label" for="city">Qyteti</label>
+                                    <label class="co-label" for="city">Qyteti <span style="color:#ef4444">*</span></label>
                                     <input type="text" id="city" name="city" class="co-input form-control" required
                                         value="{{ current_user.city if current_user.is_authenticated else '' }}">
                                 </div>
@@ -594,18 +544,23 @@
                     </div>
                 </div>
 
-                <!-- Payment -->
+                {% if current_user.is_authenticated %}
+                <label class="co-save-check" style="margin-bottom:0.75rem;">
+                    <input type="checkbox" name="save_details" value="1">
+                    Ruaj emrin, adresën dhe numrin e telefonit për herën tjetër
+                </label>
+                {% endif %}
+
                 <!-- ── Order note ── -->
-                <div class="co-note-wrap" id="coNoteWrap">
-                    <button type="button" class="co-note-toggle" id="coNoteToggle" onclick="toggleOrderNote()">
-                        <i class="fas fa-pen-alt"></i>
-                        <span id="coNoteToggleText">Shto një shënim për porosinë</span>
-                        <i class="fas fa-chevron-down co-note-chevron" id="coNoteChevron"></i>
-                    </button>
-                    <div class="co-note-body" id="coNoteBody">
+                <div class="co-card">
+                    <div class="co-card-head">
+                        <span class="co-step-num" style="background:#94a3b8;">4</span>
+                        <h3>Shënim për Porosinë <span style="font-size:0.75rem;font-weight:500;color:#94a3b8;margin-left:0.35rem;">(opsionale)</span></h3>
+                    </div>
+                    <div class="co-card-body" style="padding-bottom:0.85rem;">
                         <textarea id="orderNote" name="notes" class="co-note-textarea"
                             maxlength="400"
-                            placeholder="p.sh. Lëreni te porta, ora e preferuar e dorëzimit, alergjitë…"></textarea>
+                            placeholder="p.sh. Lëreni te porta, ora e preferuar e dorëzimit…"></textarea>
                         <div class="co-note-counter"><span id="coNoteCount">0</span>/400</div>
                     </div>
                 </div>
@@ -674,21 +629,6 @@
 </div>
 
 <script>
-    function toggleOrderNote() {
-        const body    = document.getElementById('coNoteBody');
-        const chevron = document.getElementById('coNoteChevron');
-        const label   = document.getElementById('coNoteToggleText');
-        const isOpen  = body.classList.contains('open');
-        body.classList.toggle('open', !isOpen);
-        chevron.classList.toggle('open', !isOpen);
-        if (!isOpen) {
-            document.getElementById('orderNote').focus();
-            label.textContent = 'Shënim për porosinë';
-        } else {
-            const val = document.getElementById('orderNote').value.trim();
-            label.textContent = val ? 'Shënim për porosinë ✓' : 'Shto një shënim për porosinë';
-        }
-    }
     document.addEventListener('DOMContentLoaded', function() {
         const ta = document.getElementById('orderNote');
         const counter = document.getElementById('coNoteCount');
@@ -773,6 +713,16 @@
             shippingDisplay.innerHTML = '€' + fee.toFixed(2);
             shippingDisplay.style.color = 'inherit';
             shippingDisplay.style.fontWeight = 'normal';
+        }
+
+        // Update delivery option sub-label
+        var deliverySub = document.getElementById('delivery-price-sub');
+        if (deliverySub) {
+            if (isAlbaniaMacedonia) {
+                deliverySub.textContent = '€5.00';
+            } else {
+                deliverySub.textContent = subtotal > 50 ? 'Falas' : '€2.50 (Falas mbi €50)';
+            }
         }
 
         const grandTotal = subtotal + fee;

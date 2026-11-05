@@ -100,7 +100,7 @@
 .sdd-divider { height:1px; background:#f3f4f2; margin:0.25rem 0; }
 
 /* ── Detail panel ── */
-.ord-panel { background:#fff; border:1px solid #E8E2DA; border-radius:14px; overflow:hidden; height:100%; overflow-y:auto; max-height:calc(100vh - 90px); display:flex; flex-direction:column; }
+.ord-panel { background:#fff; border:1px solid #E8E2DA; border-radius:14px; overflow:hidden; height:calc(100vh - 90px); display:flex; flex-direction:column; }
 .panel-hd { display:flex; align-items:flex-start; justify-content:space-between; padding:1.1rem 1.15rem 0.85rem; border-bottom:1px solid #f0f1ef; flex-shrink:0; }
 .panel-hd-left h3 { font-size:0.95rem; font-weight:800; color:#1a1f18; margin:0 0 0.35rem; letter-spacing:-0.01em; }
 .panel-hd-left .panel-date { font-size:0.72rem; color:#9aa095; }
@@ -336,6 +336,7 @@
                         "total_price": (order.total_price or order.grand_total)|float,
                         "grand_total": order.grand_total|float,
                         "cancel_reason": order.cancel_reason or "",
+                        "notes": order.notes or "",
                         "created_at": order.created_at.strftime("%d %b %Y, %H:%M"),
                         "items": order["items"]|list
                     } | tojson }}'>
@@ -343,9 +344,8 @@
                         <input type="checkbox" name="order_ids" value="{{ order._id }}" class="order-checkbox" onchange="updateBulkBar()" style="width:15px;height:15px;accent-color:var(--adm-primary);">
                     </td>
                     <td onclick="openPanel('{{ order._id }}')">
-                        <span class="ord-id">#MP-{{ (order._id|string)[:8]|upper }}</span>
+                        <span class="ord-id">#MP-{{ (order._id|string)[:8]|upper }}{% if order.notes %}<span class="ord-note-dot" title="Ka shënim nga klienti"><i class="fas fa-comment-dots"></i></span>{% endif %}</span>
                         <span class="ord-date">{{ order.created_at.strftime('%d %b, %H:%M') }}</span>
-                        {% if order.notes %}<span class="ord-note-dot" title="Ka shënim nga klienti"><i class="fas fa-comment-dots"></i></span>{% endif %}
                     </td>
                     <td onclick="openPanel('{{ order._id }}')">
                         <span class="cust-name">{{ order.fullname }}</span>
@@ -525,7 +525,7 @@ function openPanel(orderId) {
     if (_openOrderId === orderId) { closePanel(); return; }
 
     const data = JSON.parse(row.dataset.order);
-    data.notes = row.dataset.notes || '';   // read from dedicated attribute — avoids JSON escaping issues
+    // notes is now inside the JSON (properly encoded via tojson)
     _openOrderId = orderId;
     _openOrderData = data;
 
@@ -601,6 +601,17 @@ function renderPanel(d) {
         ${d.email ? `<div class="panel-info-row"><span class="lbl">Email</span><a class="val" href="mailto:${escHtml(d.email)}">${escHtml(d.email)}</a></div>` : ''}
     </div>`;
 
+    // Customer note — shown prominently before address
+    if (d.notes) {
+        html += `<div style="background:#fffbeb;border:1.5px solid #fde68a;border-radius:10px;">
+            <div style="display:flex;align-items:center;gap:0.45rem;padding:0.5rem 0.75rem;background:rgba(253,230,138,0.4);border-bottom:1px solid #fde68a;font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#92400e;">
+                <i class="fas fa-comment-dots" style="color:#d97706;"></i>
+                <span>Shënim i Klientit</span>
+            </div>
+            <div style="display:block;padding:0.6rem 0.75rem;font-size:0.84rem;color:#78350f;line-height:1.5;white-space:pre-wrap;word-break:break-word;">${escHtml(d.notes)}</div>
+        </div>`;
+    }
+
     // Address
     if (d.city || d.address) {
         html += `<div>
@@ -608,17 +619,6 @@ function renderPanel(d) {
             ${d.address ? `<div class="panel-info-row"><span class="lbl">Adresa</span><span class="val">${escHtml(d.address)}</span></div>` : ''}
             ${d.city ? `<div class="panel-info-row"><span class="lbl">Qyteti</span><span class="val">${escHtml(d.city)}</span></div>` : ''}
             ${d.shipping_method ? `<div class="panel-info-row"><span class="lbl">Dërgesa</span><span class="val">${d.shipping_method === 'pickup' ? 'Marrje në dyqan' : 'Dërgesë në adresë'}</span></div>` : ''}
-        </div>`;
-    }
-
-    // Customer note
-    if (d.notes) {
-        html += `<div class="cust-note-block">
-            <div class="cust-note-header">
-                <i class="fas fa-comment-dots"></i>
-                <span>Shënim i Klientit</span>
-            </div>
-            <div class="cust-note-body">${escHtml(d.notes)}</div>
         </div>`;
     }
 
