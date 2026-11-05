@@ -1,5 +1,8 @@
 {% extends "base.html" %}
 
+{% block page_title %}Produktet{% if request.args.get('category') and request.args.get('category') != 'all' %} — {{ request.args.get('category') }}{% endif %} | Barnatore Meld Pharm{% endblock %}
+{% block meta_description %}Shfleto të gjitha produktet farmaceutike dhe kozmetike origjinale. Eucerin, La Roche-Posay, Vichy, CeraVe dhe shumë të tjera — dërgim falas mbi 30€ në Kosovë.{% endblock %}
+
 {% block content %}
 <section class="section shop-section">
     <div class="container container-wide">

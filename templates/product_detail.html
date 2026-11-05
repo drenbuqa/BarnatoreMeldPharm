@@ -1,5 +1,49 @@
 {% extends "base.html" %}
 
+{% set _img = (product.images[0] if product.images else product.image_url) %}
+{% set _price = "%.2f"|format(product.display_price) %}
+{% set _desc = product.description | striptags | truncate(160, True, '...') if product.description else (product.name ~ ' — ' ~ (product.brand or '') ~ '. Blej online në Barnatore Meld Pharm, farmaci online në Kosovë.') %}
+
+{% block page_title %}{{ product.name }} | Barnatore Meld Pharm{% endblock %}
+{% block meta_description %}{{ _desc }}{% endblock %}
+{% block canonical %}{{ url_for('main.product_detail', product_id=product._id, _external=True) }}{% endblock %}
+
+{% block og_type %}product{% endblock %}
+{% block og_title %}{{ product.name }} | Barnatore Meld Pharm{% endblock %}
+{% block og_description %}{{ _desc }}{% endblock %}
+{% block og_image %}{{ _img | cld(800) if _img else '' }}{% endblock %}
+{% block twitter_title %}{{ product.name }}{% endblock %}
+{% block twitter_description %}{{ _desc }}{% endblock %}
+{% block twitter_image %}{{ _img | cld(800) if _img else '' }}{% endblock %}
+
+{% block structured_data %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org/",
+  "@type": "Product",
+  "name": {{ product.name | tojson }},
+  "description": {{ _desc | tojson }},
+  "brand": {
+    "@type": "Brand",
+    "name": {{ (product.brand or 'Barnatore Meld Pharm') | tojson }}
+  },
+  "image": [{{ (_img | cld(800) if _img else '') | tojson }}],
+  "sku": {{ (product._id | string) | tojson }},
+  "offers": {
+    "@type": "Offer",
+    "url": {{ url_for('main.product_detail', product_id=product._id, _external=True) | tojson }},
+    "priceCurrency": "EUR",
+    "price": {{ _price | tojson }},
+    "availability": "https://schema.org/{% if product.in_stock is not false %}InStock{% else %}OutOfStock{% endif %}",
+    "seller": {
+      "@type": "Organization",
+      "name": "Barnatore Meld Pharm"
+    }
+  }
+}
+</script>
+{% endblock %}
+
 {% block content %}
 <!-- Mobile floating back button (shown only on mobile) -->
 <a href="#" onclick="history.back(); return false;" class="pd-mobile-back" aria-label="Kthehu">

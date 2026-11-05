@@ -1808,3 +1808,43 @@ def privacy():
 @main.route('/terms')
 def terms():
     return render_template('terms.html')
+
+
+@main.route('/sitemap.xml')
+def sitemap():
+    from flask import Response, url_for
+    from models.db import mongo
+    from datetime import datetime
+
+    base = 'https://barnatore-meld-pharm.fly.dev'
+    today = datetime.utcnow().strftime('%Y-%m-%d')
+
+    static_urls = [
+        ('/', '1.0', 'daily'),
+        ('/products', '0.9', 'daily'),
+        ('/about', '0.5', 'monthly'),
+    ]
+
+    lines = ['<?xml version="1.0" encoding="UTF-8"?>',
+             '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
+
+    for path, priority, freq in static_urls:
+        lines.append(f'<url><loc>{base}{path}</loc><lastmod>{today}</lastmod>'
+                     f'<changefreq>{freq}</changefreq><priority>{priority}</priority></url>')
+
+    try:
+        products = mongo.db.products.find(
+            {'in_stock': {'$ne': False}},
+            {'slug': 1, 'updated_at': 1}
+        )
+        for p in products:
+            slug = p.get('slug') or str(p['_id'])
+            lastmod = p.get('updated_at', datetime.utcnow()).strftime('%Y-%m-%d') if p.get('updated_at') else today
+            lines.append(f'<url><loc>{base}/product/{slug}</loc>'
+                         f'<lastmod>{lastmod}</lastmod>'
+                         f'<changefreq>weekly</changefreq><priority>0.8</priority></url>')
+    except Exception:
+        pass
+
+    lines.append('</urlset>')
+    return Response('\n'.join(lines), mimetype='application/xml')

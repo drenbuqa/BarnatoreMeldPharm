@@ -17,8 +17,23 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="theme-color" content="#ffffff">
-    <title>Barnatore Meld Pharm</title>
-    <link rel="canonical" href="{{ request.url.split('?')[0] }}">
+    <title>{% block page_title %}Barnatore Meld Pharm | Farmaci Online në Kosovë{% endblock %}</title>
+    <meta name="description" content="{% block meta_description %}Barnatore Meld Pharm — farmaci online në Kosovë. Produkte origjinale Eucerin, La Roche-Posay, Vichy, CeraVe me çmime të ulëta. Dërgim falas mbi 30€.{% endblock %}">
+    <link rel="canonical" href="{% block canonical %}{{ request.url.split('?')[0] }}{% endblock %}">
+    <!-- Open Graph -->
+    <meta property="og:type" content="{% block og_type %}website{% endblock %}">
+    <meta property="og:site_name" content="Barnatore Meld Pharm">
+    <meta property="og:title" content="{% block og_title %}Barnatore Meld Pharm | Farmaci Online në Kosovë{% endblock %}">
+    <meta property="og:description" content="{% block og_description %}Farmaci online në Kosovë. Produkte origjinale Eucerin, La Roche-Posay, Vichy, CeraVe me çmime të ulëta.{% endblock %}">
+    <meta property="og:image" content="{% block og_image %}{{ url_for('static', filename='img/og-default.jpg', _external=True) }}{% endblock %}">
+    <meta property="og:url" content="{{ request.url.split('?')[0] }}">
+    <meta property="og:locale" content="sq_AL">
+    <!-- Twitter/X Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{% block twitter_title %}Barnatore Meld Pharm{% endblock %}">
+    <meta name="twitter:description" content="{% block twitter_description %}Farmaci online në Kosovë.{% endblock %}">
+    <meta name="twitter:image" content="{% block twitter_image %}{{ url_for('static', filename='img/og-default.jpg', _external=True) }}{% endblock %}">
+    {% block structured_data %}{% endblock %}
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
     <!-- Preconnect to external CDNs and image host to cut DNS+TCP round-trip time -->
     <link rel="preconnect" href="https://fonts.googleapis.com">

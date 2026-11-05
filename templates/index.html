@@ -1,5 +1,24 @@
 {% extends "base.html" %}
 
+{% block page_title %}Barnatore Meld Pharm | Farmaci Online në Kosovë — Eucerin, La Roche-Posay, Vichy{% endblock %}
+{% block meta_description %}Blej produkte farmaceutike dhe kozmetike origjinale online në Kosovë. Eucerin, La Roche-Posay, Vichy, CeraVe me çmime të ulëta. Dërgim falas mbi 30€.{% endblock %}
+
+{% block structured_data %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Pharmacy",
+  "name": "Barnatore Meld Pharm",
+  "url": "https://barnatore-meld-pharm.fly.dev",
+  "logo": "{{ url_for('static', filename='img/logo.png', _external=True) }}",
+  "description": "Farmaci online në Kosovë. Produkte origjinale Eucerin, La Roche-Posay, Vichy, CeraVe.",
+  "areaServed": "XK",
+  "currenciesAccepted": "EUR",
+  "paymentAccepted": "Cash on Delivery"
+}
+</script>
+{% endblock %}
+
 {% block content %}
 <script>document.body.classList.add('home-page');</script>
 
