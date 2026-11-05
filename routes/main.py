@@ -405,18 +405,29 @@ def _call_openai_chat(user_query, products_context, conversation_history=None, s
     pharmacy_location = os.getenv('PHARMACY_LOCATION', 'Rruga Eqrem Çabej 72, Prishtinë, Kosovë')
     
     system_prompt = (
-        'You are a professional and knowledgeable pharmacy shopping assistant for Barnatore Meld Pharm. '
-        'Answer in Albanian. Your role is to confidently recommend products that match the customer\'s needs. '
-        'Be friendly, practical, and helpful. Always respond warmly to greetings. '
-        'If asked about location, tell users: "Kami ndodhet në ' + pharmacy_location + '". '
-        'When users ask about offers, provide specific examples from available products with discounts. '
-        'If no products are on offer, say: "Nuk kemi oferta në dispozicion tani, por oferta të reja do të shtohen shpejt." '
-        'IMPORTANT: When you have product recommendations available in the context, focus on recommending those products clearly and confidently. '
-        'List products with their key details (brand, size, price) in a well-structured format with line breaks. '
-        'Do NOT ask customers to provide more details when products are already available - just present the recommendations. '
-        'After showing products, you can ask if they want more specific options or alternatives. '
-        'Avoid markdown symbols like ** or ###. Keep text simple and readable. '
-        'You are an expert on these products and your recommendations are valuable - trust your expertise and present products confidently.'
+        'Ti je asistenti profesional i farmacisë Barnatore Meld Pharm — farmaci online në Kosovë. '
+        'GJITHMONË përgjigju VETËM në gjuhën shqipe. Mos shkruaj asnjëherë në anglisht apo gjuhë tjetër. '
+        'Roli yt: ndihmon klientët të gjejnë produktet e duhura, u jep këshilla profesionale farmaceutike, '
+        'dhe u tregon informacion për farmacitë, kategorinë, markat dhe ofertat. '
+        '\n\nFarmacia jonë shet produkte në këto kategori kryesore:\n'
+        '- Dermokozmetikë (Kundër Akneve, Anti-aging & Rrudhat, Hidratues, Mbrojtje nga Dielli, Serum, Tonik, Pastrime)\n'
+        '- Flokët (Shampo, Kondicionerë, Maska, Kundër rënies së flokëve, Leshteriku)\n'
+        '- Suplementë & Vitamina (Vitamina C/D/B, Magnez, Omega-3, Probiotikë, Hekur, Kolagjen, Energia)\n'
+        '- Baby & Mami (Kujdesi për lëkurën e foshnjës, produktet për shtatzëninë, ushqimi)\n'
+        '- Higjiena Gojore (Pasta dhëmbësh, Fije dentale, Gargara)\n'
+        '- Parfumeri & Kozmetikë\n'
+        '\nMarkat kryesore: Eucerin, La Roche-Posay, Vichy, Avène, CeraVe, Bioderma, Neutrogena, Cetaphil, Nuxe, '
+        'Lierac, SVR, Uriage, Dermaceutic, Medik8, Isdin, Rilastil, Mixa, Caudalie, Weleda, Mustela, '
+        'Pharmaceris, Klorane, Rene Furterer, Ducray, Vichy Dercos.\n'
+        '\nAdresa fizike: ' + pharmacy_location + '\n'
+        '\nUdhëzime për përgjigjet:\n'
+        '1. Kur ke produkte të disponueshme nga konteksti, prezento ato me emrin, markën dhe çmimin — mos pyet për informacion shtesë.\n'
+        '2. Kur nuk ke produkte specifikë, jep këshilla të dobishme për shqetësimin e klientit (p.sh. për lëkurë të thatë, akneve, flokë) dhe sugjero kategorinë ku mund të gjejë.\n'
+        '3. Për pyetje mjekësore serioze (barëra me recetë, sëmundje specifike), thuaji të konsultohet me farmacistin ose mjekun.\n'
+        '4. Përgjigju shkurt dhe qartë — 2-4 fjali maksimum, pastaj produktet. Mos bëj lista të gjata teksti.\n'
+        '5. Mos përdor simbole ** ose ### ose bullet points me *. Teksti duhet të jetë i thjeshtë dhe i lexueshëm.\n'
+        '6. Përshëndetjet i kthe me ngrohtësi dhe pyet si mund të ndihmosh.\n'
+        '7. Gjithmonë je i ndihmëshëm, profesional dhe i sjellshëm.'
     )
     
     if include_offers and offers_context:
@@ -584,12 +595,84 @@ def _get_offer_banner_target(link_value):
     return url_for('main.products', discount_only='true', offer_name=offer_name)
 
 
+_CATEGORY_HINTS = [
+    # Skin / Dermokozmetikë
+    ('akne', 'Dermokozmetikë', 'Kundër Akneve'),
+    ('pimple', 'Dermokozmetikë', 'Kundër Akneve'),
+    ('anti aging', 'Dermokozmetikë', 'Anti-aging & Rrudhat'),
+    ('anti-aging', 'Dermokozmetikë', 'Anti-aging & Rrudhat'),
+    ('rrudhat', 'Dermokozmetikë', 'Anti-aging & Rrudhat'),
+    ('hidrat', 'Dermokozmetikë', 'Hidratues'),
+    ('moistur', 'Dermokozmetikë', 'Hidratues'),
+    ('thatë', 'Dermokozmetikë', 'Hidratues'),
+    ('that', 'Dermokozmetikë', 'Hidratues'),
+    ('diell', 'Dermokozmetikë', 'Mbrojtje nga Dielli'),
+    ('spf', 'Dermokozmetikë', 'Mbrojtje nga Dielli'),
+    ('sunscreen', 'Dermokozmetikë', 'Mbrojtje nga Dielli'),
+    ('serum', 'Dermokozmetikë', None),
+    ('njolla', 'Dermokozmetikë', None),
+    ('pigment', 'Dermokozmetikë', None),
+    ('sensitive', 'Dermokozmetikë', None),
+    ('ndjeshmëri', 'Dermokozmetikë', None),
+    ('lëkur', 'Dermokozmetikë', None),
+    ('lekur', 'Dermokozmetikë', None),
+    ('fytyrë', 'Dermokozmetikë', None),
+    ('fytyra', 'Dermokozmetikë', None),
+    ('krem', 'Dermokozmetikë', None),
+    # Hair
+    ('flok', 'Flokët', None),
+    ('shampoo', 'Flokët', None),
+    ('shampo', 'Flokët', None),
+    ('hair', 'Flokët', None),
+    # Supplements & vitamins
+    ('vitamin', 'Suplementë & Vitamina', None),
+    ('suplement', 'Suplementë & Vitamina', None),
+    ('omega', 'Suplementë & Vitamina', None),
+    ('magnez', 'Suplementë & Vitamina', None),
+    ('probiotik', 'Suplementë & Vitamina', None),
+    ('imunitet', 'Suplementë & Vitamina', None),
+    ('kolesterol', 'Suplementë & Vitamina', None),
+    ('hekur', 'Suplementë & Vitamina', None),
+    ('energji', 'Suplementë & Vitamina', None),
+    ('kolagjen', 'Suplementë & Vitamina', None),
+    # Baby & family
+    ('baby', 'Baby & Mami', None),
+    ('fëmij', 'Baby & Mami', None),
+    ('femij', 'Baby & Mami', None),
+    ('foshnjë', 'Baby & Mami', None),
+    ('foshnja', 'Baby & Mami', None),
+    ('shtatzëni', 'Baby & Mami', None),
+    ('shtatzani', 'Baby & Mami', None),
+    ('mami', 'Baby & Mami', None),
+    # Oral
+    ('dhëmbë', 'Higjiena Gojore', None),
+    ('dheмbe', 'Higjiena Gojore', None),
+    ('pasta dhëmbësh', 'Higjiena Gojore', None),
+    ('gojë', 'Higjiena Gojore', None),
+]
+
+_CHATBOT_SESSION_MAX = 40
+_CHATBOT_MIN_INTERVAL = 1.5
+
+
+def _check_chatbot_rate_limit():
+    import time
+    now = time.time()
+    count = session.get('chatbot_count', 0)
+    if count >= _CHATBOT_SESSION_MAX:
+        return False, 'Keni arritur limitin e mesazheve për këtë sesion. Ju lutemi rifrisoni faqen për të filluar bisedë të re.'
+    last_time = session.get('chatbot_last_time', 0.0)
+    if now - last_time < _CHATBOT_MIN_INTERVAL:
+        return False, 'Ju lutemi prisni pak para se të dërgoni mesazhin tjetër.'
+    session['chatbot_count'] = count + 1
+    session['chatbot_last_time'] = now
+    session.modified = True
+    return True, None
+
+
 def _build_chatbot_reply(user_query, conversation_id=None):
     normalized = _normalize_chat_query(user_query)
-    lowered = normalized.lower()
-    prefer_offers = _is_offer_query(normalized)
-    
-    # Get conversation history if conversation_id is provided
+
     conversation_history = None
     if conversation_id:
         user_id = str(current_user.id) if current_user.is_authenticated else None
@@ -597,220 +680,98 @@ def _build_chatbot_reply(user_query, conversation_id=None):
 
     if not normalized:
         return {
-            "reply": "Përshëndetje! Më shkruani çfarë po kërkoni dhe unë do t'ju sugjeroj produktet më të përshtatshme.",
-            "products": [],
-            "quick_replies": ["Për akne", "Për hidratim", "Vitaminë C", "Më të shiturat"],
-            "needs_clarification": False
-        }
-
-    # Handle special cases
-    if _is_greeting(normalized):
-        greeting_replies = [
-            "Përshëndetje! Mirëpresim në Barnatore Meld Pharm. Si mund t'ju ndihmoj të gjeni produktin e duhur?",
-            "Përshëndetje! Jam këtu për t'ju ndihmuar me rekomandimet e produkteve. Çfarë po kërkoni?",
-            "Përshëndetje! Mirë se erdhët. Më tregoni se çfarë produktesh ju interesojnë."
-        ]
-        import random
-        return {
-            "reply": random.choice(greeting_replies),
-            "products": [],
-            "quick_replies": ["Për akne", "Për hidratim", "Vitaminë C", "Më të shiturat", "Oferta"],
-            "needs_clarification": False
-        }
-    
-    if _is_location_query(normalized):
-        pharmacy_location = os.getenv('PHARMACY_LOCATION', 'Rruga Eqrem Çabej 72, Prishtinë, Kosovë')
-        return {
-            'reply': f'Kami ndodhet në {pharmacy_location}. A dëshironi më shumë informacion apo kërkoni ndonjë produkt të caktuar?',
+            'reply': 'Përshëndetje! Jam asistenti i Barnatore Meld Pharm. Si mund t\'ju ndihmoj?',
             'products': [],
-            'quick_replies': ['Për akne', 'Për hidratim', 'Vitaminë C', 'Oferta'],
-            'needs_clarification': False
+            'quick_replies': ['Për akne', 'Hidratues', 'Vitaminë C', 'Oferta'],
+            'needs_clarification': False,
         }
-    
-    if prefer_offers:
-        active_offers = _get_active_offers_context()
-        if active_offers.startswith("No offers") or active_offers.startswith("Unable to fetch"):
-            return {
-                'reply': 'Nuk kemi oferta në dispozicion tani, por oferta të reja do të shtohen shpejt. Ndërkohë, shikoni produktet tona më të shitur dhe të rekomanduara!',
-                'products': [],
-                'quick_replies': ['Më të shiturat', 'Për akne', 'Për hidratim', 'Suplement'],
-                'needs_clarification': False
-            }
-        else:
-            # Get products on offer
-            try:
-                products = Product.get_paginated(
-                    page=1,
-                    per_page=5,
-                    discount_only=True,
-                    sort='relevance'
-                )[0]
-                product_cards = [_product_summary(product) for product in _rank_chatbot_products(products, normalized, prefer_offers=True, limit=5)]
-            except:
-                product_cards = []
-            
-            return {
-                'reply': f'Këtu janë disa nga ofertat tona të disponueshme: {active_offers}',
-                'products': [
-                    {
-                        'id': card['id'],
-                        'name': card['name'],
-                        'brand': card['brand'],
-                        'category': card['category'],
-                        'subcategory': card['subcategory'],
-                        'size': card['size'],
-                        'price': card['price'],
-                        'discount_price': card['discount_price'],
-                        'image_url': card['image_url'],
-                    }
-                    for card in product_cards
-                ] if product_cards else [],
-                'quick_replies': ['Më shumë oferta', 'Për akne', 'Për hidratim', 'Suplement'],
-                'see_more_url': _build_products_url('', category=None, subcategory=None) + '?discount_only=true',
-                'needs_clarification': False
-            }
 
-    category_hints = [
-        # Skin / Dermokozmetikë
-        ('akne', 'Dermokozmetikë', 'Kundër Akneve'),
-        ('pimple', 'Dermokozmetikë', 'Kundër Akneve'),
-        ('anti aging', 'Dermokozmetikë', 'Anti-aging & Rrudhat'),
-        ('anti-aging', 'Dermokozmetikë', 'Anti-aging & Rrudhat'),
-        ('rrudhat', 'Dermokozmetikë', 'Anti-aging & Rrudhat'),
-        ('hidrat', 'Dermokozmetikë', 'Hidratues'),
-        ('moistur', 'Dermokozmetikë', 'Hidratues'),
-        ('diell', 'Dermokozmetikë', 'Mbrojtje nga Dielli'),
-        ('spf', 'Dermokozmetikë', 'Mbrojtje nga Dielli'),
-        ('sunscreen', 'Dermokozmetikë', 'Mbrojtje nga Dielli'),
-        ('serum', 'Dermokozmetikë', None),
-        ('njolla', 'Dermokozmetikë', None),
-        ('pigment', 'Dermokozmetikë', None),
-        ('sensitive', 'Dermokozmetikë', None),
-        ('lëkur', 'Dermokozmetikë', None),
-        ('fytyrë', 'Dermokozmetikë', None),
-        # Hair
-        ('flok', 'Flokët', None),
-        ('shampoo', 'Flokët', None),
-        ('shampo', 'Flokët', None),
-        ('hair', 'Flokët', None),
-        # Supplements & vitamins
-        ('vitamin', 'Suplementë & Vitamina', None),
-        ('suplement', 'Suplementë & Vitamina', None),
-        ('omega', 'Suplementë & Vitamina', None),
-        ('magnez', 'Suplementë & Vitamina', None),
-        ('probiotik', 'Suplementë & Vitamina', None),
-        ('imunitet', 'Suplementë & Vitamina', None),
-        ('kolesterol', 'Suplementë & Vitamina', None),
-        ('hekur', 'Suplementë & Vitamina', None),
-        ('energji', 'Suplementë & Vitamina', None),
-        # Baby & family
-        ('baby', 'Baby & Mami', None),
-        ('fëmij', 'Baby & Mami', None),
-        ('femij', 'Baby & Mami', None),
-        ('foshnjë', 'Baby & Mami', None),
-        ('shtatzëni', 'Baby & Mami', None),
-        ('shtatzani', 'Baby & Mami', None),
-        ('mami', 'Baby & Mami', None),
-        # Oral
-        ('dhëmbë', 'Higjiena Gojore', None),
-        ('dheмbe', 'Higjiena Gojore', None),
-        ('pasta dhëmbësh', 'Higjiena Gojore', None),
-        ('gojë', 'Higjiena Gojore', None),
-    ]
+    prefer_offers = _is_offer_query(normalized)
+    lowered = normalized.lower()
 
+    # Determine category from message for better product search
     selected_category = None
     selected_subcategory = None
-    for hint, category_name, subcategory_name in category_hints:
+    for hint, category_name, subcategory_name in _CATEGORY_HINTS:
         if hint in lowered:
             selected_category = category_name
             selected_subcategory = subcategory_name
             break
 
+    # Always do a broad product search to give Gemini context
     products = []
-    search_terms = normalized
-    if selected_subcategory:
+    if prefer_offers:
+        try:
+            products = Product.get_paginated(page=1, per_page=6, discount_only=True, sort='relevance')[0]
+        except Exception:
+            products = []
+    elif selected_subcategory:
         products = Product.get_paginated(
-            page=1,
-            per_page=5,
-            category=selected_category,
-            subcategory=selected_subcategory,
-            search_query=search_terms,
-            sort='relevance'
+            page=1, per_page=6, category=selected_category,
+            subcategory=selected_subcategory, search_query=normalized, sort='relevance'
         )[0]
     elif selected_category:
         products = Product.get_paginated(
-            page=1,
-            per_page=5,
-            category=selected_category,
-            search_query=search_terms,
-            sort='relevance'
+            page=1, per_page=6, category=selected_category,
+            search_query=normalized, sort='relevance'
         )[0]
     else:
-        products = _find_chatbot_products(search_terms, limit=5)
-
-    if not products and any(keyword in lowered for keyword in ['rekomand', 'sugjero', 'suggest', 'recommend', 'çfarë keni', 'cfare keni', 'show me', 'me trego', 'produkt']):
-        return {
-            'reply': 'Po ju ndihmoj me zgjedhjen më të saktë. Më tregoni përdorimin, markën ose kategorinë që kërkoni dhe unë do t'"'"'ju sjell produkte të përshtatshme nga katalogu ynë.',
-            'products': [],
-            'quick_replies': ['Për akne', 'Për hidratim', 'Vitaminë C', 'Mbrojtje nga dielli', 'Për fëmijë'],
-            'needs_clarification': True,
-            'see_more_url': _build_products_url(normalized, selected_category, selected_subcategory),
-        }
+        products = _find_chatbot_products(normalized, limit=6)
 
     products = _rank_chatbot_products(products, normalized, prefer_offers=prefer_offers, limit=5)
-
-    product_cards = [_product_summary(product) for product in products[:5]]
+    product_cards = [_product_summary(p) for p in products]
     offers_context = _get_active_offers_context() if prefer_offers else None
-    ai_reply = _call_openai_chat(normalized, product_cards, conversation_history, selected_category, selected_subcategory, include_offers=prefer_offers, offers_context=offers_context)
 
-    if product_cards:
-        if ai_reply:
-            reply = ai_reply
-        else:
+    # Always call Gemini — it handles greetings, location, recommendations, general questions
+    ai_reply = _call_openai_chat(
+        normalized, product_cards, conversation_history,
+        selected_category, selected_subcategory,
+        include_offers=prefer_offers, offers_context=offers_context
+    )
+
+    if not ai_reply:
+        if product_cards:
             reply = 'Këtu janë disa rekomandime nga koleksioni ynë:'
-        return {
-            'reply': reply,
-            'products': [
-                {
-                    'id': card['id'],
-                    'name': card['name'],
-                    'brand': card['brand'],
-                    'category': card['category'],
-                    'subcategory': card['subcategory'],
-                    'size': card['size'],
-                    'price': card['price'],
-                    'discount_price': card['discount_price'],
-                    'image_url': card['image_url'],
-                }
-                for card in product_cards
-            ],
-            'quick_replies': ['Më trego më shumë', 'Kërko alternativa', 'Më të shiturat', 'Oferta'],
-            'see_more_url': _build_products_url(normalized, selected_category, selected_subcategory),
-            'needs_clarification': False
-        }
-
-    if ai_reply:
-        fallback_reply = ai_reply
-    else:
-        # If AI is not available, show a clearer Albanian message and guidance
-        api_key_present = bool((os.getenv('OPENAI_API_KEY') or os.getenv('GEMINI_API_KEY') or '').strip())
-        if not api_key_present:
-            fallback_reply = (
-                "Më vjen keq — shërbimi i inteligjencës artificiale nuk është i konfiguruar në server. "
-                "Për të marrë përgjigje më të plota, vendosni GEMINI_API_KEY ose OPENAI_API_KEY në variablat mjedisore të serverit (nuk duhet të vendoset çelësi në klient). "
-                "Derisa të konfigurohet, më tregoni saktësisht markën, kategorinë ose përdorimin që kërkoni dhe unë do të kërkoj manualisht në katalog."
-            )
         else:
-            fallback_reply = (
-                'Po e kuptoj kërkesën tuaj. Nuk gjeta përputhje të drejtpërdrejtë në katalog, por mund t’ju ndihmoj të gjeni alternativa nëse më jepni markën, kategorinë ose përdorimin që kërkoni.'
-            )
-    return {
-        'reply': fallback_reply,
-        'products': [],
-        'quick_replies': ['Për akne', 'Për hidratim', 'Vitaminë C', 'Mbrojtje nga dielli'],
-        'see_more_url': _build_products_url(normalized, selected_category, selected_subcategory),
-        'needs_clarification': True
+            reply = 'Nuk gjeta produkte të përshtatshme. Provoni të kërkoni me terma tjerë ose shikoni kategorinë e duhur.'
+    else:
+        reply = ai_reply
+
+    if prefer_offers:
+        quick_replies = ['Më shumë oferta', 'Për akne', 'Për hidratim', 'Suplementë']
+    elif selected_category == 'Dermokozmetikë':
+        quick_replies = ['Alternativa', 'Për lëkurë të thatë', 'Mbrojtje nga dielli', 'Anti-aging']
+    elif selected_category == 'Suplementë & Vitamina':
+        quick_replies = ['Vitamina D', 'Magnez', 'Omega-3', 'Probiotik']
+    elif selected_category == 'Flokët':
+        quick_replies = ['Shampo', 'Maskë flokësh', 'Kundër rënies', 'Leshteriku']
+    elif selected_category == 'Baby & Mami':
+        quick_replies = ['Krem fëmijësh', 'Shampo fëmijësh', 'Vitamina fëmijësh', 'Për shtatzëni']
+    else:
+        quick_replies = ['Për akne', 'Hidratues', 'Vitaminë C', 'Oferta']
+
+    result = {
+        'reply': reply,
+        'products': [
+            {
+                'id': card['id'],
+                'name': card['name'],
+                'brand': card['brand'],
+                'category': card['category'],
+                'subcategory': card['subcategory'],
+                'size': card['size'],
+                'price': card['price'],
+                'discount_price': card['discount_price'],
+                'image_url': card['image_url'],
+            }
+            for card in product_cards
+        ],
+        'quick_replies': quick_replies,
+        'needs_clarification': False,
     }
+    if product_cards or selected_category or selected_subcategory:
+        result['see_more_url'] = _build_products_url(normalized, selected_category, selected_subcategory)
+    return result
 
 @main.route('/')
 def index():
@@ -1527,11 +1488,32 @@ def _generate_chat_title(user_query):
 
 @main.route('/api/chatbot', methods=['POST'])
 def chatbot_api():
+    allowed, rate_limit_msg = _check_chatbot_rate_limit()
+    if not allowed:
+        return jsonify({
+            'success': False,
+            'message': rate_limit_msg,
+            'products': [],
+            'quick_replies': [],
+            'needs_clarification': False,
+            'conversation_id': None,
+        }), 429
+
     payload = request.get_json(silent=True) or {}
     user_query = payload.get('message', '').strip()
     conversation_id = payload.get('conversation_id')
     user_id = str(current_user.id) if current_user.is_authenticated else _get_guest_id()
-    
+
+    if not user_query:
+        return jsonify({
+            'success': False,
+            'message': 'Mesazhi është bosh.',
+            'products': [],
+            'quick_replies': [],
+            'needs_clarification': False,
+            'conversation_id': conversation_id,
+        }), 400
+
     # Create new conversation if no conversation_id provided
     if not conversation_id:
         # Auto-generate title from first message with better logic
