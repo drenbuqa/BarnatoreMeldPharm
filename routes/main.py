@@ -1798,7 +1798,7 @@ def sitemap():
     from models.db import mongo
     from datetime import datetime
 
-    base = 'https://barnatore-meld-pharm.fly.dev'
+    base = os.getenv('SITE_BASE_URL', 'https://barnatoremeldpharm.com').rstrip('/')
     today = datetime.utcnow().strftime('%Y-%m-%d')
 
     static_urls = [
