@@ -41,7 +41,7 @@
     <link rel="preconnect" href="https://cdnjs.cloudflare.com">
     <link rel="preconnect" href="https://images.barnatoremeldpharm.com" crossorigin>
     <link rel="dns-prefetch" href="https://images.barnatoremeldpharm.com">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css', v=39) }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css', v=41) }}">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&family=Cormorant+Garamond:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <!-- Font Awesome: load asynchronously to avoid render-blocking -->
     <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
@@ -849,7 +849,9 @@
                     const messages = JSON.parse(flashEl.dataset.messages);
                     messages.forEach(([category, message], index) => {
                         setTimeout(() => {
-                            if (typeof showToast === 'function') {
+                            if (category === 'success' && typeof window.showLoginToast === 'function') {
+                                window.showLoginToast(message);
+                            } else if (typeof showToast === 'function') {
                                 showToast(message, category);
                             }
                         }, index * 500);
@@ -883,7 +885,7 @@
     </style>
 
     <!-- Back to Top Button -->
-    <button id="backToTop" class="back-to-top" title="Kthehu në fillim">
+    <button id="backToTop" class="back-to-top" aria-label="Kthehu lart" tabindex="-1">
         <span class="iconify" data-icon="lucide:chevron-up" data-width="20" data-height="20"></span>
     </button>
 
@@ -1036,21 +1038,21 @@
 
     <script>
         // Back to Top functionality
-        const backToTopBtn = document.getElementById('backToTop');
-        if (backToTopBtn) {
-            window.addEventListener('scroll', () => {
-                const scrolled = window.pageYOffset || document.documentElement.scrollTop;
-                if (scrolled > 400) {
-                    backToTopBtn.classList.add('visible');
-                } else {
-                    backToTopBtn.classList.remove('visible');
-                }
+        (function() {
+            const btn = document.getElementById('backToTop');
+            if (!btn) return;
+            const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            function update() {
+                const show = (window.pageYOffset || document.documentElement.scrollTop) > window.innerHeight;
+                btn.classList.toggle('visible', show);
+                btn.tabIndex = show ? 0 : -1;
+            }
+            window.addEventListener('scroll', update, { passive: true });
+            update();
+            btn.addEventListener('click', function() {
+                window.scrollTo({ top: 0, behavior: prefersReduced ? 'auto' : 'smooth' });
             });
-            backToTopBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-            });
-        }
+        })();
     </script>
     <script>
         // Global Image Loading Smoothness
@@ -1580,12 +1582,27 @@
   document.addEventListener('DOMContentLoaded', window.hpInitUrgency);
 })();
 function hpAddToCart(btn, productId) {
-  if (btn.classList.contains('hp-atc--added') || btn.disabled) return;
+  if (btn.disabled) return;
   btn.disabled = true;
   var fd = new FormData();
   fd.append('quantity', '1');
   var csrfMeta = document.querySelector('meta[name="csrf-token"]');
   if (csrfMeta) fd.append('csrf_token', csrfMeta.content);
+  // Show spinner in icon position after brief delay (avoids flash on fast responses)
+  var spinNode = null;
+  var iconEl = btn.querySelector('.hp-atc-label i, .hp-atc-label .iconify');
+  var spinTimer = setTimeout(function() {
+    if (iconEl) iconEl.style.visibility = 'hidden';
+    spinNode = document.createElement('span');
+    spinNode.className = 'atc-spinner';
+    if (iconEl) iconEl.parentNode.insertBefore(spinNode, iconEl);
+  }, 150);
+  function restoreBtn() {
+    clearTimeout(spinTimer);
+    if (iconEl) iconEl.style.visibility = '';
+    if (spinNode && spinNode.parentNode) spinNode.parentNode.removeChild(spinNode);
+    btn.disabled = false;
+  }
   fetch('/cart/add/' + productId, {
     method: 'POST',
     headers: {'X-Requested-With': 'XMLHttpRequest'},
@@ -1593,18 +1610,316 @@ function hpAddToCart(btn, productId) {
   })
   .then(function(r) { return r.json(); })
   .then(function(d) {
+    restoreBtn();
     if (d.success) {
-      btn.classList.add('hp-atc--added');
       if (window.updateGlobalBadges) window.updateGlobalBadges(d);
       if (window.animateCartBadges) window.animateCartBadges();
-      if (window.showToast) window.showToast('U shtua në shportë!', 'success', 'Shiko shportën', '/cart');
+      if (window.showCartToast) window.showCartToast(d.pixel ? d.pixel.product_name : null, null);
+      else if (window.showToast) window.showToast('U shtua në shportë!', 'success', 'Shiko shportën', '/cart');
       if (window.refreshMiniCart) window.refreshMiniCart();
       if (window.showMiniCart) window.showMiniCart();
-      setTimeout(function() { btn.classList.remove('hp-atc--added'); btn.disabled = false; }, 1800);
-    } else { btn.disabled = false; }
+    }
   })
-  .catch(function() { btn.disabled = false; });
+  .catch(function() { restoreBtn(); });
 }
+(function() {
+  var _wrap = null, _timer = null, DURATION = 5000;
+  function getToastBottom() {
+    var stickyBar = document.getElementById('sticky-product-bar');
+    var bottomNav = document.querySelector('.mobile-bottom-nav');
+    var navH = (bottomNav && window.getComputedStyle(bottomNav).display !== 'none') ? bottomNav.offsetHeight : 0;
+    var barH = 0;
+    if (stickyBar && stickyBar.classList.contains('spb-visible')) barH = stickyBar.offsetHeight;
+    return navH + barH + 8;
+  }
+  function dismiss() {
+    if (!_wrap) return;
+    clearTimeout(_timer);
+    var toast = _wrap.querySelector('.cart-toast');
+    if (toast) { toast.classList.remove('cart-toast--visible'); toast.classList.add('cart-toast--out'); }
+    var btt = document.getElementById('backToTop');
+    if (btt) btt.style.visibility = '';
+    setTimeout(function() { if (_wrap && _wrap.parentNode) _wrap.parentNode.removeChild(_wrap); _wrap = null; }, 160);
+  }
+  function startTimer() { clearTimeout(_timer); _timer = setTimeout(dismiss, DURATION); }
+  window.showCartToast = function(productName, variantLabel) {
+    var lr = document.getElementById('cart-toast-live');
+    if (!lr) {
+      lr = document.createElement('div'); lr.id = 'cart-toast-live';
+      lr.setAttribute('role', 'status'); lr.setAttribute('aria-live', 'polite'); lr.setAttribute('aria-atomic', 'true');
+      lr.style.cssText = 'position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;';
+      document.body.appendChild(lr);
+    }
+    setTimeout(function() { lr.textContent = 'U shtua në shportë' + (productName ? ': ' + productName : ''); }, 50);
+    if (!_wrap) { _wrap = document.createElement('div'); _wrap.className = 'cart-toast-wrap'; document.body.appendChild(_wrap); }
+    var sub = productName || '';
+    if (variantLabel) sub += (sub ? ' · ' : '') + variantLabel;
+    _wrap.innerHTML = '<div class="cart-toast" role="alert">' +
+      '<div class="cart-toast__icon"><i class="fas fa-check"></i></div>' +
+      '<div class="cart-toast__body">' +
+      '<div class="cart-toast__title">U shtua në shportë</div>' +
+      (sub ? '<div class="cart-toast__sub">' + sub + '</div>' : '') +
+      '<a href="/cart" class="cart-toast__link">Shiko shportën &rarr;</a>' +
+      '</div>' +
+      '<button class="cart-toast__close" aria-label="Mbyll njoftimin">&#x2715;</button>' +
+      '</div>';
+    var toast = _wrap.querySelector('.cart-toast');
+    var closeBtn = _wrap.querySelector('.cart-toast__close');
+    _wrap.style.bottom = getToastBottom() + 'px';
+    setTimeout(function() { toast.classList.add('cart-toast--visible'); }, 16);
+    var btt = document.getElementById('backToTop');
+    if (btt) btt.style.visibility = 'hidden';
+    toast.addEventListener('mouseenter', function() { clearTimeout(_timer); });
+    toast.addEventListener('mouseleave', startTimer);
+    toast.addEventListener('focusin', function() { clearTimeout(_timer); });
+    toast.addEventListener('focusout', startTimer);
+    if (closeBtn) closeBtn.addEventListener('click', dismiss);
+    startTimer();
+  };
+})();
+(function() {
+  var _wrap = null, _timer = null;
+  var DURATION_SAVED = 3000, DURATION_REMOVED = 5000;
+  function getToastBottom() {
+    var stickyBar = document.getElementById('sticky-product-bar');
+    var bottomNav = document.querySelector('.mobile-bottom-nav');
+    var navH = (bottomNav && window.getComputedStyle(bottomNav).display !== 'none') ? bottomNav.offsetHeight : 0;
+    var barH = 0;
+    if (stickyBar && stickyBar.classList.contains('spb-visible')) barH = stickyBar.offsetHeight;
+    return navH + barH + 8;
+  }
+  function dismiss() {
+    if (!_wrap) return;
+    clearTimeout(_timer);
+    var toast = _wrap.querySelector('.fav-toast');
+    if (toast) { toast.classList.remove('fav-toast--visible'); toast.classList.add('fav-toast--out'); }
+    var btt = document.getElementById('backToTop');
+    if (btt) btt.style.visibility = '';
+    setTimeout(function() { if (_wrap && _wrap.parentNode) _wrap.parentNode.removeChild(_wrap); _wrap = null; }, 160);
+  }
+  function startTimer(duration) { clearTimeout(_timer); _timer = setTimeout(dismiss, duration); }
+  window.showFavToast = function(action, productId) {
+    var saved = (action === 'added');
+    var duration = saved ? DURATION_SAVED : DURATION_REMOVED;
+    var lr = document.getElementById('fav-toast-live');
+    if (!lr) {
+      lr = document.createElement('div'); lr.id = 'fav-toast-live';
+      lr.setAttribute('role', 'status'); lr.setAttribute('aria-live', 'polite'); lr.setAttribute('aria-atomic', 'true');
+      lr.style.cssText = 'position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;';
+      document.body.appendChild(lr);
+    }
+    setTimeout(function() {
+      lr.textContent = saved ? 'Shtuar te të preferuarat' : 'Hequr nga të preferuarat';
+    }, 50);
+    if (!_wrap) { _wrap = document.createElement('div'); _wrap.className = 'fav-toast-wrap'; document.body.appendChild(_wrap); }
+    var iconClass = saved ? 'fav-toast__icon--saved' : 'fav-toast__icon--removed';
+    var heartClass = saved ? 'fas fa-heart' : 'far fa-heart';
+    var titleText = saved ? 'Shtuar te të preferuarat' : 'Hequr nga të preferuarat';
+    var undoHtml = saved ? '' : '<button class="fav-toast__undo">Shto përsëri</button>';
+    _wrap.innerHTML = '<div class="fav-toast" role="alert">' +
+      '<div class="fav-toast__icon ' + iconClass + '"><i class="' + heartClass + '"></i></div>' +
+      '<div class="fav-toast__body">' +
+      '<div class="fav-toast__title">' + titleText + '</div>' +
+      undoHtml +
+      '</div>' +
+      '<button class="fav-toast__close" aria-label="Mbyll njoftimin">&#x2715;</button>' +
+      '</div>';
+    var toast = _wrap.querySelector('.fav-toast');
+    var closeBtn = _wrap.querySelector('.fav-toast__close');
+    var undoBtn = _wrap.querySelector('.fav-toast__undo');
+    _wrap.style.bottom = getToastBottom() + 'px';
+    setTimeout(function() { toast.classList.add('fav-toast--visible'); }, 16);
+    var btt = document.getElementById('backToTop');
+    if (btt) btt.style.visibility = 'hidden';
+    toast.addEventListener('mouseenter', function() { clearTimeout(_timer); });
+    toast.addEventListener('mouseleave', function() { startTimer(duration); });
+    toast.addEventListener('focusin', function() { clearTimeout(_timer); });
+    toast.addEventListener('focusout', function() { startTimer(duration); });
+    if (closeBtn) closeBtn.addEventListener('click', dismiss);
+    if (undoBtn && productId) {
+      undoBtn.addEventListener('click', function() {
+        dismiss();
+        var csrfMeta = document.querySelector('meta[name="csrf-token"]');
+        var csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
+        fetch('/product/favorite/' + productId, {method: 'POST', headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrfToken}})
+          .then(function(r) { return r.json(); })
+          .then(function(data) {
+            if (data.success && data.action === 'added') {
+              document.querySelectorAll('[onclick*="toggleFavorite"][onclick*="' + productId + '"]').forEach(function(b) {
+                b.classList.add('active');
+                var ic = b.querySelector('i');
+                if (ic) { ic.classList.remove('far'); ic.classList.add('fas'); }
+              });
+              if (window.updateGlobalBadges) window.updateGlobalBadges({wishlist_count: data.wishlist_count !== undefined ? data.wishlist_count : data.count});
+              window.showFavToast('added', productId);
+            }
+          })
+          .catch(function() {});
+      });
+    }
+    startTimer(duration);
+  };
+})();
+(function() {
+  var _wrap = null, _timer = null, _restorePending = false;
+  var DURATION = 5000;
+  function getToastBottom() {
+    var stickyBar = document.getElementById('stickyCheckoutBar');
+    var bottomNav = document.querySelector('.mobile-bottom-nav');
+    var navH = (bottomNav && window.getComputedStyle(bottomNav).display !== 'none') ? bottomNav.offsetHeight : 0;
+    var barH = 0;
+    if (stickyBar) {
+      var cs = window.getComputedStyle(stickyBar);
+      if (cs.display !== 'none' && cs.visibility !== 'hidden') barH = stickyBar.offsetHeight;
+    } else {
+      var stickyPB = document.getElementById('sticky-product-bar');
+      if (stickyPB && stickyPB.classList.contains('spb-visible')) barH = stickyPB.offsetHeight;
+    }
+    return navH + barH + 10;
+  }
+  function dismiss() {
+    if (!_wrap) return;
+    clearTimeout(_timer);
+    var toast = _wrap.querySelector('.crem-toast');
+    if (toast) { toast.classList.remove('crem-toast--visible'); toast.classList.add('crem-toast--out'); }
+    var btt = document.getElementById('backToTop');
+    if (btt) btt.style.visibility = '';
+    setTimeout(function() { if (_wrap && _wrap.parentNode) _wrap.parentNode.removeChild(_wrap); _wrap = null; _restorePending = false; }, 160);
+  }
+  function startTimer() { clearTimeout(_timer); _timer = setTimeout(dismiss, DURATION); }
+  window.showCartRemoveToast = function(opts) {
+    var name = opts.name || '';
+    var meta = opts.meta || '';
+    var productId = opts.productId || '';
+    var variantId = opts.variantId || '';
+    var qty = opts.qty || 1;
+    var lr = document.getElementById('crem-toast-live');
+    if (!lr) {
+      lr = document.createElement('div'); lr.id = 'crem-toast-live';
+      lr.setAttribute('role', 'status'); lr.setAttribute('aria-live', 'polite'); lr.setAttribute('aria-atomic', 'true');
+      lr.style.cssText = 'position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;';
+      document.body.appendChild(lr);
+    }
+    setTimeout(function() { lr.textContent = 'Hequr nga shporta' + (name ? ': ' + name : ''); }, 50);
+    _restorePending = false;
+    if (!_wrap) { _wrap = document.createElement('div'); _wrap.className = 'crem-toast-wrap'; document.body.appendChild(_wrap); }
+    _wrap.innerHTML = '<div class="crem-toast" role="alert">' +
+      '<div class="crem-toast__icon"><i class="fas fa-shopping-cart"></i></div>' +
+      '<div class="crem-toast__body">' +
+      '<div class="crem-toast__title">Hequr nga shporta</div>' +
+      (meta ? '<div class="crem-toast__meta">' + meta + '</div>' : '') +
+      '</div>' +
+      (productId ? '<button class="crem-toast__undo" type="button">Shto përsëri</button>' : '') +
+      '</div>';
+    var toast = _wrap.querySelector('.crem-toast');
+    var undoBtn = _wrap.querySelector('.crem-toast__undo');
+    _wrap.style.bottom = getToastBottom() + 'px';
+    setTimeout(function() { toast.classList.add('crem-toast--visible'); }, 16);
+    var btt = document.getElementById('backToTop');
+    if (btt) btt.style.visibility = 'hidden';
+    toast.addEventListener('mouseenter', function() { clearTimeout(_timer); });
+    toast.addEventListener('mouseleave', startTimer);
+    toast.addEventListener('focusin', function() { clearTimeout(_timer); });
+    toast.addEventListener('focusout', startTimer);
+    if (undoBtn) {
+      undoBtn.addEventListener('click', function() {
+        if (_restorePending) return;
+        _restorePending = true;
+        undoBtn.disabled = true;
+        undoBtn.textContent = '...';
+        var fd = new FormData();
+        fd.append('quantity', String(qty));
+        if (variantId) fd.append('variant_id', variantId);
+        var csrfMeta = document.querySelector('meta[name="csrf-token"]');
+        if (csrfMeta) fd.append('csrf_token', csrfMeta.content);
+        fetch('/cart/add/' + productId, {method: 'POST', headers: {'X-Requested-With': 'XMLHttpRequest'}, body: fd})
+          .then(function(r) { return r.json(); })
+          .then(function(data) {
+            if (data.success) {
+              if (window.updateGlobalBadges) window.updateGlobalBadges(data);
+              if (window.refreshMiniCart) window.refreshMiniCart();
+              dismiss();
+              setTimeout(function() { window.location.reload(); }, 100);
+            } else {
+              throw new Error(data.message || 'Ndodhi një gabim.');
+            }
+          })
+          .catch(function(err) {
+            _restorePending = false;
+            undoBtn.disabled = false;
+            undoBtn.textContent = 'Shto përsëri';
+            if (window.showToast) window.showToast(err.message || 'Produkti nuk u shtua.', 'error');
+          });
+      });
+    }
+    startTimer();
+  };
+  window._cartRemoveToastFromSession = function() {
+    try {
+      var stored = sessionStorage.getItem('cartRemoveToast');
+      if (!stored) return;
+      sessionStorage.removeItem('cartRemoveToast');
+      var opts = JSON.parse(stored);
+      setTimeout(function() { window.showCartRemoveToast(opts); }, 300);
+    } catch(e) {}
+  };
+})();
+(function() {
+  var _wrap = null, _timer = null;
+  var DURATION = 3000;
+  function getToastBottom() {
+    var bottomNav = document.querySelector('.mobile-bottom-nav');
+    var navH = (bottomNav && window.getComputedStyle(bottomNav).display !== 'none') ? bottomNav.offsetHeight : 0;
+    var stickyBar = document.getElementById('sticky-product-bar');
+    var barH = (stickyBar && stickyBar.classList.contains('spb-visible')) ? stickyBar.offsetHeight : 0;
+    return navH + barH + 8;
+  }
+  function dismiss() {
+    if (!_wrap) return;
+    clearTimeout(_timer);
+    var toast = _wrap.querySelector('.cart-toast');
+    if (toast) { toast.classList.remove('cart-toast--visible'); toast.classList.add('cart-toast--out'); }
+    setTimeout(function() { if (_wrap && _wrap.parentNode) _wrap.parentNode.removeChild(_wrap); _wrap = null; }, 180);
+  }
+  function startTimer() { clearTimeout(_timer); _timer = setTimeout(dismiss, DURATION); }
+  window.showLoginToast = function(message) {
+    if (_wrap && _wrap.parentNode) { _wrap.parentNode.removeChild(_wrap); _wrap = null; clearTimeout(_timer); }
+    var liveId = 'login-toast-live';
+    var live = document.getElementById(liveId);
+    if (!live) {
+      live = document.createElement('div');
+      live.id = liveId;
+      live.setAttribute('role', 'status');
+      live.setAttribute('aria-live', 'polite');
+      live.setAttribute('aria-atomic', 'true');
+      live.style.cssText = 'position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap';
+      document.body.appendChild(live);
+    }
+    _wrap = document.createElement('div');
+    _wrap.className = 'cart-toast-wrap';
+    _wrap.style.bottom = getToastBottom() + 'px';
+    _wrap.innerHTML = '<div class="cart-toast" role="alert" aria-atomic="true" style="display:flex;align-items:center;gap:10px;padding:10px 12px;">'
+      + '<div class="cart-toast__icon" style="background:#E3E9DE;color:#4B594A;border-radius:8px;width:36px;height:36px;min-width:36px;display:flex;align-items:center;justify-content:center;align-self:center;">'
+      + '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>'
+      + '</div>'
+      + '<div style="flex:1;min-width:0;">'
+      + '<div class="cart-toast__title">' + (message || 'Jeni kyçur me sukses') + '</div>'
+      + '</div>'
+      + '<button class="cart-toast__close" aria-label="Mbyll njoftimin" style="flex-shrink:0;background:none;border:none;padding:4px;cursor:pointer;color:#94a3b8;line-height:1;border-radius:4px;">'
+      + '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>'
+      + '</button>'
+      + '</div>';
+    document.body.appendChild(_wrap);
+    var toast = _wrap.querySelector('.cart-toast');
+    toast.addEventListener('mouseenter', function() { clearTimeout(_timer); });
+    toast.addEventListener('mouseleave', startTimer);
+    toast.addEventListener('focusin', function() { clearTimeout(_timer); });
+    toast.addEventListener('focusout', startTimer);
+    _wrap.querySelector('.cart-toast__close').addEventListener('click', dismiss);
+    setTimeout(function() { toast.classList.add('cart-toast--visible'); live.textContent = message || 'Jeni kyçur me sukses'; }, 16);
+    startTimer();
+  };
+})();
 function hpUpdateArrows(outer) {
   var c = outer.querySelector('.hp-carousel');
   if (!c) return;
@@ -1735,13 +2050,13 @@ document.addEventListener('DOMContentLoaded', function() {
     let epBadgeHtml = '';
     if(p.offer_type === 'multi_buy') epBadgeHtml = `<span class="ep-badge">${p.offer_badge_text||'1+1'}</span>`;
     else if(p.auto_oct_discount) epBadgeHtml = `<span class="ep-badge ep-badge-oct">-5%</span>`;
+    else if(hasDisc && p.labels && p.labels.includes('sale')) epBadgeHtml = '<span class="ep-badge">Ofertë speciale</span>';
     else if(hasDisc) epBadgeHtml = `<span class="ep-badge">-${pct}%</span>`;
-    else if(p.labels && p.labels.includes('sale')) epBadgeHtml = '<span class="ep-badge">Ofertë</span>';
-    else if(p.is_pharmacist_choice) epBadgeHtml = '<span class="ep-badge ep-badge-pharm">Farmacisti</span>';
-    else if(p.labels && p.labels.includes('limited')) epBadgeHtml = '<span class="ep-badge">I Kufizuar</span>';
-    else if(p.labels && p.labels.includes('set')) epBadgeHtml = '<span class="ep-badge ep-badge-set">Set</span>';
-    else if(p.labels && p.labels.includes('new_arrival')) epBadgeHtml = '<span class="ep-badge ep-badge-new">I Ri</span>';
-    else if(p.is_best_seller) epBadgeHtml = '<span class="ep-badge ep-badge-bs">Më i Shituri</span>';
+    else if(p.labels && p.labels.includes('set')) epBadgeHtml = '<span class="ep-badge ep-badge-set">Set / Paketë</span>';
+    else if(p.labels && p.labels.includes('limited')) epBadgeHtml = '<span class="ep-badge">I kufizuar</span>';
+    else if(p.labels && p.labels.includes('new_arrival')) epBadgeHtml = '<span class="ep-badge ep-badge-new">I ri</span>';
+    else if(p.is_pharmacist_choice) epBadgeHtml = '<span class="ep-badge ep-badge-pharm">Zgjedhja e farmacistit</span>';
+    else if(p.is_best_seller) epBadgeHtml = '<span class="ep-badge ep-badge-bs">Më i shituri</span>';
     const badge = epBadgeHtml ? `<div class="ep-badge-stack">${epBadgeHtml}</div>` : '';
     const img = p.image_url || '';
     const brand = p.brand ? `<span class="ep-brand">${p.brand}</span>` : `<span class="ep-brand">${p.category||''}</span>`;

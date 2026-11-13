@@ -22,7 +22,8 @@
                     <tbody>
                         {% for item in cart_items %}
                         <tr data-item-id="{{ item._id }}" data-cart-key="{{ item.cart_key|e }}" class="cart-item-row clickable-row"
-                            data-href="{{ url_for('main.product_detail', product_id=item._id) }}">
+                            data-href="{{ url_for('main.product_detail', product_id=item._id) }}"
+                            data-variant-id="{{ item.variant_id or '' }}" data-item-name="{{ item.name|e }}" data-item-size="{{ item.size or '' }}">
                             <td>
                                 <div class="cart-product-info">
                                     <img src="{{ item.image_url }}" alt="{{ item.name }}" class="cart-thumb">
@@ -120,7 +121,8 @@
                 <!-- Cart Items -->
                 {% for item in cart_items %}
                 <div class="cart-item-card clickable-row" data-item-id="{{ item._id }}" data-cart-key="{{ item.cart_key|e }}"
-                    data-href="{{ url_for('main.product_detail', product_id=item._id) }}">
+                    data-href="{{ url_for('main.product_detail', product_id=item._id) }}"
+                    data-variant-id="{{ item.variant_id or '' }}" data-item-name="{{ item.name|e }}" data-item-size="{{ item.size or '' }}">
                     <!-- Top Row: Image + Info + Delete Button -->
                     <div class="cart-mobile-top">
                         <!-- Action (Delete) - Absolute Positioned -->
@@ -327,23 +329,20 @@
             <div class="hp-carousel" id="cartRecommendationsTrack">
                 {% for product in recommended_products %}
                 {% set cr_badges = [] %}
-                {% if product.offer_type == 'multi_buy' %}{% set _ = cr_badges.append(('offer', product.offer_badge_text or '1+1', '')) %}
-                {% elif product.auto_oct_discount %}{% set _ = cr_badges.append(('offer', '-5%', 'hp-card-badge--oct')) %}
-                {% elif product.discount_price %}{% set _disc = ((product.display_original_price - product.discount_price) / product.display_original_price * 100)|round|int %}{% set _ = cr_badges.append(('offer', '-' ~ _disc ~ '%', '')) %}
-                {% elif product.is_pharmacist_choice %}{% set _ = cr_badges.append(('pharmacist', 'Farmacisti', 'pharmacist-badge')) %}
-                {% elif product.labels and 'limited' in product.labels %}{% set _ = cr_badges.append(('label', 'I Kufizuar', 'limited-badge')) %}
-                {% elif product.labels and 'set' in product.labels %}{% set _ = cr_badges.append(('label', 'Set', 'set-badge')) %}
-                {% elif product.labels and 'sale' in product.labels %}{% set _ = cr_badges.append(('label', 'Ofertë', 'sale-label-badge')) %}
-                {% elif product.labels and 'new_arrival' in product.labels %}{% set _ = cr_badges.append(('label', 'I Ri', 'new-arrival-badge')) %}
-                {% elif product.is_best_seller %}{% set _ = cr_badges.append(('bestseller', 'Më i Shituri', '')) %}{% endif %}
+                {% if product.offer_type == 'multi_buy' %}{% set _ = cr_badges.append((product.offer_badge_text or '1+1', 'hp-card-badge sale-label-badge')) %}
+                {% elif product.auto_oct_discount %}{% set _ = cr_badges.append(('-5%', 'hp-card-badge hp-card-badge--oct')) %}
+                {% elif product.discount_price and product.labels and 'sale' in product.labels %}{% set _ = cr_badges.append(('Ofertë speciale', 'sale-label-badge')) %}
+                {% elif product.discount_price %}{% set _disc = ((product.display_original_price - product.discount_price) / product.display_original_price * 100)|round|int %}{% set _ = cr_badges.append(('-' ~ _disc ~ '%', 'hp-card-badge sale-label-badge')) %}
+                {% elif product.labels and 'set' in product.labels %}{% set _ = cr_badges.append(('Set / Paketë', 'set-badge')) %}
+                {% elif product.labels and 'limited' in product.labels %}{% set _ = cr_badges.append(('I kufizuar', 'limited-badge')) %}
+                {% elif product.labels and 'new_arrival' in product.labels %}{% set _ = cr_badges.append(('I ri', 'new-arrival-badge')) %}
+                {% elif product.is_pharmacist_choice %}{% set _ = cr_badges.append(('Zgjedhja e farmacistit', 'pharmacist-badge')) %}
+                {% elif product.is_best_seller %}{% set _ = cr_badges.append(('Më i shituri', 'best-seller-badge')) %}{% endif %}
                 <div class="hp-card{% if product.auto_oct_discount %} hp-card--oct{% endif %}" data-href="{{ url_for('main.product_detail', product_id=product._id) }}" onclick="window.location.href=this.dataset.href">
                     <div class="hp-card-img">
                         <div class="badge-stack">
-                            {% for btype, btext, bclass in cr_badges[:1] %}
-                              {% if btype == 'bestseller' %}<div class="best-seller-badge">{{ btext }}</div>
-                              {% elif btype == 'pharmacist' %}<div class="pharmacist-badge" style="font-size:0.65rem;padding:3px 8px;letter-spacing:0.4px;border-radius:20px;font-weight:700;text-transform:uppercase;color:#fff;">{{ btext }}</div>
-                              {% elif btype == 'label' %}<div class="{{ bclass }}" style="font-size:0.65rem;padding:3px 8px;letter-spacing:0.4px;border-radius:20px;font-weight:700;text-transform:uppercase;color:#fff;">{{ btext }}</div>
-                              {% else %}<span class="hp-card-badge {{ bclass }}">{{ btext }}</span>{% endif %}
+                            {% for btext, bclass in cr_badges[:1] %}
+                              <span class="{{ bclass }}">{{ btext }}</span>
                             {% endfor %}
                         </div>
                         <div class="img-shimmer"></div>
@@ -390,7 +389,7 @@
     {% endif %}
 </div>
 
-<script src="{{ url_for('static', filename='js/cart-page.js', v=3) }}"></script>
+<script src="{{ url_for('static', filename='js/cart-page.js', v=4) }}"></script>
 <script>
 window.scrollCartRecommendations = function(direction) {
     const track = document.getElementById('cartRecommendationsTrack');

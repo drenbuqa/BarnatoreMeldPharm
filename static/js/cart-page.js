@@ -39,6 +39,27 @@
         }
     }
 
+    function captureItemData(cartKey) {
+        var el = document.querySelector(
+            '.cart-item-card[data-cart-key="' + cartKey + '"], .cart-item-row[data-cart-key="' + cartKey + '"]'
+        );
+        if (!el) return {};
+        var name = el.dataset.itemName || (el.querySelector('.cart-item-name, .product-name') || {}).textContent || '';
+        name = name.trim();
+        var size = el.dataset.itemSize || (el.querySelector('.cart-item-size, .product-size') || {}).textContent || '';
+        size = size.trim();
+        var qtyInput = el.querySelector('.qty-input');
+        var qty = qtyInput ? (parseInt(qtyInput.value) || 1) : 1;
+        var meta = size ? size + ' · ' + qty + ' copë' : (qty > 1 ? qty + ' copë' : '');
+        return {
+            name: name,
+            meta: meta,
+            productId: el.dataset.itemId || '',
+            variantId: el.dataset.variantId || '',
+            qty: qty
+        };
+    }
+
     document.addEventListener('click', function (event) {
         var row = event.target.closest('.clickable-row[data-href]');
         if (!row) return;
@@ -53,26 +74,11 @@
         event.preventDefault();
         event.stopImmediatePropagation();
 
-        var confirmed;
-        if (window.Swal) {
-            var result = await window.Swal.fire({
-                title: 'A jeni i sigurt?',
-                text: 'Dëshironi ta largoni këtë produkt nga shporta?',
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#b4534b',
-                cancelButtonColor: '#64748b',
-                confirmButtonText: 'Po, largoje!',
-                cancelButtonText: 'Anulo'
-            });
-            confirmed = result.isConfirmed;
-        } else {
-            confirmed = window.confirm('Dëshironi ta largoni këtë produkt nga shporta?');
-        }
-        if (!confirmed) return;
-
         var button = form.querySelector('button[type="submit"]');
         if (button) button.disabled = true;
+
+        var cartKey = form.dataset.cartKey;
+        var itemData = captureItemData(cartKey);
 
         try {
             var response = await fetch(form.action, {
@@ -85,13 +91,17 @@
                 throw new Error(data.message || 'Produkti nuk u largua.');
             }
 
-            removeEveryCartCopy(form.dataset.cartKey);
+            removeEveryCartCopy(cartKey);
             applyCartTotals(data);
             if (typeof window.refreshMiniCart === 'function') window.refreshMiniCart();
-            if (typeof window.showToast === 'function') window.showToast(data.message, 'info');
 
             if (data.cart_count === 0) {
+                try { sessionStorage.setItem('cartRemoveToast', JSON.stringify(itemData)); } catch(e) {}
                 window.setTimeout(function () { window.location.reload(); }, 230);
+            } else {
+                if (typeof window.showCartRemoveToast === 'function') {
+                    window.showCartRemoveToast(itemData);
+                }
             }
         } catch (error) {
             if (button) button.disabled = false;
@@ -100,4 +110,10 @@
             }
         }
     }, true);
+
+    document.addEventListener('DOMContentLoaded', function () {
+        if (typeof window._cartRemoveToastFromSession === 'function') {
+            window._cartRemoveToastFromSession();
+        }
+    });
 })();

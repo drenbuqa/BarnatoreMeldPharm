@@ -1,42 +1,114 @@
-/* A restrained badge palette: promotion, popularity, trust, and information. */
-.special-offer-badge,
+/*
+ * Shared product label chips — single source of truth.
+ * All badge classes here override previous definitions.
+ * Flat, no shadow, sentence case, semibold, compact.
+ */
+
+/* ── Base chip — applies to all label badges ── */
+.plc,
+.best-seller-badge,
+.pharmacist-badge,
+.set-badge,
+.limited-badge,
+.new-arrival-badge,
 .sale-label-badge,
-.limited-badge {
-    background: #b4534b !important;
-    box-shadow: 0 2px 8px rgba(180, 83, 75, 0.4) !important;
+.special-offer-badge {
+    display: inline-flex !important;
+    align-items: center !important;
+    height: 23px !important;
+    padding: 0 8px !important;
+    border-radius: 6px !important;
+    font-family: 'Inter', 'Poppins', sans-serif !important;
+    font-size: 0.72rem !important;
+    font-weight: 600 !important;
+    line-height: 1 !important;
+    letter-spacing: 0 !important;
+    text-transform: none !important;
+    white-space: nowrap !important;
+    box-shadow: none !important;
+    border: none !important;
+    gap: 0 !important;
 }
 
-.best-seller-badge {
-    background: #c49a3c !important;
-    box-shadow: 0 2px 8px rgba(196, 154, 60, 0.4) !important;
+
+/* Hide icons inside chips everywhere */
+.best-seller-badge i,
+.pharmacist-badge i,
+.set-badge i,
+.limited-badge i,
+.new-arrival-badge i,
+.sale-label-badge i,
+.special-offer-badge i,
+.plc i {
+    display: none !important;
 }
 
+/* ── Color tokens ── */
+
+/* Set / Paketë, Farmacisti — muted sage / dark olive */
+.set-badge,
 .pharmacist-badge {
-    background: #4f5d4e !important;
-    box-shadow: 0 2px 8px rgba(79, 93, 78, 0.4) !important;
+    background: #E3E9DE !important;
+    color: #40564A !important;
 }
 
+/* Më i shituri — warm sand / dark bronze */
+.best-seller-badge {
+    background: #EDE4D2 !important;
+    color: #6C531C !important;
+}
+
+/* I ri — soft blue-gray / dark slate */
 .new-arrival-badge {
-    background: #68766c !important;
-    box-shadow: 0 2px 8px rgba(104, 118, 108, 0.35) !important;
+    background: #E3EAF0 !important;
+    color: #435969 !important;
 }
 
-.set-badge {
-    background: #4a7d9a !important;
-    box-shadow: 0 2px 8px rgba(74, 125, 154, 0.4) !important;
+/* Ofertë speciale, discount %, limited — muted clay / dark brick */
+.sale-label-badge,
+.special-offer-badge,
+.limited-badge {
+    background: #F0E0DB !important;
+    color: #79493E !important;
 }
 
-/* October promo discount badge — golden gradient */
+/* October promo badge — golden gradient (keep existing look) */
 .oct-badge {
     background: linear-gradient(110deg, #8B6914, #C49A1C) !important;
     color: #fff !important;
-    box-shadow: 0 2px 8px rgba(139, 105, 20, 0.4) !important;
+    box-shadow: none !important;
 }
 
-/* Discount percentages — red alert */
+/* Discount percentage badge (price row) — muted clay / dark brick */
 .discount-badge {
-    background: #b4534b !important;
-    color: #fff !important;
+    background: #F0E0DB !important;
+    color: #79493E !important;
     border: none !important;
-    box-shadow: 0 2px 8px rgba(180, 83, 75, 0.4) !important;
+    box-shadow: none !important;
 }
+
+/* pinfo-badge base used in product detail chips */
+.pinfo-badge {
+    display: inline-flex !important;
+    align-items: center !important;
+    height: 23px !important;
+    padding: 0 8px !important;
+    border-radius: 6px !important;
+    font-family: 'Inter', 'Poppins', sans-serif !important;
+    font-size: 0.72rem !important;
+    font-weight: 600 !important;
+    line-height: 1 !important;
+    letter-spacing: 0 !important;
+    text-transform: none !important;
+    white-space: nowrap !important;
+    box-shadow: none !important;
+}
+.pinfo-badge i { display: none !important; }
+
+/* sage = Set/Paketë + Farmacisti; amber = Më i shituri; blue = I ri; red/olive = clay/brick */
+.pinfo-badge--sage   { background: #E3E9DE !important; color: #40564A !important; border: none !important; }
+.pinfo-badge--amber  { background: #EDE4D2 !important; color: #6C531C !important; border: none !important; }
+.pinfo-badge--blue   { background: #E3EAF0 !important; color: #435969 !important; border: none !important; }
+.pinfo-badge--teal   { background: #E3E9DE !important; color: #40564A !important; border: none !important; }
+.pinfo-badge--red    { background: #F0E0DB !important; color: #79493E !important; border: none !important; }
+.pinfo-badge--olive  { background: #E3E9DE !important; color: #40564A !important; border: none !important; }

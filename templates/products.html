@@ -453,23 +453,20 @@
                 <div id="productGrid" class="product-grid">
                     {% for product in products %}
                     {% set pg_badges = [] %}
-                    {% if product.offer_type == 'multi_buy' %}{% set _ = pg_badges.append(('offer', product.offer_badge_text or '1+1', '')) %}
-                    {% elif product.auto_oct_discount %}{% set _ = pg_badges.append(('offer', '-5%', 'hp-card-badge--oct')) %}
-                    {% elif product.discount_price %}{% set _pg_disc=((product.display_original_price-product.discount_price)/product.display_original_price*100)|round|int %}{% set _ = pg_badges.append(('offer', '-' ~ _pg_disc ~ '%', '')) %}
-                    {% elif product.labels and 'sale' in product.labels %}{% set _ = pg_badges.append(('label', 'Ofertë', 'sale-label-badge')) %}
-                    {% elif product.is_pharmacist_choice %}{% set _ = pg_badges.append(('pharmacist', 'Farmacisti', '')) %}
-                    {% elif product.labels and 'limited' in product.labels %}{% set _ = pg_badges.append(('label', 'I Kufizuar', 'limited-badge')) %}
-                    {% elif product.labels and 'set' in product.labels %}{% set _ = pg_badges.append(('label', 'Set', 'set-badge')) %}
-                    {% elif product.labels and 'new_arrival' in product.labels %}{% set _ = pg_badges.append(('label', 'I Ri', 'new-arrival-badge')) %}
-                    {% elif product.is_best_seller %}{% set _ = pg_badges.append(('bestseller', 'Më i Shituri', '')) %}{% endif %}
+                    {% if product.offer_type == 'multi_buy' %}{% set _ = pg_badges.append((product.offer_badge_text or '1+1', 'hp-card-badge sale-label-badge')) %}
+                    {% elif product.auto_oct_discount %}{% set _ = pg_badges.append(('-5%', 'hp-card-badge hp-card-badge--oct')) %}
+                    {% elif product.discount_price and product.labels and 'sale' in product.labels %}{% set _ = pg_badges.append(('Ofertë speciale', 'sale-label-badge')) %}
+                    {% elif product.discount_price %}{% set _pg_disc=((product.display_original_price-product.discount_price)/product.display_original_price*100)|round|int %}{% set _ = pg_badges.append(('-' ~ _pg_disc ~ '%', 'hp-card-badge sale-label-badge')) %}
+                    {% elif product.labels and 'set' in product.labels %}{% set _ = pg_badges.append(('Set / Paketë', 'set-badge')) %}
+                    {% elif product.labels and 'limited' in product.labels %}{% set _ = pg_badges.append(('I kufizuar', 'limited-badge')) %}
+                    {% elif product.labels and 'new_arrival' in product.labels %}{% set _ = pg_badges.append(('I ri', 'new-arrival-badge')) %}
+                    {% elif product.is_pharmacist_choice %}{% set _ = pg_badges.append(('Zgjedhja e farmacistit', 'pharmacist-badge')) %}
+                    {% elif product.is_best_seller %}{% set _ = pg_badges.append(('Më i shituri', 'best-seller-badge')) %}{% endif %}
                     <div class="hp-card fade-in-section{% if product.auto_oct_discount %} hp-card--oct{% endif %}" data-href="{{ url_for('main.product_detail', product_id=product._id) }}" onclick="window.location.href=this.dataset.href">
                         <div class="hp-card-img">
                             <div class="badge-stack">
-                                {% for btype, btext, bclass in pg_badges[:1] %}
-                                  {% if btype == 'offer' %}<span class="hp-card-badge {{ bclass }}">{{ btext }}</span>
-                                  {% elif btype == 'bestseller' %}<div class="best-seller-badge">{{ btext }}</div>
-                                  {% elif btype == 'pharmacist' %}<div class="pharmacist-badge"><i class="fas fa-user-md"></i> {{ btext }}</div>
-                                  {% else %}<div class="{{ bclass }}">{% if btype == 'label' and bclass == 'new-arrival-badge' %}<i class="fas fa-sparkles"></i> {% elif bclass == 'set-badge' %}<i class="fas fa-layer-group"></i> {% elif bclass == 'limited-badge' %}<i class="fas fa-clock"></i> {% elif bclass == 'sale-label-badge' %}<i class="fas fa-tag"></i> {% endif %}{{ btext }}</div>{% endif %}
+                                {% for btext, bclass in pg_badges[:1] %}
+                                  <span class="{{ bclass }}">{{ btext }}</span>
                                 {% endfor %}
                             </div>
                             <div class="img-shimmer"></div>

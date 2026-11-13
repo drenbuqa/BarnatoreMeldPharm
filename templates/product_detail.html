@@ -45,10 +45,6 @@
 {% endblock %}
 
 {% block content %}
-<!-- Mobile floating back button (shown only on mobile) -->
-<a href="#" onclick="history.back(); return false;" class="pd-mobile-back" aria-label="Kthehu">
-    <i class="fas fa-arrow-left"></i>
-</a>
 
 <style>
 /* ══════════════════════════════════════════════════════
@@ -58,24 +54,25 @@
 /* Base (all screens) — elements that are mobile-only */
 .pd-mobile-back {
     display: none;
-    position: fixed;
+    position: absolute;
     top: 14px;
     left: 14px;
     z-index: 500;
-    background: rgba(255,255,255,0.92);
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
-    border-radius: 50%;
-    width: 40px; height: 40px;
+    background: #f0f0f0;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border-radius: 14px;
+    width: 44px; height: 44px;
     align-items: center; justify-content: center;
-    box-shadow: 0 2px 14px rgba(0,0,0,0.13);
-    color: var(--text-main);
+    box-shadow: none;
+    color: #1e293b;
     text-decoration: none;
-    border: 1px solid rgba(255,255,255,0.55);
-    font-size: 0.85rem;
-    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    border: 1px solid rgba(0,0,0,0.07);
+    font-size: 1rem;
+    transition: transform 0.15s ease;
+    -webkit-tap-highlight-color: transparent;
 }
-.pd-mobile-back:active { transform: scale(0.93); }
+.pd-mobile-back:active { transform: scale(0.9); }
 
 /* Desktop: accordion lives below the grid, not inside the card */
 @media (min-width: 769px) {
@@ -124,7 +121,7 @@
   .mobile-header   { display: none !important; }
   .main-content    { margin-top: 0 !important; }
 
-  /* Container: full-bleed */
+  /* Container: full-bleed, sits above fixed gallery */
   .product-breadcrumbs { display: none !important; }
   .product-detail-container {
       padding-left: 0 !important;
@@ -132,6 +129,9 @@
       padding-top: 0 !important;
       max-width: 100% !important;
       overflow: visible !important;
+      position: relative !important;
+      z-index: 10 !important;
+      background: #fff !important;
   }
   .product-detail-container > div:first-child { display: none !important; }
 
@@ -141,11 +141,10 @@
       top: calc(env(safe-area-inset-top, 0px) + 14px);
   }
 
-  /* ── Bottom-sheet layout ───────────────────────────────── */
-  /* Body locked — sheet is the only scroll container */
-  body { overflow: hidden !important; }
+  /* ── Scroll-over-image layout ──────────────────────────── */
+  /* Body scrolls normally — no gesture conflict possible */
 
-  /* Gallery: fixed fullscreen background layer */
+  /* Gallery: fixed at top, 48vh tall */
   body { background: #fff !important; }
   .mobile-header,
   .mobile-header.scrolled {
@@ -155,118 +154,127 @@
       box-shadow: none !important;
   }
   .product-detail-grid { display: block !important; }
+  /* Gallery: top-bar height = safe-area + 14px padding + 44px buttons + 14px gap below = safe-area + 72px */
   .product-gallery {
-      position: fixed !important;
-      top: 0 !important;
-      left: 0 !important;
-      right: 0 !important;
-      height: 100vh !important;
-      z-index: 1 !important;
-      overflow: hidden !important;
+      position: relative !important;
+      width: 100% !important;
+      height: calc(env(safe-area-inset-top, 0px) + 72px + min(78vw, 320px) + 34px) !important;
+      overflow: visible !important;
       background: #fff !important;
+      z-index: auto !important;
   }
 
-  /* Dim overlay — sits between gallery and sheet */
-  .pd-gallery-dim {
-      display: block !important;
-      position: fixed !important;
-      inset: 0 !important;
-      background: rgba(0,0,0,0); /* no !important — JS sets this */
-      z-index: 2 !important;
-      pointer-events: none !important;
-  }
+  /* Dim overlay — not used */
+  .pd-gallery-dim { display: none !important; }
 
-  /* Sheet: fixed, full height, controlled by JS transform */
+  /* Info column: flows naturally below gallery */
   .product-info-column {
-      position: fixed !important;
+      position: relative !important;
+      left: auto !important;
+      right: auto !important;
+      bottom: auto !important;
+      height: auto !important;
+      margin-top: -8px !important;
+      z-index: 10 !important;
+      will-change: auto !important;
+      transform: none !important;
+  }
+  /* Carousel: starts below the top-bar (button row) */
+  .detail-carousel-container {
+      position: absolute !important;
       left: 0 !important;
       right: 0 !important;
-      bottom: 0 !important;
-      height: 90vh !important;
-      z-index: 10 !important;
-      margin-top: 0 !important;
-      will-change: transform;
-      /* JS sets initial translateY on DOMContentLoaded */
-  }
-  .product-info-column.pd-snapping {
-      transition: transform 0.42s cubic-bezier(0.16, 1, 0.3, 1) !important;
-  }
-  .detail-carousel-container {
-      height: 100% !important;
+      top: calc(env(safe-area-inset-top, 0px) + 72px) !important;
+      height: min(78vw, 320px) !important;
       aspect-ratio: unset !important;
-      border-radius: 0 !important;
+      border-radius: 28px !important;
       border: none !important;
       box-shadow: none !important;
       background: #fff !important;
+      overflow: hidden !important;
   }
-  /* Constrain image element to exactly the gallery visible area; padding included via border-box */
+  /* Product image fills the square carousel */
   .detail-carousel-container .product-image {
       width: 100% !important;
-      height: var(--gallery-vis-h, 38vh) !important;
-      max-height: var(--gallery-vis-h, 38vh) !important;
+      height: 100% !important;
+      max-height: none !important;
       box-sizing: border-box !important;
-      padding: 0.20rem 0.20rem 44px !important;
+      padding: 0.5rem !important;
       display: block !important;
       object-fit: contain !important;
-      object-position: center 80% !important;
+      object-position: center center !important;
   }
-  /* Thumbnail strip — fixed to viewport left edge, never covers the image */
+  /* Thumbnail strip — overlays left side of carousel */
   .thumbnails-container {
-      position: fixed !important;
-      left: 9px !important;
-      top: 62px !important;
+      position: absolute !important;
+      left: 7px !important;
+      top: calc(env(safe-area-inset-top, 0px) + 80px) !important;
       transform: none !important;
-      z-index: 8 !important;
-      width: 48px !important;
-      height: calc(var(--gallery-vis-h, 38vh) - 76px) !important;
-      max-height: calc(var(--gallery-vis-h, 38vh) - 76px) !important;
+      z-index: 10 !important;
+      width: 50px !important;
+      height: calc(min(78vw, 320px) - 16px) !important;
+      max-height: calc(min(78vw, 320px) - 16px) !important;
       display: flex !important;
       flex-direction: column !important;
       gap: 7px !important;
       padding: 0 !important;
       overflow-y: auto !important;
-      overflow-x: visible !important;
+      overflow-x: hidden !important;
       scrollbar-width: none !important;
       background: transparent !important;
       align-items: center !important;
-      justify-content: safe center !important;
+      justify-content: flex-start !important;
   }
   .thumbnails-container::-webkit-scrollbar { display: none !important; }
 
   /* Hide arrows on mobile — swipe is the gesture */
   .detail-carousel-container .carousel-arrow { display: none !important; }
 
-  /* Pill-style dot indicators — fixed to viewport, always just above the sheet */
-  .carousel-indicators {
-      position: fixed !important;
-      left: 50% !important;
-      transform: translateX(-50%) !important;
-      top: calc(var(--gallery-vis-h, 38vh) - 20px) !important;
-      bottom: auto !important;
+  /* Image counter pill — bottom-right of carousel, hidden when only 1 image */
+  .pd-img-counter {
+      position: absolute !important;
+      right: 14px !important;
+      top: calc(env(safe-area-inset-top, 0px) + 72px + min(78vw, 320px) - 34px) !important;
       z-index: 10 !important;
-      gap: 5px !important;
-      display: flex !important;
-      align-items: center !important;
-      justify-content: center !important;
+      background: rgba(0,0,0,0.42) !important;
+      color: #fff !important;
+      font-size: 12px !important;
+      font-weight: 600 !important;
+      letter-spacing: 0.02em !important;
+      padding: 4px 10px !important;
+      border-radius: 20px !important;
+      pointer-events: none !important;
+      transition: opacity 0.2s ease !important;
   }
-  .indicator-dot {
-      width: 6px !important;
-      height: 6px !important;
-      background: rgba(0,0,0,0.22) !important;
-      border-radius: 10px !important;
-      transition: width 0.35s cubic-bezier(0.34,1.56,0.64,1), background 0.3s ease !important;
-      margin: 0 !important;
+  /* Pill-style dot indicators — absolutely positioned within .product-gallery */
+  .pd-indicators {
+      position: absolute;
+      bottom: 22px;
+      left: 0;
+      right: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      z-index: 6;
   }
-  .indicator-dot.active {
-      width: 22px !important;
-      background: #4F5D4E !important;
+  .pd-indicator-dot {
+      width: 6px;
+      height: 6px;
+      background: rgba(0,0,0,0.22);
+      border-radius: 10px;
+      transition: width 0.35s cubic-bezier(0.34,1.56,0.64,1), background 0.3s ease;
+  }
+  .pd-indicator-dot.active {
+      width: 22px;
+      background: #4F5D4E;
   }
 
   /* Mobile thumbnail items — vertical strip on left */
   .product-gallery .thumbnail {
-      min-width: 48px !important;
-      width: 48px !important;
-      height: 48px !important;
+      min-width: 50px !important;
+      width: 50px !important;
+      height: 50px !important;
       border-radius: 10px !important;
       border: 2px solid rgba(200,200,200,0.5) !important;
       background: rgba(255,255,255,0.90) !important;
@@ -291,51 +299,78 @@
       padding: 4px !important;
   }
 
-  /* Hide carousel heart — use inline social row instead */
+  /* Hide carousel heart — overlay row replaces it */
   .detail-carousel-container .btn-favorite { display: none !important; }
 
-  /* pinfo-card: scrollable content container within the sheet */
+  /* ── Gallery action buttons — top-right, above the image ── */
+  .pd-gallery-actions {
+      position: absolute !important;
+      top: calc(env(safe-area-inset-top, 0px) + 14px) !important;
+      right: 14px !important;
+      display: flex !important;
+      flex-direction: row !important;
+      gap: 10px !important;
+      z-index: 20 !important;
+  }
+  .pd-gallery-action-btn {
+      width: 44px !important;
+      height: 44px !important;
+      border-radius: 50% !important;
+      border: 1px solid rgba(0,0,0,0.07) !important;
+      background: #f0f0f0 !important;
+      backdrop-filter: none !important;
+      -webkit-backdrop-filter: none !important;
+      box-shadow: none !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      cursor: pointer !important;
+      color: #1e293b !important;
+      font-size: 17px !important;
+      -webkit-tap-highlight-color: transparent !important;
+  }
+  /* tap feedback driven by JS for precise 70ms/140ms timing */
+  .pd-gallery-action-btn.fav-active i,
+  .pd-gallery-action-btn.active i {
+      color: #4F5D4E !important;
+  }
+
+  @keyframes pd-heart-pulse {
+      0%   { transform: scale(1); }
+      50%  { transform: scale(1.06); }
+      100% { transform: scale(1); }
+  }
+  /* Icon color fades between states; inline-block so transform works */
+  .pd-gallery-action-btn i {
+      display: inline-block !important;
+      transition: color 160ms ease !important;
+  }
+  .pd-gallery-action-btn i.pd-heart-saving {
+      animation: pd-heart-pulse 200ms ease-out forwards !important;
+  }
+  @media (prefers-reduced-motion: reduce) {
+      .pd-gallery-action-btn { transition: none !important; }
+      .pd-gallery-action-btn i { transition: none !important; animation: none !important; }
+  }
+
+  /* pinfo-card: natural height, scrolls with the page */
   .pinfo-card {
-      height: 100% !important;
-      overflow-y: hidden; /* NO !important — JS overrides this to 'auto' when expanded */
-      -webkit-overflow-scrolling: touch !important;
-      overscroll-behavior: none !important;
+      height: auto !important;
+      overflow: visible !important;
       border-radius: 28px 28px 0 0 !important;
       border: none !important;
       box-shadow: 0 -6px 24px rgba(0,0,0,0.07) !important;
-      padding: 0 1.25rem 16rem !important;
-      margin: 0 !important;
+      padding: 1rem 1.25rem 0 !important;
+      margin: 0 0 0 0 !important;
+      margin-bottom: 0 !important;
       background: #fff !important;
-      scroll-behavior: smooth !important;
+      min-height: unset !important;
   }
-  /* ::before pill hidden — replaced by .pd-drag-handle created in JS */
+  /* No drag handle — removed to avoid false sheet affordance */
   .pinfo-card::before { display: none !important; }
 
-  /* Drag handle zone — sticky so it stays at the top of the sheet
-     even when the card is scrolled to the bottom */
-  .pd-drag-handle {
-      position: sticky !important;
-      top: 0 !important;
-      z-index: 20 !important;
-      flex-shrink: 0 !important;
-      order: -10 !important;
-      height: 28px !important;
-      display: flex !important;
-      align-items: flex-start !important;
-      justify-content: center !important;
-      padding-top: 8px !important;
-      background: #fff !important;
-      touch-action: none; /* toggled to pan-y when collapsed via JS */
-      cursor: grab !important;
-      margin: 0 -1.25rem !important; /* edge-to-edge */
-  }
-  .pd-drag-handle::after {
-      content: '' !important;
-      width: 40px !important;
-      height: 4px !important;
-      background: #d1d9e0 !important;
-      border-radius: 2px !important;
-  }
+  /* Drag handle — not used in scroll layout, kept empty */
+  .pd-drag-handle { display: none !important; }
 
   /* ══════════════════════════════════════════════════════
      CARD CONTENT LAYOUT — Complete Restart
@@ -356,11 +391,12 @@
   .pinfo-share-wrap      { order: -1; }   /* stays hidden */
   .pinfo-top-row         { order: 1; }    /* stock badge only */
   .pinfo-brand           { order: 2; }
-  .pinfo-title           { order: 3; }
-  #product-variants-ui   { order: 4; }
-  .pinfo-size            { order: 4; }
-  .pinfo-labels-row      { order: 5; }
+  .pinfo-labels-row      { order: 3; }    /* chips: below brand, above title */
+  .pinfo-title           { order: 4; }
+  #product-variants-ui   { order: 5; }
+  .pinfo-size            { order: 5; }
   .pinfo-price-row       { order: 6; }    /* border-top = visual separator */
+  #pd-inline-actions     { order: 7; }    /* inline buy buttons below price */
   .pinfo-trust-signals   { order: 8; }
   .pinfo-mobile-social   { order: 9; }    /* border-top = visual separator */
   .pinfo-divider         { display: none !important; }
@@ -434,12 +470,45 @@
   .pinfo-labels-row {
       display: flex !important;
       flex-wrap: wrap !important;
-      gap: 0.3rem !important;
-      margin-bottom: 0.65rem !important;
+      gap: 6px !important;
+      margin-top: 2px !important;
+      margin-bottom: 6px !important;
   }
+  /* Compact flat chips — override base badge styles */
   .pinfo-labels-row .pinfo-badge {
-      font-size: 0.69rem !important;
-      padding: 0.2rem 0.55rem !important;
+      font-size: 0.72rem !important;
+      font-weight: 600 !important;
+      line-height: 1 !important;
+      height: 23px !important;
+      padding: 0 8px !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      border-radius: 6px !important;
+      box-shadow: none !important;
+      text-transform: none !important;
+      letter-spacing: 0 !important;
+      white-space: nowrap !important;
+  }
+  /* Hide icons inside chips */
+  .pinfo-labels-row .pinfo-badge i { display: none !important; }
+  /* Set / Paketë, Farmacisti — muted sage, dark olive */
+  .pinfo-labels-row .pinfo-badge--sage,
+  .pinfo-labels-row .pinfo-badge--olive {
+      background: #E3E9DE !important;
+      color: #40564A !important;
+      border: none !important;
+  }
+  /* Më i shituri — warm sand, dark bronze */
+  .pinfo-labels-row .pinfo-badge--amber {
+      background: #EDE4D2 !important;
+      color: #6C531C !important;
+      border: none !important;
+  }
+  /* Limited, clay labels — muted clay, dark brick */
+  .pinfo-labels-row .pinfo-badge--red {
+      background: #F0E0DB !important;
+      color: #79493E !important;
+      border: none !important;
   }
 
   /* ── Row 5: Variants / Size ── */
@@ -465,7 +534,6 @@
       background: #1e3a2f !important;
       color: #fff !important;
       transform: none !important;
-      box-shadow: 0 2px 8px rgba(30,58,47,0.22) !important;
   }
   .vpill.vpill-oos {
       opacity: 0.38 !important;
@@ -483,29 +551,32 @@
       display: flex !important;
       align-items: center !important;
       flex-wrap: wrap !important;
+      gap: 0.6rem !important;
+  }
+  /* Baseline group: sale price + struck original share a baseline */
+  .pinfo-price-group {
+      display: inline-flex !important;
+      align-items: baseline !important;
       gap: 0.55rem !important;
   }
   .pinfo-price-orig {
-      font-size: 0.9rem !important;
+      font-size: 1rem !important;
       color: #94a3b8 !important;
       text-decoration: line-through !important;
       font-weight: 400 !important;
-      order: 0 !important;
   }
   .pinfo-price-main {
-      font-size: 1.65rem !important;
-      font-weight: 800 !important;
+      font-size: 1.9rem !important;
+      font-weight: 700 !important;
       letter-spacing: -0.02em !important;
-      color: var(--text-main, #1e293b) !important;
+      color: var(--primary, #1e3a2f) !important;
       line-height: 1 !important;
-      order: 1 !important;
   }
   .pinfo-price-row .discount-badge {
       font-size: 0.77rem !important;
       padding: 0.28rem 0.6rem !important;
       border-radius: 8px !important;
       font-weight: 700 !important;
-      order: 2 !important;
   }
 
   /* ── Row 7: Expiry (urgency, sits under price) ── */
@@ -563,11 +634,7 @@
 
   /* ── Row 9: Mobile save + share ── */
   .pinfo-mobile-social {
-      display: flex !important;
-      gap: 0.65rem !important;
-      margin-top: 0.85rem !important;
-      padding-top: 0.85rem !important;
-      border-top: 1.5px solid #f1f5f9 !important;
+      display: none !important;
   }
 
   /* Hide overlay fav + share — inline row handles these */
@@ -577,8 +644,8 @@
   /* ── Staggered entrance animations ── */
   .pinfo-top-row       { animation: pd-fade-up 0.4s cubic-bezier(0.16,1,0.3,1) 0.13s both; }
   .pinfo-brand         { animation: pd-fade-up 0.4s cubic-bezier(0.16,1,0.3,1) 0.16s both; }
-  .pinfo-title         { animation: pd-fade-up 0.4s cubic-bezier(0.16,1,0.3,1) 0.19s both; }
-  .pinfo-labels-row    { animation: pd-fade-up 0.4s cubic-bezier(0.16,1,0.3,1) 0.22s both; }
+  .pinfo-labels-row    { animation: pd-fade-up 0.4s cubic-bezier(0.16,1,0.3,1) 0.19s both; }
+  .pinfo-title         { animation: pd-fade-up 0.4s cubic-bezier(0.16,1,0.3,1) 0.22s both; }
   #product-variants-ui { animation: pd-fade-up 0.4s cubic-bezier(0.16,1,0.3,1) 0.25s both; }
   .pinfo-size          { animation: pd-fade-up 0.4s cubic-bezier(0.16,1,0.3,1) 0.25s both; }
   .pinfo-price-row     { animation: pd-fade-up 0.4s cubic-bezier(0.16,1,0.3,1) 0.28s both; }
@@ -655,6 +722,9 @@
       padding-left: 1.25rem !important;
       padding-right: 1.25rem !important;
   }
+  .pinfo-accordion-mobile .accordion-item:last-child {
+      border-bottom: none !important;
+  }
 
   /* Cloned below-fold sections inside the card — must appear after accordion (order:20) */
   .pd-in-card-clone {
@@ -673,20 +743,41 @@
   #relatedProductsSection.pd-in-card-clone {
       padding-top: 3rem !important;
   }
-  /* Hide the original sections on mobile (they're cloned into card) */
-  .pd-contact-section:not(.pd-in-card-clone),
-  #relatedProductsSection:not(.pd-in-card-clone) {
-      display: none !important;
+  /* Contact + related scroll naturally below the product info */
+  .pd-contact-section,
+  #relatedProductsSection {
+      display: block !important;
+      position: relative !important;
+      z-index: 20 !important;
+      background: #fff !important;
+      margin-top: 0 !important;
+  }
+  /* Close margin gaps so no fixed elements bleed through between sections */
+  #relatedProductsSection {
+      margin-top: 0 !important;
+      padding-top: calc(2rem + 16px) !important;
+  }
+  .pd-contact-section {
+      margin-bottom: 0 !important;
+      padding-top: 1.5rem !important;
+      padding-bottom: 1.5rem !important;
+  }
+  /* Remove excessive bottom padding that creates blank space after related products */
+  .main-content {
+      padding-bottom: 0 !important;
+  }
+
+  /* When gallery-area elements should vanish (contact/related visible) */
+  .pd-gallery-hidden-els {
+      opacity: 0 !important;
+      pointer-events: none !important;
+      transition: opacity 0.2s ease !important;
   }
 }
 
-/* Restore originals on desktop and hide clones */
+/* Hide any leftover clones on desktop (safety) */
 @media (min-width: 769px) {
-  .pd-contact-section:not(.pd-in-card-clone),
-  #relatedProductsSection:not(.pd-in-card-clone) { display: revert !important; }
-  /* ID specificity can beat class — use both selectors to guarantee clones hide */
-  .pd-in-card-clone,
-  #relatedProductsSection.pd-in-card-clone { display: none !important; }
+  .pd-in-card-clone { display: none !important; }
 }
 </style>
 
@@ -716,6 +807,10 @@
 
         <!-- Image Section -->
         <div class="product-gallery">
+            <!-- Back button lives inside gallery so it scrolls with the image -->
+            <a href="#" onclick="history.back(); return false;" class="pd-mobile-back" aria-label="Kthehu">
+                <i class="fas fa-arrow-left"></i>
+            </a>
             <div class="carousel-container detail-carousel-container" data-index="0" style="aspect-ratio: 1.1/1;">
                 <div class="carousel-track-container" style="height: 100%;">
                     <div class="carousel-track" style="height: 100%;">
@@ -731,14 +826,6 @@
                             onclick="openImageModal(this.src)">
                         {% endif %}
                     </div>
-                </div>
-
-                <div class="carousel-indicators">
-                    {% if product.images and product.images|length > 1 %}
-                    {% for img in product.images %}
-                    <div class="indicator-dot {{ 'active' if loop.first else '' }}"></div>
-                    {% endfor %}
-                    {% endif %}
                 </div>
 
                 {% if product.images and product.images|length > 1 %}
@@ -760,6 +847,19 @@
 
             </div>
 
+            <!-- Dot indicators -->
+            <div class="pd-indicators">
+                {% if product.images and product.images|length > 1 %}
+                {% for img in product.images %}
+                <div class="pd-indicator-dot {{ 'active' if loop.first else '' }}"></div>
+                {% endfor %}
+                {% endif %}
+            </div>
+
+            {% if product.images and product.images|length > 1 %}
+            <div class="pd-img-counter" id="pd-img-counter">1 / {{ product.images|length }}</div>
+            {% endif %}
+
             {% if product.images and product.images|length > 1 %}
             <div class="thumbnails-container">
                 {% for img in product.images %}
@@ -770,6 +870,21 @@
                 {% endfor %}
             </div>
             {% endif %}
+
+            <!-- Overlay action buttons: like + share -->
+            <div class="pd-gallery-actions">
+                <button class="pd-gallery-action-btn {{ 'fav-active' if (current_user.is_authenticated and product.favorites and current_user.id in product.favorites) or (not current_user.is_authenticated and product._id|string in session.get('liked_products', [])) else '' }}"
+                    id="pd-overlay-fav"
+                    onclick="toggleFavorite(this, '{{ product._id }}')"
+                    aria-label="Shto në të preferuarat">
+                    <i class="{{ 'fas' if (current_user.is_authenticated and product.favorites and current_user.id in product.favorites) or (not current_user.is_authenticated and product._id|string in session.get('liked_products', [])) else 'far' }} fa-heart"></i>
+                </button>
+                <button class="pd-gallery-action-btn"
+                    onclick="toggleSharePopover(event)"
+                    aria-label="Shpërndaj produktin">
+                    <i class="fas fa-share-nodes"></i>
+                </button>
+            </div>
         </div>
 
         <!-- Dim overlay for gallery behind sheet -->
@@ -817,27 +932,25 @@
                     {% endif %}
                 </div>
 
-                <!-- ② All labels on one row -->
-                {% set has_labels = (product.labels and ('set' in product.labels or 'limited' in product.labels or 'sale' in product.labels or 'new_arrival' in product.labels)) or product.is_best_seller or product.is_pharmacist_choice %}
+                <!-- ② Product labels — product-type chips first, merchandising second -->
+                {% set has_labels = (product.labels and ('set' in product.labels or 'limited' in product.labels or 'new_arrival' in product.labels)) or product.is_best_seller or product.is_pharmacist_choice %}
                 {% if has_labels %}
                 <div class="pinfo-labels-row">
-                    {% if product.labels and 'sale' in product.labels and not product.discount_price %}
-                    <span class="pinfo-badge pinfo-badge--red"><i class="fas fa-tag"></i> Ofertë Speciale</span>
-                    {% endif %}
+                    {# Product-type labels first #}
                     {% if product.labels and 'new_arrival' in product.labels %}
-                    <span class="pinfo-badge pinfo-badge--sage"><i class="fas fa-sparkles"></i> I Ri</span>
+                    <span class="pinfo-badge pinfo-badge--sage">I ri</span>
                     {% endif %}
                     {% if product.labels and 'set' in product.labels %}
-                    <span class="pinfo-badge pinfo-badge--sage"><i class="fas fa-layer-group"></i> Set / Paketë</span>
+                    <span class="pinfo-badge pinfo-badge--sage">Set / Paketë</span>
                     {% endif %}
                     {% if product.labels and 'limited' in product.labels %}
-                    <span class="pinfo-badge pinfo-badge--red"><i class="fas fa-clock"></i> I Kufizuar</span>
+                    <span class="pinfo-badge pinfo-badge--red">I kufizuar</span>
                     {% endif %}
                     {% if product.is_best_seller %}
-                    <span class="pinfo-badge pinfo-badge--amber">Më i Shituri</span>
+                    <span class="pinfo-badge pinfo-badge--amber">Më i shituri</span>
                     {% endif %}
                     {% if product.is_pharmacist_choice %}
-                    <span class="pinfo-badge pinfo-badge--olive"><i class="fas fa-user-md"></i> Farmacisti</span>
+                    <span class="pinfo-badge pinfo-badge--olive">Farmacisti</span>
                     {% endif %}
                 </div>
                 {% endif %}
@@ -897,18 +1010,40 @@
                     <span class="price main-price pinfo-price-main">€{{ "%.2f"|format(product.display_price) }}</span>
                     <span class="discount-badge pinfo-badge--teal" style="font-size:0.9rem; padding:0.35rem 0.7rem;">{{ product.offer_badge_text or '1+1' }}</span>
                     {% elif product.auto_oct_discount %}
-                    <span class="price original pinfo-price-orig">€{{ "%.2f"|format(product.display_original_price) }}</span>
-                    <span class="price discounted pinfo-price-main">€{{ "%.2f"|format(product.display_price) }}</span>
+                    <span class="pinfo-price-group">
+                        <span class="price discounted pinfo-price-main">€{{ "%.2f"|format(product.display_price) }}</span>
+                        <span class="price original pinfo-price-orig">€{{ "%.2f"|format(product.display_original_price) }}</span>
+                    </span>
                     <span class="discount-badge" style="background:linear-gradient(110deg,#8B6914,#C49A1C);color:#fff;padding:0.35rem 0.7rem;border-radius:8px;font-weight:700;font-size:0.9rem;">-5%</span>
                     {% elif product.discount_price %}
-                    <span class="price original pinfo-price-orig">€{{ "%.2f"|format(product.display_original_price) }}</span>
-                    <span class="price discounted pinfo-price-main">€{{ "%.2f"|format(product.discount_price) }}</span>
+                    <span class="pinfo-price-group">
+                        <span class="price discounted pinfo-price-main">€{{ "%.2f"|format(product.discount_price) }}</span>
+                        <span class="price original pinfo-price-orig">€{{ "%.2f"|format(product.display_original_price) }}</span>
+                    </span>
                     <span class="discount-badge pinfo-badge--red" style="font-size:0.9rem; padding:0.35rem 0.7rem;">
                         -{{ ((product.display_original_price - product.discount_price) / product.display_original_price * 100)|round|int }}%
                     </span>
                     {% else %}
                     <span class="price main-price pinfo-price-main">€{{ "%.2f"|format(product.display_price) }}</span>
                     {% endif %}
+                </div>
+
+                <!-- ⑧b Inline action buttons — mobile only, below price -->
+                <div id="pd-inline-actions" class="pd-inline-actions">
+                    <button type="button" onclick="addToCartWithQty('{{ product._id }}', this)"
+                        class="btn pd-inline-atc btn-add-to-cart-light"
+                        {% if product.in_stock==False %}disabled{% endif %}>
+                        {% if product.in_stock == False %}
+                        Jashtë Stokut
+                        {% else %}
+                        <i class="fas fa-shopping-cart"></i> Shto në Shportë
+                        {% endif %}
+                    </button>
+                    <button type="button" onclick="buyNowWithQty('{{ product._id }}', this)"
+                        class="btn pd-inline-buy"
+                        {% if product.in_stock==False %}disabled{% endif %}>
+                        Blej Tani
+                    </button>
                 </div>
 
                 <div class="pinfo-divider"></div>
@@ -1208,9 +1343,9 @@
 .vcolor.vcolor-oos::after { content:'';position:absolute;inset:0;background:repeating-linear-gradient(-45deg,transparent,transparent 3px,rgba(0,0,0,.25) 3px,rgba(0,0,0,.25) 4px);border-radius:50%; }
 .vsize { padding:0.35rem 0.7rem;border-radius:8px;border:1.5px solid #dde1e7;background:#fff;font-size:0.88rem;font-weight:600;color:#4a5568;cursor:pointer;transition:border-color .15s,background .15s,color .15s,box-shadow .15s; }
 .vsize:hover:not(.vsize-oos):not(.vsize-active) { border-color:#4a7c59;background:#f2f7f4;color:#1e3a2f; }
-.vsize.vsize-active { border-color:#1e3a2f;background:#1e3a2f;color:#fff;box-shadow:0 2px 8px rgba(30,58,47,0.22); }
+.vsize.vsize-active { border-color:#1e3a2f;background:#1e3a2f;color:#fff; }
 .vsize.vsize-oos { opacity:.38;cursor:default;text-decoration:line-through; }
-.vattr-color-name { display:inline-block;margin-left:.4rem;font-size:.8rem;font-weight:600;color:var(--text-main);text-transform:none; }
+.vattr-color-name { font-size:14px;font-weight:600;color:var(--text-main);text-transform:none;letter-spacing:0; }
 </style>
 <script>
 // ── Variant selector ─────────────────────────────────────────────────────────
@@ -1281,17 +1416,14 @@
             wrapper.style.cssText = 'margin-bottom:1.25rem;';
 
             const label = document.createElement('div');
-            label.style.cssText = 'font-size:0.85rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:0.75rem;';
+            label.style.cssText = 'font-size:14px;font-weight:500;color:#64748b;text-transform:none;letter-spacing:0;margin-bottom:0.75rem;';
             const selectedVal = selections[attrType];
-            label.textContent = attrType + ':';
+            const dimLabel = dimType==='color'?'Ngjyra':dimType==='size'?'Numri i këpucës':'Madhësia';
+            label.textContent = dimLabel + ': ';
             if (selectedVal) {
                 const sel = document.createElement('span');
-                if (dimType === 'color') {
-                    sel.className = 'vattr-color-name';
-                } else {
-                    sel.style.cssText = 'color:var(--text-main);text-transform:none;font-weight:800;margin-left:.35rem;';
-                }
-                sel.textContent = ' ' + selectedVal;
+                sel.style.cssText = 'font-size:14px;font-weight:600;color:var(--text-main);text-transform:none;letter-spacing:0;';
+                sel.textContent = selectedVal;
                 label.appendChild(sel);
             }
 
@@ -1321,7 +1453,7 @@
                     btn.type = 'button';
                     btn.className = 'vsize' + (isActive?' vsize-active':'') + (!inStock?' vsize-oos':'');
                     btn.textContent = val;
-                    btn.style.cssText = 'flex:0 0 calc((100% - 6*0.55rem)/7);text-align:center;box-sizing:border-box;';
+                    btn.style.cssText = 'flex:0 0 auto;text-align:center;box-sizing:border-box;min-width:48px;';
                     if (!inStock) { btn.disabled = true; btn.title = 'Jashtë stokut'; }
                     btn.onclick = () => selectAttr(attrType, val);
                     optRow.appendChild(btn);
@@ -1400,10 +1532,10 @@
             } else { tc.style.display='none'; }
         }
         // Indicators
-        const ic = document.querySelector('.carousel-indicators');
+        const ic = document.querySelector('.pd-indicators');
         if (ic) {
             ic.innerHTML = images.length > 1
-                ? images.map((_,i) => `<div class="indicator-dot${i===0?' active':''}"></div>`).join('')
+                ? images.map((_,i) => `<div class="pd-indicator-dot${i===0?' active':''}"></div>`).join('')
                 : '';
         }
         // Reset carousel position
@@ -1427,9 +1559,11 @@
             if (discount && parseFloat(discount) > 0) {
                 const pct = Math.round((price - discount) / price * 100);
                 c.innerHTML = `
-                    <span class="price original" style="font-size:1rem;text-decoration:line-through;color:#94a3b8;font-weight:500;">€${fmt(price)}</span>
-                    <span class="price discounted" style="font-size:1.8rem;color:var(--primary);font-weight:800;line-height:1;">€${fmt(discount)}</span>
-                    <span class="discount-badge" style="background:#ef4444;color:white;padding:0.35rem 0.6rem;border-radius:8px;font-weight:700;font-size:0.9rem;margin-bottom:0.2rem;transform:translateY(-2px);">-${pct}%</span>`;
+                    <span class="pinfo-price-group">
+                        <span class="price discounted pinfo-price-main">€${fmt(discount)}</span>
+                        <span class="price original pinfo-price-orig">€${fmt(price)}</span>
+                    </span>
+                    <span class="discount-badge pinfo-badge--red" style="font-size:0.9rem;padding:0.35rem 0.7rem;">-${pct}%</span>`;
             } else {
                 c.innerHTML = `<span class="price main-price" style="font-size:1.8rem;color:var(--primary);font-weight:800;line-height:1;">€${fmt(price)}</span>`;
             }
@@ -1448,6 +1582,10 @@
     }
 
     window._getSelectedVariantId = () => selectedVariantId;
+    window._getVariantLabel = () => {
+        const pills = document.querySelectorAll('.vpill.vpill-active');
+        return pills.length ? Array.from(pills).map(p => p.textContent.trim()).filter(Boolean).join(' · ') : null;
+    };
 
     if (productVariants.length > 0) {
         renderVariantUI();
@@ -1477,7 +1615,8 @@
         }
 
         const qty = document.querySelector('.qty-input').value;
-        window.addToCartAJAX(productId, qty, variantId, btn);
+        const variantLabel = window._getVariantLabel ? window._getVariantLabel() : null;
+        window.addToCartAJAX(productId, qty, variantId, btn, variantLabel);
     }
 
     function buyNowWithQty(productId, btn) {
@@ -1596,12 +1735,11 @@
     // ── Sticky product bar ────────────────────────────────────────────────────────
     (function() {
         var bar = document.getElementById('sticky-product-bar');
-        // Observe the whole pinfo-card — bar appears when card scrolls out of view
         var card = document.querySelector('.pinfo-card');
         if (!bar || !card) return;
 
-        // On mobile the bar is always visible (CSS handles it); only use observer on desktop
         if (window.innerWidth > 768) {
+            // Desktop: show bar when pinfo-card scrolls out of view
             var obs = new IntersectionObserver(function(entries) {
                 bar.classList.toggle('spb-visible', !entries[0].isIntersecting);
             }, {
@@ -1609,6 +1747,19 @@
                 rootMargin: '-80px 0px 0px 0px'
             });
             obs.observe(card);
+        } else {
+            // Mobile: show bar only when inline button row is scrolled out of view
+            var inlineActions = document.getElementById('pd-inline-actions');
+            if (inlineActions) {
+                var mobileObs = new IntersectionObserver(function(entries) {
+                    var visible = entries[0].isIntersecting;
+                    bar.classList.toggle('spb-visible', !visible);
+                }, { threshold: 0 });
+                mobileObs.observe(inlineActions);
+            } else {
+                // Fallback: always show bar if no inline actions
+                bar.classList.add('spb-visible');
+            }
         }
 
         // Unit price from Jinja2 — used for total price calculation
@@ -1992,17 +2143,22 @@
         gap: 0.75rem;
         flex-wrap: wrap;
     }
+    .pinfo-price-group {
+        display: inline-flex;
+        align-items: baseline;
+        gap: 0.6rem;
+    }
     .pinfo-price-main {
         font-size: 2rem !important;
-        font-weight: 800 !important;
+        font-weight: 700 !important;
         color: var(--primary) !important;
         line-height: 1 !important;
     }
     .pinfo-price-orig {
-        font-size: 1rem !important;
+        font-size: 1.05rem !important;
         text-decoration: line-through !important;
         color: #94a3b8 !important;
-        font-weight: 500 !important;
+        font-weight: 400 !important;
         line-height: 1 !important;
     }
     .pinfo-actions {
@@ -2044,6 +2200,66 @@
         white-space: nowrap;
     }
     .pinfo-btn-buy:hover:not(:disabled) { background: #e2e8f0 !important; }
+
+    /* ── Inline action buttons (mobile only, below price) ── */
+    .pd-inline-actions {
+        display: none; /* hidden on desktop */
+    }
+    @media (max-width: 768px) {
+        .pd-inline-actions {
+            display: flex !important;
+            flex-direction: row;
+            gap: 10px;
+            margin-top: 14px;
+            margin-bottom: 18px;
+            width: 100%;
+        }
+        .pd-inline-atc {
+            flex: 55;
+            min-width: 0;
+            height: 45px;
+            border-radius: 11px;
+            font-weight: 700;
+            font-size: 0.88rem;
+            background: var(--primary) !important;
+            color: white !important;
+            border: none !important;
+            display: flex !important;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            white-space: nowrap;
+            transition: background .15s;
+            padding: 0 14px;
+        }
+        .pd-inline-atc:active:not(:disabled) { background: #2f4a2e !important; }
+        .pd-inline-atc:disabled { opacity: 0.55; cursor: not-allowed; }
+        .pd-inline-buy {
+            flex: 45;
+            min-width: 0;
+            height: 45px;
+            border-radius: 11px;
+            font-weight: 600;
+            font-size: 0.88rem;
+            background: #fff !important;
+            border: 1.5px solid var(--primary) !important;
+            color: var(--primary) !important;
+            display: flex !important;
+            align-items: center;
+            justify-content: center;
+            white-space: nowrap;
+            transition: background .15s;
+            padding: 0 14px;
+        }
+        .pd-inline-buy:active:not(:disabled) { background: color-mix(in srgb, var(--primary) 8%, white) !important; }
+        .pd-inline-buy:disabled { opacity: 0.55; cursor: not-allowed; }
+    }
+    /* At 320px give ATC a little more room */
+    @media (max-width: 340px) {
+        .pd-inline-atc { flex: 60; font-size: 0.82rem; padding: 0 10px; }
+        .pd-inline-buy { flex: 40; font-size: 0.82rem; padding: 0 10px; }
+    }
+
     /* Favorite button inside card */
     .pinfo-fav {
         width: 44px;
@@ -2136,9 +2352,9 @@
         .pinfo-btn-atc { flex: 3; }
         .pinfo-btn-buy { flex: 2; }
         .mobile-price-fix .price.discounted,
-        .mobile-price-fix .price.main-price { font-size: 1.5rem !important; }
-        .mobile-price-fix .price.original { font-size: 0.85rem !important; }
-        .mobile-price-fix .discount-badge { font-size: 0.7rem !important; padding: 0.2rem 0.35rem !important; }
+        .mobile-price-fix .price.main-price { font-size: 1.9rem !important; }
+        .mobile-price-fix .price.original { font-size: 1rem !important; }
+        .mobile-price-fix .discount-badge { font-size: 0.75rem !important; padding: 0.25rem 0.5rem !important; }
     }
 
     /* Variant pills */
@@ -2154,7 +2370,7 @@
         transition: all 0.2s;
     }
     .vpill:hover:not(.vpill-active) { border-color: #4a7c59; color: #1e3a2f; background: #f2f7f4; }
-    .vpill-active { background: #1e3a2f !important; border-color: #1e3a2f !important; color: white !important; box-shadow: 0 2px 8px rgba(30,58,47,0.22) !important; }
+    .vpill-active { background: #1e3a2f !important; border-color: #1e3a2f !important; color: white !important; }
     .vpill-oos { opacity: 0.45; text-decoration: line-through; cursor: not-allowed; }
 
     /* Product Card Link Fix for Detail Page Related Products */
@@ -2201,8 +2417,8 @@
     /* Hide gallery favorite btn — shown in info card instead */
     .product-gallery .btn-favorite { display: none !important; }
 
-    /* Back-to-top must always sit above all page content including sticky bars */
-    #backToTop { z-index: 2147483647 !important; }
+    /* Back-to-top above sticky bars on product pages */
+    #backToTop { z-index: 9999991 !important; }
 
     /* ── Sticky Product Bar ─────────────────────────────────────── */
     #sticky-product-bar {
@@ -2381,9 +2597,16 @@
             z-index: 9500;
             border-bottom: none;
             border-top: 1px solid #e2e8f0;
-            transform: none !important;
-            transition: none !important;
+            transform: translateY(calc(100% + 8px));
+            opacity: 0;
+            transition: transform 0.18s cubic-bezier(0.16,1,0.3,1), opacity 0.18s ease;
             background: #fff;
+            pointer-events: none;
+        }
+        #sticky-product-bar.spb-visible {
+            transform: translateY(0) !important;
+            opacity: 1 !important;
+            pointer-events: auto;
         }
         /* Single-row layout */
         .spb-inner {
@@ -2447,8 +2670,8 @@
         }
         .desktop-action-container { display: none !important; }
         body { padding-bottom: 118px !important; }
-        /* Back-to-top must clear the sticky add-to-cart bar on mobile */
-        #backToTop { bottom: calc(70px + env(safe-area-inset-bottom) + 80px) !important; z-index: 99999999 !important; }
+        /* Back-to-top clears sticky add-to-cart bar (bar ~92px tall, sits at 70px + safe area) */
+        #backToTop { bottom: calc(70px + env(safe-area-inset-bottom) + 100px) !important; z-index: 9999991 !important; }
 
         /* Related products: proper card width and gap on mobile */
         .pd-related-card {
@@ -2499,6 +2722,12 @@
         }
         #sticky-product-bar.spb-has-discount .spb-buy-btn {
             flex: 1.5;
+        }
+    }
+    @media (max-width: 768px) and (prefers-reduced-motion: reduce) {
+        #sticky-product-bar {
+            transition: opacity 0.1s ease !important;
+            transform: translateY(0) !important;
         }
     }
 </style>
@@ -2617,15 +2846,15 @@
                     onload="this.style.opacity='1';this.style.transition='opacity 0.25s, transform 0.35s ease';var s=this.parentElement.querySelector('.img-shimmer');if(s)s.classList.add('hidden')"
                     onerror="this.style.opacity='0.35';this.src='/static/img/placeholder.png';var s=this.parentElement.querySelector('.img-shimmer');if(s)s.classList.add('hidden')">
                 <div class="badge-stack">
-                    {% if related.offer_type == 'multi_buy' %}<span class="hp-card-badge">{{ related.offer_badge_text or '1+1' }}</span>
+                    {% if related.offer_type == 'multi_buy' %}<span class="hp-card-badge sale-label-badge">{{ related.offer_badge_text or '1+1' }}</span>
                     {% elif related.auto_oct_discount %}<span class="hp-card-badge hp-card-badge--oct">-5%</span>
-                    {% elif related.discount_price %}{% set _disc = ((related.display_original_price - related.discount_price) / related.display_original_price * 100)|round|int %}<span class="hp-card-badge">-{{ _disc }}%</span>
-                    {% elif related.is_pharmacist_choice %}<div class="pharmacist-badge" style="font-size:0.65rem;padding:3px 8px;letter-spacing:0.4px;border-radius:20px;font-weight:700;text-transform:uppercase;color:#fff;">Farmacisti</div>
-                    {% elif related.labels and 'limited' in related.labels %}<div class="limited-badge" style="font-size:0.65rem;padding:3px 8px;letter-spacing:0.4px;border-radius:20px;font-weight:700;text-transform:uppercase;color:#fff;">I Kufizuar</div>
-                    {% elif related.labels and 'set' in related.labels %}<div class="set-badge" style="font-size:0.65rem;padding:3px 8px;letter-spacing:0.4px;border-radius:20px;font-weight:700;text-transform:uppercase;color:#fff;">Set</div>
-                    {% elif related.labels and 'sale' in related.labels %}<div class="sale-label-badge" style="font-size:0.65rem;padding:3px 8px;letter-spacing:0.4px;border-radius:20px;font-weight:700;text-transform:uppercase;color:#fff;">Ofertë</div>
-                    {% elif related.labels and 'new_arrival' in related.labels %}<div class="new-arrival-badge" style="font-size:0.65rem;padding:3px 8px;letter-spacing:0.4px;border-radius:20px;font-weight:700;text-transform:uppercase;color:#fff;">I Ri</div>
-                    {% elif related.is_best_seller %}<div class="best-seller-badge">Më i Shituri</div>{% endif %}
+                    {% elif related.discount_price and related.labels and 'sale' in related.labels %}<span class="sale-label-badge">Ofertë speciale</span>
+                    {% elif related.discount_price %}{% set _disc = ((related.display_original_price - related.discount_price) / related.display_original_price * 100)|round|int %}<span class="hp-card-badge sale-label-badge">-{{ _disc }}%</span>
+                    {% elif related.labels and 'set' in related.labels %}<span class="set-badge">Set / Paketë</span>
+                    {% elif related.labels and 'limited' in related.labels %}<span class="limited-badge">I kufizuar</span>
+                    {% elif related.labels and 'new_arrival' in related.labels %}<span class="new-arrival-badge">I ri</span>
+                    {% elif related.is_pharmacist_choice %}<span class="pharmacist-badge">Zgjedhja e farmacistit</span>
+                    {% elif related.is_best_seller %}<span class="best-seller-badge">Më i shituri</span>{% endif %}
                 </div>
                 {% if related.in_stock == False %}
                 <div class="hp-out-stock"><span>Jashtë Stokut</span></div>
@@ -3203,245 +3432,153 @@
 </style>
 
 <script>
-/* ── Mobile bottom-sheet drag ──────────────────────────── */
-(function pdSheet() {
-    if (window.innerWidth > 768) return;
+window._pdGalleryRefresh = function() {};
 
-    var sheet = document.querySelector('.product-info-column');
-    var card  = document.querySelector('.pinfo-card');
-    var dim   = document.getElementById('pd-gallery-dim');
-    if (!sheet || !card) return;
+// Sync external dots (outside overflow:hidden carousel) via MutationObserver on data-index
+(function () {
+    function initDotSync() {
+        var carousel = document.querySelector('.detail-carousel-container');
+        var gallery  = carousel && carousel.closest('.product-gallery');
+        if (!carousel || !gallery) return;
 
-    var vh = window.innerHeight;
-    var COLLAPSED = vh * 0.43 - 32;
-    var EXPANDED  = vh * 0.04;
-    var THRESHOLD = vh * 0.16;
-    var EASE      = 'transform 0.15s cubic-bezier(0.16,1,0.3,1)';
-    var pos       = COLLAPSED;
-    var isExpanded = false;
+        var total   = carousel.querySelectorAll('.carousel-track img').length;
+        var counter = document.getElementById('pd-img-counter');
 
+        function syncDots(idx) {
+            // Update pill counter
+            if (counter && total > 1) counter.textContent = (idx + 1) + ' / ' + total;
+        }
 
-    var _carousel = document.querySelector('.detail-carousel-container');
-    function _updateGalleryNav(sheetTranslateY) {
-        /* visible gallery height = viewport - sheet height + sheet translateY */
-        var visH = window.innerHeight - sheet.offsetHeight + sheetTranslateY;
-        var val = visH + 'px';
-        /* set on both carousel (for dots) and root (for fixed thumbnails) */
-        if (_carousel) _carousel.style.setProperty('--gallery-vis-h', val);
-        document.documentElement.style.setProperty('--gallery-vis-h', val);
+        // Sync immediately on load
+        syncDots(parseInt(carousel.getAttribute('data-index') || '0'));
+
+        // goToSlide calls container.setAttribute('data-index', index) — watch it
+        new MutationObserver(function (mutations) {
+            mutations.forEach(function (m) {
+                if (m.attributeName === 'data-index') {
+                    syncDots(parseInt(carousel.getAttribute('data-index') || '0'));
+                }
+            });
+        }).observe(carousel, { attributes: true, attributeFilter: ['data-index'] });
     }
 
-    function applyPos(y) {
-        pos = Math.max(EXPANDED, Math.min(COLLAPSED, y));
-        sheet.style.transform = 'translateY(' + pos + 'px)';
-        var t = 1 - (pos - EXPANDED) / (COLLAPSED - EXPANDED);
-        if (dim) dim.style.background = 'rgba(0,0,0,' + (t * 0.45).toFixed(3) + ')';
-        requestAnimationFrame(function() { _updateGalleryNav(pos); });
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initDotSync);
+    } else {
+        initDotSync();
     }
+})();
 
-    /* On mobile the contact section and related products are cloned into the
-       card, so there is nothing meaningful left to page-scroll. Disabling page
-       scroll permanently removes the competing scroll context that confuses
-       iOS Safari and causes the ~2s freeze on fast swipes. */
-    document.body.style.overflow = 'hidden';
-
-    function snapTo(target) {
-        if (target === COLLAPSED) {
-            card.style.setProperty('scroll-behavior', 'auto', 'important');
-            card.style.overflowY = 'hidden';
-            card.style.overflowY = 'auto';
-            card.scrollTop = 0;
-        }
-        sheet.style.transition = EASE;
-        if (dim) dim.style.transition = EASE;
-        applyPos(target);
-        isExpanded = (target === EXPANDED);
-        setTimeout(function() {
-            sheet.style.transition = '';
-            if (dim) dim.style.transition = '';
-            card.style.removeProperty('scroll-behavior');
-        }, 170);
-        card.style.overflowY = isExpanded ? 'auto' : 'hidden';
-        handle.style.touchAction = isExpanded ? 'none' : 'pan-y';
+// Deduplicate toasts: replace existing toast of same type instead of stacking
+(function () {
+    function initToastDedup() {
+        var _orig = window.showToast;
+        if (typeof _orig !== 'function') return;
+        window.showToast = function (message, type, ctaText, ctaUrl) {
+            type = type || 'success';
+            var container = document.getElementById('toast-container');
+            if (container) {
+                // Remove ALL existing toasts immediately — no stacking ever
+                var existing = container.querySelectorAll('.toast');
+                existing.forEach(function (t) {
+                    if (t.parentNode) t.parentNode.removeChild(t);
+                });
+            }
+            _orig(message, type, ctaText, ctaUrl);
+        };
     }
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initToastDedup);
+    } else {
+        initToastDedup();
+    }
+})();
 
-    applyPos(COLLAPSED);
-    card.style.overflowY = 'hidden';
+// Fav button: tap feedback + heart animation — deferred until main.js (defer) is ready
+(function () {
+    function initFavSync() {
+        var _origToggle = window.toggleFavorite;
+        if (typeof _origToggle !== 'function') return;
 
-    /* ── Drag handle zone ────────────────────────────────────────────────────
-       A sticky element at card top with touch-action:none.  Its passive
-       listeners drive the sheet without ever blocking native card scroll. */
-    var handle = document.createElement('div');
-    handle.className = 'pd-drag-handle';
-    handle.style.pointerEvents = 'auto';
-    card.prepend(handle);
+        var overlayBtn  = document.getElementById('pd-overlay-fav');
+        var reduced     = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-    var hStartY = 0, hActive = false;
-
-    handle.addEventListener('touchstart', function(e) {
-        hStartY = e.touches[0].clientY;
-        hActive = true;
-        sheet.style.transition = '';
-        if (dim) dim.style.transition = '';
-    }, { passive: true });
-
-    handle.addEventListener('touchmove', function(e) {
-        if (!hActive) return;
-        /* When collapsed, touch-action:pan-y passes scroll to iOS.
-           Cancel any drag state so we don't also move the sheet. */
-        if (!isExpanded) { hActive = false; return; }
-        var dy = e.touches[0].clientY - hStartY;
-        if (dy < 0) return;
-        applyPos(EXPANDED + dy * 0.88);
-    }, { passive: true });
-
-    handle.addEventListener('touchend', function(e) {
-        if (!hActive) return;
-        hActive = false;
-        var dy = e.changedTouches[0].clientY - hStartY;
-        if (!isExpanded) {
-            /* Collapsed: tap the handle to expand. Drags go to iOS page scroll. */
-            if (Math.abs(dy) < 15) snapTo(EXPANDED);
-            return;
+        // Set initial aria-pressed
+        if (overlayBtn) {
+            overlayBtn.setAttribute('aria-pressed',
+                overlayBtn.classList.contains('fav-active') ? 'true' : 'false');
         }
-        snapTo(dy > THRESHOLD ? COLLAPSED : EXPANDED);
-    }, { passive: true });
 
-    /* touchcancel: OS claimed the gesture (edge swipe, notification, scroll).
-       When collapsed, iOS took it for page scroll — do nothing.
-       When expanded, snap to nearest endpoint so state never gets stuck. */
-    handle.addEventListener('touchcancel', function() {
-        if (!hActive) return;
-        hActive = false;
-        if (isExpanded) {
-            snapTo(pos < (EXPANDED + COLLAPSED) / 2 ? EXPANDED : COLLAPSED);
-        }
-    }, { passive: true });
-
-    /* ── Card body gestures ──────────────────────────────────────────────────
-       All listeners are passive:true — e.preventDefault() is never called,
-       so native scroll is NEVER blocked. Sheet movement (applyPos) runs
-       alongside the browser's own scroll handling without fighting it. */
-    var bStartY = 0, bStartScroll = 0, bIntent = null;
-    /* bIntent: null | 'drag' | 'scroll' */
-
-    card.addEventListener('touchstart', function(e) {
-        if (handle.contains(e.target)) return;
-        bStartY      = e.touches[0].clientY;
-        bStartScroll = card.scrollTop;
-        bIntent      = null;
-        sheet.style.transition = '';
-        if (dim) dim.style.transition = '';
-    }, { passive: true });
-
-    card.addEventListener('touchmove', function(e) {
-        if (handle.contains(e.target)) return;
-        var dy = e.touches[0].clientY - bStartY;
-
-        if (bIntent === null) {
-            if (Math.abs(dy) < 8) return;
-            if (isExpanded) {
-                var atTop    = bStartScroll === 0 && card.scrollTop === 0;
-                var atBottom = bStartScroll + card.clientHeight >= card.scrollHeight - 2;
-                bIntent = ((atTop || atBottom) && dy > 0) ? 'drag' : 'scroll';
-            } else {
-                bIntent = dy < 0 ? 'drag' : 'scroll';
+        // Tap feedback: press → 0.96 (70 ms), release → 1 (140 ms)
+        function onPress() {
+            if (!reduced) {
+                this.style.transition = 'transform 70ms ease';
+                this.style.transform  = 'scale(0.96)';
             }
         }
-
-        if (bIntent === 'scroll') return;
-
-        var atScrollBottom = card.scrollTop + card.clientHeight >= card.scrollHeight - 2;
-        if (card.scrollTop > 0 && !atScrollBottom) {
-            bIntent = 'scroll';
-            return;
+        function onRelease() {
+            if (!reduced) {
+                this.style.transition = 'transform 140ms ease';
+                this.style.transform  = '';
+            }
         }
-        /* Move the sheet — no e.preventDefault() so native scroll is NEVER blocked */
-        applyPos(isExpanded
-            ? EXPANDED   + dy * 0.75
-            : COLLAPSED  + dy);
-    }, { passive: true });
-
-    card.addEventListener('touchend', function(e) {
-        if (handle.contains(e.target)) return;
-        if (bIntent !== 'drag') { bIntent = null; return; }
-        bIntent = null;
-        var dy = e.changedTouches[0].clientY - bStartY;
-        snapTo(!isExpanded
-            ? (dy < -THRESHOLD ? EXPANDED : COLLAPSED)
-            : (dy >  THRESHOLD ? COLLAPSED : EXPANDED));
-    }, { passive: true });
-
-    /* touchcancel: snap to nearest endpoint and unlock scroll */
-    card.addEventListener('touchcancel', function() {
-        if (bIntent === 'drag') {
-            snapTo(pos < (EXPANDED + COLLAPSED) / 2 ? EXPANDED : COLLAPSED);
+        if (overlayBtn) {
+            overlayBtn.addEventListener('pointerdown',   onPress);
+            overlayBtn.addEventListener('pointerup',     onRelease);
+            overlayBtn.addEventListener('pointercancel', onRelease);
         }
-        bIntent = null;
-    }, { passive: true });
 
-    /* ── Tap gallery area to collapse ───────────────────────────────────── */
-    /* tapZone: invisible overlay covering the visible gallery area above the sheet */
-    if (dim) dim.style.pointerEvents = 'none';
-    var tapZone = document.createElement('div');
-    tapZone.style.cssText =
-        'position:fixed;top:0;left:0;right:0;z-index:5;cursor:pointer;background:transparent;pointer-events:none;';
-    function refreshTapZone() {
-        tapZone.style.height = Math.max(0, pos) + 'px';
-        tapZone.style.pointerEvents = (pos >= COLLAPSED - 5) ? 'none' : 'auto';
+        window.toggleFavorite = async function (btn, productId) {
+            await _origToggle(btn, productId);
+
+            var isActive = btn.classList.contains('active') || btn.classList.contains('fav-active');
+
+            // Sync fav-active on the clicked button
+            if (isActive) btn.classList.add('fav-active');
+            else          btn.classList.remove('fav-active');
+
+            // Update aria-pressed on overlay
+            if (overlayBtn) {
+                overlayBtn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+            }
+
+            // Heart animation: save → 1→1.06→1 pulse (200ms); unsave → color fades (CSS transition)
+            var overlayIcon = overlayBtn && overlayBtn.querySelector('i');
+            if (overlayIcon && isActive) {
+                overlayIcon.classList.remove('pd-heart-saving');
+                void overlayIcon.offsetWidth; // restart
+                overlayIcon.classList.add('pd-heart-saving');
+                overlayIcon.addEventListener('animationend', function () {
+                    overlayIcon.classList.remove('pd-heart-saving');
+                }, { once: true });
+            }
+
+            // Mirror state to all other fav buttons on the page
+            document.querySelectorAll('#pinfo-mobile-fav, .pinfo-fav, .btn-favorite').forEach(function (b) {
+                if (b === btn) return;
+                var icon = b.querySelector('i');
+                if (isActive) {
+                    b.classList.add('active', 'fav-active');
+                    if (icon) icon.classList.replace('far', 'fas');
+                } else {
+                    b.classList.remove('active', 'fav-active');
+                    if (icon) icon.classList.replace('fas', 'far');
+                }
+            });
+
+            // Keep overlay fav-active aligned with active
+            if (overlayBtn) {
+                if (overlayBtn.classList.contains('active')) overlayBtn.classList.add('fav-active');
+                else overlayBtn.classList.remove('fav-active');
+            }
+        };
     }
-    refreshTapZone();
-    tapZone.addEventListener('click', function() { if (pos < COLLAPSED - 10) snapTo(COLLAPSED); });
-    document.body.appendChild(tapZone);
-    /* Also listen on the dim overlay — tap the gray gallery area to collapse.
-       pointer-events start as none (set above); the snapTo wrapper enables them when expanded. */
-    if (dim) {
-        dim.addEventListener('click', function() {
-            if (pos < COLLAPSED - 10) snapTo(COLLAPSED);
-        });
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initFavSync);
+    } else {
+        initFavSync();
     }
-    /* Unconditional snapTo wrapper — updates pointer-events on sheet, dim, tapZone */
-    var _snapOrig = snapTo;
-    snapTo = function(target) {
-        _snapOrig(target);
-        var collapsed = (target === COLLAPSED);
-        if (dim) dim.style.setProperty('pointer-events', collapsed ? 'none' : 'auto', 'important');
-        tapZone.style.pointerEvents = collapsed ? 'none' : 'auto';
-        sheet.style.pointerEvents = collapsed ? 'none' : 'auto';
-    };
-
-    var _origApply = applyPos;
-    applyPos = function(y) { _origApply(y); refreshTapZone(); };
-    applyPos(COLLAPSED);
-    card.style.overflowY = 'hidden';
-    /* Ensure sheet starts with pointer-events:none (collapsed) so gallery is touchable */
-    sheet.style.pointerEvents = 'none';
-    card.style.pointerEvents = 'auto';
-    handle.style.touchAction = 'pan-y'; /* collapsed initially */
-    card.style.touchAction = 'pan-y';
-    card.style.overscrollBehaviorY = 'contain';
-
-
-    /* Expose a refresh hook so external code (e.g. lightbox close) can re-sync
-       --gallery-vis-h after a viewport change (iOS browser chrome show/hide). */
-    window._pdGalleryRefresh = function() { applyPos(pos); };
-
-    /* ── Bring below-fold sections into the card on mobile ──────────────────
-       The contact section and related products live outside the fixed sheet
-       in normal page flow. On mobile they're permanently hidden behind the
-       sheet. Clone them into the bottom of the card so they're scrollable. */
-    var sectionsToMove = [
-        document.querySelector('.pd-contact-section'),
-        document.getElementById('relatedProductsSection')
-    ];
-    sectionsToMove.forEach(function(src) {
-        if (!src) return;
-        var clone = src.cloneNode(true);
-        clone.classList.add('pd-in-card-clone');
-        card.appendChild(clone);
-        src.style.display = 'none'; /* hide original so it doesn't show on desktop-sized mobile */
-    });
-
 })();
 </script>
 {% endblock %}

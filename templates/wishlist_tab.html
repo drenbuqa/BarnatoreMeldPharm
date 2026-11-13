@@ -17,12 +17,23 @@
                 <div class="img-shimmer"></div>
                 <div class="badge-stack" style="position:absolute;top:9px;left:9px;z-index:2;display:flex;flex-direction:column;gap:4px;">
                     {% if product.offer_type == 'multi_buy' %}
-                    <span class="hp-card-badge">{{ product.offer_badge_text or '1+1' }}</span>
-                    {% elif product.discount_price or product.auto_oct_discount %}
-                    <span class="hp-card-badge">Ofertë Speciale</span>
-                    {% endif %}
-                    {% if product.is_best_seller %}
-                    <span class="best-seller-badge" style="font-size:0.58rem;background:#4F5D4E;color:#fff;padding:3px 8px;border-radius:5px;font-weight:700;letter-spacing:0.04em;">Më i Shituri</span>
+                    <span class="hp-card-badge sale-label-badge">{{ product.offer_badge_text or '1+1' }}</span>
+                    {% elif product.auto_oct_discount %}
+                    <span class="hp-card-badge hp-card-badge--oct">-5%</span>
+                    {% elif product.discount_price and product.labels and 'sale' in product.labels %}
+                    <span class="sale-label-badge">Ofertë speciale</span>
+                    {% elif product.discount_price %}
+                    <span class="hp-card-badge sale-label-badge">-{{ ((product.display_original_price - product.discount_price) / product.display_original_price * 100)|round|int }}%</span>
+                    {% elif product.labels and 'set' in product.labels %}
+                    <span class="set-badge">Set / Paketë</span>
+                    {% elif product.labels and 'limited' in product.labels %}
+                    <span class="limited-badge">I kufizuar</span>
+                    {% elif product.labels and 'new_arrival' in product.labels %}
+                    <span class="new-arrival-badge">I ri</span>
+                    {% elif product.is_pharmacist_choice %}
+                    <span class="pharmacist-badge">Zgjedhja e farmacistit</span>
+                    {% elif product.is_best_seller %}
+                    <span class="best-seller-badge">Më i shituri</span>
                     {% endif %}
                 </div>
                 <img src="{{ product.image_url|cld(400) }}" alt="{{ product.name }}" loading="lazy" onload="this.classList.add('loaded');var s=this.parentElement.querySelector('.img-shimmer');if(s)s.classList.add('hidden')" onerror="this.src='/static/img/placeholder.png';this.classList.add('error','loaded');var s=this.parentElement.querySelector('.img-shimmer');if(s)s.classList.add('hidden')">
