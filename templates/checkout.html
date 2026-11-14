@@ -298,8 +298,6 @@
     display: flex;
     flex-direction: column;
     gap: 0.6rem;
-    max-height: 260px;
-    overflow-y: auto;
 }
 .co-item {
     display: flex;
@@ -380,7 +378,7 @@
         order: -1; /* summary first on mobile */
     }
     /* collapse summary items on mobile, show just totals */
-    .co-summary-items { max-height: 140px; }
+    .co-summary-items { max-height: none; }
     .co-submit-btn { display: none !important; }
     /* Give just enough room for sticky bar (≈66px) + nav (70px) + safe area */
     .main-content { padding-bottom: 0 !important; }

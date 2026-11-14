@@ -1042,12 +1042,23 @@
             const btn = document.getElementById('backToTop');
             if (!btn) return;
             const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            function updateBttPos() {
+                var bar = document.getElementById('stickyCheckoutBar');
+                if (bar && window.getComputedStyle(bar).display !== 'none') {
+                    var rect = bar.getBoundingClientRect();
+                    btn.style.bottom = (window.innerHeight - rect.top + 8) + 'px';
+                } else {
+                    btn.style.bottom = '';
+                }
+            }
             function update() {
                 const show = (window.pageYOffset || document.documentElement.scrollTop) > window.innerHeight;
                 btn.classList.toggle('visible', show);
                 btn.tabIndex = show ? 0 : -1;
             }
             window.addEventListener('scroll', update, { passive: true });
+            window.addEventListener('resize', updateBttPos, { passive: true });
+            document.addEventListener('DOMContentLoaded', updateBttPos);
             update();
             btn.addEventListener('click', function() {
                 window.scrollTo({ top: 0, behavior: prefersReduced ? 'auto' : 'smooth' });

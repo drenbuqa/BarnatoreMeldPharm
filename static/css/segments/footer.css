@@ -72,8 +72,8 @@
     .footer-trust-item{padding:0.75rem 1rem}
 }
 @media(max-width:640px){
-    .footer-grid{grid-template-columns:1fr;gap:2rem;padding:0 1.25rem}
-    .footer-body{padding:2.5rem 0 2rem}
+    .footer-grid{grid-template-columns:1fr;gap:1.5rem;padding:0 1.25rem}
+    .footer-body{padding:2rem 0 1.25rem}
     .footer-trust-bar{display:none}
     .footer-bottom-inner{flex-direction:column;text-align:center;padding:1.1rem 1.25rem}
     .footer-bottom-links{justify-content:center}
@@ -81,4 +81,6 @@
     .newsletter-form{width:100%;flex-direction:column}
     .newsletter-form input{min-width:0;width:100%}
     .newsletter-form button{width:100%}
+    .footer-map{display:none}
+    .footer-contact-list{margin-bottom:0}
 }

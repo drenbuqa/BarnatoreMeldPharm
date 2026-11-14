@@ -360,7 +360,8 @@
       border-radius: 28px 28px 0 0 !important;
       border: none !important;
       box-shadow: 0 -6px 24px rgba(0,0,0,0.07) !important;
-      padding: 1rem 1.25rem 0 !important;
+      clip-path: inset(-60px -40px 0px -40px) !important;
+      padding: 1rem 1.25rem 2rem !important;
       margin: 0 0 0 0 !important;
       margin-bottom: 0 !important;
       background: #fff !important;
@@ -755,12 +756,12 @@
   /* Close margin gaps so no fixed elements bleed through between sections */
   #relatedProductsSection {
       margin-top: 0 !important;
-      padding-top: calc(2rem + 16px) !important;
+      padding-top: 5.5rem !important;
   }
   .pd-contact-section {
       margin-bottom: 0 !important;
-      padding-top: 1.5rem !important;
-      padding-bottom: 1.5rem !important;
+      padding-top: 3rem !important;
+      padding-bottom: 2rem !important;
   }
   /* Remove excessive bottom padding that creates blank space after related products */
   .main-content {
@@ -778,6 +779,24 @@
 /* Hide any leftover clones on desktop (safety) */
 @media (min-width: 769px) {
   .pd-in-card-clone { display: none !important; }
+  /* Mobile-only overlays: hide on desktop */
+  .pd-gallery-actions { display: none !important; }
+  .pd-indicators      { display: none !important; }
+  /* Image counter: reposition to bottom-right of carousel on desktop */
+  .pd-img-counter {
+      position: absolute;
+      bottom: 12px;
+      right: 12px;
+      z-index: 10;
+      background: rgba(0,0,0,0.42);
+      color: #fff;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      padding: 4px 10px;
+      border-radius: 20px;
+      pointer-events: none;
+  }
 }
 </style>
 
@@ -845,6 +864,10 @@
                         class="{{ 'fas' if (current_user.is_authenticated and product.favorites and current_user.id in product.favorites) or (not current_user.is_authenticated and product._id|string in session.get('liked_products', [])) else 'far' }} fa-heart"></i>
                 </button>
 
+                {% if product.images and product.images|length > 1 %}
+                <div class="pd-img-counter" id="pd-img-counter">1 / {{ product.images|length }}</div>
+                {% endif %}
+
             </div>
 
             <!-- Dot indicators -->
@@ -855,10 +878,6 @@
                 {% endfor %}
                 {% endif %}
             </div>
-
-            {% if product.images and product.images|length > 1 %}
-            <div class="pd-img-counter" id="pd-img-counter">1 / {{ product.images|length }}</div>
-            {% endif %}
 
             {% if product.images and product.images|length > 1 %}
             <div class="thumbnails-container">
