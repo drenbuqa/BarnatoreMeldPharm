@@ -39,3 +39,12 @@
 .crem-toast__undo:disabled{opacity:0.55;cursor:not-allowed}
 @media (max-width:320px){.crem-toast__meta{white-space:normal}}
 @media (prefers-reduced-motion:reduce){.crem-toast{transition:opacity 0.15s ease;transform:none!important}.crem-toast.crem-toast--visible{transform:none!important}}
+@media (min-width:993px){
+  .cart-toast-wrap,.fav-toast-wrap,.crem-toast-wrap{top:24px!important;bottom:auto!important;left:auto!important;right:24px!important;width:360px}
+  .cart-toast,.fav-toast,.crem-toast{max-width:100%;margin:0;border-radius:14px;box-shadow:0 8px 32px rgba(30,41,35,0.14),0 2px 8px rgba(30,41,35,0.08);transform:translateX(16px);padding:16px}
+  .cart-toast.cart-toast--visible,.fav-toast.fav-toast--visible,.crem-toast.crem-toast--visible{transform:translateX(0)}
+  .cart-toast.cart-toast--out,.fav-toast.fav-toast--out,.crem-toast.crem-toast--out{transform:translateX(16px)}
+  .cart-toast__icon,.fav-toast__icon,.crem-toast__icon{width:40px;height:40px;min-width:40px;font-size:1rem}
+  .cart-toast__title,.fav-toast__title,.crem-toast__title{font-size:0.9rem}
+  .cart-toast__sub,.fav-toast__sub,.crem-toast__meta{font-size:0.82rem}
+}
