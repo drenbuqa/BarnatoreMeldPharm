@@ -1403,6 +1403,10 @@
         return 'volume';
     }
 
+    function hasSizeDimension() {
+        return getAttrTypes().some(t => getDimType(t) === 'size');
+    }
+
     function getValuesForAttr(attrType) {
         const values = new Set();
         productVariants.forEach(v => {
@@ -1446,6 +1450,11 @@
                 sel.style.cssText = 'font-size:14px;font-weight:600;color:var(--text-main);text-transform:none;letter-spacing:0;';
                 sel.textContent = selectedVal;
                 label.appendChild(sel);
+            } else if (dimType === 'size') {
+                const prompt = document.createElement('span');
+                prompt.style.cssText = 'font-size:13px;font-weight:600;color:#ef4444;text-transform:none;letter-spacing:0;';
+                prompt.textContent = 'Zgjidh madhësinë';
+                label.appendChild(prompt);
             }
 
             const optRow = document.createElement('div');
@@ -1528,7 +1537,9 @@
             titleEl.textContent = (v && v.variant_name) ? v.variant_name : ORIG_TITLE;
         }
 
-        updateStockStatus(!v || v.in_stock !== false);
+        // For shoe-size products, keep buttons disabled until size is explicitly chosen
+        const sizeRequired = hasSizeDimension() && !v;
+        updateStockStatus(!v || v.in_stock !== false, sizeRequired);
     }
 
     function updateGallery(images) {
@@ -1591,28 +1602,46 @@
         });
     }
 
-    function updateStockStatus(inStock) {
+    function updateStockStatus(inStock, sizeRequired) {
         const badge = document.querySelector('.stock-status');
         if (badge) {
-            badge.textContent = inStock ? 'Në Stok' : 'Jashtë Stokut';
-            badge.className = 'stock-status ' + (inStock ? 'in-stock' : 'out-of-stock');
+            if (sizeRequired) {
+                badge.textContent = 'Zgjidh madhësinë';
+                badge.className = 'stock-status';
+                badge.style.background = '#fef2f2';
+                badge.style.color = '#ef4444';
+                badge.style.border = '1px solid #fecaca';
+            } else {
+                badge.textContent = inStock ? 'Në Stok' : 'Jashtë Stokut';
+                badge.className = 'stock-status ' + (inStock ? 'in-stock' : 'out-of-stock');
+                badge.style.background = '';
+                badge.style.color = '';
+                badge.style.border = '';
+            }
         }
         document.querySelectorAll('button[onclick^="addToCartWithQty"], button[onclick^="buyNowWithQty"]').forEach(btn => {
-            btn.disabled = !inStock;
+            btn.disabled = !inStock || !!sizeRequired;
+            btn.style.opacity = sizeRequired ? '0.45' : '';
+            btn.style.cursor  = sizeRequired ? 'not-allowed' : '';
         });
     }
 
     window._getSelectedVariantId = () => selectedVariantId;
     window._getVariantLabel = () => {
-        const pills = document.querySelectorAll('.vpill.vpill-active');
-        return pills.length ? Array.from(pills).map(p => p.textContent.trim()).filter(Boolean).join(' · ') : null;
+        const active = document.querySelectorAll('.vpill.vpill-active, .vsize.vsize-active');
+        return active.length ? Array.from(active).map(p => p.textContent.trim()).filter(Boolean).join(' · ') : null;
     };
 
     if (productVariants.length > 0) {
-        renderVariantUI();
-        const first = productVariants[0];
-        getAttrTypes().forEach(t => { selections[t] = (first.attributes||{})[t]; });
-        renderVariantUI();
+        if (hasSizeDimension()) {
+            // Shoe-size products: no auto-selection — user must choose explicitly
+            renderVariantUI();
+        } else {
+            // Volume/color variants: auto-select first option
+            const first = productVariants[0];
+            getAttrTypes().forEach(t => { selections[t] = (first.attributes||{})[t]; });
+            renderVariantUI();
+        }
     }
 })();
 

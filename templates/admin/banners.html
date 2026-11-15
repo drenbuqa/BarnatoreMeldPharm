@@ -778,9 +778,9 @@ async function bnDoUpload(input) {
             urlInput.value = data.url;
             previewBnImg(data.url);
         } else {
-            alert('Gabim: ' + (data.error || 'E panjohur'));
+            showToast('Gabim: ' + (data.error || 'E panjohur'), 'danger');
         }
-    } catch(e) { alert('Gabim gjatë ngarkimit: ' + e); }
+    } catch(e) { showToast('Gabim gjatë ngarkimit.', 'danger'); }
     finally {
         btn.disabled = false;
         btn.innerHTML = '<i class="fas fa-upload"></i> Ngarko';

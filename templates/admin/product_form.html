@@ -1279,9 +1279,17 @@ function valueRowHtml(gi, vi, v, ogType, showPrice) {
                 value="${escH(v.variant_name||'')}" oninput="updateVal(${gi},${vi},'variant_name',this.value)">
         </div>` : '';
 
+    // Field: SKU (always shown, admin-only)
+    const skuField = `
+        <div class="vgvr-field" style="min-width:90px;">
+            <label>SKU</label>
+            <input type="text" class="vgvr-input variant-name-input" placeholder="—"
+                value="${escH(v.sku||'')}" oninput="updateVal(${gi},${vi},'sku',this.value)">
+        </div>`;
+
     return `<div class="opt-value-row" data-gi="${gi}" data-vi="${vi}">
         <span class="vgvr-label">${escH(v.value)}</span>
-        ${colorField}${priceFields}${stockField}${photoField}${nameField}
+        ${colorField}${priceFields}${stockField}${photoField}${nameField}${skuField}
     </div>
     <div class="opt-img-row-multi" id="img-row-${gi}-${vi}" style="display:${imgCount>0?'flex':'none'};">
         ${imgRows}
@@ -1601,9 +1609,9 @@ async function r2DoUpload(input, fieldId, type) {
             urlField.value = data.url;
             urlField.dispatchEvent(new Event('input'));
         } else {
-            alert('Gabim: ' + (data.error || 'E panjohur'));
+            showToast('Gabim: ' + (data.error || 'E panjohur'), 'danger');
         }
-    } catch(e) { alert('Gabim gjatë ngarkimit: ' + e); }
+    } catch(e) { showToast('Gabim gjatë ngarkimit.', 'danger'); }
     finally {
         btn.disabled = false;
         btn.innerHTML = '<i class="fas fa-upload"></i> Ngarko';
@@ -1628,9 +1636,9 @@ async function r2DoUploadAppend(input, fieldId, type) {
             ta.value = (ta.value.trim() ? ta.value.trim() + '\n' : '') + data.url;
             ta.dispatchEvent(new Event('input'));
         } else {
-            alert('Gabim: ' + (data.error || 'E panjohur'));
+            showToast('Gabim: ' + (data.error || 'E panjohur'), 'danger');
         }
-    } catch(e) { alert('Gabim gjatë ngarkimit: ' + e); }
+    } catch(e) { showToast('Gabim gjatë ngarkimit.', 'danger'); }
     finally {
         btn.disabled = false;
         btn.innerHTML = '<i class="fas fa-upload"></i> Ngarko';
@@ -1669,9 +1677,9 @@ async function r2DoUploadVariant(input, gi, vi, ii) {
             updateImgUrl(gi, vi, ii, data.url);
             _refreshImgPanel(gi, vi);
         } else {
-            alert('Gabim: ' + (data.error || 'E panjohur'));
+            showToast('Gabim: ' + (data.error || 'E panjohur'), 'danger');
         }
-    } catch(e) { alert('Gabim gjatë ngarkimit: ' + e); }
+    } catch(e) { showToast('Gabim gjatë ngarkimit.', 'danger'); }
     finally {
         if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-upload"></i>'; }
         input.value = '';

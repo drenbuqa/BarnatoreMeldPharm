@@ -286,7 +286,9 @@ class Product:
                                 {"brand": {"$regex": escaped_part, "$options": "i"}},
                                 {"category": {"$regex": escaped_part, "$options": "i"}},
                                 {"subcategory": {"$regex": escaped_part, "$options": "i"}},
-                                {"description": {"$regex": escaped_part, "$options": "i"}}
+                                {"description": {"$regex": escaped_part, "$options": "i"}},
+                                {"sku": {"$regex": escaped_part, "$options": "i"}},
+                                {"variants.sku": {"$regex": escaped_part, "$options": "i"}}
                             ]
                         }
                         and_parts.append(part_cond)
@@ -304,7 +306,9 @@ class Product:
                                 {"brand": {"$regex": escaped_part, "$options": "i"}},
                                 {"category": {"$regex": escaped_part, "$options": "i"}},
                                 {"subcategory": {"$regex": escaped_part, "$options": "i"}},
-                                {"description": {"$regex": escaped_part, "$options": "i"}}
+                                {"description": {"$regex": escaped_part, "$options": "i"}},
+                                {"sku": {"$regex": escaped_part, "$options": "i"}},
+                                {"variants.sku": {"$regex": escaped_part, "$options": "i"}}
                             ]
                         }
                         and_parts.append(part_cond)

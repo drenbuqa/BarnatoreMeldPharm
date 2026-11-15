@@ -1329,11 +1329,13 @@ def search_api():
         or_clauses = []
         for t in tokens:
             pat = _diacritic_pattern(t)
-            or_clauses.append({"name":        {"$regex": pat, "$options": "i"}})
-            or_clauses.append({"brand":       {"$regex": pat, "$options": "i"}})
-            or_clauses.append({"category":    {"$regex": pat, "$options": "i"}})
-            or_clauses.append({"subcategory": {"$regex": pat, "$options": "i"}})
-            or_clauses.append({"description": {"$regex": pat, "$options": "i"}})
+            or_clauses.append({"name":         {"$regex": pat, "$options": "i"}})
+            or_clauses.append({"brand":        {"$regex": pat, "$options": "i"}})
+            or_clauses.append({"category":     {"$regex": pat, "$options": "i"}})
+            or_clauses.append({"subcategory":  {"$regex": pat, "$options": "i"}})
+            or_clauses.append({"description":  {"$regex": pat, "$options": "i"}})
+            or_clauses.append({"sku":          {"$regex": pat, "$options": "i"}})
+            or_clauses.append({"variants.sku": {"$regex": pat, "$options": "i"}})
 
         raw = list(mongo.db.products.find(
             {"$or": or_clauses, "is_deleted": {"$ne": True}},

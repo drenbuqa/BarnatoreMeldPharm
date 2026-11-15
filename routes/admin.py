@@ -418,10 +418,12 @@ def products_page():
         if tokens:
             query["$and"] = [
                 {"$or": [
-                    {"name":        {"$regex": _dp(t), "$options": "i"}},
-                    {"brand":       {"$regex": _dp(t), "$options": "i"}},
-                    {"category":    {"$regex": _dp(t), "$options": "i"}},
-                    {"subcategory": {"$regex": _dp(t), "$options": "i"}},
+                    {"name":         {"$regex": _dp(t), "$options": "i"}},
+                    {"brand":        {"$regex": _dp(t), "$options": "i"}},
+                    {"category":     {"$regex": _dp(t), "$options": "i"}},
+                    {"subcategory":  {"$regex": _dp(t), "$options": "i"}},
+                    {"sku":          {"$regex": _re.escape(t), "$options": "i"}},
+                    {"variants.sku": {"$regex": _re.escape(t), "$options": "i"}},
                 ]}
                 for t in tokens
             ]

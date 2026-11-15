@@ -176,7 +176,7 @@ function closeSidebar() {
 /* ── Toast system ── */
 const _toastIcons = {
     success: 'fa-check-circle',
-    danger:  'fa-exclamation-circle',
+    danger:  'fa-times-circle',
     warning: 'fa-exclamation-triangle',
     info:    'fa-info-circle'
 };
@@ -186,7 +186,7 @@ function showToast(message, type = 'info', duration = 4000) {
     t.className = `adm-toast adm-toast-${type}`;
     t.style.setProperty('--dur', duration + 'ms');
     t.innerHTML = `
-        <i class="fas ${_toastIcons[type] || 'fa-info-circle'} adm-toast-icon"></i>
+        <div class="adm-toast-icon"><i class="fas ${_toastIcons[type] || 'fa-info-circle'}"></i></div>
         <div class="adm-toast-body"><div class="adm-toast-msg">${message}</div></div>
         <button class="adm-toast-close" onclick="removeToast(this.closest('.adm-toast'))">
             <i class="fas fa-times"></i>
@@ -196,12 +196,12 @@ function showToast(message, type = 'info', duration = 4000) {
         if (!e.target.closest('.adm-toast-close')) removeToast(t);
     });
     wrap.appendChild(t);
-    setTimeout(() => removeToast(t), duration + 200);
+    setTimeout(() => removeToast(t), duration + 350);
 }
 function removeToast(t) {
     if (!t || !t.isConnected) return;
     t.classList.add('removing');
-    setTimeout(() => t.remove(), 200);
+    setTimeout(() => t.remove(), 300);
 }
 
 /* ── Loading helpers ── */

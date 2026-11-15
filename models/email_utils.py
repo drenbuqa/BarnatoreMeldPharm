@@ -682,7 +682,19 @@ def send_new_order_notification(order: dict):
 
     subject = f"Porosi e Re — {fullname} — €{grand:.2f}"
 
+    notes    = (order.get("notes") or "").strip()
     items_html = _order_items_html(items)
+
+    notes_block = ""
+    if notes:
+        notes_block = f"""
+    <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:14px 16px;margin-bottom:1.25rem;">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
+        <span style="font-size:14px;">📝</span>
+        <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;color:#92400e;">Shënim nga klienti</div>
+      </div>
+      <div style="font-size:13px;color:#1a1f18;line-height:1.6;font-style:italic;">"{notes}"</div>
+    </div>"""
 
     content_html = f"""
     <h2 style="font-size:1.2rem;font-weight:800;color:#1a1f18;margin:0 0 1.25rem;">
@@ -710,6 +722,7 @@ def send_new_order_notification(order: dict):
       </tr>
     </table>
 
+    {notes_block}
     <div style="font-size:11px;font-weight:700;color:#8a9186;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">Produktet e porositura</div>
     {items_html}
 
@@ -720,11 +733,13 @@ def send_new_order_notification(order: dict):
     </div>
     """
 
+    notes_text = f"\nShënim: {notes}" if notes else ""
     text_body = (
         f"Porosi e Re: {fullname} — €{grand:.2f}\n"
         f"Telefoni: {phone}\n"
         f"Adresa: {address}, {city}\n"
-        f"Pagesa: {payment}\n\n"
+        f"Pagesa: {payment}\n"
+        + notes_text + "\n\n"
         + "\n".join(f"  {it.get('quantity',1)}x {it.get('name','')} — €{float(it.get('item_total',0)):.2f}" for it in items)
         + f"\n\nShiko: {SITE_BASE_URL}/admin/orders"
     )
