@@ -288,7 +288,8 @@ class Product:
                                 {"subcategory": {"$regex": escaped_part, "$options": "i"}},
                                 {"description": {"$regex": escaped_part, "$options": "i"}},
                                 {"sku": {"$regex": escaped_part, "$options": "i"}},
-                                {"variants.sku": {"$regex": escaped_part, "$options": "i"}}
+                                {"variants.sku": {"$regex": escaped_part, "$options": "i"}},
+                                {"option_groups.values.sku": {"$regex": escaped_part, "$options": "i"}}
                             ]
                         }
                         and_parts.append(part_cond)
@@ -308,7 +309,8 @@ class Product:
                                 {"subcategory": {"$regex": escaped_part, "$options": "i"}},
                                 {"description": {"$regex": escaped_part, "$options": "i"}},
                                 {"sku": {"$regex": escaped_part, "$options": "i"}},
-                                {"variants.sku": {"$regex": escaped_part, "$options": "i"}}
+                                {"variants.sku": {"$regex": escaped_part, "$options": "i"}},
+                                {"option_groups.values.sku": {"$regex": escaped_part, "$options": "i"}}
                             ]
                         }
                         and_parts.append(part_cond)

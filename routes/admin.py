@@ -422,8 +422,9 @@ def products_page():
                     {"brand":        {"$regex": _dp(t), "$options": "i"}},
                     {"category":     {"$regex": _dp(t), "$options": "i"}},
                     {"subcategory":  {"$regex": _dp(t), "$options": "i"}},
-                    {"sku":          {"$regex": _re.escape(t), "$options": "i"}},
-                    {"variants.sku": {"$regex": _re.escape(t), "$options": "i"}},
+                    {"sku":                        {"$regex": _re.escape(t), "$options": "i"}},
+                    {"variants.sku":               {"$regex": _re.escape(t), "$options": "i"}},
+                    {"option_groups.values.sku":   {"$regex": _re.escape(t), "$options": "i"}},
                 ]}
                 for t in tokens
             ]
@@ -2232,6 +2233,7 @@ def upload_image():
 
     except Exception as e:
         return jsonify(error=f'Gabim gjatë ngarkimit: {str(e)}'), 500
+
 
 
 @admin.route('/recent-events')
