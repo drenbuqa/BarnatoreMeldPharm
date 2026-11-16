@@ -1073,7 +1073,7 @@ def bulk_offers():
             "price": 1, "discount_price": 1, "offer_name": 1, "offer_type": 1,
             "offer_status": 1, "multi_buy_type": 1, "discount_until": 1,
             "image_url": 1, "in_stock": 1, "created_at": 1,
-            "variants": 1, "option_groups": 1,
+            "sku": 1, "variants": 1, "option_groups": 1,
         }
     ).sort("created_at", -1))
     
