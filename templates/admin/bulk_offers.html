@@ -438,7 +438,7 @@
 
 <!-- Product data for JS -->
 <script>
-const PD = [{% for p in all_products %}{"id":"{{ p._id }}","n":{{ p.name|tojson }},"b":{{ (p.brand or '')|tojson }},"c":{{ p.category|tojson }},"sc":{{ (p.subcategory or '')|tojson }},"p":{{ p.price|float }},"img":{{ (p.image_url or '')|tojson }},"on":{{ (p.offer_name or '')|tojson }},"ot":{{ (p.offer_type or '')|tojson }},"vars":{{ (p.variants or [])|map(attribute='id')|list|tojson }},"varLabels":{{ (p.variants or [])|map(attribute='attributes')|list|tojson }},"varPrices":{{ (p.variants or [])|map(attribute='price')|list|tojson }}}{% if not loop.last %},{% endif %}{% endfor %}];
+const PD = [{% for p in all_products %}{"id":"{{ p._id }}","n":{{ p.name|tojson }},"b":{{ (p.brand or '')|tojson }},"c":{{ p.category|tojson }},"sc":{{ (p.subcategory or '')|tojson }},"p":{{ p.price|float }},"img":{{ (p.image_url or '')|tojson }},"on":{{ (p.offer_name or '')|tojson }},"ot":{{ (p.offer_type or '')|tojson }},"vars":{{ (p.variants or [])|map(attribute='id')|list|tojson }},"varLabels":{{ (p.variants or [])|map(attribute='attributes')|list|tojson }},"varPrices":{{ (p.variants or [])|map(attribute='price')|list|tojson }},"sku":{{ (p.sku or '')|tojson }},"vskus":{{ (p.option_groups or [])|map(attribute='values')|list|tojson|safe }}}{% if not loop.last %},{% endif %}{% endfor %}];
 const EDIT_OFFER = {{ edit_offer|tojson }};
 </script>
 
@@ -967,7 +967,8 @@ let pg = 1;
 function applyFilters() {
     const bfLow = brandF.size ? new Set([...brandF].map(b=>b.toLowerCase())) : null;
     filtData = PD.filter(p => {
-        const qm = !srchQ || (p.n+' '+p.b).toLowerCase().includes(srchQ);
+        const vskuStr = (p.vskus||[]).flat().map(v=>v&&v.sku||'').join(' ');
+        const qm = !srchQ || (p.n+' '+p.b+' '+p.sku+' '+vskuStr).toLowerCase().includes(srchQ);
         const cm = !catF  || p.c.trim().toLowerCase()===catF.trim().toLowerCase();
         const bm = !bfLow || bfLow.has((p.b||'').toLowerCase());
         return qm && cm && bm;
