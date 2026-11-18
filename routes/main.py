@@ -180,7 +180,21 @@ def _rank_best_random(rows, limit):
 
 REGULAR_PRODUCTS_HOME_COUNT = 24  # multiple of 6/4/3/2 so the grid never ends with a partial row
 
-from routes.promo import apply_oct_5pct_discount as _apply_oct_5pct_discount, is_oct_promo_active as _is_oct_promo_active
+from routes.promo import (
+    apply_oct_5pct_discount as _apply_oct_5pct_discount,
+    is_oct_promo_active as _is_oct_promo_active,
+    apply_bf_discounts as _apply_bf_discounts,
+)
+
+
+def _apply_active_promo(products):
+    """Apply whichever auto-promo is currently live (BF takes priority over Oct)."""
+    from routes.promo import get_bf_promo_status
+    if get_bf_promo_status()['active']:
+        return _apply_bf_discounts(products)
+    if _is_oct_promo_active():
+        return _apply_oct_5pct_discount(products)
+    return products
 
 
 def _get_home_payload():
@@ -224,12 +238,12 @@ def _get_home_payload():
         "in_stock": {"$ne": False},
     }).limit(100))
     suplemente_products = Product._decorate_products(_rank_best_random(_suplemente_rows, 16))
-    suplemente_products = _apply_oct_5pct_discount(suplemente_products)
+    suplemente_products = _apply_active_promo(suplemente_products)
 
     kujdes_products = []
 
-    # Apply virtual Oct 5% discount to non-discounted products in all homepage sections
-    best_sellers       = _apply_oct_5pct_discount(best_sellers)
+    # Apply virtual discount to non-discounted products in all homepage sections
+    best_sellers       = _apply_active_promo(best_sellers)
 
     offer_banners = Banner.get_active()
 
@@ -856,9 +870,8 @@ def products():
                 brand_map[normalized] = rb.strip()
     available_brands = sorted(brand_map.values(), key=lambda x: x.lower())
     
-    # Apply oct promo before serializing (AJAX or HTML)
-    if _is_oct_promo_active():
-        products = _apply_oct_5pct_discount(list(products))
+    # Apply active promo before serializing (AJAX or HTML)
+    products = _apply_active_promo(list(products))
 
     # Build base label/flag query (shared across all facet count computations)
     def _facet_base_q() -> dict:
@@ -1112,11 +1125,10 @@ def product_detail(product_id):
 
     related_products = Product.get_related(product, product.get('_id'), limit=12)
 
-    # Apply in-memory October discount if active and product has no existing discount
-    if _is_oct_promo_active():
-        applied = _apply_oct_5pct_discount([product])
-        product = applied[0] if applied else product
-        related_products = _apply_oct_5pct_discount(list(related_products))
+    # Apply active promo if product has no existing discount
+    applied = _apply_active_promo([product])
+    product = applied[0] if applied else product
+    related_products = _apply_active_promo(list(related_products))
 
     return render_template('product_detail.html',
                             product=product,
@@ -1442,7 +1454,7 @@ def search_api():
                 ))
                 products = products + fuzzy_full
     
-    products = _apply_oct_5pct_discount(products)
+    products = _apply_active_promo(products)
 
     results = []
     for p in products:

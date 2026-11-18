@@ -189,6 +189,11 @@ def inject_meta_pixel():
     }
 
 @app.context_processor
+def inject_bf_promo():
+    from routes.promo import get_bf_promo_status
+    return {'bf_promo': get_bf_promo_status()}
+
+@app.context_processor
 def inject_cart_count():
     from flask import session
     from models.categories import CATEGORIES

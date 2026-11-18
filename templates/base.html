@@ -41,7 +41,7 @@
     <link rel="preconnect" href="https://cdnjs.cloudflare.com">
     <link rel="preconnect" href="https://images.barnatoremeldpharm.com" crossorigin>
     <link rel="dns-prefetch" href="https://images.barnatoremeldpharm.com">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css', v=41) }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css', v=46) }}">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&family=Cormorant+Garamond:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <!-- Font Awesome: load asynchronously to avoid render-blocking -->
     <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
@@ -119,9 +119,34 @@
     {% block extra_css %}{% endblock %}
 </head>
 
-<body data-user-logged-in="{{ 'true' if current_user.is_authenticated else 'false' }}">
+<body data-user-logged-in="{{ 'true' if current_user.is_authenticated else 'false' }}"{% if bf_promo and bf_promo.active %} class="has-bf-bar"{% endif %}>
 
     {% block navbar %}
+
+    {% if bf_promo and bf_promo.active %}
+    <!-- ── BLACK FRIDAY BAR (normal flow, scrolls away) ── -->
+    <a class="bf-bar" href="{{ url_for('main.products', discount_only='true') }}">
+      <span class="bf-bar__mobile">
+        <strong class="bf-bar__title">Black Friday</strong>
+        <span class="bf-bar__sub">Deri në <strong>20%</strong> zbritje në të gjitha produktet</span>
+      </span>
+      <span class="bf-bar__desk">
+        <strong>Black Friday</strong> &middot; Deri në <strong>20%</strong> zbritje në të gjitha produktet &middot; Deri më 30 nëntor &rarr;
+      </span>
+      <span class="bf-bar__arrow" aria-hidden="true">&rarr;</span>
+    </a>
+    <script>
+    (function(){
+      var bar=document.querySelector('.bf-bar');
+      var body=document.body;
+      if(!bar)return;
+      function sync(){body.classList.toggle('bf-bar-gone',bar.getBoundingClientRect().bottom<=0);}
+      window.addEventListener('scroll',sync,{passive:true});
+      sync();
+    })();
+    </script>
+    {% endif %}
+
     <!-- --- MOBILE HEADER --- -->
     <header class="mobile-header">
         <div class="mobile-top-row">

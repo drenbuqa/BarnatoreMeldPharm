@@ -49,6 +49,7 @@
   {# Show exactly 1 badge: distinct promotion first, then product-type, then merchandising #}
   {% set badges = [] %}
   {% if product.offer_type == 'multi_buy' %}{% set _ = badges.append(('offer', product.offer_badge_text or '1+1', 'hp-card-badge sale-label-badge')) %}
+  {% elif product.auto_bf_discount %}{% set _ = badges.append(('offer', '-' ~ (product.bf_badge_pct or 5)|string ~ '%', 'hp-card-badge sale-label-badge')) %}
   {% elif product.auto_oct_discount %}{% set _ = badges.append(('offer', '-5%', 'hp-card-badge hp-card-badge--oct')) %}
   {% elif product.discount_price and product.labels and 'sale' in product.labels %}{% set _ = badges.append(('offer', 'Ofertë speciale', 'sale-label-badge')) %}
   {% elif product.discount_price %}{% set _disc=((product.display_original_price-product.discount_price)/product.display_original_price*100)|round|int %}{% set _ = badges.append(('offer', '-' ~ _disc ~ '%', 'hp-card-badge sale-label-badge')) %}
@@ -101,7 +102,7 @@
     <div class="hp-price-row">
       {% if product.offer_type == 'multi_buy' %}
         <span class="hp-price-main">€{{ "%.2f"|format(product.display_price) }}</span>
-      {% elif product.discount_price or product.auto_oct_discount %}
+      {% elif product.discount_price or product.auto_oct_discount or product.auto_bf_discount %}
         <span class="hp-price-main">€{{ "%.2f"|format(product.display_price) }}</span>
         <span class="hp-price-orig">€{{ "%.2f"|format(product.display_original_price) }}</span>
       {% else %}
@@ -220,22 +221,78 @@
       <span class="hero-dot active" onclick="currentSlide(1)"></span>
       {% endif %}
     </div>
+    {% if bf_promo and bf_promo.active %}
+    <div class="bf-countdown" id="bfCountdown"
+         role="timer"
+         aria-label="Black Friday: oferta përfundon më 30 nëntor 2026">
+      <span class="bf-countdown__label" id="bfLabel">Oferta përfundon pas</span>
+      <div class="bf-countdown__slots" aria-hidden="true">
+        <div class="bf-countdown__slot">
+          <span class="bf-countdown__num" id="bfN0">--</span>
+          <span class="bf-countdown__unit" id="bfU0">ditë</span>
+        </div>
+        <div class="bf-countdown__sep">:</div>
+        <div class="bf-countdown__slot">
+          <span class="bf-countdown__num" id="bfN1">--</span>
+          <span class="bf-countdown__unit" id="bfU1">orë</span>
+        </div>
+        <div class="bf-countdown__sep">:</div>
+        <div class="bf-countdown__slot">
+          <span class="bf-countdown__num" id="bfN2">--</span>
+          <span class="bf-countdown__unit" id="bfU2">min</span>
+        </div>
+      </div>
+    </div>
+    <script>
+    (function(){
+      var el=document.getElementById('bfCountdown');
+      if(!el)return;
+      var DEADLINE={{ (bf_promo.ends_at.timestamp() * 1000)|int }};
+      var label=document.getElementById('bfLabel');
+      var ns=[document.getElementById('bfN0'),document.getElementById('bfN1'),document.getElementById('bfN2')];
+      var us=[document.getElementById('bfU0'),document.getElementById('bfU1'),document.getElementById('bfU2')];
+      function p(n){return(n<10?'0':'')+n;}
+      function tick(){
+        var diff=DEADLINE-Date.now();
+        if(diff<=0){el.style.display='none';clearInterval(timer);return;}
+        var s=Math.floor(diff/1000);
+        if(s>86400){
+          label.textContent='Oferta përfundon pas';
+          ns[0].textContent=p(Math.floor(s/86400));us[0].textContent='ditë';
+          ns[1].textContent=p(Math.floor(s%86400/3600));us[1].textContent='orë';
+          ns[2].textContent=p(Math.floor(s%3600/60));us[2].textContent='min';
+        }else{
+          label.textContent='Oferta përfundon sot';
+          ns[0].textContent=p(Math.floor(s/3600));us[0].textContent='orë';
+          ns[1].textContent=p(Math.floor(s%3600/60));us[1].textContent='min';
+          ns[2].textContent=p(s%60);us[2].textContent='sek';
+        }
+      }
+      tick();
+      var timer=setInterval(tick,1000);
+      document.addEventListener('visibilitychange',function(){
+        if(!document.hidden){clearInterval(timer);tick();timer=setInterval(tick,1000);}
+      });
+    })();
+    </script>
+    {% else %}
     <div class="hero-scroll-hint" id="heroScrollHint" aria-hidden="true">
       <div class="hero-scroll-hint-arrow"><i class="fas fa-chevron-down"></i></div>
     </div>
+    <script>
+    (function(){
+      var hint=document.getElementById('heroScrollHint');
+      if(!hint)return;
+      function hideHint(){if(window.scrollY>40){hint.classList.add('hidden');}}
+      window.addEventListener('scroll',hideHint,{passive:true});
+    })();
+    </script>
+    {% endif %}
   </div>
 
 </div>
-<script>
-(function(){
-  var hint = document.getElementById('heroScrollHint');
-  if (!hint) return;
-  function hideHint() {
-    if (window.scrollY > 40) { hint.classList.add('hidden'); }
-  }
-  window.addEventListener('scroll', hideHint, { passive: true });
-})();
-</script>
+
+
 
 
 <!-- ══════════════════════════════════════════
@@ -341,6 +398,7 @@
         {% for product in featured_products %}
         {% set fp_badges = [] %}
         {% if product.offer_type == 'multi_buy' %}{% set _ = fp_badges.append(('offer', product.offer_badge_text or '1+1', 'hp-card-badge sale-label-badge')) %}
+        {% elif product.auto_bf_discount %}{% set _ = fp_badges.append(('offer', '-' ~ (product.bf_badge_pct or 5)|string ~ '%', 'hp-card-badge sale-label-badge')) %}
         {% elif product.auto_oct_discount %}{% set _ = fp_badges.append(('offer', '-5%', 'hp-card-badge hp-card-badge--oct')) %}
         {% elif product.discount_price and product.labels and 'sale' in product.labels %}{% set _ = fp_badges.append(('offer', 'Ofertë speciale', 'sale-label-badge')) %}
         {% elif product.discount_price %}{% set _fp_disc=((product.display_original_price-product.discount_price)/product.display_original_price*100)|round|int %}{% set _ = fp_badges.append(('offer', '-' ~ _fp_disc ~ '%', 'hp-card-badge sale-label-badge')) %}
@@ -376,8 +434,8 @@
             <div class="hp-price-row">
               {% if product.offer_type == 'multi_buy' %}
                 <span class="hp-price-main">€{{ "%.2f"|format(product.display_price) }}</span>
-              {% elif product.discount_price %}
-                <span class="hp-price-main">€{{ "%.2f"|format(product.discount_price) }}</span>
+              {% elif product.discount_price or product.auto_bf_discount %}
+                <span class="hp-price-main">€{{ "%.2f"|format(product.display_price) }}</span>
                 <span class="hp-price-orig">€{{ "%.2f"|format(product.display_original_price) }}</span>
               {% else %}
                 <span class="hp-price-main">€{{ "%.2f"|format(product.display_price) }}</span>
