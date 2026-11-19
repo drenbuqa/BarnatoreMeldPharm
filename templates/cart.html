@@ -67,10 +67,9 @@
                                 <div class="quantity-selector" onclick="event.stopPropagation()">
                                     <form
                                         action="{{ url_for('cart.update_quantity', cart_key=item.cart_key, action='decrease') }}"
-                                        method="POST">
+                                        method="POST" data-decrease-form>
                                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-                                        <button type="submit" class="qty-btn minus" {{ 'disabled' if item.quantity <=1
-                                            }}>
+                                        <button type="submit" class="qty-btn minus">
                                             <i class="fas fa-minus"></i>
                                         </button>
                                     </form>
@@ -176,9 +175,9 @@
                             <div class="quantity-control">
                                 <form
                                     action="{{ url_for('cart.update_quantity', cart_key=item.cart_key, action='decrease') }}"
-                                    method="POST">
+                                    method="POST" data-decrease-form>
                                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-                                    <button type="submit" class="qty-btn" {{ 'disabled' if item.quantity <=1 }}>
+                                    <button type="submit" class="qty-btn">
                                         <i class="fas fa-minus"></i>
                                     </button>
                                 </form>
@@ -266,12 +265,12 @@
     <!-- Sticky Mobile Checkout Bar -->
     <div class="sticky-checkout-bar" id="stickyCheckoutBar">
         <div class="sticky-checkout-inner">
-            <div>
-                <span class="sticky-total-label">Gjithsej</span>
+            <div class="sticky-total-row">
+                <span class="sticky-total-label">Totali:</span>
                 <span class="sticky-total-amount">€{{ "%.2f"|format(grand_total) }}</span>
             </div>
             <a href="{{ url_for('cart.checkout') }}" class="btn btn-primary sticky-checkout-btn">
-                Proçedo <i class="fas fa-arrow-right"></i>
+                Fillo Porosinë <i class="fas fa-arrow-right"></i>
             </a>
         </div>
     </div>
@@ -389,7 +388,7 @@
     {% endif %}
 </div>
 
-<script src="{{ url_for('static', filename='js/cart-page.js', v=4) }}"></script>
+<script src="{{ url_for('static', filename='js/cart-page.js', v=5) }}"></script>
 <script>
 window.scrollCartRecommendations = function(direction) {
     const track = document.getElementById('cartRecommendationsTrack');

@@ -55,7 +55,7 @@ def _bf_discount_for_product(product, bf_status):
     if brand_raw == 'eucerin':
         if bf_status['eucerin_active']:
             return 0.80  # -20%
-        return None
+        return 0.95  # -5% until Nov 23
 
     if brand_raw in _BF_BRANDS_20PCT_NO_EUCERIN:
         return 0.80  # -20%

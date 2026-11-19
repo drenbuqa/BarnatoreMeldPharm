@@ -184,6 +184,18 @@ body.has-bf-bar.bf-bar-gone .mobile-header  { top: 0 !important; }
   line-height: 1;
 }
 
+/* ── Digit tick animation ─────────────────────────────────────────────────── */
+@keyframes bfTickIn {
+  from { opacity: 0.35; transform: translateY(4px); }
+  to   { opacity: 1;    transform: translateY(0); }
+}
+.bf-countdown__num--tick {
+  animation: bfTickIn 0.2s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* ── 4-slot mode (days+h+m+s): tighten slots so they fit ─────────────────── */
+.bf-countdown--four .bf-countdown__slot { min-width: 46px; }
+
 /* ── Responsive: narrow phones ────────────────────────────────────────────── */
 @media (max-width: 360px) {
   .bf-countdown {
@@ -192,6 +204,8 @@ body.has-bf-bar.bf-bar-gone .mobile-header  { top: 0 !important; }
   }
   .bf-countdown__slot { min-width: 48px; }
   .bf-countdown__num  { font-size: 1.5rem; }
+  .bf-countdown--four .bf-countdown__slot { min-width: 40px; }
+  .bf-countdown--four .bf-countdown__num  { font-size: 1.35rem; }
 }
 
 /* ── Mobile: tighter top margin ───────────────────────────────────────────── */

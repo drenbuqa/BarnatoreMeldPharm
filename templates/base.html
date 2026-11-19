@@ -1847,9 +1847,12 @@ function hpAddToCart(btn, productId) {
       (meta ? '<div class="crem-toast__meta">' + meta + '</div>' : '') +
       '</div>' +
       (productId ? '<button class="crem-toast__undo" type="button">Shto përsëri</button>' : '') +
+      '<button class="crem-toast__close" aria-label="Mbyll njoftimin">&#x2715;</button>' +
       '</div>';
     var toast = _wrap.querySelector('.crem-toast');
     var undoBtn = _wrap.querySelector('.crem-toast__undo');
+    var closeBtn = _wrap.querySelector('.crem-toast__close');
+    if (closeBtn) closeBtn.addEventListener('click', dismiss);
     _wrap.style.bottom = getToastBottom() + 'px';
     setTimeout(function() { toast.classList.add('crem-toast--visible'); }, 16);
     var btt = document.getElementById('backToTop');
@@ -1858,6 +1861,7 @@ function hpAddToCart(btn, productId) {
     toast.addEventListener('mouseleave', startTimer);
     toast.addEventListener('focusin', function() { clearTimeout(_timer); });
     toast.addEventListener('focusout', startTimer);
+    toast.addEventListener('click', function(e) { if (e.target.closest('.crem-toast__undo')) return; clearTimeout(_timer); dismiss(); });
     if (undoBtn) {
       undoBtn.addEventListener('click', function() {
         if (_restorePending) return;

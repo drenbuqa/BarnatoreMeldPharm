@@ -184,12 +184,12 @@ from routes.promo import (
     apply_oct_5pct_discount as _apply_oct_5pct_discount,
     is_oct_promo_active as _is_oct_promo_active,
     apply_bf_discounts as _apply_bf_discounts,
+    get_bf_promo_status,
 )
 
 
 def _apply_active_promo(products):
     """Apply whichever auto-promo is currently live (BF takes priority over Oct)."""
-    from routes.promo import get_bf_promo_status
     if get_bf_promo_status()['active']:
         return _apply_bf_discounts(products)
     if _is_oct_promo_active():
@@ -837,17 +837,23 @@ def products():
     best_sellers = request.args.get('best_sellers') == 'true'
     requested_per_page = request.args.get('per_page', 24, type=int)
     per_page = min(max(requested_per_page, 4), 32)
-    
+
     pharmacist_choice = request.args.get('pharmacist_choice') == 'true'
     product_labels = [
         label.strip() for label in request.args.get('labels', '').split(',')
         if label.strip()
     ]
-    
+
+    # During BF every product has an auto-discount, so the DB-level discount_only
+    # filter (which checks discount_price in the database) would wrongly exclude them.
+    # Disable it for the DB query; _apply_active_promo handles the rest.
+    _bf_promo_active = get_bf_promo_status()['active']
+    _db_discount_only = discount_only and not _bf_promo_active
+
     products, total_pages, total_count = Product.get_paginated(
         page, per_page, category, search_query, subcategory,
         sort=sort, brand=brand, min_price=min_price, max_price=max_price,
-        discount_only=discount_only, best_seller_only=best_sellers,
+        discount_only=_db_discount_only, best_seller_only=best_sellers,
         no_discount=no_discount, pharmacist_choice=pharmacist_choice,
         offer_name=offer_name or None, product_labels=product_labels,
         seed=seed
@@ -878,7 +884,7 @@ def products():
         from datetime import datetime as _dt
         q: dict[str, object] = {"is_deleted": {"$ne": True}}
         _lc: list[dict] = []
-        if discount_only:
+        if _db_discount_only:
             _lc.append({"$and": [
                 {"discount_price": {"$ne": None, "$gt": 0}},
                 {"$or": [
@@ -985,6 +991,8 @@ def products():
                 'is_favorite': (current_user.is_authenticated and p.get('favorites') and current_user.id in p.get('favorites')) or
                                (not current_user.is_authenticated and str(p['_id']) in session.get('liked_products', [])),
                 'auto_oct_discount': p.get('auto_oct_discount', False),
+                'auto_bf_discount': p.get('auto_bf_discount', False),
+                'bf_badge_pct': p.get('bf_badge_pct'),
                 'display_price': p.get('display_price', p.get('price')),
                 'display_original_price': p.get('display_original_price'),
                 'discount_until': p.get('discount_until'),

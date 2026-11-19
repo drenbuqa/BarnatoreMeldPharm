@@ -37,6 +37,8 @@
 .crem-toast__undo{flex-shrink:0;background:none;border:none;cursor:pointer;font-size:0.8rem;color:#4B594A;font-weight:700;padding:8px 10px;min-width:44px;white-space:nowrap;border-radius:8px;line-height:1;align-self:center}
 .crem-toast__undo:hover{background:#F0F2EE}
 .crem-toast__undo:disabled{opacity:0.55;cursor:not-allowed}
+.crem-toast__close{background:none;border:none;cursor:pointer;color:#94a3b8;padding:0;min-width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:6px;flex-shrink:0;font-size:1rem;line-height:1;margin-top:-2px}
+.crem-toast__close:hover{background:#f1f5f9;color:#475569}
 @media (max-width:320px){.crem-toast__meta{white-space:normal}}
 @media (prefers-reduced-motion:reduce){.crem-toast{transition:opacity 0.15s ease;transform:none!important}.crem-toast.crem-toast--visible{transform:none!important}}
 @media (min-width:993px){

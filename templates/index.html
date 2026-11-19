@@ -241,6 +241,11 @@
           <span class="bf-countdown__num" id="bfN2">--</span>
           <span class="bf-countdown__unit" id="bfU2">min</span>
         </div>
+        <div class="bf-countdown__sep" id="bfSep3" style="display:none">:</div>
+        <div class="bf-countdown__slot" id="bfSlot3" style="display:none">
+          <span class="bf-countdown__num" id="bfN3">--</span>
+          <span class="bf-countdown__unit" id="bfU3">sek</span>
+        </div>
       </div>
     </div>
     <script>
@@ -249,23 +254,37 @@
       if(!el)return;
       var DEADLINE={{ (bf_promo.ends_at.timestamp() * 1000)|int }};
       var label=document.getElementById('bfLabel');
-      var ns=[document.getElementById('bfN0'),document.getElementById('bfN1'),document.getElementById('bfN2')];
-      var us=[document.getElementById('bfU0'),document.getElementById('bfU1'),document.getElementById('bfU2')];
+      var ns=[document.getElementById('bfN0'),document.getElementById('bfN1'),document.getElementById('bfN2'),document.getElementById('bfN3')];
+      var us=[document.getElementById('bfU0'),document.getElementById('bfU1'),document.getElementById('bfU2'),document.getElementById('bfU3')];
+      var sep3=document.getElementById('bfSep3');
+      var slot3=document.getElementById('bfSlot3');
       function p(n){return(n<10?'0':'')+n;}
+      function setNum(el,val){
+        if(el.textContent===val)return;
+        el.classList.remove('bf-countdown__num--tick');
+        void el.offsetWidth;
+        el.textContent=val;
+        el.classList.add('bf-countdown__num--tick');
+      }
       function tick(){
         var diff=DEADLINE-Date.now();
         if(diff<=0){el.style.display='none';clearInterval(timer);return;}
         var s=Math.floor(diff/1000);
         if(s>86400){
+          el.classList.add('bf-countdown--four');
+          sep3.style.display='';slot3.style.display='';
           label.textContent='Oferta përfundon pas';
-          ns[0].textContent=p(Math.floor(s/86400));us[0].textContent='ditë';
-          ns[1].textContent=p(Math.floor(s%86400/3600));us[1].textContent='orë';
-          ns[2].textContent=p(Math.floor(s%3600/60));us[2].textContent='min';
+          setNum(ns[0],p(Math.floor(s/86400)));us[0].textContent='ditë';
+          setNum(ns[1],p(Math.floor(s%86400/3600)));us[1].textContent='orë';
+          setNum(ns[2],p(Math.floor(s%3600/60)));us[2].textContent='min';
+          setNum(ns[3],p(s%60));us[3].textContent='sek';
         }else{
+          el.classList.remove('bf-countdown--four');
+          sep3.style.display='none';slot3.style.display='none';
           label.textContent='Oferta përfundon sot';
-          ns[0].textContent=p(Math.floor(s/3600));us[0].textContent='orë';
-          ns[1].textContent=p(Math.floor(s%3600/60));us[1].textContent='min';
-          ns[2].textContent=p(s%60);us[2].textContent='sek';
+          setNum(ns[0],p(Math.floor(s/3600)));us[0].textContent='orë';
+          setNum(ns[1],p(Math.floor(s%3600/60)));us[1].textContent='min';
+          setNum(ns[2],p(s%60));us[2].textContent='sek';
         }
       }
       tick();

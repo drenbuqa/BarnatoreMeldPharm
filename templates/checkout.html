@@ -402,17 +402,6 @@
         max-width: 600px;
         margin: 0 auto;
     }
-    .sticky-checkout-total { display: flex; flex-direction: column; gap: 1px; }
-    .sticky-checkout-total .sct-label { font-size: 0.7rem; color: #64748b; font-weight: 500; }
-    .sticky-checkout-total .sct-value { font-size: 1.1rem; font-weight: 800; color: #1e293b; }
-    .sticky-checkout-bar button {
-        flex-shrink: 0;
-        padding: 0.8rem 1.75rem !important;
-        font-size: 0.95rem !important;
-        font-weight: 700 !important;
-        border-radius: 10px !important;
-        white-space: nowrap;
-    }
     .co-field-row { grid-template-columns: 1fr; }
 }
 </style>
@@ -616,12 +605,12 @@
 <!-- Sticky bottom bar — mobile only -->
 <div class="sticky-checkout-bar" id="stickyCheckoutBar">
     <div class="sticky-checkout-inner">
-        <div class="sticky-checkout-total">
-            <span class="sct-label">Totali</span>
-            <span class="sct-value" id="sticky-grand-total">€{{ "%.2f"|format(grand_total) }}</span>
+        <div class="sticky-total-row">
+            <span class="sticky-total-label">Totali:</span>
+            <span class="sticky-total-amount" id="sticky-grand-total">€{{ "%.2f"|format(grand_total) }}</span>
         </div>
-        <button type="button" class="btn btn-primary" onclick="document.getElementById('checkout-form').requestSubmit()">
-            Konfirmo Porosinë <i class="fas fa-arrow-right" style="margin-left:0.3rem;font-size:.8rem;"></i>
+        <button type="button" class="btn btn-primary sticky-checkout-btn" onclick="document.getElementById('checkout-form').requestSubmit()">
+            Konfirmo Porosinë <i class="fas fa-arrow-right" style="margin-left:0.4rem;font-size:.85rem;"></i>
         </button>
     </div>
 </div>

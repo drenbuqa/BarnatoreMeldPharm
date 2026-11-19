@@ -60,6 +60,50 @@
         };
     }
 
+    function setMinusMode(btn, qty) {
+        if (!btn) return;
+        var icon = btn.querySelector('i');
+        if (!icon) return;
+        if (qty <= 1) {
+            btn.classList.add('qty-btn--trash');
+            icon.className = 'fas fa-trash-alt';
+            btn.title = 'Hiqe';
+        } else {
+            btn.classList.remove('qty-btn--trash');
+            icon.className = 'fas fa-minus';
+            btn.title = '';
+        }
+    }
+
+    function initMinusButtons() {
+        document.querySelectorAll('[data-decrease-form]').forEach(function (form) {
+            var wrapper = form.closest('.quantity-selector, .quantity-control');
+            if (!wrapper) return;
+            var input = wrapper.querySelector('.qty-input');
+            var qty = input ? (parseInt(input.value) || 1) : 1;
+            setMinusMode(form.querySelector('.qty-btn'), qty);
+        });
+    }
+
+    document.addEventListener('submit', function (e) {
+        if (!e.target.hasAttribute('data-decrease-form')) return;
+        var form = e.target;
+        var wrapper = form.closest('.quantity-selector, .quantity-control');
+        if (!wrapper) return;
+        var input = wrapper.querySelector('.qty-input');
+        if (!input || parseInt(input.value) > 1) return;
+
+        e.preventDefault();
+        e.stopImmediatePropagation();
+
+        var card = form.closest('.cart-item-card, .cart-item-row');
+        if (!card) return;
+        var removeForm = card.querySelector('form[data-cart-remove]');
+        if (removeForm) {
+            removeForm.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+        }
+    }, true);
+
     document.addEventListener('click', function (event) {
         var row = event.target.closest('.clickable-row[data-href]');
         if (!row) return;
@@ -112,6 +156,7 @@
     }, true);
 
     document.addEventListener('DOMContentLoaded', function () {
+        initMinusButtons();
         if (typeof window._cartRemoveToastFromSession === 'function') {
             window._cartRemoveToastFromSession();
         }
