@@ -352,6 +352,15 @@ tr.row-saved-flash { animation: row-saved 2.2s ease forwards; }
                                 <span class="prod-brand">{{ product.brand or '—' }}</span>
                                 <span class="prod-name">{{ product.name }}</span>
                                 {% if product.size %}<span class="prod-size">{{ product.size }}</span>{% endif %}
+                                {% if product.get('image_upload_status') == 'failed' %}
+                                <span title="{{ product.get('image_upload_error', '') }}" style="display:inline-flex;align-items:center;gap:3px;font-size:0.68rem;font-weight:600;color:#dc2626;background:#fef2f2;border:1px solid #fca5a5;border-radius:4px;padding:1px 5px;margin-top:2px;">
+                                    <i class="fas fa-exclamation-triangle" style="font-size:0.6rem;"></i> Imazhi dështoi
+                                </span>
+                                {% elif product.get('image_upload_status') == 'pending' %}
+                                <span style="display:inline-flex;align-items:center;gap:3px;font-size:0.68rem;font-weight:600;color:#d97706;background:#fffbeb;border:1px solid #fcd34d;border-radius:4px;padding:1px 5px;margin-top:2px;">
+                                    <i class="fas fa-spinner fa-spin" style="font-size:0.6rem;"></i> Duke ngarkuar…
+                                </span>
+                                {% endif %}
                             </div>
                         </div>
                     </td>

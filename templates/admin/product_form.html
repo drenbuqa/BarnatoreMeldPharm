@@ -261,7 +261,7 @@
                         <div id="img-import-status" style="display:none;margin-bottom:0.75rem;">
                             <div style="display:flex;align-items:center;gap:0.5rem;padding:0.5rem 0.75rem;background:#f0f4ff;border:1px solid #c7d2fe;border-radius:6px;font-size:0.85rem;color:#3730a3;">
                                 <span style="display:inline-block;width:16px;height:16px;border:2px solid #3730a3;border-top-color:transparent;border-radius:50%;animation:spin 0.7s linear infinite;flex-shrink:0;"></span>
-                                Duke importuar imazhin te Cloudinary… mund të zgjasë disa sekonda.
+                                Duke ngarkuar imazhin… mund të zgjasë disa sekonda.
                             </div>
                         </div>
 
@@ -1075,6 +1075,17 @@
                 q.setText(initialContent);
             }
         }
+        // Strip inline color/background styles on paste (e.g. white text from ChatGPT dark mode)
+        q.root.addEventListener('paste', function() {
+            setTimeout(function() {
+                q.root.querySelectorAll('[style]').forEach(function(el) {
+                    el.style.removeProperty('color');
+                    el.style.removeProperty('background-color');
+                    el.style.removeProperty('background');
+                    if (!el.style.cssText.trim()) el.removeAttribute('style');
+                });
+            }, 0);
+        });
         return q;
     }
 
@@ -1530,11 +1541,11 @@ function optGroupsFromVariants(variants) {
 const _pf = document.querySelector('form.premium-product-form');
 _pf.addEventListener('submit', syncHidden);
 
-// Show import-loading indicator when the form is submitted with a non-Cloudinary image URL
+// Show import-loading indicator when the form is submitted with a new (non-R2) image URL
 _pf.addEventListener('submit', function() {
     const imgUrl = (document.getElementById('image_url').value || '').trim();
-    const isCloudinary = imgUrl.includes('res.cloudinary.com');
-    if (imgUrl && !isCloudinary) {
+    const isAlreadyUploaded = imgUrl.includes('res.cloudinary.com') || imgUrl.includes('r2.dev') || imgUrl.includes('imagedelivery.net');
+    if (imgUrl && !isAlreadyUploaded) {
         document.getElementById('img-import-status').style.display = 'block';
     }
 });
