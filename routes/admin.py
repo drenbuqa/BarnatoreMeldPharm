@@ -755,10 +755,13 @@ def _upload_images_background(product_id: str, main_url: str, extra_urls: list[s
         _log.info("Background image upload done for product %s", product_id)
     except Exception as e:
         _log.error("Background image upload FAILED for product %s: %s", product_id, e)
-        from bson import ObjectId as _OId
+        # On failure, store the original pending URLs so admin can see and retry them
+        pending_images = [u for u in [main_url] + list(extra_urls) if u]
         mongo.db.products.update_one(
             {"_id": ObjectId(product_id)},
             {"$set": {
+                "image_url": main_url or "",
+                "images": pending_images,
                 "image_upload_status": "failed",
                 "image_upload_error": str(e),
             }}
