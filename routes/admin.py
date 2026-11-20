@@ -801,34 +801,26 @@ def new_product():
         extra_raws = [x.strip() for x in additional_str.replace(',', '\n').split('\n')
                       if x.strip() and x.strip() != main_img_raw]
 
+        main_img, main_err = _try_import(main_img_raw)
+        if main_err:
+            flash(f'Gabim: {main_err}  Produkti NUK u ruajt. Provoni një URL tjetër.', 'danger')
+            return render_template('admin/product_form.html', product=None, categories=CATEGORIES)
+
+        images = [main_img]
+        for url in extra_raws:
+            imported_url, err = _try_import(url)
+            if err:
+                flash(f'Paralajmërim: {err}  Ky imazh u anashkalua.', 'warning')
+            else:
+                images.append(imported_url)
+
         option_groups, variants, base_price, base_discount = _parse_option_groups(
             request.form.get('option_groups_json', '')
         )
-
-        needs_bg = _needs_upload(main_img_raw) or any(_needs_upload(u) for u in extra_raws)
-
-        if needs_bg:
-            # Save immediately with raw URL as placeholder; upload in background
-            product_data = _build_product_data(main_img_raw, [main_img_raw] + extra_raws,
-                                               option_groups, variants, base_price, base_discount)
-            product_data['image_upload_status'] = 'pending'
-            result = Product.create(product_data)
-            product_id = str(result.inserted_id)
-            t = threading.Thread(
-                target=_upload_images_background,
-                args=(product_id, main_img_raw, extra_raws),
-                daemon=True,
-            )
-            t.start()
-            flash('Produkti u krijua! Imazhi po ngarkohet në sfond — do të shfaqet brenda pak sekondash.', 'success')
-        else:
-            # All images already on R2/Cloudinary — save directly
-            product_data = _build_product_data(main_img_raw, [main_img_raw] + extra_raws,
-                                               option_groups, variants, base_price, base_discount)
-            product_data['image_upload_status'] = 'done'
-            Product.create(product_data)
-            flash('Produkti u krijua me sukses!', 'success')
-
+        product_data = _build_product_data(main_img, images, option_groups, variants, base_price, base_discount)
+        product_data['image_upload_status'] = 'done'
+        Product.create(product_data)
+        flash('Produkti u krijua me sukses!', 'success')
         return redirect(url_for('admin.dashboard'))
     return render_template('admin/product_form.html', product=None, categories=CATEGORIES)
 
@@ -853,43 +845,30 @@ def edit_product(product_id):
 
         saved_main = product.get('image_url', '')
 
-        # Determine if any image URL is new and needs uploading
-        main_changed = main_img_raw != saved_main
-        needs_bg = (main_changed and _needs_upload(main_img_raw)) or any(_needs_upload(u) for u in extra_raws)
-
-        if needs_bg:
-            # Keep existing image as fallback while upload happens in background
-            fallback_main = saved_main if main_changed else main_img_raw
-            option_groups, variants, base_price, base_discount = _parse_option_groups(
-                request.form.get('option_groups_json', ''),
-                existing_variants=product.get('variants') or []
-            )
-            product_data = _build_product_data(fallback_main,
-                                               product.get('images') or [fallback_main],
-                                               option_groups, variants, base_price, base_discount)
-            product_data['image_upload_status'] = 'pending'
-            Product.update(product_id, product_data)
-            t = threading.Thread(
-                target=_upload_images_background,
-                args=(product_id, main_img_raw, extra_raws),
-                daemon=True,
-            )
-            t.start()
-            flash('Produkti u përditësua! Imazhi i ri po ngarkohet në sfond — do të shfaqet brenda pak sekondash.', 'success')
+        if main_img_raw == saved_main and (is_cloudinary_url(saved_main) or is_r2_url(saved_main)):
+            main_img = saved_main
         else:
-            # No new images to upload — use URL as-is (already on R2/Cloudinary or unchanged)
-            main_img = main_img_raw if main_img_raw else saved_main
-            images = [main_img] + [u for u in extra_raws if u]
-            if not images:
-                images = product.get('images') or []
-            option_groups, variants, base_price, base_discount = _parse_option_groups(
-                request.form.get('option_groups_json', ''),
-                existing_variants=product.get('variants') or []
-            )
-            product_data = _build_product_data(main_img, images, option_groups, variants, base_price, base_discount)
-            product_data['image_upload_status'] = 'done'
-            Product.update(product_id, product_data)
-            flash('Produkti u përditësua me sukses!', 'success')
+            main_img, main_err = _try_import(main_img_raw)
+            if main_err:
+                main_img = saved_main
+                flash(f'Gabim: {main_err}  Imazhi kryesor mbeti i pandryshuar.', 'danger')
+
+        images = [main_img]
+        for url in extra_raws:
+            imported_url, err = _try_import(url)
+            if err:
+                flash(f'Paralajmërim: {err}  Ky imazh u anashkalua.', 'warning')
+            else:
+                images.append(imported_url)
+
+        option_groups, variants, base_price, base_discount = _parse_option_groups(
+            request.form.get('option_groups_json', ''),
+            existing_variants=product.get('variants') or []
+        )
+        product_data = _build_product_data(main_img, images, option_groups, variants, base_price, base_discount)
+        product_data['image_upload_status'] = 'done'
+        Product.update(product_id, product_data)
+        flash('Produkti u përditësua me sukses!', 'success')
 
         next_url = request.form.get('next') or request.args.get('next')
         if next_url and next_url.startswith('/'):
