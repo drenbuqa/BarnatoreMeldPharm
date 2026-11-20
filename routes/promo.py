@@ -10,7 +10,7 @@ _OCT_PROMO_MONTH = 10
 _CET = timezone(timedelta(hours=1))
 
 _BF_START_ALL    = _dt(2026, 11, 18, 0, 0, 0, tzinfo=_CET)   # CeraVe, Vichy, La Roche-Posay, 5% all
-_BF_START_EUCERIN = _dt(2026, 11, 23, 0, 0, 0, tzinfo=_CET)  # Eucerin joins on Nov 23
+_BF_START_EUCERIN = _dt(2026, 11, 20, 0, 0, 0, tzinfo=_CET)  # Eucerin joins on Nov 20
 _BF_END          = _dt(2026, 12, 1,  0, 0, 0, tzinfo=_CET)   # exclusive end (after Nov 30 midnight)
 
 _BF_BRANDS_20PCT = {'vichy', 'cerave', 'la roche-posay', 'eucerin'}
