@@ -6,6 +6,7 @@ from models.banner import Banner
 from models.order import Order
 from models.user import User
 from models.cloudinary_import import import_product_image, is_cloudinary_url, is_r2_url
+import os
 import threading
 import logging as _log
 from models.email_utils import (
