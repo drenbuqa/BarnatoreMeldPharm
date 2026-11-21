@@ -17,6 +17,7 @@
         <form method="POST" id="register-form" novalidate>
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
             <input type="hidden" name="next" value="{{ request.args.get('next', '') }}">
+            <div style="display:none" aria-hidden="true"><input type="text" name="website" tabindex="-1" autocomplete="off"></div>
             <div class="aform-group">
                 <label for="username">Emri i përdoruesit</label>
                 <div class="ainput-wrap">

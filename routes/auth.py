@@ -80,6 +80,16 @@ def login():
 def register():
     if request.method == 'POST':
         _get_limiter().limit("5 per minute")(lambda: None)()
+        # Honeypot: bots fill hidden fields, real users never see them
+        if request.form.get('website', '').strip():
+            return redirect(url_for('main.index'))
+
+        # Block known spam/bot domains from registering
+        _SPAM_DOMAINS = {'1win.com', '1win.xyz', 'guerrillamail.com', 'mailinator.com',
+                         'tempmail.com', 'throwam.com', 'sharklasers.com', 'yopmail.com'}
+        _email_domain = email.split('@')[-1].lower() if '@' in email else ''
+        if _email_domain in _SPAM_DOMAINS:
+            return redirect(url_for('main.index'))
         username = request.form.get('username', '').strip()
         email = request.form.get('email', '').strip().lower()
         password = request.form.get('password', '')
