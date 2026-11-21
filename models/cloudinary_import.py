@@ -268,6 +268,8 @@ def is_r2_url(url: str) -> bool:
     """Return True if the URL is already hosted on our R2 bucket."""
     if not url:
         return False
+    if ".r2.dev/" in url:
+        return True
     public_url_base = os.environ.get("R2_PUBLIC_URL", "images.barnatoremeldpharm.com")
     return public_url_base.replace("https://", "") in url
 
