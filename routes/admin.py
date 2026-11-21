@@ -804,7 +804,9 @@ def new_product():
         main_img, main_err = _try_import(main_img_raw)
         if main_err:
             flash(f'Gabim: {main_err}  Produkti NUK u ruajt. Provoni një URL tjetër.', 'danger')
-            return render_template('admin/product_form.html', product=None, categories=CATEGORIES)
+            return render_template('admin/product_form.html', product=None, categories=CATEGORIES,
+                                   worker_url=os.environ.get('WORKER_UPLOAD_URL',''),
+                                   worker_secret=os.environ.get('WORKER_UPLOAD_SECRET',''))
 
         images = [main_img]
         for url in extra_raws:
@@ -822,7 +824,9 @@ def new_product():
         Product.create(product_data)
         flash('Produkti u krijua me sukses!', 'success')
         return redirect(url_for('admin.dashboard'))
-    return render_template('admin/product_form.html', product=None, categories=CATEGORIES)
+    return render_template('admin/product_form.html', product=None, categories=CATEGORIES,
+                           worker_url=os.environ.get('WORKER_UPLOAD_URL',''),
+                           worker_secret=os.environ.get('WORKER_UPLOAD_SECRET',''))
 
 
 @admin.route('/product/edit/<product_id>', methods=['GET', 'POST'])
@@ -877,7 +881,9 @@ def edit_product(product_id):
             return redirect(urlunparse(parsed._replace(fragment=f'prod-{product_id}')))
         return redirect(url_for('admin.products_page'))
 
-    return render_template('admin/product_form.html', product=product, categories=CATEGORIES)
+    return render_template('admin/product_form.html', product=product, categories=CATEGORIES,
+                           worker_url=os.environ.get('WORKER_UPLOAD_URL',''),
+                           worker_secret=os.environ.get('WORKER_UPLOAD_SECRET',''))
 
 @admin.route('/product/delete/<product_id>', methods=['POST'])
 @login_required
@@ -1908,7 +1914,7 @@ def users():
     raw_users = list(mongo.db.users.find(
         {},
         {"username": 1, "email": 1, "is_admin": 1, "created_at": 1, "newsletter_subscribed": 1}
-    ).sort("created_at", -1))
+    ).sort("created_at", -1).limit(500))
 
     order_counts = {r['_id']: r['count'] for r in mongo.db.orders.aggregate([
         {"$group": {"_id": "$email", "count": {"$sum": 1}}}
@@ -1936,7 +1942,7 @@ def users():
 
     guest_subs = list(mongo.db.newsletter_subscribers.find(
         {}, {"email": 1, "subscribed_at": 1}
-    ).sort("subscribed_at", -1))
+    ).sort("subscribed_at", -1).limit(500))
     for g in guest_subs:
         if g.get('email', '').lower() not in registered_emails:
             entries.append({
