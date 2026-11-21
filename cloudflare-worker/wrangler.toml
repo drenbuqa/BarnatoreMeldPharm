@@ -1,0 +1,9 @@
+name = "meldpharm-image-upload"
+main = "worker.js"
+compatibility_date = "2024-01-01"
+
+account_id = "9de3d179bc71abc2f715bf9eb0a6336a"
+
+[[r2_buckets]]
+binding = "R2_BUCKET"
+bucket_name = "meldpharm-images"
