@@ -84,15 +84,24 @@ def register():
         if request.form.get('website', '').strip():
             return redirect(url_for('main.index'))
 
+        username = request.form.get('username', '').strip()
+        email = request.form.get('email', '').strip().lower()
+        password = request.form.get('password', '')
+
+        # Block URLs in username — spam bots put gambling links there
+        if 'http://' in username or 'https://' in username:
+            return redirect(url_for('main.index'))
+
+        # Limit username length and reject excessive special characters
+        if len(username) > 50 or username.count('*') > 2:
+            return redirect(url_for('main.index'))
+
         # Block known spam/bot domains from registering
         _SPAM_DOMAINS = {'1win.com', '1win.xyz', 'guerrillamail.com', 'mailinator.com',
                          'tempmail.com', 'throwam.com', 'sharklasers.com', 'yopmail.com'}
         _email_domain = email.split('@')[-1].lower() if '@' in email else ''
         if _email_domain in _SPAM_DOMAINS:
             return redirect(url_for('main.index'))
-        username = request.form.get('username', '').strip()
-        email = request.form.get('email', '').strip().lower()
-        password = request.form.get('password', '')
 
         if len(password) < 8 or not any(c.isdigit() for c in password):
             flash('Fjalëkalimi duhet të jetë të paktën 8 karaktere dhe të përmbajë një numër.', 'warning')

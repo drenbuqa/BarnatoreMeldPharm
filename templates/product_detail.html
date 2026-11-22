@@ -3710,9 +3710,12 @@ window._pdGalleryRefresh = function() {};
                 }, { once: true });
             }
 
-            // Mirror state to all other fav buttons on the page
+            // Mirror state to other fav buttons for the SAME product only
             document.querySelectorAll('#pinfo-mobile-fav, .pinfo-fav, .btn-favorite').forEach(function (b) {
                 if (b === btn) return;
+                // Skip buttons belonging to a different product (related cards)
+                var onclickAttr = b.getAttribute('onclick') || '';
+                if (onclickAttr && !onclickAttr.includes(productId)) return;
                 var icon = b.querySelector('i');
                 if (isActive) {
                     b.classList.add('active', 'fav-active');
