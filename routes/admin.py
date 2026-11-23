@@ -1697,10 +1697,11 @@ def newsletter():
     guest_sub_count = len(subscribers) - registered_sub_count
     pending_orders_count = mongo.db.orders.count_documents({'status': 'Pending'})
 
-    # All products for picker (show offers first)
+    # All products for picker (show offers first, exclude deleted)
     all_products = list(mongo.db.products.find(
-        {}, {'name': 1, 'brand': 1, 'price': 1, 'discount_price': 1, 'image_url': 1, 'category': 1, 'in_stock': 1}
-    ).sort([('discount_price', -1)]).limit(120))
+        {'is_deleted': {'$ne': True}},
+        {'name': 1, 'brand': 1, 'price': 1, 'discount_price': 1, 'image_url': 1, 'category': 1, 'in_stock': 1}
+    ).sort([('discount_price', -1)]))
 
     # Build smart defaults for the newsletter form
     offer_products = [p for p in all_products if p.get('discount_price')]
@@ -1822,6 +1823,8 @@ def _build_newsletter_html(template, headline, intro_text, products, base_url,
 <html><head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light">
+<meta name="supported-color-schemes" content="light">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=DM+Sans:wght@400;500;700&display=swap');
@@ -1843,11 +1846,9 @@ def _product_price_html(p, accent_color='#4F5D4E'):
     price = p.get('price', 0)
     disc  = p.get('discount_price')
     if disc:
-        pct = round((price - disc) / price * 100) if price else 0
         return (
             f'<span style="{_EMAIL_SANS};font-size:11px;color:#9aa095;text-decoration:line-through;">€{price:.2f}</span> '
-            f'<span style="{_EMAIL_SANS};font-size:14px;font-weight:700;color:{accent_color};">€{disc:.2f}</span> '
-            f'<span style="{_EMAIL_SANS};background:#fef3c7;color:#92400e;font-size:9px;font-weight:700;padding:2px 6px;border-radius:5px;margin-left:3px;">-{pct}%</span>'
+            f'<span style="{_EMAIL_SANS};font-size:14px;font-weight:700;color:{accent_color};">€{disc:.2f}</span>'
         )
     return f'<span style="{_EMAIL_SANS};font-size:14px;font-weight:700;color:#1a1f18;">€{price:.2f}</span>'
 
@@ -1862,19 +1863,19 @@ def _product_card_grid(p, base_url, accent_color='#4F5D4E', width='45%'):
     badge_html = ''
     if disc and price:
         pct = round((price - disc) / price * 100)
-        badge_html = f'<div style="position:absolute;top:8px;left:8px;background:#dc2626;color:#fff;{_EMAIL_SANS};font-size:9px;font-weight:800;padding:3px 7px;border-radius:20px;line-height:1;">-{pct}%</div>'
+        badge_html = f'<div style="margin-bottom:5px;"><span style="{_EMAIL_SANS};display:inline-block;background:#dc2626;color:#fff;font-size:9px;font-weight:800;padding:2px 7px;border-radius:20px;line-height:1.4;">-{pct}%</span></div>'
     return f"""
-    <td style="width:{width};padding:8px;vertical-align:top;">
-      <a href="{base_url}/product/{pid}" style="text-decoration:none;display:block;background:#fff;border-radius:12px;overflow:hidden;border:1px solid #eef0ed;">
-        <div style="position:relative;">
-          <img src="{img}" alt="{name}" width="100%" style="display:block;height:180px;object-fit:contain;background:#fafafa;padding:10px;box-sizing:border-box;">
-          {badge_html}
+    <td style="width:{width};padding:5px;vertical-align:top;">
+      <a href="{base_url}/product/{pid}" style="text-decoration:none;display:block;background:#ffffff;border-radius:10px;overflow:hidden;border:1px solid #eef0ed;">
+        <div style="background-color:#ffffff;padding:8px 8px 4px;text-align:center;">
+          <img src="{img}" alt="{name}" width="100%" style="display:block;height:150px;object-fit:contain;background-color:#ffffff;border:0;outline:none;">
         </div>
-        <div style="padding:12px 14px 14px;">
-          {('<div style="' + _EMAIL_SANS + ';font-size:9px;font-weight:700;color:#9aa095;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:4px;height:14px;overflow:hidden;">' + brand + '</div>') if brand else '<div style="height:18px;"></div>'}
-          <div style="{_EMAIL_SANS};font-size:12px;font-weight:600;color:#1a1f18;margin-bottom:7px;line-height:1.45;height:34px;overflow:hidden;">{name}</div>
-          <div style="margin-bottom:9px;height:22px;overflow:hidden;">{_product_price_html(p, accent_color)}</div>
-          <div style="{_EMAIL_SANS};font-size:11px;font-weight:700;color:{accent_color};letter-spacing:0.2px;">Shiko produktin →</div>
+        <div style="padding:8px 10px 10px;background-color:#ffffff;">
+          {badge_html}
+          {('<div style="' + _EMAIL_SANS + ';font-size:9px;font-weight:700;color:#9aa095;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:3px;overflow:hidden;">' + brand + '</div>') if brand else ''}
+          <div style="{_EMAIL_SANS};font-size:11px;font-weight:600;color:#1a1f18;margin-bottom:5px;line-height:1.4;overflow:hidden;">{name}</div>
+          <div style="margin-bottom:6px;">{_product_price_html(p, accent_color)}</div>
+          <div style="{_EMAIL_SANS};font-size:10px;font-weight:700;color:{accent_color};letter-spacing:0.2px;">Shiko produktin →</div>
         </div>
       </a>
     </td>"""
@@ -1891,9 +1892,9 @@ def _products_grid(products, base_url, accent_color='#4F5D4E'):
             cells += '<td style="width:45%;padding:8px;"></td>'
         rows += f'<tr>{cells}</tr>'
     return f"""
-    <div style="padding:24px 28px;">
+    <div style="padding:20px 14px;">
       <p style="margin:0 0 4px;font-family:'DM Sans',Arial,sans-serif;font-size:11px;font-weight:700;color:{accent_color};text-transform:uppercase;letter-spacing:1.2px;">Produktet e Zgjedhura</p>
-      <h2 style="margin:0 0 18px;font-family:'Playfair Display',Georgia,'Times New Roman',serif;font-size:20px;font-weight:800;color:#1a1f18;line-height:1.2;">Ofertat e Limituara</h2>
+      <h2 style="margin:0 0 14px;font-family:'Playfair Display',Georgia,'Times New Roman',serif;font-size:20px;font-weight:800;color:#1a1f18;line-height:1.2;">Ofertat e Limituara</h2>
       <table width="100%" cellpadding="0" cellspacing="0"><tbody>{rows}</tbody></table>
     </div>"""
 

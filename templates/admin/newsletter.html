@@ -698,10 +698,13 @@ function buildPreview() {
         const priceEl = lbl.querySelector('.prod-price');
         const offerTag = lbl.querySelector('.offer-tag');
         const pct = offerTag ? Math.abs(parseInt(offerTag.textContent)) : 0;
+        // Strip the offer-tag from priceHTML — badge shows it separately now
+        const priceClone = priceEl?.cloneNode(true);
+        priceClone?.querySelector('.offer-tag')?.remove();
         products.push({
             img:      lbl.querySelector('img')?.src || '',
             name:     lbl.querySelector('.prod-name')?.textContent?.trim() || '',
-            priceHTML:priceEl?.innerHTML || '',
+            priceHTML:priceClone?.innerHTML || '',
             id:       cb.value,
             pct:      pct
         });
@@ -737,12 +740,12 @@ function previewHTML(template, headline, intro, products, cta, fnote, bannerUrl,
         if (template === 'list') {
             products.forEach(p => {
                 prodsHtml += `<div style="display:flex;gap:10px;padding:9px 0;border-bottom:1px solid #f0f2ef;align-items:center;">
-                    <div style="position:relative;flex-shrink:0;">
-                        <img src="${p.img}" width="52" height="52" style="border-radius:8px;object-fit:contain;background:#fafafa;display:block;">
-                        ${p.pct ? `<div style="position:absolute;top:-4px;left:-4px;background:#dc2626;color:#fff;font-family:'DM Sans',Arial,sans-serif;font-size:7px;font-weight:800;padding:2px 5px;border-radius:20px;">-${p.pct}%</div>` : ''}
+                    <div style="flex-shrink:0;">
+                        <img src="${p.img}" width="52" height="52" style="border-radius:8px;object-fit:contain;background:#ffffff;display:block;">
                     </div>
                     <div style="flex:1;min-width:0;">
                         <div style="font-family:'DM Sans',Arial,sans-serif;font-size:10px;font-weight:600;color:#1a1f18;margin-bottom:4px;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.name}</div>
+                        ${p.pct ? `<div style="margin-bottom:3px;"><span style="display:inline-block;background:#dc2626;color:#fff;font-family:'DM Sans',Arial,sans-serif;font-size:7px;font-weight:800;padding:2px 5px;border-radius:20px;line-height:1.3;">-${p.pct}%</span></div>` : ''}
                         <div style="font-size:10px;margin-bottom:4px;">${p.priceHTML}</div>
                         <span style="font-family:'DM Sans',Arial,sans-serif;font-size:10px;font-weight:700;color:${ac};letter-spacing:0.2px;">Shiko produktin →</span>
                     </div>
@@ -751,14 +754,14 @@ function previewHTML(template, headline, intro, products, cta, fnote, bannerUrl,
         } else {
             prodsHtml += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">';
             products.forEach(p => {
-                prodsHtml += `<div style="background:#fff;border-radius:10px;border:1px solid #eef0ed;overflow:hidden;display:flex;flex-direction:column;">
-                    <div style="position:relative;">
-                        <img src="${p.img}" style="width:100%;height:110px;object-fit:contain;display:block;background:#fafafa;padding:6px;box-sizing:border-box;">
-                        ${p.pct ? `<div style="position:absolute;top:6px;left:6px;background:#dc2626;color:#fff;font-family:'DM Sans',Arial,sans-serif;font-size:8px;font-weight:800;padding:3px 6px;border-radius:20px;line-height:1;">-${p.pct}%</div>` : ''}
+                prodsHtml += `<div style="background:#ffffff;border-radius:10px;border:1px solid #eef0ed;overflow:hidden;display:flex;flex-direction:column;">
+                    <div style="background-color:#ffffff;padding:6px 6px 3px;text-align:center;">
+                        <img src="${p.img}" style="width:100%;height:110px;object-fit:contain;display:block;background-color:#ffffff;">
                     </div>
-                    <div style="padding:8px 10px 10px;display:flex;flex-direction:column;flex:1;">
-                        <div style="font-family:'DM Sans',Arial,sans-serif;font-size:10px;font-weight:600;color:#1a1f18;margin-bottom:5px;line-height:1.4;height:28px;overflow:hidden;">${p.name}</div>
-                        <div style="font-size:10px;margin-bottom:7px;height:18px;overflow:hidden;">${p.priceHTML}</div>
+                    <div style="padding:7px 9px 9px;display:flex;flex-direction:column;flex:1;background-color:#ffffff;">
+                        ${p.pct ? `<div style="margin-bottom:4px;"><span style="display:inline-block;background:#dc2626;color:#fff;font-family:'DM Sans',Arial,sans-serif;font-size:8px;font-weight:800;padding:2px 6px;border-radius:20px;line-height:1.4;">-${p.pct}%</span></div>` : ''}
+                        <div style="font-family:'DM Sans',Arial,sans-serif;font-size:10px;font-weight:600;color:#1a1f18;margin-bottom:4px;line-height:1.4;overflow:hidden;">${p.name}</div>
+                        <div style="font-size:10px;margin-bottom:6px;">${p.priceHTML}</div>
                         <div style="font-family:'DM Sans',Arial,sans-serif;font-size:10px;font-weight:700;color:${ac};letter-spacing:0.2px;margin-top:auto;">Shiko produktin →</div>
                     </div>
                 </div>`;

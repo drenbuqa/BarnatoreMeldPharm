@@ -1597,7 +1597,20 @@ syncLabels();
 
 <script>
 /* ── R2 direct upload helpers ───────────────────────────────────────── */
-const _R2_UPLOAD_URL = "{{ url_for('admin.upload_image') }}";
+const _WORKER_URL    = "{{ worker_url }}";
+const _WORKER_SECRET = "{{ worker_secret }}";
+const _USE_WORKER    = !!_WORKER_URL;
+const _R2_UPLOAD_URL = _USE_WORKER ? _WORKER_URL : "{{ url_for('admin.upload_image') }}";
+
+function _buildFetchOpts(fd) {
+    const opts = { method: 'POST', body: fd };
+    if (_USE_WORKER) {
+        opts.headers = { 'Authorization': 'Bearer ' + _WORKER_SECRET };
+    } else {
+        fd.append('csrf_token', document.querySelector('input[name=csrf_token]').value);
+    }
+    return opts;
+}
 
 function r2PickFile(fieldId, type) {
     document.getElementById('r2-file-' + fieldId).click();
@@ -1613,8 +1626,7 @@ async function r2DoUpload(input, fieldId, type) {
         const fd = new FormData();
         fd.append('file', input.files[0]);
         fd.append('type', type);
-        fd.append('csrf_token', document.querySelector('input[name=csrf_token]').value);
-        const res = await fetch(_R2_UPLOAD_URL, { method:'POST', body:fd });
+        const res = await fetch(_R2_UPLOAD_URL, _buildFetchOpts(fd));
         const data = await res.json();
         if (data.url) {
             urlField.value = data.url;
@@ -1639,8 +1651,7 @@ async function r2DoUploadAppend(input, fieldId, type) {
         const fd = new FormData();
         fd.append('file', input.files[0]);
         fd.append('type', type);
-        fd.append('csrf_token', document.querySelector('input[name=csrf_token]').value);
-        const res = await fetch(_R2_UPLOAD_URL, { method:'POST', body:fd });
+        const res = await fetch(_R2_UPLOAD_URL, _buildFetchOpts(fd));
         const data = await res.json();
         if (data.url) {
             const ta = document.getElementById(fieldId);
@@ -1681,8 +1692,7 @@ async function r2DoUploadVariant(input, gi, vi, ii) {
         const fd = new FormData();
         fd.append('file', input.files[0]);
         fd.append('type', 'product');
-        fd.append('csrf_token', document.querySelector('input[name=csrf_token]').value);
-        const res = await fetch(_R2_UPLOAD_URL, { method:'POST', body:fd });
+        const res = await fetch(_R2_UPLOAD_URL, _buildFetchOpts(fd));
         const data = await res.json();
         if (data.url) {
             updateImgUrl(gi, vi, ii, data.url);
