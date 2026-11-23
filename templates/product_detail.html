@@ -1445,12 +1445,14 @@
 </script>
 
 <style>
-.vcolor { width:2.2rem;height:2.2rem;border-radius:50%;border:2.5px solid #e2e8f0;cursor:pointer;transition:transform .12s,border-color .12s;flex-shrink:0; }
+.vcolor { width:2.2rem;height:2.2rem;border-radius:50%;border:2.5px solid #e2e8f0;cursor:pointer;transition:transform .12s,border-color .12s;flex-shrink:0;outline:none;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none; }
+.vcolor:focus,.vcolor:focus-visible { outline:none;box-shadow:none; }
 .vcolor:hover { transform:scale(1.12); }
 .vcolor.vcolor-active { border-color:#059669;box-shadow:0 0 0 2px #fff,0 0 0 4px #059669; }
 .vcolor.vcolor-oos { opacity:.38;cursor:default;position:relative; }
 .vcolor.vcolor-oos::after { content:'';position:absolute;inset:0;background:repeating-linear-gradient(-45deg,transparent,transparent 3px,rgba(0,0,0,.25) 3px,rgba(0,0,0,.25) 4px);border-radius:50%; }
-.vsize { padding:0.35rem 0.7rem;border-radius:8px;border:1.5px solid #dde1e7;background:#fff;font-size:0.88rem;font-weight:600;color:#4a5568;cursor:pointer;transition:border-color .15s,background .15s,color .15s,box-shadow .15s; }
+.vsize { padding:0.35rem 0.7rem;border-radius:8px;border:1.5px solid #dde1e7;background:#fff;font-size:0.88rem;font-weight:600;color:#4a5568;cursor:pointer;transition:border-color .15s,background .15s,color .15s,box-shadow .15s;outline:none;-webkit-tap-highlight-color:transparent;-moz-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none; }
+.vsize:focus,.vsize:focus-visible { outline:none;box-shadow:none; }
 .vsize:hover:not(.vsize-oos):not(.vsize-active) { border-color:#4a7c59;background:#f2f7f4;color:#1e3a2f; }
 .vsize.vsize-active { border-color:#1e3a2f;background:#1e3a2f;color:#fff; }
 .vsize.vsize-oos { opacity:.38;cursor:default;text-decoration:line-through; }
@@ -1540,6 +1542,7 @@
                 const sel = document.createElement('span');
                 sel.style.cssText = 'font-size:14px;font-weight:600;color:var(--text-main);text-transform:none;letter-spacing:0;';
                 sel.textContent = selectedVal;
+                sel.dataset.labelAttr = attrType;
                 label.appendChild(sel);
             } else if (dimType === 'size') {
                 const prompt = document.createElement('span');
@@ -1566,6 +1569,8 @@
                     btn.title = val;
                     btn.className = 'vcolor' + (isActive?' vcolor-active':'') + (!inStock?' vcolor-oos':'');
                     btn.style.background = hex;
+                    btn.dataset.attrType = attrType;
+                    btn.dataset.attrVal = val;
                     if (!inStock) btn.disabled = true;
                     btn.onclick = () => selectAttr(attrType, val);
                     optRow.appendChild(btn);
@@ -1574,7 +1579,9 @@
                     btn.type = 'button';
                     btn.className = 'vsize' + (isActive?' vsize-active':'') + (!inStock?' vsize-oos':'');
                     btn.textContent = val;
-                    btn.style.cssText = 'flex:0 0 auto;text-align:center;box-sizing:border-box;min-width:48px;';
+                    btn.style.cssText = 'flex:0 0 auto;text-align:center;box-sizing:border-box;min-width:48px;outline:none;-webkit-tap-highlight-color:transparent;';
+                    btn.dataset.attrType = attrType;
+                    btn.dataset.attrVal = val;
                     if (!inStock) { btn.disabled = true; btn.title = 'Jashtë stokut'; }
                     btn.onclick = () => selectAttr(attrType, val);
                     optRow.appendChild(btn);
@@ -1583,6 +1590,8 @@
                     pill.type = 'button';
                     pill.className = 'vpill' + (isActive?' vpill-active':'') + (!inStock?' vpill-oos':'');
                     pill.textContent = val;
+                    pill.dataset.attrType = attrType;
+                    pill.dataset.attrVal = val;
                     if (!inStock) { pill.disabled = false; pill.title = 'Jashtë stokut'; }
                     pill.onclick = () => selectAttr(attrType, val);
                     optRow.appendChild(pill);
@@ -1606,7 +1615,37 @@
                             || productVariants.find(v => (v.attributes||{})[attrType]===val);
             if (compatible) getAttrTypes().forEach(type => { selections[type] = (compatible.attributes||{})[type]; });
         }
-        renderVariantUI();
+        // Update active classes in place — avoids DOM rebuild which causes repaint artifacts
+        const container = document.getElementById('product-variants-ui');
+        if (container) {
+            const attrTypes = getAttrTypes();
+            container.querySelectorAll('[data-attr-type]').forEach(el => {
+                const isActive = selections[el.dataset.attrType] === el.dataset.attrVal;
+                const testSel = Object.assign({}, selections, {[el.dataset.attrType]: el.dataset.attrVal});
+                const fullySelected = attrTypes.every(t => testSel[t] != null);
+                let inStock = true;
+                if (fullySelected) { const fv = findVariant(testSel); inStock = !fv || fv.in_stock !== false; }
+                if (el.classList.contains('vpill')) {
+                    el.classList.toggle('vpill-active', isActive);
+                    el.classList.toggle('vpill-oos', !inStock);
+                } else if (el.classList.contains('vsize')) {
+                    el.classList.toggle('vsize-active', isActive);
+                    el.classList.toggle('vsize-oos', !inStock);
+                    el.disabled = !inStock;
+                } else if (el.classList.contains('vcolor')) {
+                    el.classList.toggle('vcolor-active', isActive);
+                    el.classList.toggle('vcolor-oos', !inStock);
+                    el.disabled = !inStock;
+                }
+            });
+            // Update label selected-value span text
+            container.querySelectorAll('[data-label-attr]').forEach(span => {
+                span.textContent = selections[span.dataset.labelAttr] || '';
+            });
+        }
+        const attrTypes = getAttrTypes();
+        const fullySelected = attrTypes.length > 0 && attrTypes.every(t => selections[t] != null);
+        applyVariant(fullySelected ? findVariant(selections) : null);
         updateURL();
     }
 

@@ -786,6 +786,8 @@
     }
     .tag-chip button { background:none; border:none; color:rgba(255,255,255,.75); cursor:pointer; font-size:.85rem; padding:0; line-height:1; transition:color .15s; }
     .tag-chip button:hover { color:white; }
+    .tag-chip-text { cursor:text; border-bottom:1px dashed rgba(255,255,255,.5); }
+    .tag-chip-text:hover { border-bottom-color:white; }
 
     .tag-input { border:none; outline:none; font-size:.88rem; min-width:80px; flex:1; background:transparent; color:var(--text-main); }
     .tags-hint { font-size:0.72rem; color:#94a3b8; margin-top:0.3rem; }
@@ -1221,7 +1223,33 @@ function tagChipHtml(gi, vi, val, isColor, colorHex) {
         const hex = colorHex || colorFor(val) || '#cbd5e1';
         swatch = `<span class="color-swatch" style="background:${hex};border:1px solid rgba(0,0,0,.15);"></span>`;
     }
-    return `<span class="tag-chip">${swatch}${escH(val)}<button type="button" onclick="removeValue(${gi},${vi})" tabindex="-1">×</button></span>`;
+    return `<span class="tag-chip">${swatch}<span class="tag-chip-text" onclick="startEditValue(${gi},${vi})" title="Klik për të riemërtuar">${escH(val)}</span><button type="button" onclick="removeValue(${gi},${vi})" tabindex="-1">×</button></span>`;
+}
+
+function startEditValue(gi, vi) {
+    const chips = document.querySelectorAll(`.opt-group[data-gi="${gi}"] .tag-chip`);
+    const chip = chips[vi];
+    if (!chip) return;
+    const currentVal = optionGroups[gi].values[vi].value;
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.value = currentVal;
+    input.style.cssText = 'border:1.5px solid #4a7c59;border-radius:5px;padding:2px 7px;font-size:0.82rem;font-weight:700;width:' + Math.max(60, currentVal.length * 9) + 'px;outline:none;color:#1a1f18;background:#fff;';
+    function commit() {
+        const newVal = input.value.trim();
+        if (newVal && newVal !== currentVal && !optionGroups[gi].values.some((v, i) => i !== vi && v.value.toLowerCase() === newVal.toLowerCase())) {
+            optionGroups[gi].values[vi].value = newVal;
+        }
+        renderAllGroups();
+    }
+    input.onblur = commit;
+    input.onkeydown = e => {
+        if (e.key === 'Enter') { e.preventDefault(); input.blur(); }
+        if (e.key === 'Escape') { input.onblur = null; renderAllGroups(); }
+    };
+    chip.replaceWith(input);
+    input.focus();
+    input.select();
 }
 
 function valueRowHtml(gi, vi, v, ogType, showPrice) {
