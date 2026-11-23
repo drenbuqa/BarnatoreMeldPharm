@@ -1460,7 +1460,10 @@
 // ── Variant selector ─────────────────────────────────────────────────────────
 (function() {
     const BASE_PRICE = {{ product.display_original_price | float }};
-    const BASE_DISCOUNT = {{ (product.discount_price | float) if product.discount_price else 'null' }};
+    // For BF/promo products, discount_price may be null in DB but display_price holds the discounted value
+    const BASE_DISCOUNT = {% if product.discount_price %}{{ product.discount_price | float }}{% elif product.auto_bf_discount or product.auto_oct_discount %}{{ product.display_price | float }}{% else %}null{% endif %};
+    // BF/promo multiplier applied to this product — used to price variants that have no manual discount
+    const AUTO_PROMO_MULT = {% if product.auto_bf_discount and product.bf_badge_pct %}{{ (1 - product.bf_badge_pct / 100) | round(4) }}{% else %}null{% endif %};
 
     let productVariants = [];
     try { productVariants = JSON.parse(document.getElementById('product-variants-json').textContent) || []; } catch(e) {}
@@ -1610,7 +1613,11 @@
     function applyVariant(v) {
         selectedVariantId = v ? v.id : null;
         const price    = v ? (v.price || BASE_PRICE) : BASE_PRICE;
-        const discount = v ? (v.discount_price || null) : BASE_DISCOUNT;
+        let discount   = v ? (v.discount_price || null) : BASE_DISCOUNT;
+        // Apply active promo to variant if it has no manual discount
+        if (v && !discount && AUTO_PROMO_MULT !== null && price > 0) {
+            discount = Math.round(price * AUTO_PROMO_MULT * 100) / 100;
+        }
         updatePriceDisplay(price, discount);
         if (window._spbSyncPrice) window._spbSyncPrice(price, discount);
 
