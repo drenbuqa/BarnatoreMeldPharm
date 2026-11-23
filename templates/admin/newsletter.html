@@ -734,7 +734,7 @@ function previewHTML(template, headline, intro, products, cta, fnote, bannerUrl,
 
     let prodsHtml = '';
     if (products.length) {
-        prodsHtml = '<div style="padding:16px 20px;">';
+        prodsHtml = '<div style="padding:16px 8px;">';
         prodsHtml += `<div style="font-family:'DM Sans',Arial,sans-serif;font-size:9px;font-weight:700;color:${ac};text-transform:uppercase;letter-spacing:1.2px;margin-bottom:3px;">Produktet e Zgjedhura</div>`;
         prodsHtml += `<div style="font-family:'Playfair Display',Georgia,'Times New Roman',serif;font-size:15px;font-weight:800;color:#1a1f18;margin-bottom:12px;line-height:1.2;">Ofertat e Limituara</div>`;
         if (template === 'list') {
@@ -752,17 +752,17 @@ function previewHTML(template, headline, intro, products, cta, fnote, bannerUrl,
                 </div>`;
             });
         } else {
-            prodsHtml += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">';
+            prodsHtml += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;">';
             products.forEach(p => {
                 prodsHtml += `<div style="background:#ffffff;border-radius:10px;border:1px solid #eef0ed;overflow:hidden;display:flex;flex-direction:column;">
-                    <div style="background-color:#ffffff;padding:6px 6px 3px;text-align:center;">
+                    <div style="position:relative;background-color:#ffffff;padding:6px 6px 3px;text-align:center;">
                         <img src="${p.img}" style="width:100%;height:110px;object-fit:contain;display:block;background-color:#ffffff;">
+                        ${p.pct ? `<span style="position:absolute;top:5px;left:5px;display:inline-block;background:#dc2626;color:#fff;font-family:'DM Sans',Arial,sans-serif;font-size:8px;font-weight:800;padding:2px 6px;border-radius:20px;line-height:1.3;">-${p.pct}%</span>` : ''}
                     </div>
-                    <div style="padding:7px 9px 9px;display:flex;flex-direction:column;flex:1;background-color:#ffffff;">
-                        ${p.pct ? `<div style="margin-bottom:4px;"><span style="display:inline-block;background:#dc2626;color:#fff;font-family:'DM Sans',Arial,sans-serif;font-size:8px;font-weight:800;padding:2px 6px;border-radius:20px;line-height:1.4;">-${p.pct}%</span></div>` : ''}
-                        <div style="font-family:'DM Sans',Arial,sans-serif;font-size:10px;font-weight:600;color:#1a1f18;margin-bottom:4px;line-height:1.4;overflow:hidden;">${p.name}</div>
-                        <div style="font-size:10px;margin-bottom:6px;">${p.priceHTML}</div>
-                        <div style="font-family:'DM Sans',Arial,sans-serif;font-size:10px;font-weight:700;color:${ac};letter-spacing:0.2px;margin-top:auto;">Shiko produktin →</div>
+                    <div style="padding:7px 9px 9px;background-color:#ffffff;">
+                        <div style="font-family:'DM Sans',Arial,sans-serif;font-size:10px;font-weight:600;color:#1a1f18;margin-bottom:4px;line-height:1.4;height:28px;overflow:hidden;">${p.name}</div>
+                        <div style="font-size:10px;margin-bottom:6px;height:18px;overflow:hidden;">${p.priceHTML}</div>
+                        <div style="font-family:'DM Sans',Arial,sans-serif;font-size:10px;font-weight:700;color:${ac};letter-spacing:0.2px;">Shiko produktin →</div>
                     </div>
                 </div>`;
             });

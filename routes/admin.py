@@ -1848,11 +1848,20 @@ def _build_newsletter_html(template, headline, intro_text, products, base_url,
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=DM+Sans:wght@400;500;700&display=swap');
+  @media (prefers-color-scheme: dark) {
+    .email-wrap { background-color: #ffffff !important; }
+    .product-card { background-color: #ffffff !important; border-color: #eef0ed !important; }
+    .product-img-bg { background-color: #ffffff !important; }
+    .product-name { color: #1a1f18 !important; }
+    .product-brand { color: #9aa095 !important; }
+    .product-price-orig { color: #9aa095 !important; }
+    .product-link { color: #4F5D4E !important; }
+  }
 </style>
 </head>
 <body style="margin:0;padding:0;background:#F7F3EE;font-family:'DM Sans',Arial,sans-serif;">
   {preheader_html}
-  <div style="max-width:620px;margin:24px auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+  <div class="email-wrap" style="max-width:620px;margin:24px auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
     {header}{banner_html}{hero}{urgency_html}{products_html}{cta}{footer}
   </div>
 </body></html>"""
@@ -1883,19 +1892,19 @@ def _product_card_grid(p, base_url, accent_color='#4F5D4E', width='45%'):
     badge_html = ''
     if disc and price:
         pct = round((price - disc) / price * 100)
-        badge_html = f'<div style="margin-bottom:5px;"><span style="{_EMAIL_SANS};display:inline-block;background:#dc2626;color:#fff;font-size:9px;font-weight:800;padding:2px 7px;border-radius:20px;line-height:1.4;">-{pct}%</span></div>'
+        badge_html = f'<span style="position:absolute;top:6px;left:6px;{_EMAIL_SANS};display:inline-block;background:#dc2626;color:#fff;font-size:9px;font-weight:800;padding:3px 7px;border-radius:20px;line-height:1.3;z-index:1;">-{pct}%</span>'
     return f"""
-    <td style="width:{width};padding:5px;vertical-align:top;">
-      <a href="{base_url}/product/{pid}" style="text-decoration:none;display:block;background:#ffffff;border-radius:10px;overflow:hidden;border:1px solid #eef0ed;">
-        <div style="background-color:#ffffff;padding:8px 8px 4px;text-align:center;">
+    <td style="width:{width};padding:3px;vertical-align:top;">
+      <a href="{base_url}/product/{pid}" class="product-card" style="text-decoration:none;display:block;background:#ffffff;border-radius:10px;overflow:hidden;border:1px solid #eef0ed;">
+        <div class="product-img-bg" style="position:relative;background-color:#ffffff;padding:8px 8px 4px;text-align:center;">
           <img src="{img}" alt="{name}" width="100%" style="display:block;height:150px;object-fit:contain;background-color:#ffffff;border:0;outline:none;">
-        </div>
-        <div style="padding:8px 10px 10px;background-color:#ffffff;">
           {badge_html}
-          {('<div style="' + _EMAIL_SANS + ';font-size:9px;font-weight:700;color:#9aa095;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:3px;overflow:hidden;">' + brand + '</div>') if brand else ''}
-          <div style="{_EMAIL_SANS};font-size:11px;font-weight:600;color:#1a1f18;margin-bottom:5px;line-height:1.4;overflow:hidden;">{name}</div>
-          <div style="margin-bottom:6px;">{_product_price_html(p, accent_color)}</div>
-          <div style="{_EMAIL_SANS};font-size:10px;font-weight:700;color:{accent_color};letter-spacing:0.2px;">Shiko produktin →</div>
+        </div>
+        <div class="product-card" style="padding:8px 10px 10px;background-color:#ffffff;">
+          <div class="product-brand" style="{_EMAIL_SANS};font-size:9px;font-weight:700;color:#9aa095;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:3px;height:13px;overflow:hidden;">{brand}</div>
+          <div class="product-name" style="{_EMAIL_SANS};font-size:11px;font-weight:600;color:#1a1f18;margin-bottom:5px;line-height:1.4;height:32px;overflow:hidden;">{name}</div>
+          <div style="margin-bottom:6px;height:20px;overflow:hidden;">{_product_price_html(p, accent_color)}</div>
+          <div class="product-link" style="{_EMAIL_SANS};font-size:10px;font-weight:700;color:{accent_color};letter-spacing:0.2px;">Shiko produktin →</div>
         </div>
       </a>
     </td>"""
@@ -1909,10 +1918,10 @@ def _products_grid(products, base_url, accent_color='#4F5D4E'):
         if len(pair) > 1:
             cells += _product_card_grid(pair[1], base_url, accent_color)
         else:
-            cells += '<td style="width:45%;padding:8px;"></td>'
+            cells += '<td style="width:45%;padding:3px;"></td>'
         rows += f'<tr>{cells}</tr>'
     return f"""
-    <div style="padding:20px 14px;">
+    <div style="padding:20px 8px;">
       <p style="margin:0 0 4px;font-family:'DM Sans',Arial,sans-serif;font-size:11px;font-weight:700;color:{accent_color};text-transform:uppercase;letter-spacing:1.2px;">Produktet e Zgjedhura</p>
       <h2 style="margin:0 0 14px;font-family:'Playfair Display',Georgia,'Times New Roman',serif;font-size:20px;font-weight:800;color:#1a1f18;line-height:1.2;">Ofertat e Limituara</h2>
       <table width="100%" cellpadding="0" cellspacing="0"><tbody>{rows}</tbody></table>
