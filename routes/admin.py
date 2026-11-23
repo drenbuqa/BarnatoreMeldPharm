@@ -1713,7 +1713,7 @@ def newsletter():
     from routes.promo import apply_bf_discounts as _apply_bf
     _raw_products = list(mongo.db.products.find(
         {'is_deleted': {'$ne': True}},
-        {'name': 1, 'brand': 1, 'price': 1, 'discount_price': 1, 'image_url': 1, 'category': 1, 'in_stock': 1}
+        {'name': 1, 'brand': 1, 'price': 1, 'discount_price': 1, 'image_url': 1, 'category': 1, 'in_stock': 1, 'sku': 1}
     ))
     # Apply BF in-memory promos so newsletter picker shows computed discounts
     all_products = _apply_bf(_raw_products)
@@ -1889,23 +1889,46 @@ def _product_card_grid(p, base_url, accent_color='#4F5D4E', width='45%'):
     pid = str(p['_id'])
     price = p.get('price', 0)
     disc = p.get('discount_price')
-    badge_html = ''
+    badge_cell = ''
     if disc and price:
         pct = round((price - disc) / price * 100)
-        badge_html = f'<span style="position:absolute;top:6px;left:6px;{_EMAIL_SANS};display:inline-block;background:#dc2626;color:#fff;font-size:9px;font-weight:800;padding:3px 7px;border-radius:20px;line-height:1.3;z-index:1;">-{pct}%</span>'
+        badge_cell = f'<span style="{_EMAIL_SANS};display:inline-block;background:#dc2626;color:#fff;font-size:9px;font-weight:800;padding:3px 7px;border-radius:20px;line-height:1.3;">-{pct}%</span>'
+    brand_html = f'<span style="{_EMAIL_SANS};font-size:9px;font-weight:700;color:#9aa095;text-transform:uppercase;letter-spacing:0.8px;">{brand}</span>' if brand else '&nbsp;'
     return f"""
     <td style="width:{width};padding:3px;vertical-align:top;">
-      <a href="{base_url}/product/{pid}" class="product-card" style="text-decoration:none;display:block;background:#ffffff;border-radius:10px;overflow:hidden;border:1px solid #eef0ed;">
-        <div class="product-img-bg" style="position:relative;background-color:#ffffff;padding:8px 8px 4px;text-align:center;">
-          <img src="{img}" alt="{name}" width="100%" style="display:block;height:150px;object-fit:contain;background-color:#ffffff;border:0;outline:none;">
-          {badge_html}
-        </div>
-        <div class="product-card" style="padding:8px 10px 10px;background-color:#ffffff;">
-          <div class="product-brand" style="{_EMAIL_SANS};font-size:9px;font-weight:700;color:#9aa095;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:3px;height:13px;overflow:hidden;">{brand}</div>
-          <div class="product-name" style="{_EMAIL_SANS};font-size:11px;font-weight:600;color:#1a1f18;margin-bottom:5px;line-height:1.4;height:32px;overflow:hidden;">{name}</div>
-          <div style="margin-bottom:6px;height:20px;overflow:hidden;">{_product_price_html(p, accent_color)}</div>
-          <div class="product-link" style="{_EMAIL_SANS};font-size:10px;font-weight:700;color:{accent_color};letter-spacing:0.2px;">Shiko produktin →</div>
-        </div>
+      <a href="{base_url}/product/{pid}" style="text-decoration:none;color:inherit;display:block;">
+        <table width="100%" cellpadding="0" cellspacing="0" class="product-card" style="background:#ffffff;border-radius:10px;overflow:hidden;border:1px solid #eef0ed;">
+          <tr>
+            <td height="24" style="padding:5px 8px 0;background-color:#ffffff;vertical-align:middle;">
+              {badge_cell if badge_cell else '&nbsp;'}
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:0 6px 4px;background-color:#ffffff;text-align:center;" class="product-img-bg">
+              <img src="{img}" alt="{name}" width="100%" style="display:block;height:130px;object-fit:contain;background-color:#ffffff;border:0;outline:none;">
+            </td>
+          </tr>
+          <tr>
+            <td height="14" style="padding:7px 10px 0;background-color:#ffffff;vertical-align:top;" class="product-card">
+              {brand_html}
+            </td>
+          </tr>
+          <tr>
+            <td height="46" style="padding:3px 10px 0;background-color:#ffffff;vertical-align:top;" class="product-card">
+              <span style="{_EMAIL_SANS};font-size:11px;font-weight:600;color:#1a1f18;line-height:1.4;" class="product-name">{name}</span>
+            </td>
+          </tr>
+          <tr>
+            <td height="20" style="padding:4px 10px 0;background-color:#ffffff;vertical-align:top;" class="product-card">
+              {_product_price_html(p, accent_color)}
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:6px 10px 10px;background-color:#ffffff;" class="product-card">
+              <span style="{_EMAIL_SANS};font-size:10px;font-weight:700;color:{accent_color};letter-spacing:0.2px;" class="product-link">Shiko produktin &rarr;</span>
+            </td>
+          </tr>
+        </table>
       </a>
     </td>"""
 
