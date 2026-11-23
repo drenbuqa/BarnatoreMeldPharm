@@ -1848,15 +1848,15 @@ def _build_newsletter_html(template, headline, intro_text, products, base_url,
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=DM+Sans:wght@400;500;700&display=swap');
-  @media (prefers-color-scheme: dark) {
-    .email-wrap { background-color: #ffffff !important; }
-    .product-card { background-color: #ffffff !important; border-color: #eef0ed !important; }
-    .product-img-bg { background-color: #ffffff !important; }
-    .product-name { color: #1a1f18 !important; }
-    .product-brand { color: #9aa095 !important; }
-    .product-price-orig { color: #9aa095 !important; }
-    .product-link { color: #4F5D4E !important; }
-  }
+  @media (prefers-color-scheme: dark) {{
+    .email-wrap {{ background-color: #ffffff !important; }}
+    .product-card {{ background-color: #ffffff !important; border-color: #eef0ed !important; }}
+    .product-img-bg {{ background-color: #ffffff !important; }}
+    .product-name {{ color: #1a1f18 !important; }}
+    .product-brand {{ color: #9aa095 !important; }}
+    .product-price-orig {{ color: #9aa095 !important; }}
+    .product-link {{ color: #4F5D4E !important; }}
+  }}
 </style>
 </head>
 <body style="margin:0;padding:0;background:#F7F3EE;font-family:'DM Sans',Arial,sans-serif;">
