@@ -1874,7 +1874,7 @@ def _product_card_grid(p, base_url, accent_color='#4F5D4E', width='45%'):
           {('<div style="' + _EMAIL_SANS + ';font-size:9px;font-weight:700;color:#9aa095;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:4px;height:14px;overflow:hidden;">' + brand + '</div>') if brand else '<div style="height:18px;"></div>'}
           <div style="{_EMAIL_SANS};font-size:12px;font-weight:600;color:#1a1f18;margin-bottom:7px;line-height:1.45;height:34px;overflow:hidden;">{name}</div>
           <div style="margin-bottom:9px;height:22px;overflow:hidden;">{_product_price_html(p, accent_color)}</div>
-          <div style="background:{accent_color};color:#fff;text-align:center;padding:8px;border-radius:8px;{_EMAIL_SANS};font-size:11px;font-weight:700;letter-spacing:0.3px;">Shiko Produktin →</div>
+          <div style="{_EMAIL_SANS};font-size:11px;font-weight:700;color:{accent_color};letter-spacing:0.2px;">Shiko produktin →</div>
         </div>
       </a>
     </td>"""
@@ -1916,7 +1916,7 @@ def _products_list(products, base_url, accent_color='#4F5D4E'):
                 {('<div style="' + _EMAIL_SANS + ';font-size:9px;color:#9aa095;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:3px;">' + brand + '</div>') if brand else ''}
                 <div style="{_EMAIL_SANS};font-size:13px;font-weight:500;color:#1a1f18;margin:2px 0 6px;line-height:1.4;">{name}</div>
                 <div style="margin-bottom:8px;">{_product_price_html(p, accent_color)}</div>
-                <a href="{base_url}/product/{pid}" style="{_EMAIL_SANS};font-size:11px;font-weight:700;color:{accent_color};text-decoration:none;letter-spacing:0.2px;">Shiko Produktin →</a>
+                <a href="{base_url}/product/{pid}" style="{_EMAIL_SANS};font-size:11px;font-weight:700;color:{accent_color};text-decoration:none;letter-spacing:0.2px;">Shiko produktin →</a>
               </td>
             </tr></table>
           </td>
