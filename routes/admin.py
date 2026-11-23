@@ -1616,6 +1616,12 @@ def newsletter_send_test():
         except Exception:
             pass
 
+    from routes.promo import apply_bf_discounts as _apply_bf_test
+    selected_products = _apply_bf_test(selected_products)
+    for _p in selected_products:
+        if _p.get('auto_bf_discount') and not _p.get('discount_price'):
+            _p['discount_price'] = _p.get('display_price')
+
     html_body  = _build_newsletter_html(template, headline, intro_text, selected_products, SITE_BASE_URL,
                                         accent_color=accent_color, cta_text=cta_text, footer_note=footer_note,
                                         banner_url=banner_url, preheader=preheader, urgency_line=urgency_line)
@@ -1668,6 +1674,12 @@ def newsletter():
                 except Exception:
                     pass
 
+            from routes.promo import apply_bf_discounts as _apply_bf_send
+            selected_products = _apply_bf_send(selected_products)
+            for _p in selected_products:
+                if _p.get('auto_bf_discount') and not _p.get('discount_price'):
+                    _p['discount_price'] = _p.get('display_price')
+
             text_body = f"{headline}\n\n{intro_text}\n\nVisitoni: {SITE_BASE_URL}"
 
             subscribers = User.get_newsletter_subscribers()
@@ -1698,10 +1710,18 @@ def newsletter():
     pending_orders_count = mongo.db.orders.count_documents({'status': 'Pending'})
 
     # All products for picker (show offers first, exclude deleted)
-    all_products = list(mongo.db.products.find(
+    from routes.promo import apply_bf_discounts as _apply_bf
+    _raw_products = list(mongo.db.products.find(
         {'is_deleted': {'$ne': True}},
         {'name': 1, 'brand': 1, 'price': 1, 'discount_price': 1, 'image_url': 1, 'category': 1, 'in_stock': 1}
-    ).sort([('discount_price', -1)]))
+    ))
+    # Apply BF in-memory promos so newsletter picker shows computed discounts
+    all_products = _apply_bf(_raw_products)
+    # Backfill discount_price from BF promo so sorting and filtering work
+    for _p in all_products:
+        if _p.get('auto_bf_discount') and not _p.get('discount_price'):
+            _p['discount_price'] = _p.get('display_price')
+    all_products.sort(key=lambda _p: (_p.get('discount_price') is None, -(_p.get('discount_price') or 0)))
 
     # Build smart defaults for the newsletter form
     offer_products = [p for p in all_products if p.get('discount_price')]
