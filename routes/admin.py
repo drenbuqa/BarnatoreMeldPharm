@@ -1599,6 +1599,9 @@ def newsletter_send_test():
     accent_color = request.form.get('accent_color', '#4F5D4E').strip() or '#4F5D4E'
     cta_text     = request.form.get('cta_text', 'Shiko Të Gjitha Produktet').strip() or 'Shiko Të Gjitha Produktet'
     footer_note  = request.form.get('footer_note', '').strip()
+    banner_url   = request.form.get('banner_url', '').strip()
+    preheader    = request.form.get('preheader', '').strip()
+    urgency_line = request.form.get('urgency_line', '').strip()
     test_email   = request.form.get('test_email', '').strip()
 
     if not test_email:
@@ -1614,7 +1617,8 @@ def newsletter_send_test():
             pass
 
     html_body  = _build_newsletter_html(template, headline, intro_text, selected_products, SITE_BASE_URL,
-                                        accent_color=accent_color, cta_text=cta_text, footer_note=footer_note)
+                                        accent_color=accent_color, cta_text=cta_text, footer_note=footer_note,
+                                        banner_url=banner_url, preheader=preheader, urgency_line=urgency_line)
     text_body  = f"[TEST] {headline}\n\n{intro_text}\n\nVisitoni: {SITE_BASE_URL}"
     test_subj  = f"[TEST] {subject}"
 
@@ -1647,6 +1651,9 @@ def newsletter():
         accent_color = request.form.get('accent_color', '#4F5D4E').strip() or '#4F5D4E'
         cta_text     = request.form.get('cta_text', 'Shiko Të Gjitha Produktet').strip() or 'Shiko Të Gjitha Produktet'
         footer_note  = request.form.get('footer_note', '').strip()
+        banner_url   = request.form.get('banner_url', '').strip()
+        preheader    = request.form.get('preheader', '').strip()
+        urgency_line = request.form.get('urgency_line', '').strip()
 
         if not subject:
             flash('Titulli (subject) është i detyrueshëm.', 'danger')
@@ -1661,13 +1668,20 @@ def newsletter():
                 except Exception:
                     pass
 
-            html_body = _build_newsletter_html(template, headline, intro_text, selected_products, SITE_BASE_URL, accent_color=accent_color, cta_text=cta_text, footer_note=footer_note)
             text_body = f"{headline}\n\n{intro_text}\n\nVisitoni: {SITE_BASE_URL}"
 
             subscribers = User.get_newsletter_subscribers()
             failed = 0
             cfg = _get_smtp_config()
             for sub in subscribers:
+                token = sub.get('unsub_token', '')
+                unsub_url = f"{SITE_BASE_URL}/unsubscribe/{token}" if token else ''
+                html_body = _build_newsletter_html(
+                    template, headline, intro_text, selected_products, SITE_BASE_URL,
+                    accent_color=accent_color, cta_text=cta_text, footer_note=footer_note,
+                    banner_url=banner_url, preheader=preheader, urgency_line=urgency_line,
+                    unsub_url=unsub_url
+                )
                 ok, msg = _send_simple_email(cfg, sub['email'], subject, text_body, html_body)
                 if ok:
                     sent_count += 1
@@ -1735,19 +1749,29 @@ def newsletter():
 
 
 def _build_newsletter_html(template, headline, intro_text, products, base_url,
-                           accent_color='#4F5D4E', cta_text='Shiko Të Gjitha Produktet', footer_note=''):
+                           accent_color='#4F5D4E', cta_text='Shiko Të Gjitha Produktet',
+                           footer_note='', banner_url='', preheader='', urgency_line='',
+                           unsub_url=''):
     """Generate a beautiful inline-styled HTML email."""
     _sans  = "font-family:'DM Sans',Arial,sans-serif"
     _serif = "font-family:'Playfair Display',Georgia,'Times New Roman',serif"
 
+    preheader_html = ""
+    if preheader:
+        preheader_html = f'<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;">{preheader}&nbsp;&#847;&nbsp;&#847;&nbsp;&#847;&nbsp;&#847;&nbsp;&#847;&nbsp;&#847;&nbsp;&#847;&nbsp;&#847;&nbsp;&#847;&nbsp;&#847;&nbsp;&#847;&nbsp;&#847;&nbsp;&#847;&nbsp;&#847;&nbsp;&#847;&nbsp;&#847;&nbsp;&#847;&nbsp;&#847;&nbsp;&#847;&nbsp;&#847;&nbsp;&#847;&nbsp;&#847;&nbsp;&#847;&nbsp;&#847;&nbsp;&#847;&nbsp;&#847;&nbsp;&#847;&nbsp;&#847;&nbsp;&#847;&nbsp;&#847;&nbsp;&#847;&nbsp;&#847;&nbsp;&#847;&nbsp;&#847;&nbsp;&#847;&nbsp;&#847;</div>'
+
     header = f"""
     <div style="background:{accent_color};height:5px;"></div>
     <div style="background:#ffffff;padding:22px 40px;text-align:center;border-bottom:1px solid #eef0ed;">
-      <img src="https://images.barnatoremeldpharm.com/static/logo-email.png"
-           alt="Meld Pharm" width="260"
-           style="display:inline-block;max-width:260px;height:auto;">
+      <img src="https://images.barnatoremeldpharm.com/static/logo-horizontal.png"
+           alt="Barnatore Meld Pharm" width="220"
+           style="display:inline-block;max-width:220px;height:auto;">
     </div>
     """
+
+    banner_html = ""
+    if banner_url:
+        banner_html = f'<div style="border-bottom:1px solid #eef0ed;"><img src="{banner_url}" alt="" width="100%" style="display:block;width:100%;height:auto;max-height:200px;object-fit:cover;"></div>'
 
     hero = ""
     if headline or intro_text:
@@ -1755,6 +1779,14 @@ def _build_newsletter_html(template, headline, intro_text, products, base_url,
         <div style="padding:36px 44px 28px;text-align:center;border-bottom:1px solid #eef0ed;">
           {('<h1 style="margin:0 0 14px;' + _serif + ';font-size:28px;font-weight:800;color:#1a1f18;line-height:1.2;letter-spacing:-0.3px;">' + headline + '</h1>') if headline else ''}
           {('<p style="margin:0;' + _sans + ';font-size:15px;font-weight:400;color:#6b7a6e;line-height:1.8;max-width:440px;margin-left:auto;margin-right:auto;">' + intro_text + '</p>') if intro_text else ''}
+        </div>
+        """
+
+    urgency_html = ""
+    if urgency_line:
+        urgency_html = f"""
+        <div style="margin:16px 28px 0;background:#fff8f0;border:1.5px solid #fed7aa;border-radius:10px;padding:12px 18px;text-align:center;">
+          <span style="{_sans};font-size:13px;font-weight:700;color:#c2410c;">⏰ {urgency_line}</span>
         </div>
         """
 
@@ -1774,11 +1806,15 @@ def _build_newsletter_html(template, headline, intro_text, products, base_url,
     """
 
     footer_extra = ('<p style="margin:8px 0 0;' + _sans + ';font-size:12px;color:#6b7280;font-style:italic;">' + footer_note + '</p>') if footer_note else ''
+    unsub_html = ''
+    if unsub_url:
+        unsub_html = f'<p style="margin:10px 0 0;{_sans};font-size:10px;color:#b0b8b0;">Nuk dëshironi të merrni buletinin? <a href="{unsub_url}" style="color:#9aa095;text-decoration:underline;">Çabonohuni këtu</a></p>'
     footer = f"""
     <div style="background:#f8faf7;padding:22px 40px;text-align:center;border-top:1px solid #e8ebe6;">
       <p style="margin:0 0 4px;font-family:'DM Sans',Arial,sans-serif;font-size:11px;font-weight:500;color:#9aa095;letter-spacing:0.2px;">Barnatore Meld Pharm · 72 Eqrem Çabej, Prishtinë 10000</p>
       <p style="margin:0;font-family:'DM Sans',Arial,sans-serif;font-size:11px;color:#9aa095;">+383 45 590 455 · <a href="{base_url}" style="color:{accent_color};text-decoration:none;">{base_url.replace('https://','')}</a></p>
       {footer_extra}
+      {unsub_html}
     </div>
     """
 
@@ -1792,8 +1828,9 @@ def _build_newsletter_html(template, headline, intro_text, products, base_url,
 </style>
 </head>
 <body style="margin:0;padding:0;background:#F7F3EE;font-family:'DM Sans',Arial,sans-serif;">
+  {preheader_html}
   <div style="max-width:620px;margin:24px auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
-    {header}{hero}{products_html}{cta}{footer}
+    {header}{banner_html}{hero}{urgency_html}{products_html}{cta}{footer}
   </div>
 </body></html>"""
 
@@ -1820,15 +1857,24 @@ def _product_card_grid(p, base_url, accent_color='#4F5D4E', width='45%'):
     name = p.get('name', '')
     brand = p.get('brand', '')
     pid = str(p['_id'])
+    price = p.get('price', 0)
+    disc = p.get('discount_price')
+    badge_html = ''
+    if disc and price:
+        pct = round((price - disc) / price * 100)
+        badge_html = f'<div style="position:absolute;top:8px;left:8px;background:#dc2626;color:#fff;{_EMAIL_SANS};font-size:9px;font-weight:800;padding:3px 7px;border-radius:20px;line-height:1;">-{pct}%</div>'
     return f"""
     <td style="width:{width};padding:8px;vertical-align:top;">
       <a href="{base_url}/product/{pid}" style="text-decoration:none;display:block;background:#fff;border-radius:12px;overflow:hidden;border:1px solid #eef0ed;">
-        <img src="{img}" alt="{name}" width="100%" style="display:block;height:180px;object-fit:contain;background:#fff;padding:10px;box-sizing:border-box;">
+        <div style="position:relative;">
+          <img src="{img}" alt="{name}" width="100%" style="display:block;height:180px;object-fit:contain;background:#fafafa;padding:10px;box-sizing:border-box;">
+          {badge_html}
+        </div>
         <div style="padding:12px 14px 14px;">
           {('<div style="' + _EMAIL_SANS + ';font-size:9px;font-weight:700;color:#9aa095;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:4px;height:14px;overflow:hidden;">' + brand + '</div>') if brand else '<div style="height:18px;"></div>'}
-          <div style="{_EMAIL_SANS};font-size:12px;font-weight:500;color:#1a1f18;margin-bottom:7px;line-height:1.45;height:34px;overflow:hidden;">{name}</div>
+          <div style="{_EMAIL_SANS};font-size:12px;font-weight:600;color:#1a1f18;margin-bottom:7px;line-height:1.45;height:34px;overflow:hidden;">{name}</div>
           <div style="margin-bottom:9px;height:22px;overflow:hidden;">{_product_price_html(p, accent_color)}</div>
-          <div style="background:{accent_color};color:#fff;text-align:center;padding:7px;border-radius:7px;{_EMAIL_SANS};font-size:10px;font-weight:700;letter-spacing:0.3px;">Shiko Produktin →</div>
+          <div style="background:{accent_color};color:#fff;text-align:center;padding:8px;border-radius:8px;{_EMAIL_SANS};font-size:11px;font-weight:700;letter-spacing:0.3px;">Shiko Produktin →</div>
         </div>
       </a>
     </td>"""

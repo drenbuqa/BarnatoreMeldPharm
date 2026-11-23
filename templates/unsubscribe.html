@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Çabonim — Barnatore Meld Pharm{% endblock %}
+{% block content %}
+<div style="min-height:60vh;display:flex;align-items:center;justify-content:center;padding:3rem 1rem;">
+  <div style="max-width:440px;width:100%;text-align:center;">
+    {% if success %}
+    <div style="width:64px;height:64px;border-radius:50%;background:#eef5ee;display:flex;align-items:center;justify-content:center;margin:0 auto 1.5rem;font-size:1.8rem;">✅</div>
+    <h1 style="font-size:1.5rem;font-weight:800;color:#1a1f18;margin:0 0 .75rem;">U çabonuat me sukses</h1>
+    <p style="color:#6b7280;line-height:1.7;margin:0 0 2rem;">
+      Emaili juaj u hoq nga lista e buletinit tonë. Nuk do të merrni më emaile nga Barnatore Meld Pharm.
+    </p>
+    <p style="color:#9aa095;font-size:.85rem;margin:0 0 2rem;">
+      Nëse ndryshoni mendim, mund të abonoheni përsëri nga faqja jonë.
+    </p>
+    {% else %}
+    <div style="width:64px;height:64px;border-radius:50%;background:#fef2f2;display:flex;align-items:center;justify-content:center;margin:0 auto 1.5rem;font-size:1.8rem;">❌</div>
+    <h1 style="font-size:1.5rem;font-weight:800;color:#1a1f18;margin:0 0 .75rem;">Linku është i pavlefshëm</h1>
+    <p style="color:#6b7280;line-height:1.7;margin:0 0 2rem;">
+      Ky link çabonimi është i pavlefshëm ose ka skaduar. Nëse keni probleme, na kontaktoni.
+    </p>
+    {% endif %}
+    <a href="{{ url_for('main.index') }}"
+       style="display:inline-block;background:#4F5D4E;color:#fff;text-decoration:none;padding:.85rem 2rem;border-radius:10px;font-weight:700;font-size:.95rem;">
+      Kthehu në Faqen Kryesore
+    </a>
+  </div>
+</div>
+{% endblock %}

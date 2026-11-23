@@ -125,7 +125,7 @@ def _order_items_html(items):
     return f'<table cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:collapse;">{rows}</table>'
 
 
-LOGO_URL = "https://images.barnatoremeldpharm.com/static/ChatGPT_Image_Sep_1_2026_at_07_06_44_PM_.jpg"
+LOGO_URL = "https://images.barnatoremeldpharm.com/static/logo-horizontal.png"
 
 def _email_html(title, body_html, cfg):
     """Branded email shell with logo header, consistent footer."""

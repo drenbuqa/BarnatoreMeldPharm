@@ -144,17 +144,29 @@ class User(UserMixin):
 
     @staticmethod
     def get_newsletter_subscribers():
-        """Return list of (email, username) for all subscribed users."""
+        """Return list of {email, username, unsub_token} for all subscribed users."""
+        import secrets as _sec
         users = list(mongo.db.users.find(
             {"newsletter_subscribed": True},
-            {"email": 1, "username": 1}
+            {"email": 1, "username": 1, "unsub_token": 1}
         ))
-        # Also include guest subscribers from the separate collection
+        for u in users:
+            if not u.get("unsub_token"):
+                token = _sec.token_urlsafe(32)
+                mongo.db.users.update_one({"_id": u["_id"]}, {"$set": {"unsub_token": token}})
+                u["unsub_token"] = token
+
         guests = list(mongo.db.newsletter_subscribers.find(
-            {}, {"email": 1}
+            {}, {"email": 1, "unsub_token": 1}
         ))
+        for g in guests:
+            if not g.get("unsub_token"):
+                token = _sec.token_urlsafe(32)
+                mongo.db.newsletter_subscribers.update_one({"_id": g["_id"]}, {"$set": {"unsub_token": token}})
+                g["unsub_token"] = token
+
         seen = {u["email"] for u in users}
         for g in guests:
             if g["email"] not in seen:
-                users.append({"email": g["email"], "username": g["email"].split("@")[0]})
+                users.append({"email": g["email"], "username": g["email"].split("@")[0], "unsub_token": g.get("unsub_token", "")})
         return users

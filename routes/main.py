@@ -26,7 +26,7 @@ load_dotenv()
 
 main = Blueprint('main', __name__)
 
-_HOME_CACHE_TTL_SECONDS = int(os.getenv('HOME_CACHE_TTL_SECONDS', '60'))
+_HOME_CACHE_TTL_SECONDS = int(os.getenv('HOME_CACHE_TTL_SECONDS', '300'))
 _HOME_CACHE: dict[str, object] = {
     'expires_at': 0.0,
     'payload': None,
@@ -279,7 +279,7 @@ def _get_home_payload():
     }
     _HOME_CACHE['payload'] = payload
     # Cache expires at the next full minute, so offer start times take effect within 60s
-    _HOME_CACHE['expires_at'] = now + min(max(_HOME_CACHE_TTL_SECONDS, 1), 60)
+    _HOME_CACHE['expires_at'] = now + min(max(_HOME_CACHE_TTL_SECONDS, 1), 300)
     return payload
 
 
@@ -1803,6 +1803,20 @@ def profile_newsletter():
                 pass
         _threading.Thread(target=_send, daemon=True).start()
     return redirect(url_for('main.profile'))
+
+
+@main.route('/unsubscribe/<token>')
+def unsubscribe(token):
+    from models.db import mongo
+    user = mongo.db.users.find_one({"unsub_token": token})
+    if user:
+        mongo.db.users.update_one({"_id": user["_id"]}, {"$set": {"newsletter_subscribed": False}})
+        return render_template('unsubscribe.html', success=True)
+    guest = mongo.db.newsletter_subscribers.find_one({"unsub_token": token})
+    if guest:
+        mongo.db.newsletter_subscribers.delete_one({"_id": guest["_id"]})
+        return render_template('unsubscribe.html', success=True)
+    return render_template('unsubscribe.html', success=False)
 
 
 @main.route('/privacy')
