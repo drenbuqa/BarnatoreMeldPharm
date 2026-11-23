@@ -1808,7 +1808,7 @@ def _build_newsletter_html(template, headline, intro_text, products, base_url,
     footer_extra = ('<p style="margin:8px 0 0;' + _sans + ';font-size:12px;color:#6b7280;font-style:italic;">' + footer_note + '</p>') if footer_note else ''
     unsub_html = ''
     if unsub_url:
-        unsub_html = f'<p style="margin:10px 0 0;{_sans};font-size:10px;color:#b0b8b0;">Nuk dëshironi të merrni buletinin? <a href="{unsub_url}" style="color:#9aa095;text-decoration:underline;">Çabonohuni këtu</a></p>'
+        unsub_html = f'<p style="margin:14px 0 0;{_sans};font-size:9px;color:#cdd5cb;letter-spacing:0.1px;">Ju keni marrë këtë email sepse jeni abonuar. <a href="{unsub_url}" style="color:#cdd5cb;text-decoration:none;border-bottom:1px dotted #cdd5cb;">Çabonohuni</a></p>'
     footer = f"""
     <div style="background:#f8faf7;padding:22px 40px;text-align:center;border-top:1px solid #e8ebe6;">
       <p style="margin:0 0 4px;font-family:'DM Sans',Arial,sans-serif;font-size:11px;font-weight:500;color:#9aa095;letter-spacing:0.2px;">Barnatore Meld Pharm · 72 Eqrem Çabej, Prishtinë 10000</p>
