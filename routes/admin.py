@@ -1889,38 +1889,40 @@ def _product_card_grid(p, base_url, accent_color='#4F5D4E', width='45%'):
     pid = str(p['_id'])
     price = p.get('price', 0)
     disc = p.get('discount_price')
-    badge_cell = ''
+    badge_html = ''
     if disc and price:
         pct = round((price - disc) / price * 100)
-        badge_cell = f'<span style="{_EMAIL_SANS};display:inline-block;background:#dc2626;color:#fff;font-size:9px;font-weight:800;padding:3px 7px;border-radius:20px;line-height:1.3;">-{pct}%</span>'
+        badge_html = f'<span style="{_EMAIL_SANS};display:inline-block;background:#dc2626;color:#fff;font-size:9px;font-weight:800;padding:3px 7px;border-radius:20px;line-height:1.3;">-{pct}%</span>'
     brand_html = f'<span style="{_EMAIL_SANS};font-size:9px;font-weight:700;color:#9aa095;text-transform:uppercase;letter-spacing:0.8px;">{brand}</span>' if brand else '&nbsp;'
     return f"""
     <td style="width:{width};padding:3px;vertical-align:top;">
       <a href="{base_url}/product/{pid}" style="text-decoration:none;color:inherit;display:block;">
         <table width="100%" cellpadding="0" cellspacing="0" class="product-card" style="background:#ffffff;border-radius:10px;overflow:hidden;border:1px solid #eef0ed;">
           <tr>
-            <td height="24" style="padding:5px 8px 0;background-color:#ffffff;vertical-align:middle;">
-              {badge_cell if badge_cell else '&nbsp;'}
-            </td>
-          </tr>
-          <tr>
-            <td style="padding:0 6px 4px;background-color:#ffffff;text-align:center;" class="product-img-bg">
+            <td style="padding:6px 6px 4px;background-color:#ffffff;text-align:center;" class="product-img-bg">
               <img src="{img}" alt="{name}" width="100%" style="display:block;height:130px;object-fit:contain;background-color:#ffffff;border:0;outline:none;">
             </td>
           </tr>
           <tr>
-            <td height="14" style="padding:7px 10px 0;background-color:#ffffff;vertical-align:top;" class="product-card">
-              {brand_html}
+            <td style="padding:5px 10px 0;background-color:#ffffff;vertical-align:middle;" class="product-card">
+              <div style="height:22px;overflow:hidden;">{badge_html if badge_html else '&nbsp;'}</div>
             </td>
           </tr>
           <tr>
-            <td height="46" style="padding:3px 10px 0;background-color:#ffffff;vertical-align:top;" class="product-card">
-              <span style="{_EMAIL_SANS};font-size:11px;font-weight:600;color:#1a1f18;line-height:1.4;" class="product-name">{name}</span>
+            <td style="padding:3px 10px 0;background-color:#ffffff;vertical-align:top;" class="product-card">
+              <div style="height:14px;overflow:hidden;">{brand_html}</div>
             </td>
           </tr>
           <tr>
-            <td height="20" style="padding:4px 10px 0;background-color:#ffffff;vertical-align:top;" class="product-card">
-              {_product_price_html(p, accent_color)}
+            <td style="padding:3px 10px 0;background-color:#ffffff;vertical-align:top;" class="product-card">
+              <div style="height:47px;overflow:hidden;">
+                <span style="{_EMAIL_SANS};font-size:11px;font-weight:600;color:#1a1f18;line-height:1.4;" class="product-name">{name}</span>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:4px 10px 0;background-color:#ffffff;vertical-align:top;" class="product-card">
+              <div style="height:20px;overflow:hidden;">{_product_price_html(p, accent_color)}</div>
             </td>
           </tr>
           <tr>

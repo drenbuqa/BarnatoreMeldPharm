@@ -764,15 +764,13 @@ function previewHTML(template, headline, intro, products, cta, fnote, bannerUrl,
             prodsHtml += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;">';
             products.forEach(p => {
                 prodsHtml += `<div style="background:#ffffff;border-radius:10px;border:1px solid #eef0ed;overflow:hidden;">
-                    <div style="padding:5px 8px 0;background:#ffffff;min-height:24px;display:flex;align-items:center;">
-                        ${p.pct ? `<span style="display:inline-block;background:#dc2626;color:#fff;font-family:'DM Sans',Arial,sans-serif;font-size:8px;font-weight:800;padding:2px 6px;border-radius:20px;line-height:1.3;">-${p.pct}%</span>` : '&nbsp;'}
-                    </div>
-                    <div style="padding:0 6px 4px;background:#ffffff;text-align:center;">
+                    <div style="padding:6px 6px 4px;background:#ffffff;text-align:center;">
                         <img src="${p.img}" style="width:100%;height:110px;object-fit:contain;display:block;background-color:#ffffff;">
                     </div>
                     <div style="padding:7px 9px 9px;background:#ffffff;">
-                        <div style="font-family:'DM Sans',Arial,sans-serif;font-size:9px;font-weight:700;color:#9aa095;text-transform:uppercase;letter-spacing:0.8px;height:14px;overflow:hidden;">${p.brand || '&nbsp;'}</div>
-                        <div style="font-family:'DM Sans',Arial,sans-serif;font-size:10px;font-weight:600;color:#1a1f18;line-height:1.4;height:42px;overflow:hidden;">${p.name}</div>
+                        <div style="height:22px;overflow:hidden;display:flex;align-items:center;">${p.pct ? `<span style="display:inline-block;background:#dc2626;color:#fff;font-family:'DM Sans',Arial,sans-serif;font-size:8px;font-weight:800;padding:2px 6px;border-radius:20px;line-height:1.3;">-${p.pct}%</span>` : '&nbsp;'}</div>
+                        <div style="height:14px;overflow:hidden;font-family:'DM Sans',Arial,sans-serif;font-size:9px;font-weight:700;color:#9aa095;text-transform:uppercase;letter-spacing:0.8px;">${p.brand || '&nbsp;'}</div>
+                        <div style="height:47px;overflow:hidden;font-family:'DM Sans',Arial,sans-serif;font-size:10px;font-weight:600;color:#1a1f18;line-height:1.4;">${p.name}</div>
                         <div style="font-size:10px;margin-bottom:6px;height:18px;overflow:hidden;">${p.priceHTML}</div>
                         <div style="font-family:'DM Sans',Arial,sans-serif;font-size:10px;font-weight:700;color:${ac};letter-spacing:0.2px;">Shiko produktin →</div>
                     </div>
