@@ -1771,7 +1771,7 @@ def _build_newsletter_html(template, headline, intro_text, products, base_url,
 
     banner_html = ""
     if banner_url:
-        banner_html = f'<div style="border-bottom:1px solid #eef0ed;"><img src="{banner_url}" alt="" width="100%" style="display:block;width:100%;height:auto;max-height:200px;object-fit:cover;"></div>'
+        banner_html = f'<div style="border-bottom:1px solid #eef0ed;"><img src="{banner_url}" alt="" width="100%" style="display:block;width:100%;height:auto;"></div>'
 
     hero = ""
     if headline or intro_text:

@@ -717,7 +717,7 @@ function previewHTML(template, headline, intro, products, cta, fnote, bannerUrl,
     <div style="background:#ffffff;padding:18px 32px;text-align:center;border-bottom:1px solid #eef0ed;">
         <img src="https://images.barnatoremeldpharm.com/static/logo-horizontal.png" alt="Barnatore Meld Pharm" style="height:52px;width:auto;display:inline-block;">
     </div>
-    ${bannerUrl ? `<div style="border-bottom:1px solid #eef0ed;"><img src="${bannerUrl}" style="display:block;width:100%;max-height:200px;object-fit:cover;"></div>` : ''}`;
+    ${bannerUrl ? `<div style="border-bottom:1px solid #eef0ed;"><img src="${bannerUrl}" style="display:block;width:100%;height:auto;"></div>` : ''}`;
 
     let hero = '';
     if (headline || intro) {
