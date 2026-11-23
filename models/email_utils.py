@@ -454,7 +454,8 @@ def _promo_blocks_html(base, offer_products=None, cat_images=None):
     """Build the shared offers + categories HTML block used in welcome emails."""
     from models.image_utils import cld
 
-    # Hardcoded category images (same as home page)
+    _EMAIL_SANS = "font-family:'DM Sans',Arial,sans-serif"
+
     _CAT_META = [
         ('Dermokozmetikë',        'Kujdes profesional për lëkurën',   f'{base}/products?category=Dermokozmetik%C3%AB',               '#eef5ee', '#2d5a2d',
          'https://images.barnatoremeldpharm.com/static/ChatGPT_Image_Jun_24_2026_at_11_23_35_PM.jpg'),
@@ -471,27 +472,78 @@ def _promo_blocks_html(base, offer_products=None, cat_images=None):
         cols = ''
         for p in offer_products[:3]:
             pid   = str(p['_id'])
-            pname = p.get('name', '')[:40]
-            orig  = p.get('price') or 0
-            disc  = p.get('discount_price') or orig
+            name  = p.get('name', '')
+            brand = p.get('brand', '')
+            orig  = float(p.get('price') or 0)
+            disc  = float(p.get('discount_price') or orig)
             img   = cld(p.get('image_url', ''), 300)
             pct   = int(round((orig - disc) / orig * 100)) if orig > disc else 0
-            pct_badge = f'<div style="display:inline-block;background:#dc2626;color:#fff;font-size:9px;font-weight:800;padding:2px 6px;border-radius:20px;margin-bottom:6px;">-{pct}%</div>' if pct else ''
-            # contain keeps full product visible; white bg hides any transparent areas cleanly
-            img_tag = f'<img src="{img}" width="120" height="120" alt="{pname}" style="width:120px;height:120px;object-fit:contain;background:#fff;border-radius:6px;display:block;margin:0 auto 8px;">' if img else ''
+
+            badge_html = (
+                f'<span style="{_EMAIL_SANS};display:inline-block;background:#dc2626;color:#fff;'
+                f'font-size:9px;font-weight:800;padding:3px 7px;border-radius:20px;line-height:1.3;">-{pct}%</span>'
+            ) if pct else '&nbsp;'
+
+            brand_html = (
+                f'<span style="{_EMAIL_SANS};font-size:9px;font-weight:700;color:#9aa095;'
+                f'text-transform:uppercase;letter-spacing:0.8px;">{brand}</span>'
+            ) if brand else '&nbsp;'
+
+            if disc < orig:
+                price_html = (
+                    f'<span style="{_EMAIL_SANS};font-size:11px;color:#9aa095;text-decoration:line-through;">€{orig:.2f}</span> '
+                    f'<span style="{_EMAIL_SANS};font-size:14px;font-weight:700;color:#4F5D4E;">€{disc:.2f}</span>'
+                )
+            else:
+                price_html = f'<span style="{_EMAIL_SANS};font-size:14px;font-weight:700;color:#1a1f18;">€{orig:.2f}</span>'
+
+            img_tag = (
+                f'<img src="{img}" alt="{name}" width="100%" '
+                f'style="display:block;height:120px;object-fit:contain;background-color:#ffffff;border:0;outline:none;">'
+            ) if img else ''
+
             cols += f"""
-      <td style="width:33%;padding:4px;vertical-align:top;">
-        <a href="{base}/product/{pid}" style="text-decoration:none;display:block;height:100%;background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:10px;text-align:center;">
-          {img_tag}
-          {pct_badge}
-          <div style="font-size:11px;font-weight:600;color:#1a1f18;line-height:1.3;margin-bottom:5px;">{pname}</div>
-          <div style="font-size:12px;font-weight:800;color:#4F5D4E;">{disc:.0f} €</div>
-          {"" if not pct else f'<div style="font-size:10px;color:#9ca3af;text-decoration:line-through;">{orig:.0f} €</div>'}
+      <td style="width:33%;padding:3px;vertical-align:top;">
+        <a href="{base}/product/{pid}" style="text-decoration:none;color:inherit;display:block;">
+          <table width="100%" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:10px;overflow:hidden;border:1px solid #eef0ed;">
+            <tr>
+              <td style="padding:6px 6px 4px;background-color:#ffffff;text-align:center;">
+                {img_tag}
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:5px 10px 0;background-color:#ffffff;vertical-align:middle;">
+                <div style="height:22px;overflow:hidden;">{badge_html}</div>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:3px 10px 0;background-color:#ffffff;vertical-align:top;">
+                <div style="height:14px;overflow:hidden;">{brand_html}</div>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:3px 10px 0;background-color:#ffffff;vertical-align:top;">
+                <div style="height:47px;overflow:hidden;">
+                  <span style="{_EMAIL_SANS};font-size:11px;font-weight:600;color:#1a1f18;line-height:1.4;">{name}</span>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:4px 10px 0;background-color:#ffffff;vertical-align:top;">
+                <div style="height:20px;overflow:hidden;">{price_html}</div>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:6px 10px 10px;background-color:#ffffff;">
+                <span style="{_EMAIL_SANS};font-size:10px;font-weight:700;color:#4F5D4E;letter-spacing:0.2px;">Shiko produktin &rarr;</span>
+              </td>
+            </tr>
+          </table>
         </a>
       </td>"""
         html += f"""
-<p style="margin:0 0 8px;font-weight:700;color:#1a1f18;font-size:0.85rem;">Ofertat e momentit:</p>
-<table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:18px;"><tr>{cols}</tr></table>"""
+<p style="margin:0 0 10px;font-weight:700;color:#1a1f18;font-size:0.85rem;{_EMAIL_SANS};">Ofertat e momentit:</p>
+<table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:20px;"><tr>{cols}</tr></table>"""
 
     # ── Categories row ───────────────────────────────────────────────────────
     cat_cells = ''
@@ -502,13 +554,13 @@ def _promo_blocks_html(base, offer_products=None, cat_images=None):
       <td style="width:33%;padding:4px;vertical-align:top;">
         <a href="{cat_url}" style="text-decoration:none;display:block;background:{bg};border-radius:10px;overflow:hidden;padding:10px;text-align:center;">
           {img_tag}
-          <div style="font-size:11px;font-weight:800;color:{fg};margin-bottom:3px;line-height:1.3;">{cat_name}</div>
-          <div style="font-size:9px;color:#6b7280;line-height:1.4;margin-bottom:6px;">{cat_desc}</div>
-          <div style="font-size:10px;font-weight:700;color:{fg};">Shiko &rarr;</div>
+          <div style="{_EMAIL_SANS};font-size:11px;font-weight:800;color:{fg};margin-bottom:3px;line-height:1.3;">{cat_name}</div>
+          <div style="{_EMAIL_SANS};font-size:9px;color:#6b7280;line-height:1.4;margin-bottom:6px;">{cat_desc}</div>
+          <div style="{_EMAIL_SANS};font-size:10px;font-weight:700;color:{fg};">Shiko &rarr;</div>
         </a>
       </td>"""
     html += f"""
-<p style="margin:0 0 8px;font-weight:700;color:#1a1f18;font-size:0.85rem;">Eksploroni kategorit tona:</p>
+<p style="margin:0 0 8px;font-weight:700;color:#1a1f18;font-size:0.85rem;{_EMAIL_SANS};">Eksploroni kategorit tona:</p>
 <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:18px;"><tr>{cat_cells}</tr></table>"""
 
     return html
